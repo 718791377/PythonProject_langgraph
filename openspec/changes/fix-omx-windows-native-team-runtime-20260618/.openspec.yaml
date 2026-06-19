@@ -1,5 +1,0 @@
-schema: spec-driven
-created: 2026-06-18
-x_change_class: user-level-omx-runtime-fix
-x_archive_deferred_reason: "Stage A freezes the Windows native OMX team runtime contract; Stage B must implement and live-verify runtime behavior before archive."
-x_archive_follow_up: "After Stage B local-main integration, archive this change and promote stable native_omx operational-readiness and Windows backend requirements."

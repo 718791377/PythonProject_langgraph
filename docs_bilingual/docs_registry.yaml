@@ -359,7 +359,7 @@ documents:
 
   - doc_id: omx_windows_native_team_runtime_fix_plan
     doc_class: implementation_plan
-    status: active
+    status: final
     canonical_path: docs_bilingual/implementation_plans/omx_windows_native_team_runtime_fix_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/omx_windows_native_team_runtime_fix_plan.zh-CN.md
 

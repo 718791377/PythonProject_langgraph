@@ -1,9 +1,10 @@
 ---
 doc_id: omx_windows_native_team_runtime_fix_plan
 doc_class: implementation_plan
-status: active
+status: final
 change: fix-omx-windows-native-team-runtime-20260618
 base_ref: 2d53bd73c8a8b9202d6643fe26985960c7a740a0
+archived-with: 2026-06-19-fix-omx-windows-native-team-runtime-20260618
 ---
 
 # OMX Windows Native Team Runtime Fix Plan
@@ -127,9 +128,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_mr_review.p
 
 <!-- CURRENT_STATUS_START -->
 - Stage A has been validated, committed, and integrated into local `main`.
-- Stage B implementation is in worktree `implement-omx-windows-native-team-runtime-20260619`; focused PowerShell and Node verification has passed.
-- Stage B local gate, local MR review, and local-main integration are pending.
-- Remote publication is not authorized.
+- Stage B runtime implementation has been validated, committed, integrated into local `main` at `5cd3491`, and cleaned through the guarded local flow.
+- User-level managed helpers were refreshed from the current repository source on 2026-06-19, and `codex-ohmy doctor --summary --no-color --ascii` reported `0 fail`.
+- A cross-project live smoke from `D:\project` proved the native Windows prompt/process backend can launch, report status, await, handle resume without a stale handle, shutdown, and clean up without tmux.
+- Remote publication is not authorized and was not performed.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
@@ -138,17 +140,38 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\local_mr_review.p
 - Stage A: complete - OpenSpec deltas, bilingual implementation plan, docs registry entry, and corrected P6 runtime wording were frozen and integrated.
 - Stage B TDD: complete - PowerShell tests cover false-ready readiness, Windows backend selection, Apply preflight fail-closed behavior, and live runtime evidence fields.
 - Stage B runtime: complete - runtime backend/preflight fields, Windows prompt/process controller behavior, lifecycle status/exit/shutdown replay patches, and cross-project cwd evidence are implemented.
-- Stage B verification/integration: run repository governance checks, commit the runtime package, run local gate/local MR review, merge into local `main`, and stop at the remote-publication gate.
+- Stage B verification/integration: complete - focused tests, repository gates, local MR review, guarded local-main integration, install refresh, and cross-project live smoke evidence are complete; the workflow is stopped at the remote-publication gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- `openspec/changes/fix-omx-windows-native-team-runtime-20260618/` - Stage A OpenSpec and management evidence.
+- `openspec/changes/archive/2026-06-19-fix-omx-windows-native-team-runtime-20260618/` - Stage A OpenSpec and management evidence; archive/sync evidence is recorded before archive promotion.
 - `test/install-codex-user-level-team-mode.test.ps1` - Stage B generated-wrapper and readiness regression evidence.
 - `test/codex-official-update-patch-replay-template.test.ps1` - official-install replay gate, patch filtering, ordering, and fail-closed evidence.
 - `test/openclaw-omx-windows-prompt-*-fix.test.mjs` - Windows prompt controller lifecycle/startup/status/shutdown replay evidence.
 - `tools/ci/ci_test_manifest.json` - CI registration for the new Node and PowerShell regression surfaces.
-- `.omx/state/selectors/active.json` - per-repository selector authority.
-- `.omx/state/team/codex-auto-managed-team.json` - compatibility tracked native team record, not sufficient by itself as launch evidence.
+- `C:\Users\lenovo\.codex\bin\omx-team-auto.ps1`, `codex-durable-state-status.ps1`, and `_codex-user-level-team-mode-launcher.ps1` - refreshed installed managed helper artifacts used by all local projects.
+- `D:\project\.omx\state\prompt-controller-debug\windows-native-prompt-process\worker-1.controller.log` - live launch/controller evidence for the cross-project smoke.
+- `D:\project\.omx\reports\team-commit-hygiene\windows-native-prompt-process.md` and `.context.json` - live shutdown/finalization evidence for the cross-project smoke.
+- `.omx/state/selectors/active.json` - per-repository selector authority; not a substitute for live launch evidence.
+- `.omx/state/team/codex-auto-managed-team.json` - compatibility tracked native team record when present; not sufficient by itself as launch evidence.
 <!-- EVIDENCE_INDEX_END -->
+
+## Live Runtime Evidence - 2026-06-19
+
+Fresh machine evidence after Stage B local-main integration:
+
+- Windows target context: `TMUX=<unset>` and `tmux=<not found>`.
+- User-level install refresh: `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\install-codex-user-level-team-mode.ps1 -Force` rewrote managed helpers under `C:\Users\lenovo\.codex\bin`; `omx-team-auto.ps1`, `codex-durable-state-status.ps1`, and `_codex-user-level-team-mode-launcher.ps1` have 2026-06-19T08:56:57Z-08:56:59Z timestamps.
+- Wrapped-entry health: `codex-ohmy doctor --summary --no-color --ascii` ended with `15 ok | 1 idle | 5 notes | 2 warn | 0 fail degraded`.
+- Installed CLI surface: `omx --version` reported `oh-my-codex v0.12.5`; `omx team --help` includes `native Windows defaults to the prompt/process worker backend; Unix keeps the tmux backend.`
+- Readiness projection: `omx-team-auto.ps1 -Task "windows native prompt process completion evidence" -Phase execute-parallel -ParallelSlices 2 -RepoRoot D:\PythonProject_langgraph -Json` reports `runtime_backend`, `preflight_passed`, `operational_ready`, and `blockers`; the native OMX readiness entry reports `runtime_backend=windows_prompt_process_controller`, `preflight_passed=true`, and `operational_ready=true` while correctly separating user-level LangGraph selection from native OMX launch evidence.
+- Cross-project live smoke from `D:\project`: `omx team 1:team-executor "windows native prompt/process live smoke 20260619 1700: say SMOKE_READY briefly then wait for shutdown"` created team `windows-native-prompt-process` under `D:\project\.omx\state\team` and `D:\project\.omx\state\prompt-controller-debug`.
+- Launch evidence: `config.json` / `manifest.v2.json` recorded `worker_launch_mode: "prompt"`, `tmux_session: "prompt-windows-native-prompt-process"`, `leader_pane_id: null`, `hud_pane_id: null`, worker `pid: 20456`, child pid `30816`, and `team_state_root: "D:\project\.omx\state"`.
+- Controller evidence: `worker-1.controller.log` recorded `controller_start`, `startup_ack`, `claim_task`, and `launch_exec` with `launchMode: "codex_exec_direct_js"`.
+- Status evidence: `omx team status windows-native-prompt-process --json` returned `status: "ok"`, `phase: "team-exec"`, workers total/dead/non-reporting `1/0/0`, and one in-progress task.
+- Await/resume evidence: `omx team await ... --timeout-ms 10000 --json` returned a timeout with no new event after the initial ACK, not a launch failure; `omx team resume ...` reported no resumable handle and the immediate follow-up status remained `ok`.
+- Shutdown evidence: `omx team shutdown windows-native-prompt-process --force --confirm-issues` completed with `merge_outcome: noop`, `Team shutdown complete`, generated commit-hygiene reports under `D:\project\.omx\reports\team-commit-hygiene`, and post-status returned `status: "missing"`.
+- Cleanup/isolation evidence: pids `20456` and `30816` were gone, `D:\project` stayed clean on `main`, no registered worktree entry remained for `windows-native-prompt-process`, `D:\PythonProject_langgraph` had no smoke team state/worktree, and the empty smoke directory under `D:\project\.omx\team\windows-native-prompt-process` was removed after path verification.
+- Remote boundary: no GitLab/GitHub publication was authorized or performed.

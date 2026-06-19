@@ -17,4 +17,4 @@
 - [x] Implement the native Windows prompt/process controller backend or fail closed with named blockers until the controller can launch.
 - [x] Wire automatic helper launch/reuse/switch/shutdown through operational preflight.
 - [x] Add lifecycle evidence for launch, status, await, resume, shutdown, and cross-project cwd operation.
-- [ ] Validate, commit, and integrate Stage B into local `main`, then stop at the remote-publication gate.
+- [x] Validate, commit, and integrate Stage B into local `main`, then stop at the remote-publication gate.

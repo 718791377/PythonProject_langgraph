@@ -17,4 +17,4 @@
 - [x] 实现 Windows 原生 prompt/process controller 后端，或在不能启动时用命名 blocker fail closed。
 - [x] 让自动 helper 的 launch/reuse/switch/shutdown 都经过 operational preflight。
 - [x] 增加 launch、status、await、resume、shutdown 和跨项目 cwd 的生命周期证据。
-- [ ] 验证、提交并把 Stage B 合入本地 `main`，然后停在远程发布门。
+- [x] 验证、提交并把 Stage B 合入本地 `main`，然后停在远程发布门。

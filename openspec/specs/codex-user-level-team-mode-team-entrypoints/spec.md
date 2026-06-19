@@ -579,3 +579,26 @@ When the user-level LangGraph migration-aware lane is installed, the generated u
 - **WHEN** the user-level installation includes the LangGraph migration-aware lane
 - **THEN** the generated entrypoint set SHALL include a LangGraph migration-aware live-engine inspection helper
 - **AND** that helper SHALL remain additive to the existing LangGraph run, status, inspect, kernel, engine, invocation, live-execution, fuller-engine, deeper-engine, superstep-engine, stateful-engine, boundary-engine, handoff-engine, approval-engine, provenance-engine, artifact-engine, reducer-engine, command-engine, runtime-engine, memory-engine, auto-policy, subgraph-state, generalized-routing, approval-queue, migration, memory, runtime, stream, subgraphs, history, replay, recovery, and resume surfaces
+
+### Requirement: Automatic team Apply SHALL fail closed when operational preflight fails
+
+`omx-team-auto.ps1 -Apply` SHALL perform operational preflight before mutating tracked team state or active selector state.
+
+#### Scenario: Native OMX preflight fails on Windows
+
+- **GIVEN** the automatic helper plans a `native_omx` worker team on Windows
+- **AND** the runtime backend preflight returns `operational_ready=false`
+- **WHEN** the operator runs `omx-team-auto.ps1 -Apply -Json`
+- **THEN** the helper SHALL return a structured blocked result
+- **AND** it SHALL NOT create or update `.omx/state/team/codex-auto-managed-team.json`
+- **AND** it SHALL NOT write an active native selector as though a team is running.
+
+### Requirement: Automatic team output SHALL expose runtime backend evidence
+
+The automatic team helper SHALL include runtime backend evidence in both planning and apply output.
+
+#### Scenario: Operator inspects automatic plan output
+
+- **WHEN** the operator runs `omx-team-auto.ps1 -Phase execute-parallel -ParallelSlices 2 -Json`
+- **THEN** the output SHALL include `runtime_backend`, `preflight_passed`, `operational_ready`, and `blockers`
+- **AND** wrapper existence alone SHALL NOT be reported as launch evidence.

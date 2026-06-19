@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-18
+x_change_class: user-level-omx-runtime-fix
+x_archive_deferred_reason: "Stage B has completed local-main integration and live cross-project Windows prompt/process smoke; archive is now part of closeout."
+x_archive_follow_up: "Archive/sync the Stage B requirements into stable specs in this closeout package and keep remote publication gated."
