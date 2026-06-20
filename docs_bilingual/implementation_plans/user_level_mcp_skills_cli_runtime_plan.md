@@ -35,7 +35,7 @@ Owner session: `implement-multi-plan-family-r6-live-runtime-20260611` updates th
 R6 evidence: `.omx/r6-live-runtime/receipts/` contains accepted `live-executed` evidence for lane `user-level-mcp-skills-cli-runtime`, validated by `tools/check_r6_live_runtime_receipts.py --require-coverage` and `tools/check_multi_plan_family_r6_live_runtime.py --require-coverage`.
 Runtime boundary: this status update performs no browser/GUI action, no WXWork message send, no harness job, no Spec Kit apply, no user-level config mutation, and no remote publication; it reconciles the plan with already accepted hash-only/redacted R6 receipts.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
-Last updated: 2026-06-11
+Last updated: 2026-06-20
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -57,6 +57,69 @@ Last updated: 2026-06-11
 | R5 active-candidate / bounded live handoff | Run a direct MCP or skill-discovery handoff only under risk profile and sensitive-call receipt controls. | `active-candidate` receipt, risk profile, sensitive-call authorization when needed, action scope, rollback pointer, redacted result summary. |
 
 ## Real Runtime Implementation Gap
+
+## Stage E Final Audit and Codex-Compatible Skills Runtime Freeze
+
+Status: frozen-for-implementation
+Frozen at: 2026-06-20
+Authorization boundary: local plan update, local implementation, user-level live runtime repair, local commits, and local `main` integration are approved; remote publication remains closed.
+
+### Problem Record
+
+`reference_files/10.md` is the final audit input for this Stage E package. It records 286 Codex skill loading warnings:
+
+- 285 user-level skills under `C:/Users/lenovo/.codex/skills` have frontmatter `name` values longer than the Codex-compatible 64 character limit.
+- 1 plugin-cache Twilio skill has a `description` longer than the 1024 character Codex-compatible limit.
+
+The repair target is Codex compatibility of installed skill metadata. It must not delete skills, disable plugin families, or treat low usage as proof that a capability is useless.
+
+### Frozen Design
+
+`skills2cli` continues to follow the upstream `mcp2cli` progressive-disclosure shape: discover compact metadata first, search by task, inspect one skill when needed, and only include sanitized full bodies when explicitly requested. It is not a native subagent, not expert evidence, and not an MCP server.
+
+Stage E adds a repo-owned compatibility repair surface:
+
+1. Strictly validate Codex frontmatter compatibility: frontmatter exists, `name` and `description` exist, `name <= 64`, `description <= 1024`.
+2. Generate stable short names for overlong user-level skill names. The short name keeps a readable prefix and appends a deterministic hash when needed to avoid collisions.
+3. Shorten overlong descriptions without editing the skill body.
+4. Default to dry-run and require an explicit apply flag plus operator confirmation for live user-level mutation.
+5. Before apply, back up every touched `SKILL.md`; after apply, write a rollback manifest and sanitized receipt.
+6. Treat plugin-cache edits as minimal repair only. They may be overwritten by a future plugin update and must be identified separately in receipts.
+7. Never mutate `C:/Users/lenovo/.codex/config.toml`, never apply a profile, and never hard-load/disable a plugin in this package.
+
+### Execution Slices
+
+- Slice A - plan freeze: update this plan pair with the final audit problem record, repair boundaries, and verification gates; commit and integrate locally before live runtime work.
+- Slice B - repository runtime: enhance `tools/skills2cli.py`, add/extend compatibility fixer and checker tests, and keep all default outputs compact and redacted.
+- Slice C - live runtime: install/update repo-derived `skills2cli` user-level artifacts if required, run user-level smoke, run the Codex compatibility fixer against installed skills, and record sanitized receipts plus rollback pointers.
+
+### Verification Gates
+
+Focused gates for Stage E:
+
+```powershell
+python test/skills2cli.test.py
+python test/check_codex_skills_governance.test.py
+python test/user_level_mcp_skills_cli_install.test.py
+python tools/check_codex_skills_governance.py --root . --json
+python tools/check_user_level_mcp_skills_cli_install.py --root . --json
+python tools/check_precommit_update_archive.py --root . --json
+python tools/run_openspec_guard.py --root .
+```
+
+Live runtime gates for Stage E:
+
+```powershell
+python tools/skills2cli.py index --json
+python tools/skills2cli.py audit warnings --since 30d --json
+python tools/install_user_level_mcp_skills_cli.py check --json --require-installed
+python tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --json
+python tools/repair_codex_skill_frontmatter.py audit --json
+python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --json
+```
+
+The live repair is accepted only when the post-apply audit reports zero `name_too_long` and zero `description_too_long` items for the repaired scope, or when remaining items are explicitly listed as blocked with rollback pointers preserved.
+
 
 The previous discovery facade implementation is not enough to claim real runtime readiness. Required later work:
 
@@ -85,6 +148,9 @@ One session may claim this implementation plan at a time. Other sessions may wor
 - [ ] Stage D live runtime: install/update repo-derived `skills2cli` wrapper and SKILL.md at real user level with R3 receipt, source hash, updater command, rollback pointer, and redaction evidence after explicit live authorization.
 - [ ] Stage D live runtime: run bounded R4 help/version/safe-discovery smoke for both real user-level wrappers using the implemented `smoke` command and record live `smoke-tested` receipts.
 - [ ] Stage D live runtime: gate any R5 direct MCP call or skill action handoff behind risk profile, sensitive-call authorization receipt, action scope, result redaction, and rollback evidence.
+- [x] Stage E plan freeze: record `reference_files/10.md` final audit findings and freeze the `skills2cli` progressive-disclosure plus Codex-compatible skill metadata repair design.
+- [ ] Stage E repository runtime: implement strict `skills2cli` compatibility reporting, repair helper, tests, and checkers.
+- [ ] Stage E live runtime: repair installed user-level skill metadata with rollback manifest and smoke the installed `skills2cli` surface.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates

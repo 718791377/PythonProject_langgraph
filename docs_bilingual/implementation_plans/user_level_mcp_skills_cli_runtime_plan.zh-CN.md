@@ -35,7 +35,7 @@ Owner session: `implement-multi-plan-family-r6-live-runtime-20260611` updates th
 R6 evidence: `.omx/r6-live-runtime/receipts/` contains accepted `live-executed` evidence for lane `user-level-mcp-skills-cli-runtime`, validated by `tools/check_r6_live_runtime_receipts.py --require-coverage` and `tools/check_multi_plan_family_r6_live_runtime.py --require-coverage`.
 Runtime boundary: this status update performs no browser/GUI action, no WXWork message send, no harness job, no Spec Kit apply, no user-level config mutation, and no remote publication; it reconciles the plan with accepted hash-only/redacted R6 receipts.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
-Last updated: 2026-06-11
+Last updated: 2026-06-20
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -55,6 +55,69 @@ Last updated: 2026-06-11
 | R3 user-level install/update receipt | 明确授权后安装/更新上游 `mcp2cli`，并复制 repo-derived `skills2cli` wrapper/skill，写入 sanitized receipts。 | 每个工具的 `installed-user-level` receipt、source/package/ref pin、wrapper path hash、updater command、rollback pointer、redaction status。 |
 | R4 user-level smoke runtime | 对已安装 wrapper 运行受限的 `--help` / `--version` / safe discovery smoke。 | `smoke-tested` receipt、bounded command transcript、timeout release、redaction、rollback readiness。 |
 | R5 active-candidate / bounded live handoff | 仅在 risk profile 与 sensitive-call receipt 控制下运行 direct MCP 或 skill-discovery handoff。 | `active-candidate` receipt、risk profile、必要的 sensitive-call authorization、action scope、rollback pointer、redacted result summary。 |
+
+
+## Stage E 最后审计与 Codex 兼容 Skills Runtime 冻结
+
+Status: frozen-for-implementation
+冻结时间：2026-06-20
+授权边界：允许本地方案更新、本地实现、用户级 live runtime 修复、本地提交和本地 `main` 合入；远端发布仍关闭。
+
+### 问题记录
+
+`reference_files/10.md` 是本轮 Stage E 的最后审计输入。它记录 286 条 Codex skill 加载警示：
+
+- 285 个位于 `C:/Users/lenovo/.codex/skills` 的用户级 skill，其 frontmatter `name` 超过 Codex 兼容的 64 字符限制。
+- 1 个 Twilio plugin cache skill 的 `description` 超过 Codex 兼容的 1024 字符限制。
+
+修复目标是让已安装 skill metadata 兼容 Codex。不得删除 skills、不得禁用 plugin family，也不得把低使用频率解释成能力无用。
+
+### 冻结设计
+
+`skills2cli` 继续采用上游 `mcp2cli` 的渐进披露形态：先发现紧凑 metadata，再按任务搜索，需要时检查单个 skill，只有显式请求时才返回脱敏全文。它不是 native subagent，不是 expert evidence，也不是 MCP server。
+
+Stage E 新增 repo-owned 兼容修复面：
+
+1. 严格验证 Codex frontmatter 兼容性：必须存在 frontmatter，必须有 `name` 和 `description`，`name <= 64`，`description <= 1024`。
+2. 为超长用户级 skill name 生成稳定短名；短名保留可读前缀，必要时追加确定性 hash 避免冲突。
+3. 缩短超长 description，但不修改 skill 正文。
+4. 默认 dry-run；live 用户级修改必须显式 apply flag 加 operator confirmation。
+5. apply 前备份每个被修改的 `SKILL.md`；apply 后写入 rollback manifest 和脱敏 receipt。
+6. plugin-cache 修改仅作为最小 metadata 修复；未来 plugin 更新可能覆盖，receipt 必须单独标记。
+7. 本包绝不修改 `C:/Users/lenovo/.codex/config.toml`，不 apply profile，不 hard-load 或 disable plugin。
+
+### 执行切片
+
+- Slice A - 方案冻结：更新本方案双语文件，记录最后审计问题、修复边界和验证门禁；先本地提交并合入，再进入 live runtime。
+- Slice B - 仓库 runtime：增强 `tools/skills2cli.py`，新增或扩展兼容 fixer 与 checker tests，保持默认输出紧凑且脱敏。
+- Slice C - live runtime：必要时安装/更新 repo-derived `skills2cli` 用户级 artifacts，运行用户级 smoke，对 installed skills 执行 Codex compatibility fixer，并记录脱敏 receipts 与 rollback pointers。
+
+### 验证门禁
+
+Stage E 聚焦门禁：
+
+```powershell
+python test/skills2cli.test.py
+python test/check_codex_skills_governance.test.py
+python test/user_level_mcp_skills_cli_install.test.py
+python tools/check_codex_skills_governance.py --root . --json
+python tools/check_user_level_mcp_skills_cli_install.py --root . --json
+python tools/check_precommit_update_archive.py --root . --json
+python tools/run_openspec_guard.py --root .
+```
+
+Stage E live runtime 门禁：
+
+```powershell
+python tools/skills2cli.py index --json
+python tools/skills2cli.py audit warnings --since 30d --json
+python tools/install_user_level_mcp_skills_cli.py check --json --require-installed
+python tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --json
+python tools/repair_codex_skill_frontmatter.py audit --json
+python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --json
+```
+
+只有 post-apply audit 对修复范围报告零 `name_too_long`、零 `description_too_long`，或剩余项被明确列为 blocked 且保留 rollback pointer 时，live repair 才可验收。
 
 ## Real Runtime Implementation Gap（真实 runtime 缺口）
 
@@ -77,6 +140,9 @@ Last updated: 2026-06-11
 - [x] 把现有 repo-local helper/checker/test 仅作为 R0-R2 证据保留。
 - [x] 实现 repo-local R4 smoke command 支持：可在显式传入的 Codex home fixture 中为 `mcp2cli` 与 `skills2cli` 写入 `smoke-tested` receipts。
 - [x] 为 repo-local checker 增加 `--require-smoke-tested`，使 R4 smoke receipt evidence 可被强制要求，并可通过通用 receipt governance guard 校验。
+- [x] Stage E plan freeze：记录 `reference_files/10.md` 最后审计问题，并冻结 `skills2cli` 渐进披露与 Codex 兼容 metadata 修复设计。
+- [ ] Stage E repository runtime：实现严格 `skills2cli` 兼容报告、repair helper、tests 与 checkers。
+- [ ] Stage E live runtime：用 rollback manifest 修复 installed user-level skill metadata，并 smoke installed `skills2cli` surface。
 <!-- TASK_BACKLOG_END -->
 
 ## Stage D pending runtime work（待实施真实 runtime）
