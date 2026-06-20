@@ -15,6 +15,7 @@ related_docs:
   - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md
 runtime_sources:
   - tools/audit_codex_skills_usage.py
+  - tools/skills2cli.py
   - tools/check_skills_audit_output_retention.py
   - tools/check_skills_audit_final_review_state.py
   - tools/check_skills_audit_cadence_contract.py
@@ -171,6 +172,7 @@ After 30 days, decide using the following rules. All thresholds are based primar
 Runtime responsibilities:
 
 - `tools/audit_codex_skills_usage.py` collects evidence and emits JSON/Markdown reports.
+- `tools/skills2cli.py audit warnings` provides compact, sanitized foreground warning triage over both session JSONL and `logs_2.sqlite`; it is read-only and does not mutate Codex config, plugin cache, hard-load profiles, or skill bodies.
 - `tools/check_skills_audit_output_retention.py` proves raw audit artifacts stay local-only.
 - `tools/check_skills_audit_final_review_state.py` verifies the final human-review, closure, candidate, and apply-gate state without mutating config or profiles.
 - `tools/check_skills_audit_cadence_contract.py` verifies the locked repeat count, weekly frequency, original end date, event-triggered warning-triage rule, and post-final monitoring-only boundary.
@@ -186,8 +188,8 @@ The audit helper is evidence collection, not an apply engine. It can prepare pre
 
 Default sources:
 
-- `C:\Users\lenovo\.codex\sessions/**/*.jsonl` - session transcripts used to detect explicit skill announcements and SKILL.md reads.
-- `C:\Users\lenovo\.codex\logs_2.sqlite` - runtime log database used to count skills-budget warnings.
+- `C:\Users\lenovo\.codex\sessions/**/*.jsonl` - session transcripts used to detect explicit skill announcements, SKILL.md reads, and foreground warning text for compact `skills2cli` triage.
+- `C:\Users\lenovo\.codex\logs_2.sqlite` - runtime log database used to count skills-budget warnings; `skills2cli audit warnings` now reads it as a second sanitized source so live-turn warnings are not missed when they appear only in runtime logs.
 - `C:\Users\lenovo\.codex\config.toml` - user-level plugin enabled-state source for audit-only reporting.
 - `C:\Users\lenovo\.codex\skills\plugin-modules\references\profiles.json` - module registry used to aggregate plugin evidence by profile.
 
@@ -236,6 +238,7 @@ Regression tests must cover:
 - stdout fallback for `[WARNING] Exceeded skills context budget of 2%`;
 - explicit skill-announcement detection for Chinese `Chinese skill announcement prefix` and English `Using skill:`;
 - extraction of `omitted_additional_skills` and `all_descriptions_removed` from `logs_2.sqlite` budget warnings;
+- `skills2cli audit warnings --since ... --json` must report separate `sessions_jsonl` and `logs_2.sqlite` sources, aggregate counts, redact private paths/secrets, and keep `raw_log_paths_retained=false` plus `raw_skill_bodies_retained=false`;
 - `plugins: "all_known_plugins"` in the `full` profile must not be split into individual characters;
 - the script must fall back to `tools/skill_sources/plugin-modules/references/profiles.json` when the user-level plugin-modules profile is absent.
 
@@ -664,6 +667,7 @@ The original 30-day audit window is closed. These items now distinguish complete
 - [ ] Generate candidate Markdown preview.
 - [ ] Review candidate rollback path.
 - [ ] Review candidate validation plan.
+- [x] Add `skills2cli audit warnings` as a compact read-only post-final warning source over session JSONL and `logs_2.sqlite`.
 - [ ] Run narrow-window warning triage after each new post-final `2% skills context budget` warning.
 - [ ] Manually review each new post-final warning triage result.
 - [ ] Manually review each new post-final skipped-loading source sample.

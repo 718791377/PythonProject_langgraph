@@ -15,6 +15,7 @@ related_docs:
   - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md
 runtime_sources:
   - tools/audit_codex_skills_usage.py
+  - tools/skills2cli.py
   - tools/check_skills_audit_output_retention.py
   - tools/check_skills_audit_final_review_state.py
   - tools/check_skills_audit_cadence_contract.py
@@ -171,6 +172,7 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 运行时职责：
 
 - `tools/audit_codex_skills_usage.py` 负责收集证据并输出 JSON/Markdown 报告。
+- `tools/skills2cli.py audit warnings` 提供紧凑、脱敏的前台 warning triage，同时读取 session JSONL 与 `logs_2.sqlite`；它是只读 helper，不修改 Codex config、plugin cache、hard-load profiles 或 skill bodies。
 - `tools/check_skills_audit_output_retention.py` 证明原始 audit artifacts 保持 local-only。
 - `tools/check_skills_audit_final_review_state.py` 以只读方式验证最终人工复核、关闭、候选与 apply 门禁状态，不修改 config 或 profiles。
 - `tools/check_skills_audit_cadence_contract.py` 验证已锁定的重复次数、weekly 频率、原始结束日期、事件触发 warning-triage 规则和 post-final monitoring-only 边界。
@@ -186,8 +188,8 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 
 默认数据源：
 
-- `C:\Users\lenovo\.codex\sessions/**/*.jsonl` - 会话 transcript，用于识别显式 skill 声明与 SKILL.md 读取。
-- `C:\Users\lenovo\.codex\logs_2.sqlite` - runtime 日志库，用于统计 skills budget warning。
+- `C:\Users\lenovo\.codex\sessions/**/*.jsonl` - 会话 transcript，用于识别显式 skill 声明、SKILL.md 读取，以及紧凑 `skills2cli` triage 所需的前台 warning 文本。
+- `C:\Users\lenovo\.codex\logs_2.sqlite` - runtime 日志库，用于统计 skills budget warning；`skills2cli audit warnings` 将它作为第二个脱敏来源读取，避免 live-turn warning 只出现在 runtime 日志时被漏掉。
 - `C:\Users\lenovo\.codex\config.toml` - 用户级 plugin enabled 状态来源，仅用于 audit-only 报告。
 - `C:\Users\lenovo\.codex\skills\plugin-modules\references\profiles.json` - 模块 registry，用于按 profile 聚合 plugin evidence。
 
@@ -209,7 +211,9 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 | 计划内重复频率 | Day 0 运行 1 次，之后每 7 天运行 weekly evidence，Day 30 再运行 1 次 | Weekly evidence 日期为 2026-05-23、2026-05-30、2026-06-06、2026-06-13；final evidence 日期为 2026-06-15。 |
 | Warning triage 频率 | 仅事件触发 | 只有出现新的 `2% skills context budget` warning 后，才运行窄窗口 triage；不设固定重复次数。 |
 | Post-final 运行 | 只作为 monitoring evidence | 2026-06-15 之后的运行只能更新 review-pending evidence 或 warning triage，不能重开 30 天窗口，也不能授权 profile apply。 |
-| Apply 边界 | cadence 本身不授权 apply | profile apply 仍必须等待后续明确 `approved-to-apply` 授权。 |```powershell
+| Apply 边界 | cadence 本身不授权 apply | profile apply 仍必须等待后续明确 `approved-to-apply` 授权。 |
+
+```powershell
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 7 --json --output .\.tmp\skills-usage-audit-7d.json
 ```
 
@@ -234,6 +238,7 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 - `⚠ Exceeded skills context budget of 2%` 的 stdout fallback；
 - 中文 `使用技能：` 与英文 `Using skill:` 的显式 skill announcement 识别；
 - `logs_2.sqlite` 中 budget warning 的 `omitted_additional_skills` 与 `all_descriptions_removed` 提取；
+- `skills2cli audit warnings --since ... --json` 必须分别报告 `sessions_jsonl` 与 `logs_2.sqlite` 来源，汇总 warning 计数，脱敏私有路径与 secret，并保持 `raw_log_paths_retained=false` 与 `raw_skill_bodies_retained=false`；
 - `full` profile 中 `plugins: "all_known_plugins"` 不能被拆成单个字符；
 - 脚本在缺少用户级 plugin-modules profile 时，必须回退读取仓库内 `tools/skill_sources/plugin-modules/references/profiles.json`。
 
@@ -608,6 +613,8 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 校验 skipped-loading 样本脱敏。
 - [x] 在 Markdown 摘要渲染 warning triage。
 - [x] 在 stdout 渲染 warning triage。
+- [x] `skills2cli audit warnings --since ... --json` 同时汇总 `sessions_jsonl` 与 `logs_2.sqlite` 的只读脱敏 warning 来源。
+- [x] `skills2cli audit warnings` 输出 per-source counts、raw-retention 安全标志，以及两个解释过的 pressure fields：`all_descriptions_removed_count` - 所有 skill descriptions 被移出 model-visible context 的次数；`max_omitted_additional_skills` - warning 文本中观察到的最大 additional-skill omission 数。
 
 ### Task 5：Warning severity
 
@@ -936,6 +943,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - `tools/check_precommit_update_archive.py` 的提交前更新/归档状态，证明本轮提交前既有文件更新复核与 OpenSpec 归档门禁已经通过。
 - 默认人类可读 stdout 也必须渲染 audit state、audit state blockers、enabled plugins 已匹配/未匹配摘要、current profile 推断、inventory summary、log evidence 可用性、budget warning 最近样本数量、有界脱敏 budget-warning 样本摘录与 7 天计数、warning severity 等级、原因与处理动作、all-descriptions-removed / omitted-additional-skills 压力指标、audit-only safety 的 `audit_only` / `mutates_config` / `edits_plugin_cache` / `hard_load_apply_performed` 标志、runtime path privacy 的 `raw_paths_retained=false`、占位符路径与 `privacy_policy`、cadence review 的 late-run / missed-weekly-runs / weekly-report-review 状态、warning triage 状态、warning triage 窗口策略、warning/skipped-loading 计数、脱敏 skipped-loading 样本摘录、skipped-loading 复核动作、warning triage 后续动作建议与 blockers、explicit skill 使用总数与唯一 skill 数、SKILL.md 读取次数、profile helper 调用次数、`noise_review` 状态、剔除噪声 token 数、`raw_noise_tokens_retained=false`、`max_noise_token_length` 与 `token_privacy_policy`、`manual_evidence` 文件请求/读取数、有效/无效记录数、`raw_notes_retained=false`、`source_paths_retained=false`、`max_path_length`、人工记录隐私策略与来源路径隐私策略、`manual_evidence.conflict_review` 状态、冲突/例外数量、是否需要处置与处置说明、脚本能力边界计数、stable tool-call alias registry 的 policy/evidence level/strong-evidence 禁止标志、alias target 数量和有界 target 摘要、decision recommendation 的 advisory-only / profile-apply 禁止标志、四个决策分桶计数与有界分桶样本、recommendations 条数与前几条建议、字段契约状态/passed/blocker/含 `warning_severity` 的违规分组计数、输出留存门禁状态/checker/violation/local-only 细节和提交前更新/归档门禁状态/checker/提交前标志/既有文件更新复核/OpenSpec 归档复核/变更计数细节，确保非 JSON 运行也能安全复核。
 - `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁与 Markdown blocker 输出、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段、不安全或不完整候选记录的 `candidate_record_contract` 阻断，以及候选 Markdown 不执行清单。
+- 回归测试还必须覆盖 `skills2cli audit warnings --since ... --json` 的双来源汇总、private path/secret 脱敏、`raw_log_paths_retained=false` 与 `raw_skill_bodies_retained=false`。
 - 回归测试还必须覆盖 explicit skill 误报 token 的路径/secret 脱敏、长度截断，以及 `noise_review` 字段契约阻断未脱敏或缺少隐私字段的报告，并覆盖 `script_capability_boundaries` 字段契约阻断缺失或空边界列表的报告。
 - 回归测试还必须覆盖 `decision_recommendation` 字段契约阻断缺失或非 advisory 状态、允许 profile apply、分桶不完整、分桶元素非字符串以及 `bucket_counts` 过期的报告。
 - 回归测试还必须覆盖 `module_evidence` 行契约阻断字段缺失/类型错误、plugin 元素非字符串、strong 计数为负或过期、mapped-tool 证据被计为强证据、跨项目效用未要求人工复核以及 recommendation 不在允许列表中的报告。
@@ -1006,6 +1014,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [ ] 生成 candidate Markdown preview。
 - [ ] 复核 candidate rollback path。
 - [ ] 复核 candidate validation plan。
+- [x] 增加 `skills2cli audit warnings` 作为 post-final 紧凑只读 warning 来源，同时覆盖 session JSONL 与 `logs_2.sqlite`。
 - [ ] post-final 阶段每次新的 `2% skills context budget` warning 后运行窄窗口 warning triage。
 - [ ] 对新的 post-final warning triage 结果做人工复核。
 - [ ] 对新的 post-final skipped-loading 样本做来源复核。

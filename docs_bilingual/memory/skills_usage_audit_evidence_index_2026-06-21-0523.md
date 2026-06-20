@@ -46,6 +46,10 @@ This index records the latest review-pending evidence package. It is audit-only 
 - 05:23 record: final-summary noise false-positive and manual-conflict items are script-level pre-reviewed and no longer block continued review-pending monitoring.
 - Human review and closure decision remain open.
 
+## UTF-8 companion hygiene
+
+The zh-CN companion for this index was rewritten from mojibake into valid UTF-8 Chinese text. This is evidence hygiene only and does not change the decision state or authorize candidate generation/profile apply.
+
 ## Safe next steps
 
 1. Manually review the final 30-day summary.

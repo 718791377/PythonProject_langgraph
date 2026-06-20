@@ -56,6 +56,10 @@ Machine evidence supports closing the script-level manual-conflict item for this
 
 Interpretation: no manual conflict or exception record exists that must be dispositioned before continued review-pending monitoring. A human reviewer may still add a later manual note before any candidate decision.
 
+## UTF-8 companion hygiene
+
+The zh-CN companion for this record was rewritten from mojibake into valid UTF-8 Chinese text. The evidence content and decision state remain unchanged: the final summary is still `human_review_pending`, candidate generation is `not_requested`, and profile apply is `not_authorized`.
+
 ## Remaining open items
 
 - Final human review is still pending.
