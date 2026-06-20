@@ -1,6 +1,12 @@
 schema: spec-driven
 created: 2026-06-20
-x_change_class: operations-package-full-body-generation
+x_change_class: mixed
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/generate_operations_package.py
+  - tools/check_operations_package_docs.py
+  - test/operations_package_docs.test.py
+  - tools/ci/ci_test_manifest.json
 x_delivery_stages:
   - stage: A
     name: freeze-plan-and-contract
