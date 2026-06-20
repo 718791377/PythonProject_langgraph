@@ -31,13 +31,15 @@ Python helper scripts, `uvx mcp2cli --help`, `uv tool install mcp2cli`, `npx ski
 Status: implemented-local
 Status: R6 live-executed
 Status: Stage E live-repaired
-Stage: Stage E Codex-compatible `skills2cli` frontmatter reporting and repair runtime is implemented locally and live-executed for installed user/plugin skills.
-Owner session: `implement-skills2cli-codex-compat-runtime-20260620` owns the Stage E implementation package; `implement-multi-plan-family-r6-live-runtime-20260611` remains the older strict parent-family R6 receipt coverage owner.
+Status: Stage D R3/R4 live-executed
+Stage: Stage E Codex-compatible `skills2cli` frontmatter reporting and repair runtime is implemented locally and live-executed for installed user/plugin skills. Stage D R3/R4 user-level install/update and bounded smoke evidence is now also live-executed for `mcp2cli` and `skills2cli`; R5 direct MCP or sensitive skill handoff remains gated and not executed.
+Owner session: `implement-stage-d-mcp-skills-cli-live-runtime-20260621` owns the Stage D R3/R4 live-runtime evidence package; `implement-skills2cli-codex-compat-runtime-20260620` owns the Stage E frontmatter repair package; `implement-multi-plan-family-r6-live-runtime-20260611` remains the older strict parent-family R6 receipt coverage owner.
+Stage D evidence: upstream `knowsuchagency/mcp2cli` was source-pinned at `e3fa0f957155da6fe8dbb981441c41b2131feda0`; `uv tool install mcp2cli` and `uvx mcp2cli --help` executed successfully; user-level `mcp2cli` and repo-derived `skills2cli` wrappers/support files were refreshed with rollback pointer `state/mcp-skills-cli/backups/20260620T191937Z`; R3 receipts are `mcp2cli-20260620T191938Z.json` and `skills2cli-20260620T191938Z.json`; R4 smoke receipts are `mcp2cli-smoke-20260620T191950Z.json` and `skills2cli-smoke-20260620T191950Z.json`.
 Stage E evidence: repo runtime adds strict Codex frontmatter parsing/compatibility reports, repair helper, tests, CI manifest registration, user-level `skills2cli` support-file install, live smoke receipts, and live frontmatter repair receipts. Post-repair audit reports `invalid_total=0`; rollback manifest and sanitized receipt are stored under user-level `state/skills2cli/frontmatter-repair/`.
 R6 evidence: `.omx/r6-live-runtime/receipts/` contains accepted `live-executed` evidence for lane `user-level-mcp-skills-cli-runtime`, validated by `tools/check_r6_live_runtime_receipts.py --require-coverage` and `tools/check_multi_plan_family_r6_live_runtime.py --require-coverage`.
-Runtime boundary: Stage E mutates only the approved user-level `skills2cli` install artifacts and SKILL.md frontmatter metadata with backups/rollback receipts; it does not mutate `config.toml`, apply profiles, disable plugins, perform browser/GUI/WXWork/harness/Spec Kit actions, or publish remote refs.
+Runtime boundary: Stage D/E mutate only approved user-level `mcp2cli` / `skills2cli` install artifacts, wrappers, receipts, rollback backups, and Codex-compatible SKILL.md metadata. They do not mutate `config.toml`, apply profiles, disable plugins, perform browser/GUI/WXWork/harness/Spec Kit actions, execute R5 direct MCP/sensitive handoff, or publish remote refs.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 <!-- CURRENT_STATUS_END -->
 
 ## Source References
@@ -54,11 +56,9 @@ Last updated: 2026-06-20
 | R0 project-level preflight | Inspect upstream `mcp2cli` reference, repo-local `skills2cli` source, current `CODEX_HOME`, and available `uv`/`uvx`/`npx` without installing or copying artifacts. | Source URL, source pin plan, tool availability, no install/run evidence, sanitized transcript. |
 | R1 project-level fake/dry-run runtime | Run deterministic installer `plan` and simulated apply/check fixtures. | `apply_performed=false`, fake command results, no user-level state mutation, focused tests. |
 | R2 reusable project-level helper/guard | Maintain repo-owned installer/checker, receipt schema, rollback backup layout, redaction contract, and CI/OpenSpec guard registration. | Helper/checker tests, CI manifest registration, OpenSpec guard wiring, docs registry entry. |
-| R3 user-level install/update receipt | With explicit authorization, install/update upstream `mcp2cli`, copy repo-derived `skills2cli` wrappers/skill, and write sanitized receipts. | `installed-user-level` receipt per tool, source/package/ref pin, wrapper path hash, updater command, rollback pointer, redaction status. |
-| R4 user-level smoke runtime | Run bounded `--help` / `--version` / safe discovery smoke against installed wrappers. | `smoke-tested` receipt, bounded command transcript, timeout release, redaction, rollback readiness. |
-| R5 active-candidate / bounded live handoff | Run a direct MCP or skill-discovery handoff only under risk profile and sensitive-call receipt controls. | `active-candidate` receipt, risk profile, sensitive-call authorization when needed, action scope, rollback pointer, redacted result summary. |
-
-## Real Runtime Implementation Gap
+| R3 user-level install/update receipt | With explicit authorization, install/update upstream `mcp2cli`, copy repo-derived `skills2cli` wrappers/skill, and write sanitized receipts. | Completed live on 2026-06-20 for `mcp2cli` and `skills2cli`; receipts include source pin, wrapper hashes, updater commands, rollback pointer, and redaction status. |
+| R4 user-level smoke runtime | Run bounded `--help` / `--version` / safe discovery smoke against installed wrappers. | Completed live on 2026-06-20; smoke receipts cover `mcp2cli --version` and `skills2cli --help` with bounded transcripts, timeout release, redaction, and rollback readiness. |
+| R5 active-candidate / bounded live handoff | Run a direct MCP or skill-discovery handoff only under risk profile and sensitive-call receipt controls. | Not executed by this package; requires a separate authorization receipt, target/action allowlist, risk profile, rollback pointer, and redacted result summary. |
 
 ## Stage E Final Audit and Codex-Compatible Skills Runtime Freeze
 
@@ -124,12 +124,17 @@ python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --j
 The live repair is accepted only when the post-apply audit reports zero `name_too_long` and zero `description_too_long` items for the repaired scope, or when remaining items are explicitly listed as blocked with rollback pointers preserved.
 
 
-The previous discovery facade implementation is not enough to claim real runtime readiness. Required later work:
+## Real Runtime Implementation Gap
 
-- Execute `tools/install_user_level_mcp_skills_cli.py apply --apply --operator-confirmation ...` only after explicit authorization and source pin review.
-- Capture separate install/update receipts for `mcp2cli` and `skills2cli`, including wrapper hashes, source hashes, updater commands, rollback backup paths, and redaction status.
-- Smoke installed wrappers with bounded `mcp2cli --help` or `--version` and `skills2cli --help` / safe discovery commands.
-- Keep direct MCP calls and sensitive skill-derived actions behind risk profile, sensitive-call receipt, no-native-subagent-evidence wording, redaction, and rollback rules.
+The previous discovery facade implementation was not enough to claim real runtime readiness. As of 2026-06-20, the R3/R4 portion is live-executed and the remaining gap is R5-only:
+
+- [x] Source-pin review: upstream `knowsuchagency/mcp2cli` observed at `e3fa0f957155da6fe8dbb981441c41b2131feda0`.
+- [x] R3 install/update: `tools/install_user_level_mcp_skills_cli.py apply --apply --operator-confirmation --run-external --skip-upstream-skill-install --upstream-ref e3fa0f957155da6fe8dbb981441c41b2131feda0 --json` refreshed the approved user-level artifacts and wrote rollback-backed receipts for both tools.
+- [x] R4 smoke: `tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --upstream-ref e3fa0f957155da6fe8dbb981441c41b2131feda0 --json` wrote `smoke-tested` receipts for `mcp2cli --version` and `skills2cli --help`.
+- [x] Compatibility re-check: `tools/repair_codex_skill_frontmatter.py audit --codex-home C:/Users/lenovo/.codex --include-plugins --limit 5 --json` reported `invalid_total=0`.
+- [ ] R5 direct MCP calls and sensitive skill-derived actions remain blocked behind risk profile, sensitive-call receipt, no-native-subagent-evidence wording, redaction, and rollback rules.
+
+The upstream `npx skills add knowsuchagency/mcp2cli --skill mcp2cli` path was intentionally not executed in this package because the approved runtime surface is the repository-owned wrapper/support-file install plus receipts; executing third-party skill installation remains a separate explicit decision.
 
 ## File Ownership
 
@@ -150,16 +155,23 @@ One session may claim this implementation plan at a time. Other sessions may wor
 - [x] Stage E plan freeze: record `reference_files/10.md` final audit findings and freeze the `skills2cli` progressive-disclosure plus Codex-compatible skill metadata repair design.
 - [x] Stage E repository runtime: implement strict `skills2cli` compatibility reporting, repair helper, tests, and checkers.
 - [x] Stage E live runtime: repair installed user-level skill metadata with rollback manifest and smoke the installed `skills2cli` surface.
+- [x] Stage D source pin review: pin upstream `knowsuchagency/mcp2cli` at `e3fa0f957155da6fe8dbb981441c41b2131feda0`.
+- [x] Stage D R3 live runtime: refresh approved user-level `mcp2cli` / `skills2cli` artifacts and write rollback-backed install/update receipts.
+- [x] Stage D R4 live runtime: run bounded wrapper smoke and write `smoke-tested` receipts for both tools.
+- [ ] Stage D/R5 live handoff: keep direct MCP calls and sensitive skill-derived actions blocked until a separate authorization receipt exists.
 <!-- TASK_BACKLOG_END -->
 
-## Stage D pending runtime work
+## Stage D live-runtime status
 
-These items remain pending by design and are not blockers for the completed Stage E frontmatter-repair package. They require a separate explicit live-runtime decision before execution:
+Stage D R3/R4 is now completed-live for the approved user-level wrapper/support-file surface. R5 remains pending by design and is not part of this package:
 
-- Stage D real runtime: pin the upstream `mcp2cli` version/ref and install/update it at real user level with R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
-- Stage D real runtime: install/update the repo-derived `skills2cli` wrapper and SKILL.md with R3 receipt, source hash, updater command, rollback pointer, and redaction evidence.
-- Stage D real runtime: run bounded R4 help/version/safe-discovery smoke for both wrappers and record `smoke-tested` receipts.
-- Stage D real runtime: gate any R5 direct MCP call or skill action handoff behind risk profile, sensitive-call authorization receipt, action scope, result redaction, and rollback evidence.
+- [x] Stage D R3 source pin: upstream `mcp2cli` ref `e3fa0f957155da6fe8dbb981441c41b2131feda0`.
+- [x] Stage D R3 install/update receipts: `mcp2cli-20260620T191938Z.json` and `skills2cli-20260620T191938Z.json` under user-level `state/mcp-skills-cli/receipts/`.
+- [x] Stage D R3 rollback pointer: `state/mcp-skills-cli/backups/20260620T191937Z`.
+- [x] Stage D R4 smoke receipts: `mcp2cli-smoke-20260620T191950Z.json` and `skills2cli-smoke-20260620T191950Z.json`.
+- [x] Stage D R4 bounded smoke commands: `mcp2cli --version` returned `mcp2cli 3.2.0`; `skills2cli --help` returned the compact discovery CLI help.
+- [x] Stage D boundary: no `config.toml` mutation, no profile apply, no plugin disable, no browser/GUI/WXWork/harness/Spec Kit action, no remote ref mutation.
+- [ ] Stage D/R5 direct MCP call or skill action handoff remains gated behind a separate risk profile, sensitive-call authorization receipt, action scope, result redaction, and rollback evidence.
 
 ## Validation Gates
 
@@ -175,14 +187,16 @@ These items remain pending by design and are not blockers for the completed Stag
 
 - The deleted/superseded `user_level_mcp_skills_discovery_facade_plan` is not restored as an active implementation plan.
 - `mcp2cli` and `skills2cli` runtime ownership is represented by this active child plan.
-- Existing helper/checker/test carry-forward evidence is clearly R0-R2 only, not proof of broad R3/R4/R5 real runtime completion.
-- Stage E evidence is scoped to Codex-compatible `skills2cli` frontmatter reporting, user-level `skills2cli` support-file install/smoke, and installed-skill metadata repair; it does not complete the broader Stage D upstream `mcp2cli` runtime lane.
-- Later Stage D or R5 runtime claims require sanitized receipts and rollback evidence.
+- Existing helper/checker/test carry-forward evidence is clearly R0-R2 only unless paired with user-level receipts.
+- Stage E evidence is scoped to Codex-compatible `skills2cli` frontmatter reporting, user-level `skills2cli` support-file install/smoke, and installed-skill metadata repair.
+- Stage D R3/R4 is complete only because the user-level install/update and smoke receipts named above exist with rollback pointers and redacted transcripts.
+- R5 runtime claims still require separate active-candidate authorization, sanitized receipts, and rollback evidence.
 - Remote publication remains behind explicit approval.
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-20 Stage D R3/R4 live runtime: branch `implement-stage-d-mcp-skills-cli-live-runtime-20260621` pins upstream `knowsuchagency/mcp2cli` at `e3fa0f957155da6fe8dbb981441c41b2131feda0`, runs real `uv tool install mcp2cli` and `uvx mcp2cli --help`, refreshes approved user-level wrappers/support files with rollback pointer `state/mcp-skills-cli/backups/20260620T191937Z`, writes R3 receipts `mcp2cli-20260620T191938Z.json` and `skills2cli-20260620T191938Z.json`, writes R4 receipts `mcp2cli-smoke-20260620T191950Z.json` and `skills2cli-smoke-20260620T191950Z.json`, and verifies installed skill frontmatter with `invalid_total=0`. This evidence does not execute R5 direct MCP/sensitive handoff and does not authorize remote publication.
 - 2026-06-20 Stage E Codex-compatible skills runtime: branch `implement-skills2cli-codex-compat-runtime-20260620` adds `tools/codex_skill_frontmatter.py`, `tools/repair_codex_skill_frontmatter.py`, strict `skills2cli`/inventory compatibility reporting, governance checker fail-closed boundaries, installer support-file sync, and focused tests. Live runtime installed/checked repo-derived `skills2cli` user-level artifacts, ran smoke receipts, and applied frontmatter repair to installed skills; post-apply audit reports `invalid_total=0`, with rollback manifest and receipt under user-level `state/skills2cli/frontmatter-repair/`. This evidence does not mark Stage D upstream `mcp2cli` pin/install complete and does not authorize remote publication.
 - 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for MCP/skills CLI runtime handoff. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-05 runtime successor plan: branch `runtime-plan-standard-20260605` creates this plan to carry `mcp2cli` / `skills2cli` real-runtime work after `user_level_mcp_skills_discovery_facade_plan` was deleted/superseded; no user-level install, smoke, direct MCP call, or live handoff is performed by that package.

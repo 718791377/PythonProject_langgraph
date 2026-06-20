@@ -31,13 +31,15 @@ Python helper scripts、`uvx mcp2cli --help`、`uv tool install mcp2cli`、`npx 
 Status: implemented-local
 Status: R6 live-executed
 Status: Stage E live-repaired
-Stage: Stage E Codex-compatible `skills2cli` frontmatter reporting and repair runtime is implemented locally and live-executed for installed user/plugin skills.
-Owner session: `implement-skills2cli-codex-compat-runtime-20260620` owns the Stage E implementation package; `implement-multi-plan-family-r6-live-runtime-20260611` remains the older strict parent-family R6 receipt coverage owner.
+Status: Stage D R3/R4 live-executed
+Stage: Stage E Codex-compatible `skills2cli` frontmatter 报告与修复 runtime 已在本地实现，并已对 installed user/plugin skills 执行 live execution。Stage D R3/R4 user-level install/update 与 bounded smoke evidence 也已针对 `mcp2cli` 和 `skills2cli` live-executed；R5 direct MCP 或 sensitive skill handoff 仍受门禁约束，未执行。
+Owner session: `implement-stage-d-mcp-skills-cli-live-runtime-20260621` 拥有 Stage D R3/R4 live-runtime evidence package；`implement-skills2cli-codex-compat-runtime-20260620` 拥有 Stage E frontmatter repair package；`implement-multi-plan-family-r6-live-runtime-20260611` 仍是较早 strict parent-family R6 receipt coverage owner。
+Stage D evidence: upstream `knowsuchagency/mcp2cli` source pin 为 `e3fa0f957155da6fe8dbb981441c41b2131feda0`；`uv tool install mcp2cli` 与 `uvx mcp2cli --help` 已成功执行；user-level `mcp2cli` 与 repo-derived `skills2cli` wrappers/support files 已刷新，rollback pointer 为 `state/mcp-skills-cli/backups/20260620T191937Z`；R3 receipts 为 `mcp2cli-20260620T191938Z.json` 与 `skills2cli-20260620T191938Z.json`；R4 smoke receipts 为 `mcp2cli-smoke-20260620T191950Z.json` 与 `skills2cli-smoke-20260620T191950Z.json`。
 Stage E evidence: repo runtime adds strict Codex frontmatter parsing/compatibility reports, repair helper, tests, CI manifest registration, user-level `skills2cli` support-file install, live smoke receipts, and live frontmatter repair receipts. Post-repair audit reports `invalid_total=0`; rollback manifest and sanitized receipt are stored under user-level `state/skills2cli/frontmatter-repair/`.
 R6 evidence: `.omx/r6-live-runtime/receipts/` contains accepted `live-executed` evidence for lane `user-level-mcp-skills-cli-runtime`, validated by `tools/check_r6_live_runtime_receipts.py --require-coverage` and `tools/check_multi_plan_family_r6_live_runtime.py --require-coverage`.
-Runtime boundary: Stage E mutates only the approved user-level `skills2cli` install artifacts and SKILL.md frontmatter metadata with backups/rollback receipts; it does not mutate `config.toml`, apply profiles, disable plugins, perform browser/GUI/WXWork/harness/Spec Kit actions, or publish remote refs.
+Runtime boundary: Stage D/E 只变更已批准的 user-level `mcp2cli` / `skills2cli` install artifacts、wrappers、receipts、rollback backups 和 Codex-compatible SKILL.md metadata。它们不修改 `config.toml`，不 apply profile，不禁用 plugin，不执行 browser/GUI/WXWork/harness/Spec Kit action，不执行 R5 direct MCP/sensitive handoff，也不发布 remote refs。
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 <!-- CURRENT_STATUS_END -->
 
 ## 参考源
@@ -54,9 +56,9 @@ Last updated: 2026-06-20
 | R0 project-level preflight | 只检查上游 `mcp2cli`、repo-local `skills2cli` 源码、当前 `CODEX_HOME`、`uv`/`uvx`/`npx` 可用性；不安装、不复制。 | Source URL、source pin plan、tool availability、no install/run evidence、sanitized transcript。 |
 | R1 project-level fake/dry-run runtime | 运行 deterministic installer `plan` 与 simulated apply/check fixtures。 | `apply_performed=false`、fake command results、无用户级状态突变、focused tests。 |
 | R2 reusable project-level helper/guard | 维护 repo-owned installer/checker、receipt schema、rollback backup layout、redaction contract 与 CI/OpenSpec guard。 | Helper/checker tests、CI manifest registration、OpenSpec guard wiring、docs registry entry。 |
-| R3 user-level install/update receipt | 明确授权后安装/更新上游 `mcp2cli`，并复制 repo-derived `skills2cli` wrapper/skill，写入 sanitized receipts。 | 每个工具的 `installed-user-level` receipt、source/package/ref pin、wrapper path hash、updater command、rollback pointer、redaction status。 |
-| R4 user-level smoke runtime | 对已安装 wrapper 运行受限的 `--help` / `--version` / safe discovery smoke。 | `smoke-tested` receipt、bounded command transcript、timeout release、redaction、rollback readiness。 |
-| R5 active-candidate / bounded live handoff | 仅在 risk profile 与 sensitive-call receipt 控制下运行 direct MCP 或 skill-discovery handoff。 | `active-candidate` receipt、risk profile、必要的 sensitive-call authorization、action scope、rollback pointer、redacted result summary。 |
+| R3 user-level install/update receipt | 在显式授权下 install/update upstream `mcp2cli`，复制 repo-derived `skills2cli` wrapper/skill，并写入 sanitized receipts。 | 2026-06-20 已针对 `mcp2cli` 与 `skills2cli` live completed；receipts 包含 source pin、wrapper hashes、updater commands、rollback pointer 和 redaction status。 |
+| R4 user-level smoke runtime | 对 installed wrappers 运行 bounded `--help` / `--version` / safe discovery smoke。 | 2026-06-20 已 live completed；smoke receipts 覆盖 `mcp2cli --version` 与 `skills2cli --help`，并包含 bounded transcripts、timeout release、redaction 和 rollback readiness。 |
+| R5 active-candidate / bounded live handoff | 仅在 risk profile 与 sensitive-call receipt 控制下运行 direct MCP 或 skill-discovery handoff。 | 本 package 未执行；需要单独 authorization receipt、target/action allowlist、risk profile、rollback pointer 和 redacted result summary。 |
 
 
 ## Stage E 最后审计与 Codex 兼容 Skills Runtime 冻结
@@ -124,12 +126,15 @@ python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --j
 
 ## Real Runtime Implementation Gap（真实 runtime 缺口）
 
-旧 discovery facade 不能证明真实 runtime ready。后续必须完成：
+之前的 discovery facade implementation 不足以声明真实 runtime ready。截至 2026-06-20，R3/R4 部分已经 live-executed，剩余缺口仅为 R5：
 
-- 只有在明确授权并完成 source pin review 后，才执行 `tools/install_user_level_mcp_skills_cli.py apply --apply --operator-confirmation ...`。
-- 分别为 `mcp2cli` 与 `skills2cli` 捕获 install/update receipts，包含 wrapper hashes、source hashes、updater commands、rollback backup paths 与 redaction status。
-- 使用受限 `mcp2cli --help` 或 `--version`，以及 `skills2cli --help` / safe discovery command，smoke 已安装 wrapper。
-- direct MCP call 与 skill-derived sensitive action 必须受 risk profile、sensitive-call receipt、no-native-subagent-evidence wording、redaction 与 rollback 规则约束。
+- [x] Source-pin review：upstream `knowsuchagency/mcp2cli` 已固定在 `e3fa0f957155da6fe8dbb981441c41b2131feda0`。
+- [x] R3 install/update：`tools/install_user_level_mcp_skills_cli.py apply --apply --operator-confirmation --run-external --skip-upstream-skill-install --upstream-ref e3fa0f957155da6fe8dbb981441c41b2131feda0 --json` 已刷新批准范围内的 user-level artifacts，并为两个工具写入带 rollback 的 receipts。
+- [x] R4 smoke：`tools/install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation --upstream-ref e3fa0f957155da6fe8dbb981441c41b2131feda0 --json` 已为 `mcp2cli --version` 与 `skills2cli --help` 写入 `smoke-tested` receipts。
+- [x] Compatibility re-check：`tools/repair_codex_skill_frontmatter.py audit --codex-home C:/Users/lenovo/.codex --include-plugins --limit 5 --json` 报告 `invalid_total=0`。
+- [ ] R5 direct MCP calls 与 sensitive skill-derived actions 仍被 risk profile、sensitive-call receipt、no-native-subagent-evidence wording、redaction 和 rollback 规则阻断。
+
+本 package 有意未执行 upstream `npx skills add knowsuchagency/mcp2cli --skill mcp2cli` 路径，因为已批准 runtime surface 是 repo-owned wrapper/support-file install 加 receipts；执行第三方 skill installation 仍是单独显式决策。
 
 ## 文件归属
 
@@ -146,16 +151,23 @@ python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --j
 - [x] Stage E plan freeze：记录 `reference_files/10.md` 最后审计问题，并冻结 `skills2cli` 渐进披露与 Codex 兼容 metadata 修复设计。
 - [x] Stage E repository runtime：实现严格 `skills2cli` 兼容报告、repair helper、tests 与 checkers。
 - [x] Stage E live runtime：用 rollback manifest 修复 installed user-level skill metadata，并 smoke installed `skills2cli` surface。
+- [x] Stage D source pin review：固定 upstream `knowsuchagency/mcp2cli` 为 `e3fa0f957155da6fe8dbb981441c41b2131feda0`。
+- [x] Stage D R3 live runtime：刷新已批准的 user-level `mcp2cli` / `skills2cli` artifacts，并写入 rollback-backed install/update receipts。
+- [x] Stage D R4 live runtime：运行 bounded wrapper smoke，并为两个工具写入 `smoke-tested` receipts。
+- [ ] Stage D/R5 live handoff：direct MCP calls 与 sensitive skill-derived actions 保持阻断，直到存在单独 authorization receipt。
 <!-- TASK_BACKLOG_END -->
 
-## Stage D pending runtime work（待实施真实 runtime）
+## Stage D live-runtime status（真实 runtime 状态）
 
-这些事项按设计保持 pending，不阻塞已经完成的 Stage E frontmatter-repair package；执行前必须有单独明确的 live-runtime 决策：
+Stage D R3/R4 已在批准的 user-level wrapper/support-file surface 上 completed-live。R5 按设计保持 pending，不属于本 package：
 
-- Stage D real runtime：固定上游 `mcp2cli` version/ref，并以 R3 receipt、wrapper hash、updater command、rollback pointer 与 redaction evidence 完成用户级 install/update。
-- Stage D real runtime：安装/更新 repo-derived `skills2cli` wrapper 与 SKILL.md，并写入 R3 receipt、source hash、updater command、rollback pointer 与 redaction evidence。
-- Stage D real runtime：为两个 wrapper 运行受限 R4 help/version/safe-discovery smoke，并记录 `smoke-tested` receipts。
-- Stage D real runtime：任何 R5 direct MCP call 或 skill action handoff 都必须经过 risk profile、sensitive-call authorization receipt、action scope、result redaction 与 rollback evidence。
+- [x] Stage D R3 source pin：upstream `mcp2cli` ref 为 `e3fa0f957155da6fe8dbb981441c41b2131feda0`。
+- [x] Stage D R3 install/update receipts：user-level `state/mcp-skills-cli/receipts/` 下存在 `mcp2cli-20260620T191938Z.json` 与 `skills2cli-20260620T191938Z.json`。
+- [x] Stage D R3 rollback pointer：`state/mcp-skills-cli/backups/20260620T191937Z`。
+- [x] Stage D R4 smoke receipts：`mcp2cli-smoke-20260620T191950Z.json` 与 `skills2cli-smoke-20260620T191950Z.json`。
+- [x] Stage D R4 bounded smoke commands：`mcp2cli --version` 返回 `mcp2cli 3.2.0`；`skills2cli --help` 返回 compact discovery CLI help。
+- [x] Stage D boundary：未修改 `config.toml`，未 apply profile，未禁用 plugin，未执行 browser/GUI/WXWork/harness/Spec Kit action，未进行 remote ref mutation。
+- [ ] Stage D/R5 direct MCP call 或 skill action handoff 仍受单独 risk profile、sensitive-call authorization receipt、action scope、result redaction 与 rollback evidence 门禁约束。
 
 ## 验证门禁
 
@@ -168,14 +180,16 @@ python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --j
 ## 验收标准
 
 - 本方案与英文主文件保持双语同步，正文为中文说明，技术 token 和 checker marker 保持原样。
-- R0-R2 仅能声明 repo-local helper/checker/test 完成，不能声明广义用户级 installed/smoked/live。
-- Stage E 证据只覆盖 Codex-compatible `skills2cli` frontmatter reporting、用户级 `skills2cli` support-file install/smoke 和 installed-skill metadata repair；它不代表更大的 Stage D upstream `mcp2cli` runtime lane 已完成。
-- 后续 Stage D 或 R5 runtime claim 必须分别有 install/update、smoke 与 live handoff receipt 才能提升状态。
+- R0-R2 carry-forward evidence 仅覆盖 repo-local helper/checker/test；除非同时存在 user-level receipts，否则不能声明 installed/smoked/live。
+- Stage E 证据只覆盖 Codex-compatible `skills2cli` frontmatter reporting、用户级 `skills2cli` support-file install/smoke 和 installed-skill metadata repair。
+- Stage D R3/R4 只有在上述 user-level install/update 与 smoke receipts、rollback pointer、redacted transcripts 均存在时才算完成；本次已满足这些证据条件。
+- R5 runtime claim 仍必须有单独 active-candidate authorization、sanitized receipts 与 rollback evidence。
 - 远端发布保持关闭，除非当前用户消息明确授权 remote publication。
 
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-20 Stage D R3/R4 live runtime：branch `implement-stage-d-mcp-skills-cli-live-runtime-20260621` 将 upstream `knowsuchagency/mcp2cli` 固定在 `e3fa0f957155da6fe8dbb981441c41b2131feda0`，执行真实 `uv tool install mcp2cli` 与 `uvx mcp2cli --help`，用 rollback pointer `state/mcp-skills-cli/backups/20260620T191937Z` 刷新批准范围内的 user-level wrappers/support files，写入 R3 receipts `mcp2cli-20260620T191938Z.json` 与 `skills2cli-20260620T191938Z.json`，写入 R4 receipts `mcp2cli-smoke-20260620T191950Z.json` 与 `skills2cli-smoke-20260620T191950Z.json`，并以 `invalid_total=0` 验证 installed skill frontmatter。本 evidence 不执行 R5 direct MCP/sensitive handoff，也不授权 remote publication。
 - 2026-06-20 Stage E Codex-compatible skills runtime：branch `implement-skills2cli-codex-compat-runtime-20260620` 新增 `tools/codex_skill_frontmatter.py`、`tools/repair_codex_skill_frontmatter.py`、严格 `skills2cli`/inventory 兼容报告、governance checker fail-closed 边界、installer support-file 同步和 focused tests。Live runtime 已安装/检查 repo-derived `skills2cli` user-level artifacts，运行 smoke receipt，并对 installed skills 执行 frontmatter repair；post-apply audit 为 `invalid_total=0`，rollback manifest 与 receipt 保存在 user-level `state/skills2cli/frontmatter-repair/`。本 evidence 不代表 Stage D upstream `mcp2cli` pin/install 已完成，也不授权 remote publication。
 - 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 MCP/skills CLI runtime handoff 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 新增本 runtime 后继方案，记录 `mcp2cli` 与 `skills2cli` 的 R3/R4/R5 缺口；未安装、未 smoke、未 live-run。

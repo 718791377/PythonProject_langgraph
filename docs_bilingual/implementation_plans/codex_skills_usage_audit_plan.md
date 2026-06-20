@@ -6,7 +6,7 @@ translation: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.z
 status: active
 doc_class: implementation_plan
 created_at: 2026-05-16
-last_reviewed: 2026-06-18
+last_reviewed: 2026-06-21
 plan_readiness: final-review-pending
 implementation_lane: audit_only_profile_decision_support
 related_docs:
@@ -653,6 +653,8 @@ The original 30-day audit window is closed. These items now distinguish complete
 - [x] Script-backed cadence contract checker verifies the repeat count, weekly cadence, end date, warning-triage frequency, and post-final boundary.
 - [ ] Manually review the final 30-day summary.
 - [ ] Mark the final summary as `summary-reviewed`, or explicitly record `review-pending + continue monitoring`.
+- [x] Close the `reference_files/10.md` invalid `SKILL.md` runtime repair loop: post-repair audit reports `invalid_total=0`.
+- [x] Close the `mcp2cli` / `skills2cli` R3/R4 user-level runtime evidence loop: install/update receipts, smoke receipts, and rollback pointer exist.
 - [ ] Resolve final-summary noise false positives.
 - [ ] Resolve final-summary manual conflicts or exceptions.
 - [ ] Decide whether this audit closes as `closed-no-change`.

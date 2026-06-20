@@ -6,7 +6,7 @@ translation_of: docs_bilingual/implementation_plans/codex_skills_usage_audit_pla
 status: active
 doc_class: implementation_plan
 created_at: 2026-05-16
-last_reviewed: 2026-06-18
+last_reviewed: 2026-06-21
 plan_readiness: final-review-pending
 implementation_lane: audit_only_profile_decision_support
 related_docs:
@@ -995,6 +995,8 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 脚本化 cadence contract checker 已验证重复次数、weekly 节奏、结束日期、warning-triage 频率与 post-final 边界。
 - [ ] 人工复核最终 30 天摘要。
 - [ ] 将最终摘要标记为 `summary-reviewed`，或明确记录 `review-pending + continue monitoring`。
+- [x] 收口 `reference_files/10.md` 中 invalid `SKILL.md` runtime repair loop：post-repair audit 报告 `invalid_total=0`。
+- [x] 收口 `mcp2cli` / `skills2cli` R3/R4 user-level runtime evidence loop：install/update receipts、smoke receipts 与 rollback pointer 均已存在。
 - [ ] 处理最终摘要中的噪声误报。
 - [ ] 处理最终摘要中的人工冲突或例外。
 - [ ] 判断本轮审计是否进入 `closed-no-change`。
