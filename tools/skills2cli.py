@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import re
+import sqlite3
 import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
@@ -38,6 +39,8 @@ TOKEN_RE = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie|pass
 STANDALONE_SECRET_RE = re.compile(r"(?i)\b(?:sk-[a-z0-9_-]{6,}|xox[baprs]-[a-z0-9_-]{6,}|gh[pousr]_[a-z0-9_]{8,})\b")
 BUDGET_WARNING_RE = re.compile(r"Exceeded skills context budget of 2%", re.IGNORECASE)
 SKIPPED_LOADING_RE = re.compile(r"Skipped loading\s+\d+\s+skill|Skipped loading|invalid SKILL\.md|missing YAML frontmatter", re.IGNORECASE)
+OMITTED_ADDITIONAL_RE = re.compile(r"(\d+)\s+additional skills were not included", re.IGNORECASE)
+ALL_DESCRIPTIONS_REMOVED_RE = re.compile(r"All skill descriptions were removed", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -460,28 +463,111 @@ def iter_session_texts(codex_home: Path, since: datetime) -> Iterable[str]:
                 yield text
 
 
+def blank_warning_source(source: str, *, available: bool = True, error: str | None = None) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "source": source,
+        "available": available,
+        "budget_warning_count": 0,
+        "skipped_loading_count": 0,
+        "all_descriptions_removed_count": 0,
+        "max_omitted_additional_skills": 0,
+        "recent_sanitized_excerpts": [],
+    }
+    if error:
+        payload["error"] = sanitize_text(error, limit=120)
+    return payload
+
+
+def add_warning_text(stats: dict[str, Any], text: str, *, limit: int) -> None:
+    has_budget = bool(BUDGET_WARNING_RE.search(text))
+    has_skipped = bool(SKIPPED_LOADING_RE.search(text))
+    if has_budget:
+        stats["budget_warning_count"] += len(BUDGET_WARNING_RE.findall(text)) or 1
+    if has_skipped:
+        stats["skipped_loading_count"] += len(SKIPPED_LOADING_RE.findall(text)) or 1
+    if ALL_DESCRIPTIONS_REMOVED_RE.search(text):
+        stats["all_descriptions_removed_count"] += 1
+    for match in OMITTED_ADDITIONAL_RE.finditer(text):
+        try:
+            stats["max_omitted_additional_skills"] = max(
+                int(stats["max_omitted_additional_skills"]),
+                int(match.group(1)),
+            )
+        except (TypeError, ValueError):
+            continue
+    if (has_budget or has_skipped) and len(stats["recent_sanitized_excerpts"]) < limit:
+        stats["recent_sanitized_excerpts"].append(sanitize_text(text, limit=WARNING_EXCERPT_LIMIT))
+
+
+def scan_session_warning_source(codex_home: Path, since: datetime, *, limit: int) -> dict[str, Any]:
+    stats = blank_warning_source("sessions_jsonl", available=(codex_home / "sessions").exists())
+    for text in iter_session_texts(codex_home, since) or []:
+        add_warning_text(stats, text, limit=limit)
+    return stats
+
+
+def logs_table_columns(con: sqlite3.Connection) -> set[str]:
+    try:
+        rows = con.execute("pragma table_info(logs)").fetchall()
+    except sqlite3.Error:
+        return set()
+    return {str(row[1]) for row in rows if len(row) > 1}
+
+
+def scan_sqlite_warning_source(codex_home: Path, since: datetime, *, limit: int) -> dict[str, Any]:
+    db = codex_home / "logs_2.sqlite"
+    if not db.exists():
+        return blank_warning_source("logs_2.sqlite", available=False)
+    stats = blank_warning_source("logs_2.sqlite", available=True)
+    try:
+        con = sqlite3.connect(str(db))
+    except sqlite3.Error as exc:
+        return blank_warning_source("logs_2.sqlite", available=False, error=f"sqlite_open_failed:{exc.__class__.__name__}")
+    try:
+        columns = logs_table_columns(con)
+        if "feedback_log_body" not in columns:
+            return blank_warning_source("logs_2.sqlite", available=False, error="missing_feedback_log_body_column")
+        where = "feedback_log_body is not null and (feedback_log_body like ? or feedback_log_body like ?)"
+        params: list[Any] = ["%Exceeded skills context budget%", "%Skipped loading%"]
+        if "ts" in columns:
+            where = "ts >= ? and " + where
+            params.insert(0, int(since.timestamp()))
+        query = f"select feedback_log_body from logs where {where} order by {'ts desc' if 'ts' in columns else 'rowid desc'}"
+        for (body,) in con.execute(query, params):
+            add_warning_text(stats, str(body or ""), limit=limit)
+    except sqlite3.Error as exc:
+        return blank_warning_source("logs_2.sqlite", available=False, error=f"sqlite_query_failed:{exc.__class__.__name__}")
+    finally:
+        con.close()
+    return stats
+
+
 def command_audit_warnings(args: argparse.Namespace) -> int:
     codex_home = Path(args.codex_home).resolve()
     since = parse_duration_or_since(args.since)
-    budget_count = 0
-    skipped_count = 0
+    session_source = scan_session_warning_source(codex_home, since, limit=args.limit)
+    sqlite_source = scan_sqlite_warning_source(codex_home, since, limit=args.limit)
+    sources = [session_source, sqlite_source]
+    budget_count = sum(int(item.get("budget_warning_count") or 0) for item in sources)
+    skipped_count = sum(int(item.get("skipped_loading_count") or 0) for item in sources)
+    all_descriptions_removed_count = sum(int(item.get("all_descriptions_removed_count") or 0) for item in sources)
+    max_omitted_additional_skills = max(int(item.get("max_omitted_additional_skills") or 0) for item in sources)
     excerpts: list[str] = []
-    for text in iter_session_texts(codex_home, since) or []:
-        has_budget = bool(BUDGET_WARNING_RE.search(text))
-        has_skipped = bool(SKIPPED_LOADING_RE.search(text))
-        if has_budget:
-            budget_count += len(BUDGET_WARNING_RE.findall(text)) or 1
-        if has_skipped:
-            skipped_count += len(SKIPPED_LOADING_RE.findall(text)) or 1
-        if (has_budget or has_skipped) and len(excerpts) < args.limit:
-            excerpts.append(sanitize_text(text, limit=WARNING_EXCERPT_LIMIT))
+    for source in sources:
+        for excerpt in source.get("recent_sanitized_excerpts") or []:
+            if len(excerpts) < args.limit:
+                excerpts.append(str(excerpt))
     payload = envelope(
         "audit warnings",
         {
             "since": since.isoformat(),
             "budget_warning_count": budget_count,
             "skipped_loading_count": skipped_count,
+            "all_descriptions_removed_count": all_descriptions_removed_count,
+            "max_omitted_additional_skills": max_omitted_additional_skills,
             "recent_sanitized_excerpts": excerpts,
+            "sources": sources,
+            "log_source_review": "sessions_jsonl_and_logs_2_sqlite_are_read_only_sanitized_sources",
             "raw_log_paths_retained": False,
             "raw_skill_bodies_retained": False,
             "recommended_action": "use_summary_for_triage_and_do_not_edit_plugin_cache_without_authorization",

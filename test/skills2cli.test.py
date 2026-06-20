@@ -1,7 +1,9 @@
 import json
 import shutil
+import sqlite3
 import subprocess
 import sys
+import time
 import unittest
 import uuid
 from datetime import datetime, timezone
@@ -159,6 +161,44 @@ class Skills2CliTest(unittest.TestCase):
         self.assertFalse(payload["raw_skill_bodies_retained"])
         self.assertNotIn(r"C:\Users\lenovo", serialized)
         self.assertNotIn("sk-test-warning-secret", serialized)
+        self.assertIn("[REDACTED_PATH]", serialized)
+        self.assertIn("[REDACTED_SECRET]", serialized)
+
+    def test_warning_audit_also_reads_logs_2_sqlite_without_raw_paths(self) -> None:
+        _repo, codex_home = self.make_workspace("sqlite-warnings")
+        db = codex_home / "logs_2.sqlite"
+        with sqlite3.connect(db) as con:
+            con.execute("create table logs(ts integer, level text, target text, feedback_log_body text)")
+            con.execute(
+                "insert into logs values (?, ?, ?, ?)",
+                (
+                    int(time.time()),
+                    "WARN",
+                    "codex_runtime",
+                    "Exceeded skills context budget of 2%. "
+                    "All skill descriptions were removed and 16 additional skills were not included. "
+                    r"Skipped loading 286 skill(s) due to invalid SKILL.md files. "
+                    r"C:\Users\lenovo\.codex\skills\bad\SKILL.md api_key=sk-test-sqlite-secret",
+                ),
+            )
+
+        payload = self.run_cli("audit", "warnings", "--since", "1d", "--codex-home", str(codex_home), "--json")
+        serialized = json.dumps(payload, ensure_ascii=False)
+
+        self.assertEqual(payload["command"], "audit warnings")
+        self.assertEqual(payload["budget_warning_count"], 1)
+        self.assertGreaterEqual(payload["skipped_loading_count"], 1)
+        self.assertEqual(payload["all_descriptions_removed_count"], 1)
+        self.assertEqual(payload["max_omitted_additional_skills"], 16)
+        self.assertEqual({item["source"] for item in payload["sources"]}, {"sessions_jsonl", "logs_2.sqlite"})
+        sqlite_source = next(item for item in payload["sources"] if item["source"] == "logs_2.sqlite")
+        self.assertTrue(sqlite_source["available"])
+        self.assertEqual(sqlite_source["budget_warning_count"], 1)
+        self.assertIn("sessions_jsonl_and_logs_2_sqlite", payload["log_source_review"])
+        self.assertFalse(payload["raw_log_paths_retained"])
+        self.assertFalse(payload["raw_skill_bodies_retained"])
+        self.assertNotIn(r"C:\Users\lenovo", serialized)
+        self.assertNotIn("sk-test-sqlite-secret", serialized)
         self.assertIn("[REDACTED_PATH]", serialized)
         self.assertIn("[REDACTED_SECRET]", serialized)
 
