@@ -84,6 +84,7 @@
     "reference6_capability_install.test.py",
     "reference7_capability_install.test.py",
     "reference8_capability_install.test.py",
+    "reference_recursive_capability_install.test.py",
     "operations_package_docs.test.py"
   ],
   "node_mjs": [

@@ -905,9 +905,7 @@ try {
   if ([string]`$nativeOmxPreflight.runtime_backend -eq 'windows_prompt_process_controller') {
     [Environment]::SetEnvironmentVariable(`$workerLaunchModeEnvName, 'prompt', 'Process')
   }
-  if ([string]::IsNullOrWhiteSpace(`$previousCodexHome)) {
-    [Environment]::SetEnvironmentVariable(`$codexHomeEnvName, (Get-CodexUserLevelCodexHome), 'Process')
-  }
+  [Environment]::SetEnvironmentVariable(`$codexHomeEnvName, (Get-CodexUserLevelCodexHome), 'Process')
 
   & `$nativeCodexCommandPath @startupArgs @Arguments
   `$exitCode = 0
@@ -2561,9 +2559,7 @@ function Invoke-CodexUserLevelNativeOmxLaunchCommand {
     if ([string]$preflight.runtime_backend -eq 'windows_prompt_process_controller') {
       [Environment]::SetEnvironmentVariable($launchModeEnvName, 'prompt', 'Process')
     }
-    if ([string]::IsNullOrWhiteSpace($previousCodexHome)) {
-      [Environment]::SetEnvironmentVariable($codexHomeEnvName, (Get-CodexUserLevelCodexHome), 'Process')
-    }
+    [Environment]::SetEnvironmentVariable($codexHomeEnvName, (Get-CodexUserLevelCodexHome), 'Process')
     & $CommandPath @Arguments
   }
   finally {

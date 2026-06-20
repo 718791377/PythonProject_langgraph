@@ -897,6 +897,25 @@
       "description": "Keeps Reference 8 non-Codex upstreams adapted into Codex skill, agent, runtime-wrapper, derived-template, or inert project-template surfaces before any live-executed claim; rejects raw upstream install-only evidence, permits explicit provision-recorded receipts for missing commercial desktop runtimes, reuses env_key names only, and preserves the remote-publication gate."
     },
     {
+      "id": "reference-recursive-capability-install",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.md",
+        "docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/reference_recursive_capability_install.py",
+        "tools/check_reference_recursive_capability_install.py",
+        "tools/run_openspec_guard.py",
+        "test/reference_recursive_capability_install.test.py"
+      ],
+      "guard_steps": [
+        "check_reference_recursive_capability_install"
+      ],
+      "description": "Requires Reference 6/7/8 upstream links to be recursively expanded to installable child units with Codex adapters, hash-redacted update/smoke receipts, Browserbase disabled inheritance, dedupe/provision states, template sync, and no raw-upstream completion claims."
+    },
+    {
       "id": "operations-package-runtime",
       "owner_level": "project",
       "status": "implemented",
