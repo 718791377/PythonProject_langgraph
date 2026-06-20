@@ -1,9 +1,10 @@
 ---
 doc_id: operations_package_full_body_generation_plan
 doc_class: implementation_plan
-status: active
+status: final
 change: expand-operations-package-full-body-doc-generation-20260620
 base_ref: main
+archived-with: 2026-06-20-expand-operations-package-full-body-doc-generation-20260620
 ---
 
 # Operations Package Full Body Generation Plan
@@ -25,7 +26,7 @@ Stage A freezes this plan, the OpenSpec delta requirements, and the registry ent
 
 Stage A files:
 
-- `openspec/changes/expand-operations-package-full-body-doc-generation-20260620/` - stores the Stage A OpenSpec proposal, design, tasks, management checklist, and delta specs.
+- `openspec/changes/archive/2026-06-20-expand-operations-package-full-body-doc-generation-20260620/` - stores the Stage A OpenSpec proposal, design, tasks, management checklist, and delta specs.
 - `docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.md` - freezes the English Stage B implementation brief.
 - `docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.zh-CN.md` - freezes the Chinese companion implementation brief.
 - `docs_bilingual/docs_registry.yaml` - registers the plan now and the generated body documents in Stage B.
@@ -216,7 +217,7 @@ The work stops at the remote-publication gate unless the user explicitly authori
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- `openspec/changes/expand-operations-package-full-body-doc-generation-20260620/` - Stage A OpenSpec proposal, design, tasks, management, and delta specs.
+- `openspec/changes/archive/2026-06-20-expand-operations-package-full-body-doc-generation-20260620/` - Stage A OpenSpec proposal, design, tasks, management, and delta specs.
 - `docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.md` - frozen English implementation plan.
 - `docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.zh-CN.md` - frozen Chinese companion implementation plan.
 - `docs_bilingual/docs_registry.yaml` - registry entry for the implementation plan and Stage B body-document registry target.

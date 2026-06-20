@@ -1,11 +1,12 @@
 ---
 doc_id: operations_package_full_body_generation_plan
 doc_class: implementation_plan
-status: active
+status: final
 change: expand-operations-package-full-body-doc-generation-20260620
 base_ref: main
 lang: zh-CN
 translation_of: docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.md
+archived-with: 2026-06-20-expand-operations-package-full-body-doc-generation-20260620
 ---
 
 # 运营包正文级生成实施方案
@@ -27,7 +28,7 @@ Stage A 冻结本方案、OpenSpec delta requirements 和本方案的 registry �
 
 Stage A 文件：
 
-- `openspec/changes/expand-operations-package-full-body-doc-generation-20260620/` - 保存 Stage A OpenSpec proposal、design、tasks、management checklist 和 delta specs。
+- `openspec/changes/archive/2026-06-20-expand-operations-package-full-body-doc-generation-20260620/` - 保存 Stage A OpenSpec proposal、design、tasks、management checklist 和 delta specs。
 - `docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.md` - 冻结英文 Stage B 实施 brief。
 - `docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.zh-CN.md` - 冻结中文伴随实施 brief。
 - `docs_bilingual/docs_registry.yaml` - 当前登记方案，并在 Stage B 登记生成的正文文档。
@@ -218,7 +219,7 @@ Stage B 在 Stage A 落入本地 `main` 后至少有两个基本独立切片：
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
-- `openspec/changes/expand-operations-package-full-body-doc-generation-20260620/` - Stage A OpenSpec proposal、design、tasks、management 和 delta specs。
+- `openspec/changes/archive/2026-06-20-expand-operations-package-full-body-doc-generation-20260620/` - Stage A OpenSpec proposal、design、tasks、management 和 delta specs。
 - `docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.md` - 冻结的英文实施方案。
 - `docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.zh-CN.md` - 冻结的中文伴随实施方案。
 - `docs_bilingual/docs_registry.yaml` - 实施方案 registry 条目和 Stage B 正文文档 registry 目标。
