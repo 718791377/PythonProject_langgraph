@@ -147,18 +147,24 @@ One session may claim this implementation plan at a time. Other sessions may wor
 - [x] Preserve existing repo-local helper/checker/test carry-forward surfaces as R0-R2 evidence only.
 - [x] Implement repo-local R4 smoke command support that records `smoke-tested` receipts for `mcp2cli` and `skills2cli` against an explicitly supplied Codex home fixture.
 - [x] Extend the repo-local checker with `--require-smoke-tested` so R4 smoke receipt evidence can be required and validated through the generic receipt governance guard.
-- [ ] Stage D live runtime: pin upstream `mcp2cli` version/ref and install/update it at real user level with R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence after explicit live authorization.
-- [ ] Stage D live runtime: install/update repo-derived `skills2cli` wrapper and SKILL.md at real user level with R3 receipt, source hash, updater command, rollback pointer, and redaction evidence after explicit live authorization.
-- [ ] Stage D live runtime: run bounded R4 help/version/safe-discovery smoke for both real user-level wrappers using the implemented `smoke` command and record live `smoke-tested` receipts.
-- [ ] Stage D live runtime: gate any R5 direct MCP call or skill action handoff behind risk profile, sensitive-call authorization receipt, action scope, result redaction, and rollback evidence.
 - [x] Stage E plan freeze: record `reference_files/10.md` final audit findings and freeze the `skills2cli` progressive-disclosure plus Codex-compatible skill metadata repair design.
 - [x] Stage E repository runtime: implement strict `skills2cli` compatibility reporting, repair helper, tests, and checkers.
 - [x] Stage E live runtime: repair installed user-level skill metadata with rollback manifest and smoke the installed `skills2cli` surface.
 <!-- TASK_BACKLOG_END -->
 
+## Stage D pending runtime work
+
+These items remain pending by design and are not blockers for the completed Stage E frontmatter-repair package. They require a separate explicit live-runtime decision before execution:
+
+- Stage D real runtime: pin the upstream `mcp2cli` version/ref and install/update it at real user level with R3 receipt, wrapper hash, updater command, rollback pointer, and redaction evidence.
+- Stage D real runtime: install/update the repo-derived `skills2cli` wrapper and SKILL.md with R3 receipt, source hash, updater command, rollback pointer, and redaction evidence.
+- Stage D real runtime: run bounded R4 help/version/safe-discovery smoke for both wrappers and record `smoke-tested` receipts.
+- Stage D real runtime: gate any R5 direct MCP call or skill action handoff behind risk profile, sensitive-call authorization receipt, action scope, result redaction, and rollback evidence.
+
 ## Validation Gates
 
 - `python tools/check_user_level_mcp_skills_cli_install.py --root . --json` - validates MCP/skills CLI install surfaces and helper plan output.
+- `python tools/check_user_level_mcp_skills_cli_install.py --root . --require-user-level-installed --require-smoke-tested --json` - validates the real user-level wrapper, skill, support-file, install receipt, and R4 smoke receipt state when claiming Stage E live-repaired evidence.
 - `python tools/check_implementation_plan_rules.py --root . --json` - validates implementation-plan registry, bilingual pairing, anchors, and parent links.
 - `python tools/run_openspec_guard.py --root .` - validates OpenSpec workflow, governance policies, name clarity, and registered checkers.
 - `python tools/check_precommit_update_archive.py --root . --json` - reviews required existing-file updates, checker/test registration, and archive readiness before commit.
@@ -169,8 +175,9 @@ One session may claim this implementation plan at a time. Other sessions may wor
 
 - The deleted/superseded `user_level_mcp_skills_discovery_facade_plan` is not restored as an active implementation plan.
 - `mcp2cli` and `skills2cli` runtime ownership is represented by this active child plan.
-- Existing helper/checker/test carry-forward evidence is clearly R0-R2 only, not proof of R3/R4/R5 real runtime completion.
-- Later R3/R4/R5 runtime claims require sanitized receipts and rollback evidence.
+- Existing helper/checker/test carry-forward evidence is clearly R0-R2 only, not proof of broad R3/R4/R5 real runtime completion.
+- Stage E evidence is scoped to Codex-compatible `skills2cli` frontmatter reporting, user-level `skills2cli` support-file install/smoke, and installed-skill metadata repair; it does not complete the broader Stage D upstream `mcp2cli` runtime lane.
+- Later Stage D or R5 runtime claims require sanitized receipts and rollback evidence.
 - Remote publication remains behind explicit approval.
 
 ## Evidence Index

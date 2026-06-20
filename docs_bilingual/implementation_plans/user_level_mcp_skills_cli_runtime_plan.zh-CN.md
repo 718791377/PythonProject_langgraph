@@ -150,6 +150,8 @@ python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --j
 
 ## Stage D pending runtime work（待实施真实 runtime）
 
+这些事项按设计保持 pending，不阻塞已经完成的 Stage E frontmatter-repair package；执行前必须有单独明确的 live-runtime 决策：
+
 - Stage D real runtime：固定上游 `mcp2cli` version/ref，并以 R3 receipt、wrapper hash、updater command、rollback pointer 与 redaction evidence 完成用户级 install/update。
 - Stage D real runtime：安装/更新 repo-derived `skills2cli` wrapper 与 SKILL.md，并写入 R3 receipt、source hash、updater command、rollback pointer 与 redaction evidence。
 - Stage D real runtime：为两个 wrapper 运行受限 R4 help/version/safe-discovery smoke，并记录 `smoke-tested` receipts。
@@ -158,6 +160,7 @@ python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --j
 ## 验证门禁
 
 - `python tools/check_user_level_mcp_skills_cli_install.py --root . --json`：验证 MCP/skills CLI install surfaces 与 helper plan output。
+- `python tools/check_user_level_mcp_skills_cli_install.py --root . --require-user-level-installed --require-smoke-tested --json`：在声明 Stage E live-repaired evidence 时，验证真实用户级 wrapper、skill、support-file、install receipt 与 R4 smoke receipt 状态。
 - `python tools/check_precommit_update_archive.py --root . --json`：提交前检查。
 - `python tools/run_openspec_guard.py --root .`：OpenSpec 与治理 guard。
 - `tools/ci/local_gate.ps1` 与 `tools/ci/local_mr_review.ps1`：本地集成前的共享 gate。
@@ -165,8 +168,9 @@ python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --j
 ## 验收标准
 
 - 本方案与英文主文件保持双语同步，正文为中文说明，技术 token 和 checker marker 保持原样。
-- R0-R2 仅能声明 repo-local helper/checker/test 完成，不声明用户级 installed/smoked/live。
-- R3/R4/R5 必须分别有 install/update、smoke 与 live handoff receipt 才能提升状态。
+- R0-R2 仅能声明 repo-local helper/checker/test 完成，不能声明广义用户级 installed/smoked/live。
+- Stage E 证据只覆盖 Codex-compatible `skills2cli` frontmatter reporting、用户级 `skills2cli` support-file install/smoke 和 installed-skill metadata repair；它不代表更大的 Stage D upstream `mcp2cli` runtime lane 已完成。
+- 后续 Stage D 或 R5 runtime claim 必须分别有 install/update、smoke 与 live handoff receipt 才能提升状态。
 - 远端发布保持关闭，除非当前用户消息明确授权 remote publication。
 
 ## 证据索引
