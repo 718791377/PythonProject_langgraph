@@ -18,6 +18,15 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+from codex_skill_frontmatter import (  # noqa: E402
+    CODEX_SKILL_DESCRIPTION_LIMIT,
+    CODEX_SKILL_NAME_LIMIT,
+    codex_frontmatter_report,
+)
+
 SCHEMA_VERSION = 1
 SUMMARY_LIMIT = 160
 SHOW_BODY_LIMIT = 20000
@@ -42,6 +51,10 @@ class SkillRecord:
     available: bool
     frontmatter_valid: bool
     frontmatter_error: str | None
+    codex_frontmatter_compatible: bool
+    codex_frontmatter_errors: list[str]
+    name_length: int
+    description_length: int
     full_body_included: bool = False
 
 
@@ -88,6 +101,8 @@ def read_text_lossy(path: Path) -> str:
 
 
 def parse_frontmatter(text: str) -> tuple[dict[str, str], bool, str | None, str]:
+    if text.startswith("\ufeff"):
+        text = text[1:]
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
     if not normalized.startswith("---\n"):
         return {}, False, "missing_yaml_frontmatter", normalized
@@ -181,11 +196,13 @@ def index_skills(repo_root: Path, codex_home: Path) -> list[dict[str, Any]]:
             text = read_text_lossy(path)
         except OSError:
             continue
+        had_bom = text.startswith("\ufeff")
         frontmatter, valid, error, _body = parse_frontmatter(text)
         name = sanitize_text(frontmatter.get("name") or path.parent.name, limit=80)
         description = sanitize_text(frontmatter.get("description") or "", limit=10000)
         summary = sanitize_text(description or "No valid skill description available.", limit=SUMMARY_LIMIT)
         skill_id = build_skill_id(layer, base, path, name)
+        compatibility = codex_frontmatter_report(frontmatter, valid, error, had_bom=had_bom)
         if skill_id in used_ids:
             used_ids[skill_id] += 1
             skill_id = f"{skill_id}-{used_ids[skill_id]}"
@@ -202,6 +219,10 @@ def index_skills(repo_root: Path, codex_home: Path) -> list[dict[str, Any]]:
                 available=valid,
                 frontmatter_valid=valid,
                 frontmatter_error=error,
+                codex_frontmatter_compatible=bool(compatibility["codex_frontmatter_compatible"]),
+                codex_frontmatter_errors=list(compatibility["codex_frontmatter_errors"]),
+                name_length=int(compatibility["name_length"]),
+                description_length=int(compatibility["description_length"]),
             )
         )
     return [asdict(record) for record in sorted(records, key=lambda item: (item.source_layer, item.name.lower(), item.skill_id))]
@@ -217,6 +238,8 @@ def envelope(command: str, payload: dict[str, Any]) -> dict[str, Any]:
             "full_skill_bodies_included_by_default": False,
             "mutates_config": False,
             "edits_plugin_cache": False,
+            "codex_frontmatter_name_limit": CODEX_SKILL_NAME_LIMIT,
+            "codex_frontmatter_description_limit": CODEX_SKILL_DESCRIPTION_LIMIT,
         },
     }
     result.update(payload)
@@ -262,12 +285,14 @@ def find_skill(repo_root: Path, codex_home: Path, skill_id: str) -> tuple[dict[s
             text = read_text_lossy(path)
         except OSError:
             continue
+        had_bom = text.startswith("\ufeff")
         frontmatter, valid, error, _body = parse_frontmatter(text)
         name = sanitize_text(frontmatter.get("name") or path.parent.name, limit=80)
         record_id = build_skill_id(layer, base, path, name)
         aliases = {record_id, name, f"{layer}:{name}"}
         if skill_id in aliases:
             description = sanitize_text(frontmatter.get("description") or "", limit=10000)
+            compatibility = codex_frontmatter_report(frontmatter, valid, error, had_bom=had_bom)
             record = asdict(
                 SkillRecord(
                     skill_id=record_id,
@@ -279,6 +304,10 @@ def find_skill(repo_root: Path, codex_home: Path, skill_id: str) -> tuple[dict[s
                     available=valid,
                     frontmatter_valid=valid,
                     frontmatter_error=error,
+                    codex_frontmatter_compatible=bool(compatibility["codex_frontmatter_compatible"]),
+                    codex_frontmatter_errors=list(compatibility["codex_frontmatter_errors"]),
+                    name_length=int(compatibility["name_length"]),
+                    description_length=int(compatibility["description_length"]),
                 )
             )
             return record, path

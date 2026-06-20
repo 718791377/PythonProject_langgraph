@@ -188,6 +188,16 @@ def validate_inventory(
     for row in payload.get("skills", []):
         by_layer_name[(row["source_layer"], row["name"])].append(row)
         by_name[row["name"]].append(row)
+        compatibility_errors = list(row.get("codex_frontmatter_errors") or [])
+        if compatibility_errors:
+            message = (
+                f"{row['source_layer']} skill `{row['name']}` Codex frontmatter compatibility "
+                f"errors {compatibility_errors}: {row['file_path']}"
+            )
+            if row["source_layer"] == "plugin":
+                warnings.append(message + " (plugin cache is bundle-managed; report-only unless live repair is explicitly authorized)")
+            else:
+                errors.append(message)
         if row["source_layer"] in {"user", "repo"}:
             limit = int(limits.get(row["source_layer"], 0) or 0)
             if limit and row.get("description_length", 0) > limit:

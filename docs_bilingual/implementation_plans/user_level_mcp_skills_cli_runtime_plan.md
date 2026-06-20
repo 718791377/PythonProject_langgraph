@@ -30,10 +30,12 @@ Python helper scripts, `uvx mcp2cli --help`, `uv tool install mcp2cli`, `npx ski
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
 Status: R6 live-executed
-Stage: R6 live-runtime receipt coverage package for MCP/skills CLI runtime handoff.
-Owner session: `implement-multi-plan-family-r6-live-runtime-20260611` updates the strict parent-family checker; existing accepted receipts remain the live runtime evidence source.
+Status: Stage E live-repaired
+Stage: Stage E Codex-compatible `skills2cli` frontmatter reporting and repair runtime is implemented locally and live-executed for installed user/plugin skills.
+Owner session: `implement-skills2cli-codex-compat-runtime-20260620` owns the Stage E implementation package; `implement-multi-plan-family-r6-live-runtime-20260611` remains the older strict parent-family R6 receipt coverage owner.
+Stage E evidence: repo runtime adds strict Codex frontmatter parsing/compatibility reports, repair helper, tests, CI manifest registration, user-level `skills2cli` support-file install, live smoke receipts, and live frontmatter repair receipts. Post-repair audit reports `invalid_total=0`; rollback manifest and sanitized receipt are stored under user-level `state/skills2cli/frontmatter-repair/`.
 R6 evidence: `.omx/r6-live-runtime/receipts/` contains accepted `live-executed` evidence for lane `user-level-mcp-skills-cli-runtime`, validated by `tools/check_r6_live_runtime_receipts.py --require-coverage` and `tools/check_multi_plan_family_r6_live_runtime.py --require-coverage`.
-Runtime boundary: this status update performs no browser/GUI action, no WXWork message send, no harness job, no Spec Kit apply, no user-level config mutation, and no remote publication; it reconciles the plan with already accepted hash-only/redacted R6 receipts.
+Runtime boundary: Stage E mutates only the approved user-level `skills2cli` install artifacts and SKILL.md frontmatter metadata with backups/rollback receipts; it does not mutate `config.toml`, apply profiles, disable plugins, perform browser/GUI/WXWork/harness/Spec Kit actions, or publish remote refs.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
 Last updated: 2026-06-20
 <!-- CURRENT_STATUS_END -->
@@ -60,8 +62,9 @@ Last updated: 2026-06-20
 
 ## Stage E Final Audit and Codex-Compatible Skills Runtime Freeze
 
-Status: frozen-for-implementation
+Status: implemented-local-live-repaired
 Frozen at: 2026-06-20
+Implemented at: 2026-06-20
 Authorization boundary: local plan update, local implementation, user-level live runtime repair, local commits, and local `main` integration are approved; remote publication remains closed.
 
 ### Problem Record
@@ -89,9 +92,9 @@ Stage E adds a repo-owned compatibility repair surface:
 
 ### Execution Slices
 
-- Slice A - plan freeze: update this plan pair with the final audit problem record, repair boundaries, and verification gates; commit and integrate locally before live runtime work.
-- Slice B - repository runtime: enhance `tools/skills2cli.py`, add/extend compatibility fixer and checker tests, and keep all default outputs compact and redacted.
-- Slice C - live runtime: install/update repo-derived `skills2cli` user-level artifacts if required, run user-level smoke, run the Codex compatibility fixer against installed skills, and record sanitized receipts plus rollback pointers.
+- [x] Slice A - plan freeze: update this plan pair with the final audit problem record, repair boundaries, and verification gates; commit and integrate locally before live runtime work.
+- [x] Slice B - repository runtime: enhance `tools/skills2cli.py`, add/extend compatibility fixer and checker tests, and keep all default outputs compact and redacted.
+- [x] Slice C - live runtime: install/update repo-derived `skills2cli` user-level artifacts if required, run user-level smoke, run the Codex compatibility fixer against installed skills, and record sanitized receipts plus rollback pointers.
 
 ### Verification Gates
 
@@ -149,8 +152,8 @@ One session may claim this implementation plan at a time. Other sessions may wor
 - [ ] Stage D live runtime: run bounded R4 help/version/safe-discovery smoke for both real user-level wrappers using the implemented `smoke` command and record live `smoke-tested` receipts.
 - [ ] Stage D live runtime: gate any R5 direct MCP call or skill action handoff behind risk profile, sensitive-call authorization receipt, action scope, result redaction, and rollback evidence.
 - [x] Stage E plan freeze: record `reference_files/10.md` final audit findings and freeze the `skills2cli` progressive-disclosure plus Codex-compatible skill metadata repair design.
-- [ ] Stage E repository runtime: implement strict `skills2cli` compatibility reporting, repair helper, tests, and checkers.
-- [ ] Stage E live runtime: repair installed user-level skill metadata with rollback manifest and smoke the installed `skills2cli` surface.
+- [x] Stage E repository runtime: implement strict `skills2cli` compatibility reporting, repair helper, tests, and checkers.
+- [x] Stage E live runtime: repair installed user-level skill metadata with rollback manifest and smoke the installed `skills2cli` surface.
 <!-- TASK_BACKLOG_END -->
 
 ## Validation Gates
@@ -173,6 +176,7 @@ One session may claim this implementation plan at a time. Other sessions may wor
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-20 Stage E Codex-compatible skills runtime: branch `implement-skills2cli-codex-compat-runtime-20260620` adds `tools/codex_skill_frontmatter.py`, `tools/repair_codex_skill_frontmatter.py`, strict `skills2cli`/inventory compatibility reporting, governance checker fail-closed boundaries, installer support-file sync, and focused tests. Live runtime installed/checked repo-derived `skills2cli` user-level artifacts, ran smoke receipts, and applied frontmatter repair to installed skills; post-apply audit reports `invalid_total=0`, with rollback manifest and receipt under user-level `state/skills2cli/frontmatter-repair/`. This evidence does not mark Stage D upstream `mcp2cli` pin/install complete and does not authorize remote publication.
 - 2026-06-07 R5 active-candidate gate: branch `implement-r5-runtime-governance-batch-20260607` adds shared active-candidate receipt validation for MCP/skills CLI runtime handoff. Evidence requires authorization receipt, owner lease, target/action allowlist, timeout release, redacted transcript, rollback pointer/readiness, cleanup evidence, authority decision with the exact priority order `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`, and `remote_publication_mutated=false`. Focused validation: `python test\check_r5_active_candidate_receipts.test.py` plus lane-specific focused tests described in the OpenSpec verification report. No real user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action and no remote mutation occurs in this package.
 - 2026-06-05 runtime successor plan: branch `runtime-plan-standard-20260605` creates this plan to carry `mcp2cli` / `skills2cli` real-runtime work after `user_level_mcp_skills_discovery_facade_plan` was deleted/superseded; no user-level install, smoke, direct MCP call, or live handoff is performed by that package.
 - 2026-06-06 R4 repo-local smoke receipt support: branch `implement-mcp-skills-cli-runtime-r4-20260606` adds `install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation`, `check_user_level_mcp_skills_cli_install.py --require-smoke-tested`, and focused tests that validate generated R4 `smoke-tested` receipts through `user_level_receipt_governance.py smoke-check` against temporary Codex-home fixtures.

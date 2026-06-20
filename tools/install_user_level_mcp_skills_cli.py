@@ -404,6 +404,8 @@ def copy_facades(paths: dict[str, Path], *, upstream_ref: str | None) -> None:
     target = paths["skills2cli_tool_dir"] / "skills2cli.py"
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, target)
+    shared_frontmatter = repo_root() / "tools" / "codex_skill_frontmatter.py"
+    shutil.copy2(shared_frontmatter, paths["skills2cli_tool_dir"] / "codex_skill_frontmatter.py")
     write(paths["skills2cli_skill_dir"] / "SKILL.md", skills2cli_skill())
     write(
         paths["skills2cli_tool_dir"] / "install-metadata.json",
@@ -413,6 +415,9 @@ def copy_facades(paths: dict[str, Path], *, upstream_ref: str | None) -> None:
                 "copied_at": now().isoformat(),
                 "source_file": "tools/skills2cli.py",
                 "source_hash": h(source.read_text(encoding="utf-8", errors="replace")),
+                "support_files": {
+                    "codex_skill_frontmatter.py": h(shared_frontmatter.read_text(encoding="utf-8", errors="replace"))
+                },
                 "upstream_pattern_source": f"{UPSTREAM_URL}/tree/main/skills/mcp2cli",
                 "upstream_ref": upstream_ref or "main",
                 "full_skill_bodies_included_by_default": False,
@@ -1006,6 +1011,9 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
     for key in ("mcp2cli_tool_dir", "skills2cli_tool_dir", "skills2cli_skill_dir"):
         if not paths[key].exists():
             (errors if args.require_installed else warnings).append(f"missing_artifact:{key}")
+    skills_frontmatter_module = paths["skills2cli_tool_dir"] / "codex_skill_frontmatter.py"
+    if not skills_frontmatter_module.exists():
+        (errors if args.require_installed else warnings).append("missing_artifact:skills2cli_codex_skill_frontmatter")
     receipts = load_receipts(paths["receipt_dir"])
     update_receipts = [item for item in receipts if is_update_receipt(item)]
     smoke_receipts = [item for item in receipts if is_smoke_receipt(item)]
@@ -1047,7 +1055,10 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
         errors=errors,
         warnings=warnings,
         wrapper_presence={key: paths[key].exists() for key in ("mcp2cli_cmd", "mcp2cli_ps1", "skills2cli_cmd", "skills2cli_ps1")},
-        artifact_presence={key: paths[key].exists() for key in ("mcp2cli_tool_dir", "skills2cli_tool_dir", "skills2cli_skill_dir")},
+        artifact_presence={
+            **{key: paths[key].exists() for key in ("mcp2cli_tool_dir", "skills2cli_tool_dir", "skills2cli_skill_dir")},
+            "skills2cli_codex_skill_frontmatter": skills_frontmatter_module.exists(),
+        },
         receipt_count=len(update_receipts),
         total_receipt_count=len(receipts),
         smoke_receipt_count=len(smoke_receipts),

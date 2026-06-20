@@ -12,6 +12,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(ROOT := Path(__file__).resolve().parents[1]))
 from tools import install_user_level_mcp_skills_cli as installer  # noqa: E402
+from tools.codex_skill_frontmatter import (  # noqa: E402
+    CODEX_SKILL_DESCRIPTION_LIMIT,
+    CODEX_SKILL_NAME_LIMIT,
+    parse_frontmatter_file,
+)
 
 
 INSTALL = ROOT / "tools" / "install_user_level_mcp_skills_cli.py"
@@ -102,7 +107,14 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
         self.assertEqual(len(payload["receipt_paths"]), 2)
         self.assertTrue((home / "bin" / "mcp2cli.cmd").exists())
         self.assertTrue((home / "bin" / "skills2cli.cmd").exists())
-        self.assertTrue((home / "skills" / "skills2cli" / "SKILL.md").exists())
+        self.assertTrue((home / "tools" / "skills2cli" / "codex_skill_frontmatter.py").exists())
+        skill_path = home / "skills" / "skills2cli" / "SKILL.md"
+        self.assertTrue(skill_path.exists())
+        generated_skill = parse_frontmatter_file(skill_path)
+        self.assertTrue(generated_skill.frontmatter_valid)
+        self.assertLessEqual(len(generated_skill.data["name"]), CODEX_SKILL_NAME_LIMIT)
+        self.assertLessEqual(len(generated_skill.data["description"]), CODEX_SKILL_DESCRIPTION_LIMIT)
+        self.assertFalse(generated_skill.had_bom)
         wrapper_text = (home / "bin" / "mcp2cli.cmd").read_text(encoding="utf-8")
         self.assertIn("UV_CACHE_DIR", wrapper_text)
         self.assertIn("mcp-skills-cli\\uv-cache", wrapper_text)

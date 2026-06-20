@@ -51,6 +51,8 @@
     "check_pyside6_packaging_opt_in_contract.test.py",
     "check_pyside6_operator_usage_guide.test.py",
     "project_moe_gui_toolchain.test.py",
+    "check_codex_skills_governance.test.py",
+    "repair_codex_skill_frontmatter.test.py",
     "user_level_mcp_skills_cli_install.test.py",
     "skills2cli.test.py",
     "mcp2cli.test.py",

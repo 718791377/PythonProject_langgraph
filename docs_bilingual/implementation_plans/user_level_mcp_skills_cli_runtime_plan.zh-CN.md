@@ -30,10 +30,12 @@ Python helper scripts、`uvx mcp2cli --help`、`uv tool install mcp2cli`、`npx 
 <!-- CURRENT_STATUS_START -->
 Status: implemented-local
 Status: R6 live-executed
-Stage: R6 live-runtime receipt coverage package for `user_level_mcp_skills_cli_runtime_plan`.
-Owner session: `implement-multi-plan-family-r6-live-runtime-20260611` updates the strict parent-family checker; existing accepted receipts remain the live runtime evidence source.
+Status: Stage E live-repaired
+Stage: Stage E Codex-compatible `skills2cli` frontmatter reporting and repair runtime is implemented locally and live-executed for installed user/plugin skills.
+Owner session: `implement-skills2cli-codex-compat-runtime-20260620` owns the Stage E implementation package; `implement-multi-plan-family-r6-live-runtime-20260611` remains the older strict parent-family R6 receipt coverage owner.
+Stage E evidence: repo runtime adds strict Codex frontmatter parsing/compatibility reports, repair helper, tests, CI manifest registration, user-level `skills2cli` support-file install, live smoke receipts, and live frontmatter repair receipts. Post-repair audit reports `invalid_total=0`; rollback manifest and sanitized receipt are stored under user-level `state/skills2cli/frontmatter-repair/`.
 R6 evidence: `.omx/r6-live-runtime/receipts/` contains accepted `live-executed` evidence for lane `user-level-mcp-skills-cli-runtime`, validated by `tools/check_r6_live_runtime_receipts.py --require-coverage` and `tools/check_multi_plan_family_r6_live_runtime.py --require-coverage`.
-Runtime boundary: this status update performs no browser/GUI action, no WXWork message send, no harness job, no Spec Kit apply, no user-level config mutation, and no remote publication; it reconciles the plan with accepted hash-only/redacted R6 receipts.
+Runtime boundary: Stage E mutates only the approved user-level `skills2cli` install artifacts and SKILL.md frontmatter metadata with backups/rollback receipts; it does not mutate `config.toml`, apply profiles, disable plugins, perform browser/GUI/WXWork/harness/Spec Kit actions, or publish remote refs.
 Priority order: `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit`.
 Last updated: 2026-06-20
 <!-- CURRENT_STATUS_END -->
@@ -59,8 +61,9 @@ Last updated: 2026-06-20
 
 ## Stage E 最后审计与 Codex 兼容 Skills Runtime 冻结
 
-Status: frozen-for-implementation
+Status: implemented-local-live-repaired
 冻结时间：2026-06-20
+实现时间：2026-06-20
 授权边界：允许本地方案更新、本地实现、用户级 live runtime 修复、本地提交和本地 `main` 合入；远端发布仍关闭。
 
 ### 问题记录
@@ -88,9 +91,9 @@ Stage E 新增 repo-owned 兼容修复面：
 
 ### 执行切片
 
-- Slice A - 方案冻结：更新本方案双语文件，记录最后审计问题、修复边界和验证门禁；先本地提交并合入，再进入 live runtime。
-- Slice B - 仓库 runtime：增强 `tools/skills2cli.py`，新增或扩展兼容 fixer 与 checker tests，保持默认输出紧凑且脱敏。
-- Slice C - live runtime：必要时安装/更新 repo-derived `skills2cli` 用户级 artifacts，运行用户级 smoke，对 installed skills 执行 Codex compatibility fixer，并记录脱敏 receipts 与 rollback pointers。
+- [x] Slice A - 方案冻结：更新本方案双语文件，记录最后审计问题、修复边界和验证门禁；先本地提交并合入，再进入 live runtime。
+- [x] Slice B - 仓库 runtime：增强 `tools/skills2cli.py`，新增或扩展兼容 fixer 与 checker tests，保持默认输出紧凑且脱敏。
+- [x] Slice C - live runtime：必要时安装/更新 repo-derived `skills2cli` 用户级 artifacts，运行用户级 smoke，对 installed skills 执行 Codex compatibility fixer，并记录脱敏 receipts 与 rollback pointers。
 
 ### 验证门禁
 
@@ -141,8 +144,8 @@ python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --j
 - [x] 实现 repo-local R4 smoke command 支持：可在显式传入的 Codex home fixture 中为 `mcp2cli` 与 `skills2cli` 写入 `smoke-tested` receipts。
 - [x] 为 repo-local checker 增加 `--require-smoke-tested`，使 R4 smoke receipt evidence 可被强制要求，并可通过通用 receipt governance guard 校验。
 - [x] Stage E plan freeze：记录 `reference_files/10.md` 最后审计问题，并冻结 `skills2cli` 渐进披露与 Codex 兼容 metadata 修复设计。
-- [ ] Stage E repository runtime：实现严格 `skills2cli` 兼容报告、repair helper、tests 与 checkers。
-- [ ] Stage E live runtime：用 rollback manifest 修复 installed user-level skill metadata，并 smoke installed `skills2cli` surface。
+- [x] Stage E repository runtime：实现严格 `skills2cli` 兼容报告、repair helper、tests 与 checkers。
+- [x] Stage E live runtime：用 rollback manifest 修复 installed user-level skill metadata，并 smoke installed `skills2cli` surface。
 <!-- TASK_BACKLOG_END -->
 
 ## Stage D pending runtime work（待实施真实 runtime）
@@ -169,6 +172,7 @@ python tools/repair_codex_skill_frontmatter.py apply --operator-confirmation --j
 ## 证据索引
 
 <!-- EVIDENCE_INDEX_START -->
+- 2026-06-20 Stage E Codex-compatible skills runtime：branch `implement-skills2cli-codex-compat-runtime-20260620` 新增 `tools/codex_skill_frontmatter.py`、`tools/repair_codex_skill_frontmatter.py`、严格 `skills2cli`/inventory 兼容报告、governance checker fail-closed 边界、installer support-file 同步和 focused tests。Live runtime 已安装/检查 repo-derived `skills2cli` user-level artifacts，运行 smoke receipt，并对 installed skills 执行 frontmatter repair；post-apply audit 为 `invalid_total=0`，rollback manifest 与 receipt 保存在 user-level `state/skills2cli/frontmatter-repair/`。本 evidence 不代表 Stage D upstream `mcp2cli` pin/install 已完成，也不授权 remote publication。
 - 2026-06-07 R5 active-candidate gate：branch `implement-r5-runtime-governance-batch-20260607` 为 MCP/skills CLI runtime handoff 增加共享 active-candidate receipt validation。证据必须包含 authorization receipt、owner lease、target/action allowlist、timeout release、redacted transcript、rollback pointer/readiness、cleanup evidence，并带有按 `Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit` 记录的 authority decision 以及 `remote_publication_mutated=false`。聚焦验证：`python test\check_r5_active_candidate_receipts.test.py` 以及 OpenSpec verification report 中列出的 lane-specific focused tests。本 package 不执行真实 user-level install/start/send/browser/GUI/MCP/harness/Spec Kit action，也不执行 remote mutation。
 - 2026-06-05 real-runtime gap update：branch `runtime-plan-standard-20260605` 新增本 runtime 后继方案，记录 `mcp2cli` 与 `skills2cli` 的 R3/R4/R5 缺口；未安装、未 smoke、未 live-run。
 - 2026-06-06 R4 repo-local smoke receipt support：branch `implement-mcp-skills-cli-runtime-r4-20260606` 新增 `install_user_level_mcp_skills_cli.py smoke --record --operator-confirmation`、`check_user_level_mcp_skills_cli_install.py --require-smoke-tested`，并用 focused tests 验证临时 Codex-home fixtures 生成的 R4 `smoke-tested` receipts 可通过 `user_level_receipt_governance.py smoke-check`。

@@ -85,6 +85,35 @@ class Skills2CliTest(unittest.TestCase):
         self.assertNotIn("body", payload["skill"])
         self.assertNotIn("SENSITIVE BODY CONTENT", serialized)
 
+    def test_index_reports_codex_frontmatter_compatibility_limits(self) -> None:
+        repo, codex_home = self.make_workspace("compat")
+        long_name = "skill-" + ("very-long-" * 8)
+        long_description = "D" * 1030
+        self.write_skill(repo / ".codex" / "skills", "bad-skill", name=long_name, description=long_description)
+
+        payload = self.run_cli("index", "--root", str(repo), "--codex-home", str(codex_home), "--json")
+
+        self.assertEqual(payload["total"], 1)
+        skill = payload["skills"][0]
+        self.assertFalse(skill["codex_frontmatter_compatible"])
+        self.assertIn("name_too_long", skill["codex_frontmatter_errors"])
+        self.assertIn("description_too_long", skill["codex_frontmatter_errors"])
+        self.assertGreater(skill["name_length"], payload["safety"]["codex_frontmatter_name_limit"])
+        self.assertGreater(skill["description_length"], payload["safety"]["codex_frontmatter_description_limit"])
+
+    def test_bom_frontmatter_is_visible_but_reported_for_repair(self) -> None:
+        repo, codex_home = self.make_workspace("bom")
+        path = self.write_skill(repo / ".codex" / "skills", "bom-skill", name="bom-skill", description="Short.")
+        path.write_text("\ufeff" + path.read_text(encoding="utf-8"), encoding="utf-8")
+
+        payload = self.run_cli("show", "repo:bom-skill", "--root", str(repo), "--codex-home", str(codex_home), "--json")
+
+        self.assertTrue(payload["ok"])
+        skill = payload["skill"]
+        self.assertTrue(skill["frontmatter_valid"])
+        self.assertFalse(skill["codex_frontmatter_compatible"])
+        self.assertIn("bom_present", skill["codex_frontmatter_errors"])
+
     def test_profile_suggest_is_preview_only_and_never_applies(self) -> None:
         payload = self.run_cli(
             "profile",
