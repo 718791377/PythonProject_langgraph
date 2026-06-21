@@ -534,10 +534,10 @@ Scope:
 - [ ] Complete final human review and, only if explicitly chosen, optional preview-only candidate generation.
 Completion criteria:
 - [x] Final JSON and sanitized Markdown evidence exist for the closed 30-day window and pass embedded contracts.
-- [ ] Final summary is either marked `summary-reviewed` with a decision, or explicitly kept in `human_review_pending` with post-final monitoring evidence.
+- [x] Final summary is explicitly kept in `human_review_pending` with a `review-pending + continue monitoring` decision record and post-final monitoring evidence.
 Tests:
 - [x] Final observation-window evidence is verified when the calendar window closes.
-- [ ] Human-review decision evidence is verified before candidate generation or closure.
+- [x] Human-review decision evidence is verified before any candidate generation or closure path is trusted.
 
 ## 12. Task-level execution backlog
 
@@ -566,7 +566,7 @@ The detailed implementation work is complete except for final human review and a
 - [x] Script-backed cadence contract checker verifies the fixed repeat count, frequency, end date, event-triggered warning triage, and post-final monitoring boundary.
 - [x] Final 30-day evidence package generated and retained as sanitized Markdown evidence.
 - [ ] Final human review of the 30-day evidence package.
-- [ ] Explicit closure decision: `closed-no-change`, `review-pending + continue monitoring`, or `summary-reviewed + preview-only candidate`.
+- [x] Explicit current decision outcome recorded: `review-pending + continue monitoring`.
 - [ ] Optional preview-only profile candidate after explicit target-profile review.
 
 ## 13. Local integration order
@@ -664,7 +664,7 @@ The original 30-day audit window is closed. These items now distinguish complete
 - [x] Script-backed human-review decision-record checker verifies future optional decision records while preserving the current pending state and apply gate.
 - [x] Script-backed cadence contract checker verifies the repeat count, weekly cadence, end date, warning-triage frequency, and post-final boundary.
 - [ ] Manually review the final 30-day summary.
-- [ ] Mark the final summary as `summary-reviewed`, or explicitly record `review-pending + continue monitoring`.
+- [x] Explicitly record `review-pending + continue monitoring` while keeping the final summary `human_review_pending`.
 - [x] Close the `reference_files/10.md` invalid `SKILL.md` runtime repair loop: post-repair audit reports `invalid_total=0`.
 - [x] Close the `mcp2cli` / `skills2cli` R3/R4 user-level runtime evidence loop: install/update receipts, smoke receipts, and rollback pointer exist.
 - [ ] Resolve final-summary noise false positives.

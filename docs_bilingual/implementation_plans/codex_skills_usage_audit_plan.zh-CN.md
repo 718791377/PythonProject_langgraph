@@ -540,10 +540,10 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [ ] 完成最终人工复核，并且仅在明确选择时生成可选 preview-only candidate。
 完成标准：
 - [x] 已为关闭的 30 天窗口生成 final JSON 与脱敏 Markdown evidence，且通过 embedded contracts。
-- [ ] final summary 已被标记为 `summary-reviewed` 并记录决策，或明确保持 `human_review_pending` 并追加 post-final monitoring evidence。
+- [x] final summary 已明确保持 `human_review_pending`，并追加 `review-pending + continue monitoring` 决策记录与 post-final monitoring evidence。
 测试：
 - [x] 日历窗口关闭时验证最终观察期证据。
-- [ ] candidate generation 或 closure 前验证人工复核决策证据。
+- [x] candidate generation 或 closure 路径被信任前，已验证人工复核决策证据。
 
 ## 12. 任务级执行 Backlog
 
@@ -912,7 +912,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 明确 2026-06-15 之后的运行属于 post-final monitoring，不得延长原始 30 天审计窗口。
 - [x] 生成最终 30 天 evidence package，并以脱敏 Markdown 长期留证。
 - [ ] 人工复核最终 30 天 evidence package。
-- [ ] 明确 closure 决策：`closed-no-change`、`review-pending + continue monitoring` 或 `summary-reviewed + preview-only candidate`。
+- [x] 已明确记录当前决策结果：`review-pending + continue monitoring`。
 - [ ] 如选择 candidate 路径，必须先明确 `target_profile`，并且只生成 preview-only candidate。
 
 ## 13. 本地集成顺序
@@ -1011,7 +1011,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 脚本化人工复核决策记录 checker 已验证未来可选 decision record，同时保持当前 pending 状态与 apply gate 未关闭。
 - [x] 脚本化 cadence contract checker 已验证重复次数、weekly 节奏、结束日期、warning-triage 频率与 post-final 边界。
 - [ ] 人工复核最终 30 天摘要。
-- [ ] 将最终摘要标记为 `summary-reviewed`，或明确记录 `review-pending + continue monitoring`。
+- [x] 已明确记录 `review-pending + continue monitoring`，并保持最终摘要 `human_review_pending`。
 - [x] 收口 `reference_files/10.md` 中 invalid `SKILL.md` runtime repair loop：post-repair audit 报告 `invalid_total=0`。
 - [x] 收口 `mcp2cli` / `skills2cli` R3/R4 user-level runtime evidence loop：install/update receipts、smoke receipts 与 rollback pointer 均已存在。
 - [ ] 处理最终摘要中的噪声误报。
