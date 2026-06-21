@@ -16,8 +16,8 @@ INSTALL_RELATIVE = Path("skills/plugin-modules/references/profiles.json")
 SKILLS2CLI_RELATIVE = Path("tools/skills2cli.py")
 AUDIT_MEMORY_RELATIVE = Path("docs_bilingual/memory")
 REQUIRED_PROFILES = {"core-dev", "web-saas", "company-ops", "market-research", "customer-comms", "creative-content", "pyside6-gui", "full"}
-REQUIRED_TOP_LEVEL_FIELDS = ("scenario_description", "route_when", "negative_examples", "load_policy", "plugin_hints", "skill_doc_hints", "ranking_signals")
-REQUIRED_TASK_FIELDS = ("scenario_description", "route_when", "negative_examples", "load_policy", "plugin_hints", "skill_doc_hints", "routing_explanation", "ranking_signals")
+REQUIRED_TOP_LEVEL_FIELDS = ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "plugin_hints", "skill_doc_hints", "ranking_signals")
+REQUIRED_TASK_FIELDS = ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "plugin_hints", "skill_doc_hints", "routing_explanation", "ranking_signals")
 TROUBLESHOOTING_TERMS = ("all plugins", "full profile", "troubleshoot", "broad discovery", "diagnose missing plugin")
 
 
@@ -118,7 +118,7 @@ def validate_registry(root: Path) -> dict[str, Any]:
             errors.append(f"Scenario profile `{scenario_id}` target_profile `{target}` does not resolve to a canonical profile.")
         if scenario_id in modules:
             errors.append(f"Scenario profile `{scenario_id}` must not shadow a canonical hard-load profile ID.")
-        for field in ("scenario_description", "route_when", "negative_examples", "load_policy", "ranking_signals"):
+        for field in ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "ranking_signals"):
             if not truthy_list(scenario.get(field)):
                 errors.append(f"Scenario profile `{scenario_id}` missing field `{field}`.")
 
@@ -136,7 +136,12 @@ def validate_registry(root: Path) -> dict[str, Any]:
             errors.append(f"Known plugin `{plugin}` is reachable only through `full` without an allowlist reason.")
 
     full_entry = modules.get("full") if isinstance(modules.get("full"), dict) else {}
-    full_terms = " ".join(str(item).lower() for item in as_list(full_entry.get("route_when")) + as_list(full_entry.get("scenario_description")))
+    full_terms = " ".join(
+        str(item).lower()
+        for item in as_list(full_entry.get("route_when"))
+        + as_list(full_entry.get("scene_description"))
+        + as_list(full_entry.get("scenario_description"))
+    )
     if not any(term in full_terms for term in TROUBLESHOOTING_TERMS):
         errors.append("Profile `full` must be described as troubleshooting-only broad discovery.")
 
@@ -192,6 +197,8 @@ def validate_registry(root: Path) -> dict[str, Any]:
                     "audit_strong_evidence_available" in ranking_inputs
                     and "warning_pressure" in ranking_inputs
                     and selected.get("target_profile") != "full"
+                    and truthy_list(selected.get("plugin_hints"))
+                    and truthy_list(selected.get("skill_doc_hints"))
                     and suggestion.get("mutates_config") is False
                     and suggestion.get("profile_apply_performed") is False
                 )
@@ -205,7 +212,7 @@ def validate_registry(root: Path) -> dict[str, Any]:
                 )
                 profile_suggest_contract["ok"] = base_contract_ok and evidence_contract_ok
                 if not profile_suggest_contract["ok"]:
-                    errors.append("skills2cli profile suggest must report audit/warning rerank contract, non-full ordinary top-1, and preview-only safety.")
+                    errors.append("skills2cli profile suggest must report audit/warning rerank contract, profile-level hints, non-full ordinary top-1, and preview-only safety.")
                 if profile_suggest_contract["audit_strong_evidence_available"] is False:
                     warnings.append("No strong audit evidence was available in sanitized summaries; rerank still reports source availability and policy.")
         except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:

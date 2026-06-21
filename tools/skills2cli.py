@@ -635,12 +635,38 @@ def match_terms(haystack: str, terms: Iterable[Any]) -> list[str]:
     return hits
 
 
+def scene_description(entry: dict[str, Any]) -> str:
+    """Return the new scene_description field while preserving legacy compatibility."""
+
+    return str(entry.get("scene_description") or entry.get("scenario_description") or "")
+
+
+def profile_plugin_hints(entry: dict[str, Any]) -> list[str]:
+    hints = as_string_list(entry.get("plugin_hints"))
+    if not hints:
+        hints = as_string_list(entry.get("plugins"))
+    return hints[:12]
+
+
+def profile_skill_doc_hints(entry: dict[str, Any]) -> list[str]:
+    soft_load = entry.get("soft_load") if isinstance(entry.get("soft_load"), dict) else {}
+    hints = [*as_string_list(entry.get("skill_doc_hints")), *as_string_list(soft_load.get("skill_doc_hints"))]
+    seen: set[str] = set()
+    result: list[str] = []
+    for hint in hints:
+        if hint in seen:
+            continue
+        seen.add(hint)
+        result.append(hint)
+    return result[:12]
+
+
 def profile_candidate_terms(profile_id: str, entry: dict[str, Any]) -> list[str]:
     terms: list[str] = [profile_id]
     terms.extend(as_string_list(entry.get("route_when")))
     terms.extend(as_string_list(entry.get("plugin_hints")))
     terms.extend(as_string_list(entry.get("plugins")))
-    terms.append(str(entry.get("scenario_description") or ""))
+    terms.append(scene_description(entry))
     terms.append(str(entry.get("description") or ""))
     for module_id, module in (entry.get("task_modules") or {}).items():
         terms.append(str(module_id))
@@ -654,7 +680,7 @@ def scenario_candidate_terms(scenario_id: str, scenario: dict[str, Any]) -> list
     terms.extend(as_string_list(scenario.get("route_when")))
     terms.extend(as_string_list(scenario.get("positive_examples")))
     terms.extend(as_string_list(scenario.get("plugin_hints")))
-    terms.append(str(scenario.get("scenario_description") or ""))
+    terms.append(scene_description(scenario))
     terms.append(str(scenario.get("description") or ""))
     return terms
 
@@ -664,7 +690,7 @@ def build_task_module_recommendations(query_text: str, profile_id: str, entry: d
     results: list[dict[str, Any]] = []
     default_set = set(default_modules or [])
     for module_id, module in modules.items():
-        terms = [module_id, module.get("description", ""), module.get("scenario_description", "")]
+        terms = [module_id, module.get("description", ""), scene_description(module)]
         terms.extend(as_string_list(module.get("route_when")))
         terms.extend(as_string_list(module.get("positive_examples")))
         terms.extend(as_string_list(module.get("plugin_hints")))
@@ -795,6 +821,8 @@ def score_profile_candidate(
         "load_policy": load_policy,
         "task_modules": task_modules,
         "ranking_signals": as_string_list((scenario or {}).get("ranking_signals")) or as_string_list(entry.get("ranking_signals")),
+        "plugin_hints": profile_plugin_hints(entry),
+        "skill_doc_hints": profile_skill_doc_hints(entry),
         "audit_evidence": audit_boost,
         "warning_pressure_penalty": pressure_penalty,
     }
@@ -911,6 +939,8 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
                 "load_policy": selected.get("load_policy"),
                 "matched_terms": selected.get("matched_terms", []),
                 "ranking_signals": selected.get("ranking_signals", []),
+                "plugin_hints": selected.get("plugin_hints", []),
+                "skill_doc_hints": selected.get("skill_doc_hints", []),
                 "audit_evidence": selected.get("audit_evidence"),
                 "warning_pressure_penalty": selected.get("warning_pressure_penalty"),
             },

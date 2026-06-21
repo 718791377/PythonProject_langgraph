@@ -151,10 +151,73 @@ class Skills2CliTest(unittest.TestCase):
         task_modules = {item["task_module"] for item in payload["task_modules"]}
         self.assertIn("mobile-app", task_modules)
         self.assertIn("observability", task_modules)
+        self.assertIn("Expo", payload["selected_profile"]["plugin_hints"])
+        self.assertTrue(payload["selected_profile"]["skill_doc_hints"])
         self.assertFalse(payload["mutates_config"])
         self.assertFalse(payload["profile_apply_performed"])
         self.assertTrue(payload["soft_load_commands"])
         self.assertIn("hard_load_preview_command", payload)
+
+    def test_profile_suggest_uses_scene_description_compatibility_field(self) -> None:
+        repo, codex_home = self.make_workspace("scene-description")
+        registry_source = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        registry_target = repo / "tools" / "skill_sources" / "plugin-modules" / "references"
+        registry_target.mkdir(parents=True, exist_ok=True)
+        payload = json.loads(registry_source.read_text(encoding="utf-8"))
+        payload["scenario_profiles"]["web-product"]["scene_description"] = "orbital launch frontend"
+        payload["scenario_profiles"]["web-product"].pop("scenario_description", None)
+        payload["modules"]["web-saas"]["scene_description"] = "orbital launch deployment"
+        payload["modules"]["web-saas"].pop("scenario_description", None)
+        payload["modules"]["web-saas"]["task_modules"]["frontend-build"]["scene_description"] = "orbital launch ui"
+        payload["modules"]["web-saas"]["task_modules"]["frontend-build"].pop("scenario_description", None)
+        (registry_target / "profiles.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "orbital launch frontend",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+        )
+
+        self.assertEqual(result["selected_profile"]["target_profile"], "web-saas")
+        self.assertEqual(result["selected_profile"]["scenario_profile"], "web-product")
+        self.assertIn("frontend-build", {item["task_module"] for item in result["task_modules"]})
+
+    def test_profile_suggest_falls_back_to_legacy_scenario_description_field(self) -> None:
+        repo, codex_home = self.make_workspace("legacy-scenario-description")
+        registry_source = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        registry_target = repo / "tools" / "skill_sources" / "plugin-modules" / "references"
+        registry_target.mkdir(parents=True, exist_ok=True)
+        payload = json.loads(registry_source.read_text(encoding="utf-8"))
+        legacy_phrase = "spectral narwhal frontend"
+        payload["scenario_profiles"]["web-product"]["scenario_description"] = legacy_phrase
+        payload["scenario_profiles"]["web-product"].pop("scene_description", None)
+        payload["modules"]["web-saas"]["scenario_description"] = legacy_phrase
+        payload["modules"]["web-saas"].pop("scene_description", None)
+        payload["modules"]["web-saas"]["task_modules"]["frontend-build"]["scenario_description"] = legacy_phrase
+        payload["modules"]["web-saas"]["task_modules"]["frontend-build"].pop("scene_description", None)
+        (registry_target / "profiles.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            legacy_phrase,
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+        )
+
+        self.assertEqual(result["selected_profile"]["target_profile"], "web-saas")
+        self.assertEqual(result["selected_profile"]["scenario_profile"], "web-product")
+        self.assertIn("frontend-build", {item["task_module"] for item in result["task_modules"]})
 
     def test_profile_suggest_penalizes_full_unless_explicit_troubleshooting(self) -> None:
         ordinary = self.run_cli(

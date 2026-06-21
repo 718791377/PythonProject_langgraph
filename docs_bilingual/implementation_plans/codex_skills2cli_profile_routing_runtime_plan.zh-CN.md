@@ -26,11 +26,13 @@ created_at: 2026-06-21
 <!-- CURRENT_STATUS_START -->
 
 - Stage A 方案冻结包已在本地 `main` 集成，提交为 `3d08d6e`。
+- 收口 evidence：`skills2cli`、`check_skills2cli_profile_routing` 与 `check_plugin_modules_skill` 的聚焦单测覆盖 `scene_description` / `scenario_description` 双向兼容和 profile-level hints；本地 main 集成前会重新运行 full gates。
 - Phase B runtime 实现已在本地 `main` 集成，提交为 `80ec3dd`。
 - OpenSpec change 已归档到 `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`。
 - Phase B 后续收口已补齐原 audit/warning rerank 缺口：`profile suggest` 会读取已提交的脱敏 skills-audit 摘要、报告证据来源、对 broad `full` recommendation 施加由 warning pressure 证据驱动的惩罚，并继续保持 preview-only 与 `profile_apply_performed=false`。
 - checker 现在除 registry/schema/full 覆盖检查外，还会运行 profile-suggest rerank contract smoke。
 - user-level 安装副本仍可能报告 drift；除非另有授权，repo source 仍是 source of truth。
+- 收口包 `close-skills2cli-profile-routing-gaps-20260622` 补上 `scene_description` 契约字段，同时保留 `scenario_description` 兼容；`profile suggest` 现在输出 profile-level `plugin_hints` 与 `skill_doc_hints`，并记录 archive management outcome evidence。
 - 远程发布未授权。
 
 <!-- CURRENT_STATUS_END -->
@@ -64,7 +66,7 @@ registry 必须表达四层：
 
 每个 top-level profile 和每个 task module 都必须定义：
 
-- 场景描述；
+- `scene_description` 作为主场景描述字段，同时保留 `scenario_description` 作为兼容别名；
 - 正向 routing examples 或 `route_when` terms；
 - 用于排除误命中的 negative examples；
 - load policy：`default-candidate`、`hard-load-preview`、`soft-load`、`repo-local-only` 或 `troubleshooting-only`；
@@ -170,9 +172,9 @@ Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-m
 
 ## 9. 验收标准
 
-- `profiles.json` 为所有非 `full` profile 包含 scenario fields 与 task modules。
+- `profiles.json` 为所有非 `full` profile 包含 `scene_description` 与 `scenario_description` 兼容字段以及 task modules。
 - 每个 known plugin 都有非 `full` route，或有明确 allowlist reason。
-- `skills2cli.py profile suggest --query ... --json` 返回确定、脱敏、可解释的 recommendations。
+- `skills2cli.py profile suggest --query ... --json` 返回确定、脱敏、可解释的 recommendations，并包含 profile-level `plugin_hints`、`skill_doc_hints` 与 focused task-module hints。
 - 普通用户任务不会让 `full` 成为 top-1。
 - Profile suggestion 继续保持 advisory，绝不 apply config。
 - `skills2cli` 聚焦测试、`mcp2cli` risk/receipt 测试、agent/skill/profile 边界测试，以及严格 user-level install/smoke 检查，都属于最终 runtime 验证集合。

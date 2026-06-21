@@ -136,13 +136,13 @@ def validate(root: Path) -> dict[str, Any]:
                 if "skill_doc_hints" not in soft_load:
                     errors.append(f"Module `{module}` is missing soft_load.skill_doc_hints.")
                 if module != "full":
-                    for field in ("scenario_description", "route_when", "negative_examples", "load_policy", "ranking_signals", "task_modules"):
+                    for field in ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "ranking_signals", "task_modules"):
                         if not entry.get(field):
                             errors.append(f"Module `{module}` is missing routing field `{field}`.")
                     task_modules = entry.get("task_modules", {})
                     if isinstance(task_modules, dict):
                         for task_name, task_entry in task_modules.items():
-                            for field in ("scenario_description", "route_when", "negative_examples", "load_policy", "routing_explanation", "ranking_signals"):
+                            for field in ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "routing_explanation", "ranking_signals"):
                                 if not task_entry.get(field):
                                     errors.append(f"Task module `{module}.{task_name}` is missing field `{field}`.")
                     else:

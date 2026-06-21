@@ -31,6 +31,7 @@ created_at: 2026-06-21
 - Post-Phase-B follow-up closes the previous audit/warning rerank gap: `profile suggest` reads committed sanitized skills-audit summaries, reports evidence sources, applies evidence-driven warning-pressure penalty to broad `full` recommendations, and remains preview-only with `profile_apply_performed=false`.
 - The checker now runs a profile-suggest rerank contract smoke in addition to registry/schema/full-coverage checks.
 - User-level installed copies may still report drift until a separate install/update step is authorized; repo source remains the source of truth.
+- Closeout package `close-skills2cli-profile-routing-gaps-20260622` adds the `scene_description` contract field while preserving `scenario_description` compatibility, adds profile-level `plugin_hints` and `skill_doc_hints` to `profile suggest`, and records archive management outcome evidence.
 - Remote publication is not authorized.
 
 <!-- CURRENT_STATUS_END -->
@@ -64,7 +65,7 @@ The registry must represent four layers:
 
 Every top-level profile and every task module must define:
 
-- scenario description;
+- `scene_description` as the primary scenario description field, with `scenario_description` retained as a compatibility alias;
 - positive routing examples or `route_when` terms;
 - negative examples that exclude false matches;
 - load policy: `default-candidate`, `hard-load-preview`, `soft-load`, `repo-local-only`, or `troubleshooting-only`;
@@ -171,9 +172,9 @@ Representative routing tests must cover:
 
 ## 9. Acceptance criteria
 
-- `profiles.json` contains scenario fields and task modules for all non-`full` profiles.
+- `profiles.json` contains `scene_description` plus `scenario_description` compatibility fields and task modules for all non-`full` profiles.
 - Every known plugin has a non-`full` route or an explicit allowlist reason.
-- `skills2cli.py profile suggest --query ... --json` returns deterministic, sanitized, explainable recommendations.
+- `skills2cli.py profile suggest --query ... --json` returns deterministic, sanitized, explainable recommendations, including profile-level `plugin_hints` and `skill_doc_hints` plus focused task-module hints.
 - `full` is not top-1 for ordinary user tasks.
 - Profile suggestion remains advisory and never applies config.
 - `skills2cli` focused tests, `mcp2cli` risk/receipt tests, agent/skill/profile boundary tests, and strict user-level install/smoke checks are part of the final runtime validation set.
@@ -188,5 +189,6 @@ Representative routing tests must cover:
 - `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/` - archived OpenSpec change containing proposal, design, tasks, management record, and delta spec.
 - `docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md` - advisory audit input linkage; profile apply remains unauthorized.
 - Stage A validation evidence: `openspec validate improve-skills2cli-profile-routing --strict`, `tools/run_openspec_guard.py --root . --tool codex --json`, `tools/check_precommit_update_archive.py --root . --json`, and `tools/check_worktree_task_receipt.py --root . --json` passed before the plan-freeze commit.
+- Closeout evidence: focused unit tests for `skills2cli`, `check_skills2cli_profile_routing`, and `check_plugin_modules_skill` cover `scene_description` compatibility and profile-level hints; full gates are rerun before local-main integration.
 
 <!-- EVIDENCE_INDEX_END -->

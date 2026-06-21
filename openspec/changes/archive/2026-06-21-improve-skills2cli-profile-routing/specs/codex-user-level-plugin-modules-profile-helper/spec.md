@@ -4,13 +4,13 @@
 
 ### Requirement: Scenario-based profile routing metadata
 
-The plugin-modules profile registry SHALL preserve existing top-level canonical profile IDs while allowing each non-`full` profile and each scenario profile to declare scenario routing metadata.
+The plugin-modules profile registry SHALL preserve existing top-level canonical profile IDs while allowing each non-`full` profile and each scenario profile to declare scenario routing metadata. The primary field name SHALL be `scene_description`; `scenario_description` MAY be retained as a compatibility alias for existing consumers.
 
 #### Scenario: Non-full profile declares routing fields
 
 - **GIVEN** a non-`full` top-level profile exists in `profiles.json`
 - **WHEN** the profile routing checker validates the registry
-- **THEN** the profile has a scenario description, positive routing terms or examples, negative examples, ranking signal notes, and at least one task module unless explicitly marked repo-local-only with a justified exception.
+- **THEN** the profile has `scene_description`, the compatibility alias `scenario_description`, positive routing terms or examples, negative examples, ranking signal notes, and at least one task module unless explicitly marked repo-local-only with a justified exception.
 
 ### Requirement: Task modules provide layered routing
 
@@ -40,7 +40,7 @@ The hard-load profile helper SHALL fail closed when a nested task module is prov
 
 - **GIVEN** the query is `Expo mobile build and Sentry observability`
 - **WHEN** `skills2cli.py profile suggest --query ... --json` is executed
-- **THEN** the top recommendation is not `full`, includes `web-saas`, includes `mobile-app` and `observability` task modules, and reports `mutates_config=false`.
+- **THEN** the top recommendation is not `full`, includes `web-saas`, includes profile-level `plugin_hints` and `skill_doc_hints`, includes `mobile-app` and `observability` task modules, and reports `mutates_config=false`.
 
 ### Requirement: Known plugins are not reachable only through full
 

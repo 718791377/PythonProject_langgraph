@@ -134,7 +134,7 @@ if ($plugins -is [string] -and $plugins -eq 'all_known_plugins') {
   $plugins = ConvertTo-StringArray $plugins
 }
 
-$description = [string](Get-PropertyValue -Object $entry -Name 'description' (Get-PropertyValue -Object $entry -Name 'scenario_description' ''))
+$description = [string](Get-PropertyValue -Object $entry -Name 'description' (Get-PropertyValue -Object $entry -Name 'scene_description' (Get-PropertyValue -Object $entry -Name 'scenario_description' '')))
 $useFor = @()
 $useFor += ConvertTo-StringArray (Get-PropertyValue -Object $entrySoftLoad -Name 'use_for')
 $useFor += ConvertTo-StringArray (Get-PropertyValue -Object $entry -Name 'route_when')

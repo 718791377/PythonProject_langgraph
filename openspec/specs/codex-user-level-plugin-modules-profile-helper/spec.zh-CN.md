@@ -4,13 +4,13 @@
 
 ### 需求：场景化 profile routing metadata
 
-plugin-modules profile registry 必须保留现有 top-level canonical profile ID，同时允许每个非 `full` profile 和每个 scenario profile 声明场景 routing metadata。
+plugin-modules profile registry 必须保留现有 top-level canonical profile ID，同时允许每个非 `full` profile 和每个 scenario profile 声明场景 routing metadata。 主字段名必须是 `scene_description`；`scenario_description` 可以作为 existing consumers 的兼容别名保留。
 
 #### 场景：非 full profile 声明 routing fields
 
 - **给定** `profiles.json` 中存在一个非 `full` 的 top-level profile
 - **当** profile routing checker 校验 registry
-- **那么** 该 profile 具备场景描述、正向 routing terms 或 examples、negative examples、ranking signal notes，并且至少有一个 task module，除非它被明确标记为 repo-local-only 且有理由说明。
+- **那么** 该 profile 具备 `scene_description`、兼容别名 `scenario_description`、正向 routing terms 或 examples、negative examples、ranking signal notes，并且至少有一个 task module，除非它被明确标记为 repo-local-only 且有理由说明。
 
 ### 需求：Task modules 提供分层 routing
 
@@ -40,7 +40,7 @@ profile registry 必须支持 top-level profiles 下的 task modules，使当前
 
 - **给定** query 是 `Expo mobile build and Sentry observability`
 - **当** 执行 `skills2cli.py profile suggest --query ... --json`
-- **那么** top recommendation 不是 `full`，包含 `web-saas`，包含 `mobile-app` 与 `observability` task modules，并报告 `mutates_config=false`。
+- **那么** top recommendation 不是 `full`，包含 `web-saas`，包含 profile-level `plugin_hints` 与 `skill_doc_hints`，包含 `mobile-app` 与 `observability` task modules，并报告 `mutates_config=false`。
 
 ### 需求：Known plugins 不能只能通过 full 到达
 

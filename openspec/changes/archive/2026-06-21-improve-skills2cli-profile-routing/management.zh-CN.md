@@ -26,11 +26,11 @@
 
 ## Archive
 
-- [ ] value outcome：Stage B 完成后记录。
-- [ ] lessons learned：Stage B 完成后记录。
-- [ ] archive/sync evidence：Stage B 完成后记录。
+- [x] value outcome：Phase A 与 Phase B 已集成到本地 `main`；本收口补上 `scene_description` 兼容、profile-level hints 与 archive evidence，使 runtime 可解释且有 checker 支撑。
+- [x] lessons learned：用户可见字段名要明确使用 `scene_description`，同时保留既有 consumer 的 `scenario_description` 兼容；即使 task modules 提供 focused hints，profile-level 输出也应保留 hints。
+- [x] archive/sync evidence：OpenSpec archive 已在本目录，stable spec 已更新；本地 `main` 已包含 Stage A `3d08d6e`、Phase B `80ec3dd` 与 audit rerank 收口 `d72aee7`；远程发布仍未授权。
 
 ## Monitoring
 
-- [x] current facts：profile registry 当前缺少场景字段，七个 known plugins 需要非 full task-module route。
+- [x] current facts：Phase B runtime 已具备场景化 profile/task-module 路由；原先 only-full 的插件已有非 full route 覆盖；user-level 安装副本 drift 会被报告而不是被静默信任。
 - [x] return/no-return decision：continue。

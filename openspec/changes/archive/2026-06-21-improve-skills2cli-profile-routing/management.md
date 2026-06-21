@@ -29,9 +29,9 @@
 
 ## Archive
 
-- [ ] Value outcome recorded.
-- [ ] Lessons learned recorded.
-- [ ] Archive/sync evidence recorded after Stage B.
+- [x] Value outcome recorded: Phase A and Phase B are integrated in local `main`; closeout adds `scene_description` compatibility, profile-level hints, and archive evidence so the runtime is explainable and checker-backed.
+- [x] Lessons learned recorded: keep user-facing field names explicit (`scene_description`) while preserving previous consumer compatibility (`scenario_description`); profile-level outputs should carry hints even when task modules also provide focused hints.
+- [x] Archive/sync evidence recorded after Stage B: OpenSpec archive exists under this directory, stable spec is updated, local `main` contains Stage A `3d08d6e`, Phase B `80ec3dd`, and audit rerank closeout `d72aee7`; remote publication remains unauthorized.
 
 ## Monitoring
 

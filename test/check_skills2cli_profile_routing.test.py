@@ -89,6 +89,18 @@ class Skills2CliProfileRoutingCheckTest(unittest.TestCase):
         parsed = json.loads(result.stdout)
         self.assertTrue(any("web-saas.mobile-app" in error for error in parsed["errors"]))
 
+    def test_fails_when_profile_lacks_scene_description_alias(self) -> None:
+        root = self.make_root("missing-scene-description")
+        profiles_path = self.copy_registry(root)
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        del payload["modules"]["core-dev"]["scene_description"]
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("core-dev" in error and "scene_description" in error for error in parsed["errors"]))
+
 
 if __name__ == "__main__":
     unittest.main()

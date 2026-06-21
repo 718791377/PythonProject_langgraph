@@ -88,7 +88,8 @@
         "default developer candidate",
         "boost repo and CI terms",
         "keep full below focused developer work"
-      ]
+      ],
+      "scene_description": "Daily repository development, code review, CI repair, security review, OpenAI development, browser verification, and docs artifacts."
     },
     "browser-automation": {
       "target_profile": "core-dev",
@@ -112,7 +113,8 @@
       "load_policy": "soft-load",
       "ranking_signals": [
         "boost browser verification task module"
-      ]
+      ],
+      "scene_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification task entry."
     },
     "web-product": {
       "target_profile": "web-saas",
@@ -148,7 +150,8 @@
       "load_policy": "hard-load-preview",
       "ranking_signals": [
         "boost web deployment and app platform terms"
-      ]
+      ],
+      "scene_description": "Web/SaaS product construction, deployment, backend, payments, observability, mobile, and design implementation."
     },
     "ops-knowledge": {
       "target_profile": "company-ops",
@@ -182,7 +185,8 @@
       "load_policy": "hard-load-preview",
       "ranking_signals": [
         "boost live office connector terms"
-      ]
+      ],
+      "scene_description": "One-person-company operations, email/calendar, knowledge, CRM, meeting intelligence, Slack, and planning."
     },
     "research-analysis": {
       "target_profile": "market-research",
@@ -215,7 +219,8 @@
       "load_policy": "hard-load-preview",
       "ranking_signals": [
         "boost research-source plugin terms"
-      ]
+      ],
+      "scene_description": "Market, company, paper, library, model/dataset, science visual, and report research."
     },
     "design-media": {
       "target_profile": "creative-content",
@@ -248,7 +253,8 @@
       "load_policy": "hard-load-preview",
       "ranking_signals": [
         "boost design and media production terms"
-      ]
+      ],
+      "scene_description": "Creative content, visual design, slides, documents, video, brand, and media assets."
     },
     "repo-local-gui": {
       "target_profile": "pyside6-gui",
@@ -273,7 +279,8 @@
       "load_policy": "repo-local-only",
       "ranking_signals": [
         "boost PySide6 and local GUI terms"
-      ]
+      ],
+      "scene_description": "Repo-local PySide6/Qt desktop GUI helper work without enabling unrelated plugin bundles."
     },
     "troubleshooting": {
       "target_profile": "full",
@@ -294,7 +301,8 @@
       "load_policy": "troubleshooting-only",
       "ranking_signals": [
         "penalize unless explicit broad troubleshooting appears"
-      ]
+      ],
+      "scene_description": "Broad all-plugin troubleshooting only when the user explicitly asks to inspect or diagnose all plugin capabilities."
     },
     "customer-messaging": {
       "target_profile": "customer-comms",
@@ -323,7 +331,8 @@
       "load_policy": "hard-load-preview",
       "ranking_signals": [
         "boost channel-specific communication terms"
-      ]
+      ],
+      "scene_description": "Customer communication tasks over Twilio, WhatsApp, SMS, voice, SendGrid, Slack, Gmail, and payment messaging."
     }
   },
   "allow_full_only_plugins": {},
@@ -509,7 +518,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Repository governance, OpenSpec, local gates, local MR review, and local-main-first workflow."
         },
         "code-review": {
           "description": "Code review, CI repair, pull/MR feedback, GitHub/GitLab-adjacent review, and CodeRabbit review flows.",
@@ -572,7 +582,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Code review, CI repair, pull/MR feedback, GitHub/GitLab-adjacent review, and CodeRabbit review flows."
         },
         "security-review": {
           "description": "Security review, threat modeling, vulnerability triage, and secure code changes.",
@@ -631,7 +642,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Security review, threat modeling, vulnerability triage, and secure code changes."
         },
         "openai-dev": {
           "description": "OpenAI API, Agents SDK, ChatGPT Apps, Responses, model/tool integration, and troubleshooting.",
@@ -690,7 +702,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "OpenAI API, Agents SDK, ChatGPT Apps, Responses, model/tool integration, and troubleshooting."
         },
         "workflow-orchestration": {
           "description": "Temporal/workflow orchestration and durable execution design connected to development workflows.",
@@ -741,7 +754,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Temporal/workflow orchestration and durable execution design connected to development workflows."
         },
         "docs-artifacts": {
           "description": "Documents, spreadsheets, and presentations for developer artifacts and evidence packages.",
@@ -801,7 +815,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Documents, spreadsheets, and presentations for developer artifacts and evidence packages."
         },
         "browser-verification": {
           "description": "Browser, Chrome DevTools, CDP, screenshot, and web verification support for developer tasks.",
@@ -860,9 +875,11 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification support for developer tasks."
         }
-      }
+      },
+      "scene_description": "Daily developer profile for repository work, code review, security checks, OpenAI/ChatGPT Apps development, workflow orchestration, browser verification, and document artifacts."
     },
     "web-saas": {
       "description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Expo, Figma, browser checks, and GitHub workflows.",
@@ -1029,7 +1046,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Frontend, Next.js, Vercel, web UI, and browser-facing product builds."
         },
         "deploy-runtime": {
           "description": "Cloudflare/Vercel deployment runtime, workers, CI/CD, and edge deployment work.",
@@ -1092,7 +1110,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Cloudflare/Vercel deployment runtime, workers, CI/CD, and edge deployment work."
         },
         "db-backend": {
           "description": "Supabase/database/backend API work for web products.",
@@ -1146,7 +1165,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Supabase/database/backend API work for web products."
         },
         "payments": {
           "description": "Stripe payments, billing, checkout, subscriptions, and payment integration.",
@@ -1200,7 +1220,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Stripe payments, billing, checkout, subscriptions, and payment integration."
         },
         "observability": {
           "description": "Sentry/monitoring/error tracking and production observability for web or mobile apps.",
@@ -1254,7 +1275,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Sentry/monitoring/error tracking and production observability for web or mobile apps."
         },
         "mobile-app": {
           "description": "Expo/React Native/mobile app build, native UI, and app deployment work.",
@@ -1311,7 +1333,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Expo/React Native/mobile app build, native UI, and app deployment work."
         },
         "design-implementation": {
           "description": "Figma-to-code, design implementation, and UI handoff for web/SaaS products.",
@@ -1362,7 +1385,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Figma-to-code, design implementation, and UI handoff for web/SaaS products."
         },
         "browser-verification": {
           "description": "Browser verification, screenshots, DevTools checks, and visual QA for web products.",
@@ -1418,9 +1442,11 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Browser verification, screenshots, DevTools checks, and visual QA for web products."
         }
-      }
+      },
+      "scene_description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Expo, Figma, browser checks, and GitHub workflows."
     },
     "company-ops": {
       "description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, HubSpot, Fireflies, Linear, and office artifacts.",
@@ -1595,7 +1621,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Gmail and Google Calendar triage, scheduling, and daily briefing."
         },
         "docs-sheets-slides": {
           "description": "Google Drive Docs/Sheets/Slides and office artifacts.",
@@ -1663,7 +1690,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Google Drive Docs/Sheets/Slides and office artifacts."
         },
         "knowledge-capture": {
           "description": "Notion/Drive knowledge capture, notes, and operating-system documentation.",
@@ -1715,7 +1743,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Notion/Drive knowledge capture, notes, and operating-system documentation."
         },
         "crm-workflow": {
           "description": "HubSpot CRM records, pipeline notes, customer follow-up, and sales operations.",
@@ -1769,7 +1798,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "HubSpot CRM records, pipeline notes, customer follow-up, and sales operations."
         },
         "team-comms": {
           "description": "Slack team communications and collaboration flows.",
@@ -1820,7 +1850,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Slack team communications and collaboration flows."
         },
         "meeting-intel": {
           "description": "Fireflies meeting intelligence, meeting notes, transcripts, and follow-up extraction.",
@@ -1872,7 +1903,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Fireflies meeting intelligence, meeting notes, transcripts, and follow-up extraction."
         },
         "issue-planning": {
           "description": "Linear planning, issue triage, roadmap, backlog, and execution tracking.",
@@ -1926,9 +1958,11 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Linear planning, issue triage, roadmap, backlog, and execution tracking."
         }
-      }
+      },
+      "scene_description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, HubSpot, Fireflies, Linear, and office artifacts."
     },
     "market-research": {
       "description": "Market, company, investment, news, library, scientific visual, and model/dataset research profile.",
@@ -2086,7 +2120,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Company, market, investment, and competitive research."
         },
         "news-library": {
           "description": "News/archive/library ingestion and source tracking.",
@@ -2142,7 +2177,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "News/archive/library ingestion and source tracking."
         },
         "paper-citation": {
           "description": "Academic paper, Zotero, citation, and literature review work.",
@@ -2194,7 +2230,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Academic paper, Zotero, citation, and literature review work."
         },
         "model-dataset-inspection": {
           "description": "Hugging Face model, dataset, and ML artifact inspection.",
@@ -2247,7 +2284,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Hugging Face model, dataset, and ML artifact inspection."
         },
         "science-visuals": {
           "description": "BioRender scientific figure and research visual preparation.",
@@ -2298,7 +2336,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "BioRender scientific figure and research visual preparation."
         },
         "report-artifacts": {
           "description": "Research report documents and spreadsheet artifacts.",
@@ -2349,9 +2388,11 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Research report documents and spreadsheet artifacts."
         }
-      }
+      },
+      "scene_description": "Market, company, investment, news, library, scientific visual, and model/dataset research profile."
     },
     "customer-comms": {
       "description": "Customer communications profile for Twilio, SendGrid, Slack, Gmail, and Stripe-adjacent customer/payment messaging.",
@@ -2492,7 +2533,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Twilio SMS, WhatsApp, and voice customer messaging."
         },
         "email-delivery": {
           "description": "SendGrid/Gmail customer email delivery and deliverability tasks.",
@@ -2546,7 +2588,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "SendGrid/Gmail customer email delivery and deliverability tasks."
         },
         "support-comms": {
           "description": "Slack/Gmail support communications and customer support coordination.",
@@ -2601,7 +2644,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Slack/Gmail support communications and customer support coordination."
         },
         "payment-comms": {
           "description": "Stripe-adjacent customer payment, invoice, and billing messaging.",
@@ -2653,9 +2697,11 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Stripe-adjacent customer payment, invoice, and billing messaging."
         }
-      }
+      },
+      "scene_description": "Customer communications profile for Twilio, SendGrid, Slack, Gmail, and Stripe-adjacent customer/payment messaging."
     },
     "creative-content": {
       "description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, Cloudinary, presentations, and document deliverables.",
@@ -2798,7 +2844,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Canva/Figma design generation and visual concept creation."
         },
         "design-implementation": {
           "description": "Figma design implementation, design-to-code, and UI handoff.",
@@ -2843,7 +2890,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Figma design implementation, design-to-code, and UI handoff."
         },
         "slides-docs": {
           "description": "Presentations and document deliverables for creative content.",
@@ -2895,7 +2943,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Presentations and document deliverables for creative content."
         },
         "video-motion": {
           "description": "Remotion and HyperFrames video/motion production.",
@@ -2949,7 +2998,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Remotion and HyperFrames video/motion production."
         },
         "brand-assets": {
           "description": "Brand asset planning and reusable creative asset production.",
@@ -2999,7 +3049,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Brand asset planning and reusable creative asset production."
         },
         "media-assets": {
           "description": "Cloudinary/media asset pipeline, transformations, and hosted creative assets.",
@@ -3050,9 +3101,11 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Cloudinary/media asset pipeline, transformations, and hosted creative assets."
         }
-      }
+      },
+      "scene_description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, Cloudinary, presentations, and document deliverables."
     },
     "pyside6-gui": {
       "description": "Project-local PySide6 desktop GUI profile for preview/apply helper guidance, GUI templates, import-smoke checks, and packaging opt-in boundaries without enabling unrelated plugins.",
@@ -3156,7 +3209,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "PySide6/Qt local desktop GUI development guidance."
         },
         "gui-preview-apply": {
           "description": "Preview/apply helper usage for project-local PySide6 GUI setup.",
@@ -3202,7 +3256,8 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "Preview/apply helper usage for project-local PySide6 GUI setup."
         },
         "gui-packaging-preflight": {
           "description": "PySide6 executable packaging preflight and opt-in packaging boundary.",
@@ -3248,9 +3303,11 @@
               "Task modules are soft-load guidance only.",
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
-          }
+          },
+          "scene_description": "PySide6 executable packaging preflight and opt-in packaging boundary."
         }
-      }
+      },
+      "scene_description": "Project-local PySide6 desktop GUI profile for preview/apply helper guidance, GUI templates, import-smoke checks, and packaging opt-in boundaries without enabling unrelated plugins."
     },
     "full": {
       "description": "Troubleshooting profile that enables every known installed plugin family.",
@@ -3327,7 +3384,8 @@
         "enable_plugins": "all_known_plugins",
         "disable_other_known_plugins": false
       },
-      "task_modules": {}
+      "task_modules": {},
+      "scene_description": "Broad all-plugin troubleshooting only; not a normal daily or task-specific recommendation."
     }
   }
 }

@@ -71,13 +71,13 @@ class PluginModulesSkillCheckTest(unittest.TestCase):
         self.copy_skill_source(root)
         profiles_path = root / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
         payload = json.loads(profiles_path.read_text(encoding="utf-8"))
-        del payload["modules"]["core-dev"]["scenario_description"]
+        del payload["modules"]["core-dev"]["scene_description"]
         profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
         result = self.run_check(root)
         self.assertNotEqual(result.returncode, 0)
         parsed = json.loads(result.stdout)
-        self.assertTrue(any("scenario_description" in error for error in parsed["errors"]))
+        self.assertTrue(any("scene_description" in error for error in parsed["errors"]))
 
     def test_fails_when_task_module_is_malformed(self) -> None:
         root = self.make_root("plugin-modules-malformed-task")
