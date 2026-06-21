@@ -15,6 +15,7 @@
     "check_complete_local_flow_self_retire_preflight.test.py",
     "check_skills_audit_output_retention.test.py",
     "check_skills_audit_final_review_state.test.py",
+    "check_skills_audit_final_review_precheck.test.py",
     "check_skills_audit_cadence_contract.test.py",
     "spec_kit_authority_guard.test.py",
     "run_openspec_guard_json.test.py",

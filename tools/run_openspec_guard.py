@@ -123,6 +123,7 @@ def main() -> int:
     precommit_update_archive_script = root / "tools" / "check_precommit_update_archive.py"
     skills_audit_output_retention_script = root / "tools" / "check_skills_audit_output_retention.py"
     skills_audit_final_review_state_script = root / "tools" / "check_skills_audit_final_review_state.py"
+    skills_audit_final_review_precheck_script = root / "tools" / "check_skills_audit_final_review_precheck.py"
     skills_audit_cadence_contract_script = root / "tools" / "check_skills_audit_cadence_contract.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     openspec_comet_superpowers_policy_script = root / "tools" / "check_openspec_comet_superpowers_policy.py"
@@ -212,6 +213,8 @@ def main() -> int:
         raise SystemExit(f"Missing Skills audit output retention check script: {skills_audit_output_retention_script}")
     if not skills_audit_final_review_state_script.exists():
         raise SystemExit(f"Missing Skills audit final review state check script: {skills_audit_final_review_state_script}")
+    if not skills_audit_final_review_precheck_script.exists():
+        raise SystemExit(f"Missing Skills audit final review precheck script: {skills_audit_final_review_precheck_script}")
     if not skills_audit_cadence_contract_script.exists():
         raise SystemExit(f"Missing Skills audit cadence contract check script: {skills_audit_cadence_contract_script}")
     if not openspec_code_archive_evidence_script.exists():
@@ -448,6 +451,11 @@ def main() -> int:
                 "check_skills_audit_final_review_state",
                 [str(python_exe), str(skills_audit_final_review_state_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Skills audit final review state verification.",
+            ),
+            (
+                "check_skills_audit_final_review_precheck",
+                [str(python_exe), str(skills_audit_final_review_precheck_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Skills audit final review precheck verification.",
             ),
             (
                 "check_skills_audit_cadence_contract",
@@ -899,6 +907,11 @@ def main() -> int:
         [str(python_exe), str(skills_audit_final_review_state_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Skills audit final review state verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_final_review_precheck_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit final review precheck verification.",
     )
     run_checked(
         [str(python_exe), str(skills_audit_cadence_contract_script), "--root", str(root)],

@@ -18,6 +18,7 @@ runtime_sources:
   - tools/skills2cli.py
   - tools/check_skills_audit_output_retention.py
   - tools/check_skills_audit_final_review_state.py
+  - tools/check_skills_audit_final_review_precheck.py
   - tools/check_skills_audit_cadence_contract.py
   - tools/check_precommit_update_archive.py
 ---
@@ -175,6 +176,7 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 - `tools/skills2cli.py audit warnings` 提供紧凑、脱敏的前台 warning triage，同时读取 session JSONL 与 `logs_2.sqlite`；它是只读 helper，不修改 Codex config、plugin cache、hard-load profiles 或 skill bodies。
 - `tools/check_skills_audit_output_retention.py` 证明原始 audit artifacts 保持 local-only。
 - `tools/check_skills_audit_final_review_state.py` 以只读方式验证最终人工复核、关闭、候选与 apply 门禁状态，不修改 config 或 profiles。
+- `tools/check_skills_audit_final_review_precheck.py` 验证 final-summary noise 与 manual-conflict 项的机器级预检查证据，同时保持 human-review、candidate 与 profile-apply gate 关闭。
 - `tools/check_skills_audit_cadence_contract.py` 验证已锁定的重复次数、weekly 频率、原始结束日期、事件触发 warning-triage 规则和 post-final monitoring-only 边界。
 - `tools/check_precommit_update_archive.py` 证明本地提交前已检查 existing-file update review 与 OpenSpec archive gates。
 - `tools/run_openspec_guard.py` 聚合仓库级 guard 证据。
@@ -939,6 +941,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - apply 建议，但不自动 apply。
 - `tools/check_skills_audit_output_retention.py` 的输出留存状态，证明 `.tmp/` artifact 与原始 Skills usage JSON 没有被保留进 Git。
 - `tools/check_skills_audit_final_review_state.py` 的最终复核状态，证明当前审计仍处于 `review-pending + continue monitoring`、`summary-reviewed + closed-no-change` 或 `summary-reviewed + preview-only candidate` 中的哪一种，同时在后续明确 `approved-to-apply` receipt 前保持 profile apply 被阻断。
+- `tools/check_skills_audit_final_review_precheck.py` 的最终复核预检查状态，证明 noise/manual-conflict 脚本级预检查有证据支撑，同时不标记 summary reviewed、不生成 candidates、不 apply profiles。
 - `tools/check_skills_audit_cadence_contract.py` 的 cadence contract 状态，证明原始观察窗口仍为 2026-05-16 至 2026-06-15，计划内审计运行仍固定为 6 次，weekly evidence 日期保持固定，warning triage 仍为事件触发，post-final 运行仍只属于 monitoring evidence。
 - `tools/check_precommit_update_archive.py` 的提交前更新/归档状态，证明本轮提交前既有文件更新复核与 OpenSpec 归档门禁已经通过。
 - 默认人类可读 stdout 也必须渲染 audit state、audit state blockers、enabled plugins 已匹配/未匹配摘要、current profile 推断、inventory summary、log evidence 可用性、budget warning 最近样本数量、有界脱敏 budget-warning 样本摘录与 7 天计数、warning severity 等级、原因与处理动作、all-descriptions-removed / omitted-additional-skills 压力指标、audit-only safety 的 `audit_only` / `mutates_config` / `edits_plugin_cache` / `hard_load_apply_performed` 标志、runtime path privacy 的 `raw_paths_retained=false`、占位符路径与 `privacy_policy`、cadence review 的 late-run / missed-weekly-runs / weekly-report-review 状态、warning triage 状态、warning triage 窗口策略、warning/skipped-loading 计数、脱敏 skipped-loading 样本摘录、skipped-loading 复核动作、warning triage 后续动作建议与 blockers、explicit skill 使用总数与唯一 skill 数、SKILL.md 读取次数、profile helper 调用次数、`noise_review` 状态、剔除噪声 token 数、`raw_noise_tokens_retained=false`、`max_noise_token_length` 与 `token_privacy_policy`、`manual_evidence` 文件请求/读取数、有效/无效记录数、`raw_notes_retained=false`、`source_paths_retained=false`、`max_path_length`、人工记录隐私策略与来源路径隐私策略、`manual_evidence.conflict_review` 状态、冲突/例外数量、是否需要处置与处置说明、脚本能力边界计数、stable tool-call alias registry 的 policy/evidence level/strong-evidence 禁止标志、alias target 数量和有界 target 摘要、decision recommendation 的 advisory-only / profile-apply 禁止标志、四个决策分桶计数与有界分桶样本、recommendations 条数与前几条建议、字段契约状态/passed/blocker/含 `warning_severity` 的违规分组计数、输出留存门禁状态/checker/violation/local-only 细节和提交前更新/归档门禁状态/checker/提交前标志/既有文件更新复核/OpenSpec 归档复核/变更计数细节，确保非 JSON 运行也能安全复核。
@@ -1000,6 +1003,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 将标准计划内运行次数锁定为 6 次：Day 0 baseline 1 次、weekly run 4 次、Day 30 final run 1 次。
 - [x] 记录 warning triage 是事件触发流程，不设固定重复次数。
 - [x] 脚本化最终复核状态 checker 已验证当前 pending/closed/candidate/apply-gate 状态。
+- [x] 脚本化最终复核预检查 checker 已验证 noise/manual-conflict 机器证据，同时保持 final human-review 与 apply gate 未关闭。
 - [x] 脚本化 cadence contract checker 已验证重复次数、weekly 节奏、结束日期、warning-triage 频率与 post-final 边界。
 - [ ] 人工复核最终 30 天摘要。
 - [ ] 将最终摘要标记为 `summary-reviewed`，或明确记录 `review-pending + continue monitoring`。

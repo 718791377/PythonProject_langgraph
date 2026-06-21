@@ -181,6 +181,22 @@
       "description": "Verifies the Skills usage audit final-review, closure, candidate, and apply-gate state without marking summary-reviewed, generating candidates, or applying profiles."
     },
     {
+      "id": "skills-audit-final-review-precheck",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_final_review_precheck.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_final_review_precheck"
+      ],
+      "description": "Verifies machine precheck evidence for final-summary noise and manual-conflict review items while keeping final human review, candidate generation, and profile apply gates closed."
+    },
+    {
       "id": "skills-audit-cadence-contract",
       "owner_level": "project",
       "status": "implemented",

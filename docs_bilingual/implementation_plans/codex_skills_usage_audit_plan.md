@@ -18,6 +18,7 @@ runtime_sources:
   - tools/skills2cli.py
   - tools/check_skills_audit_output_retention.py
   - tools/check_skills_audit_final_review_state.py
+  - tools/check_skills_audit_final_review_precheck.py
   - tools/check_skills_audit_cadence_contract.py
   - tools/check_precommit_update_archive.py
 ---
@@ -175,6 +176,7 @@ Runtime responsibilities:
 - `tools/skills2cli.py audit warnings` provides compact, sanitized foreground warning triage over both session JSONL and `logs_2.sqlite`; it is read-only and does not mutate Codex config, plugin cache, hard-load profiles, or skill bodies.
 - `tools/check_skills_audit_output_retention.py` proves raw audit artifacts stay local-only.
 - `tools/check_skills_audit_final_review_state.py` verifies the final human-review, closure, candidate, and apply-gate state without mutating config or profiles.
+- `tools/check_skills_audit_final_review_precheck.py` verifies machine-level precheck evidence for final-summary noise and manual-conflict items while keeping human-review, candidate, and profile-apply gates closed.
 - `tools/check_skills_audit_cadence_contract.py` verifies the locked repeat count, weekly frequency, original end date, event-triggered warning-triage rule, and post-final monitoring-only boundary.
 - `tools/check_precommit_update_archive.py` proves existing-file update review and OpenSpec archive gates were checked before local commits.
 - `tools/run_openspec_guard.py` aggregates repository-level guard evidence.
@@ -593,6 +595,7 @@ Each audit run must report:
 - recommendations, without applying them automatically.
 - output retention status from `tools/check_skills_audit_output_retention.py`, proving `.tmp/` artifacts and raw Skills usage JSON are not retained in Git.
 - final review state from `tools/check_skills_audit_final_review_state.py`, proving whether the audit is still `review-pending + continue monitoring`, `summary-reviewed + closed-no-change`, or `summary-reviewed + preview-only candidate`, while keeping profile apply blocked until a later explicit `approved-to-apply` receipt.
+- final review precheck state from `tools/check_skills_audit_final_review_precheck.py`, proving noise/manual-conflict script-level prechecks are evidence-backed without marking the summary reviewed, generating candidates, or applying profiles.
 - cadence contract state from `tools/check_skills_audit_cadence_contract.py`, proving the original observation window remains 2026-05-16 through 2026-06-15, planned audit repeats remain 6 total runs, weekly evidence dates remain fixed, warning triage remains event-triggered, and post-final runs remain monitoring-only.
 - pre-commit update/archive status from `tools/check_precommit_update_archive.py`, proving existing-file update review and OpenSpec archive gates have passed before local commit.
 - default human stdout must also render the audit state, enabled-plugin matched/unmatched summary, current-profile inference, inventory summary, log-evidence availability, recent budget-warning sample count, bounded sanitized budget-warning sample excerpts, and 7-day counts, warning-severity level, reason, and action, all-descriptions-removed / omitted-additional-skills pressure metrics, cadence review late-run / missed-weekly-runs / weekly-report-review state, warning triage status, warning triage window policy, warning/skipped-loading counts, sanitized skipped-loading sample excerpts, skipped-loading review action, warning triage recommended action and blockers, explicit-skill total and unique-skill counts, SKILL.md read count, profile helper call count, script capability boundary counts, decision recommendation, recommendation count plus the first few recommendations, field-contract status and violation groups including `warning_severity`, output-retention gate, and pre-commit update/archive gate, so a non-JSON run is still safe to review.
@@ -653,6 +656,7 @@ The original 30-day audit window is closed. These items now distinguish complete
 - [x] Lock the fixed standard run count to 6 scheduled audit runs: 1 Day 0 baseline, 4 weekly runs, and 1 Day 30 final run.
 - [x] Record that warning triage is event-triggered and has no fixed repeat count.
 - [x] Script-backed final review state checker verifies the current pending/closed/candidate/apply-gate state.
+- [x] Script-backed final review precheck checker verifies noise/manual-conflict machine evidence while preserving final human-review and apply gates.
 - [x] Script-backed cadence contract checker verifies the repeat count, weekly cadence, end date, warning-triage frequency, and post-final boundary.
 - [ ] Manually review the final 30-day summary.
 - [ ] Mark the final summary as `summary-reviewed`, or explicitly record `review-pending + continue monitoring`.
