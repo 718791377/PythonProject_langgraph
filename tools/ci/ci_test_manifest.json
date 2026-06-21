@@ -18,6 +18,7 @@
     "check_skills_audit_final_review_precheck.test.py",
     "check_skills_audit_human_review_decision_record.test.py",
     "check_skills_audit_cadence_contract.test.py",
+    "check_skills_audit_frontmatter_resolution.test.py",
     "check_skills_audit_zh_evidence_encoding.test.py",
     "spec_kit_authority_guard.test.py",
     "run_openspec_guard_json.test.py",

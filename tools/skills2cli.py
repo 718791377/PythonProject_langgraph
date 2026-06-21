@@ -14,6 +14,7 @@ import os
 import re
 import sqlite3
 import sys
+from collections import Counter
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -244,6 +245,32 @@ def index_skills(repo_root: Path, codex_home: Path) -> list[dict[str, Any]]:
     return [asdict(record) for record in sorted(records, key=lambda item: (item.source_layer, item.name.lower(), item.skill_id))]
 
 
+def build_frontmatter_compatibility_summary(repo_root: Path, codex_home: Path) -> dict[str, Any]:
+    """Return a compact current SKILL.md frontmatter compatibility summary."""
+    skills = index_skills(repo_root, codex_home)
+    invalid = [item for item in skills if not item.get("codex_frontmatter_compatible")]
+    by_error: Counter[str] = Counter()
+    by_layer: Counter[str] = Counter()
+    for item in invalid:
+        by_layer[str(item.get("source_layer") or "unknown")] += 1
+        for error in item.get("codex_frontmatter_errors") or []:
+            by_error[str(error)] += 1
+    return {
+        "checked_with": "tools/skills2cli.py index",
+        "total": len(skills),
+        "invalid_total": len(invalid),
+        "by_error": dict(sorted(by_error.items())),
+        "by_layer": dict(sorted(by_layer.items())),
+        "codex_name_limit": CODEX_SKILL_NAME_LIMIT,
+        "codex_description_limit": CODEX_SKILL_DESCRIPTION_LIMIT,
+        "raw_paths_retained": False,
+        "raw_skill_bodies_retained": False,
+        "mutates_config": False,
+        "edits_plugin_cache": False,
+        "profile_apply_performed": False,
+    }
+
+
 def envelope(command: str, payload: dict[str, Any]) -> dict[str, Any]:
     result = {
         "schema_version": SCHEMA_VERSION,
@@ -451,9 +478,21 @@ def iter_session_texts(codex_home: Path, since: datetime) -> Iterable[str]:
     sessions_dir = codex_home / "sessions"
     if not sessions_dir.exists():
         return
-    for path in sorted(sessions_dir.rglob("*")):
+    candidates: list[tuple[float, Path]] = []
+    since_epoch = since.timestamp()
+    for path in sessions_dir.rglob("*"):
         if not path.is_file() or path.suffix.lower() not in {".jsonl", ".log", ".txt", ".md"}:
             continue
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            continue
+        # Most real sessions/log snippets are append-only.  Filtering old files
+        # keeps live warning triage from walking the full historical archive.
+        if mtime < since_epoch:
+            continue
+        candidates.append((mtime, path))
+    for _mtime, path in sorted(candidates, key=lambda item: item[0], reverse=True):
         try:
             raw_lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
         except OSError:
@@ -557,6 +596,7 @@ def scan_sqlite_warning_source(codex_home: Path, since: datetime, *, limit: int)
 
 def command_audit_warnings(args: argparse.Namespace) -> int:
     codex_home = Path(args.codex_home).resolve()
+    repo_root = Path(args.root).resolve()
     since = parse_duration_or_since(args.since)
     session_source = scan_session_warning_source(codex_home, since, limit=args.limit)
     sqlite_source = scan_sqlite_warning_source(codex_home, since, limit=args.limit)
@@ -580,6 +620,7 @@ def command_audit_warnings(args: argparse.Namespace) -> int:
             "max_omitted_additional_skills": max_omitted_additional_skills,
             "recent_sanitized_excerpts": excerpts,
             "sources": sources,
+            "current_frontmatter_compatibility": build_frontmatter_compatibility_summary(repo_root, codex_home),
             "log_source_review": "sessions_jsonl_and_logs_2_sqlite_are_read_only_sanitized_sources",
             "raw_log_paths_retained": False,
             "raw_skill_bodies_retained": False,
@@ -652,6 +693,7 @@ def build_parser() -> argparse.ArgumentParser:
     audit_sub = audit.add_subparsers(dest="audit_command")
     warnings = audit_sub.add_parser("warnings", help="Summarize skills budget/skipped-loading warnings.")
     warnings.add_argument("--since", required=True, help="Duration such as 7d/24h/30m or an ISO timestamp.")
+    warnings.add_argument("--root", default=str(default_repo_root()), help="Repository root containing .codex/skills.")
     warnings.add_argument("--codex-home", default=str(default_codex_home()))
     warnings.add_argument("--limit", type=int, default=5)
     warnings.add_argument("--json", action="store_true")

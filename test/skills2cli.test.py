@@ -137,7 +137,8 @@ class Skills2CliTest(unittest.TestCase):
         self.assertTrue(any(item["profile"] == "browser-automation" for item in payload["suggestions"]))
 
     def test_warning_audit_summarizes_and_redacts_warning_text(self) -> None:
-        _repo, codex_home = self.make_workspace("warnings")
+        repo, codex_home = self.make_workspace("warnings")
+        self.write_skill(codex_home / "skills", "valid-skill", name="valid-skill", description="Valid current skill.")
         sessions = codex_home / "sessions"
         sessions.mkdir(parents=True)
         now = datetime.now(timezone.utc).isoformat()
@@ -153,12 +154,16 @@ class Skills2CliTest(unittest.TestCase):
             encoding="utf-8",
         )
 
-        payload = self.run_cli("audit", "warnings", "--since", "7d", "--codex-home", str(codex_home), "--json")
+        payload = self.run_cli("audit", "warnings", "--since", "7d", "--root", str(repo), "--codex-home", str(codex_home), "--json")
         serialized = json.dumps(payload, ensure_ascii=False)
 
         self.assertEqual(payload["command"], "audit warnings")
         self.assertEqual(payload["budget_warning_count"], 1)
         self.assertGreaterEqual(payload["skipped_loading_count"], 1)
+        self.assertEqual(payload["current_frontmatter_compatibility"]["invalid_total"], 0)
+        self.assertEqual(payload["current_frontmatter_compatibility"]["checked_with"], "tools/skills2cli.py index")
+        self.assertFalse(payload["current_frontmatter_compatibility"]["raw_paths_retained"])
+        self.assertFalse(payload["current_frontmatter_compatibility"]["raw_skill_bodies_retained"])
         self.assertFalse(payload["raw_log_paths_retained"])
         self.assertFalse(payload["raw_skill_bodies_retained"])
         self.assertNotIn(r"C:\Users\lenovo", serialized)
@@ -174,7 +179,8 @@ class Skills2CliTest(unittest.TestCase):
         self.assertIn("[REDACTED_TOKEN_COUNT]", serialized)
 
     def test_warning_audit_also_reads_logs_2_sqlite_without_raw_paths(self) -> None:
-        _repo, codex_home = self.make_workspace("sqlite-warnings")
+        repo, codex_home = self.make_workspace("sqlite-warnings")
+        self.write_skill(codex_home / "skills", "valid-skill", name="valid-skill", description="Valid current skill.")
         db = codex_home / "logs_2.sqlite"
         with sqlite3.connect(db) as con:
             con.execute("create table logs(ts integer, level text, target text, feedback_log_body text)")
@@ -194,7 +200,7 @@ class Skills2CliTest(unittest.TestCase):
                 ),
             )
 
-        payload = self.run_cli("audit", "warnings", "--since", "1d", "--codex-home", str(codex_home), "--json")
+        payload = self.run_cli("audit", "warnings", "--since", "1d", "--root", str(repo), "--codex-home", str(codex_home), "--json")
         serialized = json.dumps(payload, ensure_ascii=False)
 
         self.assertEqual(payload["command"], "audit warnings")
@@ -202,6 +208,8 @@ class Skills2CliTest(unittest.TestCase):
         self.assertGreaterEqual(payload["skipped_loading_count"], 1)
         self.assertEqual(payload["all_descriptions_removed_count"], 1)
         self.assertEqual(payload["max_omitted_additional_skills"], 16)
+        self.assertEqual(payload["current_frontmatter_compatibility"]["invalid_total"], 0)
+        self.assertEqual(payload["current_frontmatter_compatibility"]["total"], 1)
         self.assertEqual({item["source"] for item in payload["sources"]}, {"sessions_jsonl", "logs_2.sqlite"})
         sqlite_source = next(item for item in payload["sources"] if item["source"] == "logs_2.sqlite")
         self.assertTrue(sqlite_source["available"])
@@ -220,6 +228,34 @@ class Skills2CliTest(unittest.TestCase):
         self.assertIn("[REDACTED_SECRET]", serialized)
         self.assertIn("[REDACTED_ID]", serialized)
         self.assertIn("[REDACTED_TOKEN_COUNT]", serialized)
+
+    def test_warning_audit_session_scan_filters_old_files_by_mtime(self) -> None:
+        repo, codex_home = self.make_workspace("old-session-filter")
+        sessions = codex_home / "sessions"
+        sessions.mkdir(parents=True)
+        old_file = sessions / "old-session.jsonl"
+        old_file.write_text(
+            json.dumps(
+                {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "type": "event_msg",
+                    "payload": {"message": "Exceeded skills context budget of 2%."},
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        old_time = time.time() - 10 * 86400
+        import os
+
+        os.utime(old_file, (old_time, old_time))
+
+        payload = self.run_cli("audit", "warnings", "--since", "1d", "--root", str(repo), "--codex-home", str(codex_home), "--json")
+
+        session_source = next(item for item in payload["sources"] if item["source"] == "sessions_jsonl")
+        self.assertEqual(session_source["budget_warning_count"], 0)
+        self.assertEqual(payload["budget_warning_count"], 0)
 
 
 if __name__ == "__main__":

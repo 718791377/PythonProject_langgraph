@@ -364,6 +364,13 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Enabled plugins: 0 matched_known=0 unmatched=0", output)
         self.assertIn("Current profile: inferred=custom_or_unmatched", output)
         self.assertIn("Inventory summary: total=", output)
+        self.assertIn("Frontmatter compatibility: invalid_total=0", output)
+        self.assertIn(
+            "Frontmatter compatibility safety: raw_paths_retained=False "
+            "raw_skill_bodies_retained=False mutates_config=False "
+            "edits_plugin_cache=False profile_apply_performed=False",
+            output,
+        )
         self.assertIn("Log evidence available: False", output)
         self.assertIn("Budget warning samples: recent=0 last_7d=0", output)
         self.assertIn("Budget warning sample excerpts: `none`", output)
@@ -403,6 +410,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Warning triage warnings: budget=0 skipped_loading=0 recent_skipped_samples=0", output)
         self.assertIn("Warning triage skipped-loading sample excerpts: `none`", output)
         self.assertIn("Warning triage skipped-loading review: none", output)
+        self.assertIn(
+            "Warning triage frontmatter resolution: not_checked current_invalid_total=0",
+            output,
+        )
         self.assertIn(
             "Warning triage recommended action: run_with_warning_triage_after_a_live_session_budget_warning",
             output,
@@ -475,7 +486,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("missing_fields=0 invalid_type_fields=0 requires_embedded=False", output)
         self.assertIn(
             "Field contract violation groups: safety=0 audit_state=0 "
-            "log_evidence=0 warning_severity=0 warning_triage=0 cadence_review=0 manual_evidence=0 "
+            "frontmatter_compatibility=0 log_evidence=0 warning_severity=0 "
+            "warning_triage=0 cadence_review=0 manual_evidence=0 "
             "noise_review=0 script_capability=0 output_retention=0 "
             "precommit_update_archive=0 runtime_paths=0 module_evidence=0 "
             "decision_recommendation=0 embedded=0",
@@ -1128,8 +1140,13 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(len(report["warning_triage"]["recent_skipped_loading_sample_excerpts"]), 1)
         self.assertEqual(
             report["warning_triage"]["skipped_loading_review"],
-            "record_source_and_do_not_edit_vendor_cache_without_authorization",
+            "historical_warning_current_inventory_clean",
         )
+        self.assertEqual(
+            report["warning_triage"]["frontmatter_resolution"],
+            "historical_warning_current_inventory_clean",
+        )
+        self.assertEqual(report["warning_triage"]["current_frontmatter_invalid_total"], 0)
         self.assertEqual(report["warning_triage"]["all_descriptions_removed_count"], 1)
         self.assertEqual(report["warning_triage"]["max_omitted_additional_skills"], 16)
         self.assertEqual(report["log_evidence"]["recent_budget_warning_samples"], 1)
@@ -1153,9 +1170,10 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("Recent skipped-loading sample excerpts: `Skipped loading", summary)
         self.assertIn("[REDACTED_PATH]", summary)
         self.assertIn(
-            "Skipped-loading review: `record_source_and_do_not_edit_vendor_cache_without_authorization`",
+            "Skipped-loading review: `historical_warning_current_inventory_clean`",
             summary,
         )
+        self.assertIn("Frontmatter resolution: `historical_warning_current_inventory_clean`", summary)
         self.assertEqual(report["field_contract"]["status"], "passed")
 
     def test_report_uses_repo_profile_fallback_and_expands_full_module(self) -> None:
@@ -1366,6 +1384,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             "config_summary",
             "cadence_review",
             "inventory_summary",
+            "frontmatter_compatibility",
             "log_evidence",
             "warning_severity",
             "warning_triage",
@@ -1392,6 +1411,12 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertEqual(report["cadence_review"]["weekly_report_review"], "manual_review_required")
         self.assertIn("last_7d_budget_warning_count", report["log_evidence"])
         self.assertIn("total_skills", report["inventory_summary"])
+        self.assertIn("invalid_total", report["frontmatter_compatibility"])
+        self.assertFalse(report["frontmatter_compatibility"]["raw_paths_retained"])
+        self.assertFalse(report["frontmatter_compatibility"]["raw_skill_bodies_retained"])
+        self.assertFalse(report["frontmatter_compatibility"]["mutates_config"])
+        self.assertFalse(report["frontmatter_compatibility"]["edits_plugin_cache"])
+        self.assertFalse(report["frontmatter_compatibility"]["profile_apply_performed"])
         self.assertIn("budget_warning_count", report["log_evidence"])
         self.assertIn("recent_budget_warning_samples", report["log_evidence"])
         self.assertIn("recent_budget_warning_sample_excerpts", report["log_evidence"])
@@ -1401,6 +1426,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("window_policy", report["warning_triage"])
         self.assertIn("window_ok", report["warning_triage"])
         self.assertIn("blockers", report["warning_triage"])
+        self.assertIn("frontmatter_resolution", report["warning_triage"])
+        self.assertIn("current_frontmatter_invalid_total", report["warning_triage"])
         self.assertIn("recommended_action", report["warning_triage"])
         self.assertIn("explicit_skills", report["session_evidence"])
         self.assertIsInstance(report["module_evidence"], list)
@@ -1818,6 +1845,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         report = audit.build_report(args)
         report["warning_triage"].pop("window_policy")
         report["warning_triage"].pop("skipped_loading_review")
+        report["warning_triage"].pop("frontmatter_resolution")
         report["warning_triage"]["blockers"] = "warning_triage_window_not_narrow"
         report["warning_triage"]["skipped_loading_count"] = "one"
 
@@ -1827,6 +1855,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertFalse(contract["passed"])
         self.assertIn("warning_triage:window_policy_missing", contract["blockers"])
         self.assertIn("warning_triage:skipped_loading_review_missing", contract["blockers"])
+        self.assertIn("warning_triage:frontmatter_resolution_missing", contract["blockers"])
         self.assertIn("warning_triage:blockers_invalid_type", contract["blockers"])
         self.assertIn("warning_triage:skipped_loading_count_invalid_type", contract["blockers"])
         self.assertFalse(gate["allowed"])
@@ -1838,6 +1867,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "status": "unknown-triage-state",
                 "window_policy": "use_weekly_report_as_warning_triage",
                 "skipped_loading_review": "bulk_edit_vendor_cache",
+                "frontmatter_resolution": "bulk_edit_vendor_cache",
                 "blockers": [123, "unexpected_warning_blocker"],
                 "budget_warning_count": -1,
                 "skipped_loading_count": -2,
@@ -1852,6 +1882,7 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertIn("warning_triage:status_invalid_value", value_contract["blockers"])
         self.assertIn("warning_triage:window_policy_invalid_value", value_contract["blockers"])
         self.assertIn("warning_triage:skipped_loading_review_invalid_value", value_contract["blockers"])
+        self.assertIn("warning_triage:frontmatter_resolution_invalid_value", value_contract["blockers"])
         self.assertIn("warning_triage:blockers_item_invalid_type", value_contract["blockers"])
         self.assertIn(
             "warning_triage:blockers_invalid_value:unexpected_warning_blocker",
@@ -1873,6 +1904,47 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertFalse(blocked_contract["passed"])
         self.assertIn("warning_triage:blocked_status_missing_blockers", blocked_contract["blockers"])
+
+    def test_field_contract_requires_frontmatter_compatibility_summary(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-frontmatter-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+        missing = dict(report)
+        missing.pop("frontmatter_compatibility")
+        unsafe = json.loads(json.dumps(report))
+        unsafe["frontmatter_compatibility"].update(
+            {
+                "invalid_total": -1,
+                "by_error": {"name_too_long": "many"},
+                "raw_paths_retained": True,
+                "mutates_config": True,
+            }
+        )
+
+        missing_contract = audit.validate_report_field_contract(missing)
+        unsafe_contract = audit.validate_report_field_contract(unsafe)
+
+        self.assertFalse(missing_contract["passed"])
+        self.assertIn("missing_field:frontmatter_compatibility", missing_contract["blockers"])
+        self.assertFalse(unsafe_contract["passed"])
+        self.assertIn("frontmatter_compatibility:invalid_total_negative", unsafe_contract["blockers"])
+        self.assertIn("frontmatter_compatibility:by_error_invalid_item", unsafe_contract["blockers"])
+        self.assertIn("frontmatter_compatibility:raw_paths_retained_not_false", unsafe_contract["blockers"])
+        self.assertIn("frontmatter_compatibility:mutates_config_not_false", unsafe_contract["blockers"])
 
     def test_field_contract_blocks_runtime_ids_and_token_counts_in_retained_excerpts(self) -> None:
         codex_home = self.make_codex_home("skills-audit-runtime-id-contract")
@@ -1976,6 +2048,20 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             },
             "config_summary": {"current_profile": {}},
             "inventory_summary": {},
+            "frontmatter_compatibility": {
+                "checked_with": "tools/skills2cli.py index",
+                "total": 0,
+                "invalid_total": 0,
+                "by_error": {},
+                "by_layer": {},
+                "codex_name_limit": 64,
+                "codex_description_limit": 1024,
+                "raw_paths_retained": False,
+                "raw_skill_bodies_retained": False,
+                "mutates_config": False,
+                "edits_plugin_cache": False,
+                "profile_apply_performed": False,
+            },
             "log_evidence": {
                 "budget_warning_count": 0,
                 "last_7d_budget_warning_count": 0,
@@ -2020,6 +2106,20 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             },
             "config_summary": {"current_profile": {}},
             "inventory_summary": {},
+            "frontmatter_compatibility": {
+                "checked_with": "tools/skills2cli.py index",
+                "total": 0,
+                "invalid_total": 0,
+                "by_error": {},
+                "by_layer": {},
+                "codex_name_limit": 64,
+                "codex_description_limit": 1024,
+                "raw_paths_retained": False,
+                "raw_skill_bodies_retained": False,
+                "mutates_config": False,
+                "edits_plugin_cache": False,
+                "profile_apply_performed": False,
+            },
             "log_evidence": {
                 "budget_warning_count": 0,
                 "last_7d_budget_warning_count": 0,
@@ -2042,6 +2142,8 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
                 "recent_skipped_loading_samples": 0,
                 "recent_skipped_loading_sample_excerpts": [],
                 "skipped_loading_review": "none",
+                "frontmatter_resolution": "not_checked",
+                "current_frontmatter_invalid_total": 0,
                 "recommended_action": "run_with_warning_triage_after_a_live_session_budget_warning",
             },
             "session_evidence": {},
