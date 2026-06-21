@@ -14,6 +14,7 @@ related_docs:
   - docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md
   - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md
 runtime_sources:
+  - docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.zh-CN.md
   - tools/audit_codex_skills_usage.py
   - tools/skills2cli.py
   - tools/check_skills_audit_output_retention.py
@@ -38,6 +39,8 @@ runtime_sources:
 ---
 
 ## 0. 复核结论
+
+关联路由方案：`codex_skills2cli_profile_routing_runtime_plan.zh-CN.md` 使用本审计方案的 strong evidence、warning pressure 与 final-review state 作为 profile routing 与 rerank 的 advisory 输入。该关联不授权 profile apply，也不改变 audit candidate 中 `target_profile` 的语义：它仍然表示 canonical hard-load profile ID。
 
 本方案状态为 active，并继续保持 audit-only。本次 Comet 结构重构不授权 hard-load/profile apply，也不改变实施边界：现有脚本、checker、report contract、retention 与 candidate-preview 规则仍是执行层 source of truth。本次重构将治理原则、运行时/数据源架构、CLI 契约、字段契约、实施切片、任务级 backlog、本地集成、验收证据和长期监控事项拆开，便于后续按 /comet 方式执行与复核。
 

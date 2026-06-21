@@ -1536,3 +1536,9 @@ documents:
     status: active
     canonical_path: docs_bilingual/operations_packages/one_person_company/learning-log.md
     zh_cn_path: docs_bilingual/operations_packages/one_person_company/learning-log.zh-CN.md
+  - doc_id: codex_skills2cli_profile_routing_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.zh-CN.md
+

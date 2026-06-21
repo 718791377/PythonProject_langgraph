@@ -14,6 +14,7 @@ related_docs:
   - docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md
   - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md
 runtime_sources:
+  - docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
   - tools/audit_codex_skills_usage.py
   - tools/skills2cli.py
   - tools/check_skills_audit_output_retention.py
@@ -38,6 +39,9 @@ runtime_sources:
 ---
 
 ## 0. Review conclusion
+
+Related routing plan: `codex_skills2cli_profile_routing_runtime_plan.md` uses this audit plan's strong evidence, warning pressure, and final-review state as advisory inputs for profile routing and reranking. This linkage does not authorize profile apply and does not change `target_profile` semantics in audit candidates: it remains a canonical hard-load profile ID.
+
 
 The plan is active and remains audit-only. This Comet-style refactor does not authorize a hard-load/profile apply and does not change the implementation boundary: existing script, checker, report-contract, retention, and candidate-preview rules remain the source of truth for execution. The refactor makes the plan easier to execute by separating governance principles, runtime/data-source architecture, CLI contracts, field contracts, implementation slices, task-level backlog, local integration, acceptance evidence, and long-running monitoring items.
 
