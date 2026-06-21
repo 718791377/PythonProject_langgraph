@@ -19,6 +19,7 @@ runtime_sources:
   - tools/check_skills_audit_output_retention.py
   - tools/check_skills_audit_final_review_state.py
   - tools/check_skills_audit_final_review_precheck.py
+  - tools/check_skills_audit_human_review_decision_record.py
   - tools/check_skills_audit_cadence_contract.py
   - tools/check_precommit_update_archive.py
 ---
@@ -30,7 +31,7 @@ runtime_sources:
 
 **Architecture：** 仓库内 Python 审计脚本读取用户级 Codex sessions、runtime logs、用户级 plugin 状态、profile registries、manual notes 与仓库 gate 输出；生成本地 JSON 报告、脱敏 Markdown 摘要、preview-only candidate records 与 embedded field contracts。Retention 与 pre-commit gate 防止原始审计产物或不完整报告成为提交证据。
 
-**Tech Stack：** Python audit CLI、JSON report schema、sanitized Markdown renderer、SQLite runtime-log reader、Codex session JSONL reader、profile registry reader、manual-note parser、privacy redactor、output-retention checker、pre-commit update/archive checker、CI manifest、OpenSpec guard。
+**Tech Stack：** Python audit CLI、JSON report schema、sanitized Markdown renderer、SQLite runtime-log reader、Codex session JSONL reader、profile registry reader、manual-note parser、privacy redactor、output-retention checker、最终复核状态/预检查/决策记录 checker、pre-commit update/archive checker、CI manifest、OpenSpec guard。
 
 ---
 
@@ -177,6 +178,7 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 - `tools/check_skills_audit_output_retention.py` 证明原始 audit artifacts 保持 local-only。
 - `tools/check_skills_audit_final_review_state.py` 以只读方式验证最终人工复核、关闭、候选与 apply 门禁状态，不修改 config 或 profiles。
 - `tools/check_skills_audit_final_review_precheck.py` 验证 final-summary noise 与 manual-conflict 项的机器级预检查证据，同时保持 human-review、candidate 与 profile-apply gate 关闭。
+- `tools/check_skills_audit_human_review_decision_record.py` 验证未来可选人工复核决策记录：没有记录时仍是合法 pending 状态；存在记录时必须且只能有一个允许 outcome；review 前出现 candidate artifact 会被阻断；preview-only candidate 决策必须包含 `target_profile`、candidate/rollback/validation 复核说明；没有后续 receipt 前 profile apply 仍未授权；raw path、secret、transcript、log excerpt 不得留存。
 - `tools/check_skills_audit_cadence_contract.py` 验证已锁定的重复次数、weekly 频率、原始结束日期、事件触发 warning-triage 规则和 post-final monitoring-only 边界。
 - `tools/check_precommit_update_archive.py` 证明本地提交前已检查 existing-file update review 与 OpenSpec archive gates。
 - `tools/run_openspec_guard.py` 聚合仓库级 guard 证据。
@@ -942,6 +944,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - `tools/check_skills_audit_output_retention.py` 的输出留存状态，证明 `.tmp/` artifact 与原始 Skills usage JSON 没有被保留进 Git。
 - `tools/check_skills_audit_final_review_state.py` 的最终复核状态，证明当前审计仍处于 `review-pending + continue monitoring`、`summary-reviewed + closed-no-change` 或 `summary-reviewed + preview-only candidate` 中的哪一种，同时在后续明确 `approved-to-apply` receipt 前保持 profile apply 被阻断。
 - `tools/check_skills_audit_final_review_precheck.py` 的最终复核预检查状态，证明 noise/manual-conflict 脚本级预检查有证据支撑，同时不标记 summary reviewed、不生成 candidates、不 apply profiles。
+- `tools/check_skills_audit_human_review_decision_record.py` 的人工复核决策记录状态，证明缺少 decision record 时仍保持 pending，存在 record 时只能有一个允许 outcome，reviewed decision 前 candidate artifacts 被阻断，preview-only candidate 带有 `target_profile` 与复核说明，且 raw paths/secrets/transcripts/log excerpts 未被留存。
 - `tools/check_skills_audit_cadence_contract.py` 的 cadence contract 状态，证明原始观察窗口仍为 2026-05-16 至 2026-06-15，计划内审计运行仍固定为 6 次，weekly evidence 日期保持固定，warning triage 仍为事件触发，post-final 运行仍只属于 monitoring evidence。
 - `tools/check_precommit_update_archive.py` 的提交前更新/归档状态，证明本轮提交前既有文件更新复核与 OpenSpec 归档门禁已经通过。
 - 默认人类可读 stdout 也必须渲染 audit state、audit state blockers、enabled plugins 已匹配/未匹配摘要、current profile 推断、inventory summary、log evidence 可用性、budget warning 最近样本数量、有界脱敏 budget-warning 样本摘录与 7 天计数、warning severity 等级、原因与处理动作、all-descriptions-removed / omitted-additional-skills 压力指标、audit-only safety 的 `audit_only` / `mutates_config` / `edits_plugin_cache` / `hard_load_apply_performed` 标志、runtime path privacy 的 `raw_paths_retained=false`、占位符路径与 `privacy_policy`、cadence review 的 late-run / missed-weekly-runs / weekly-report-review 状态、warning triage 状态、warning triage 窗口策略、warning/skipped-loading 计数、脱敏 skipped-loading 样本摘录、skipped-loading 复核动作、warning triage 后续动作建议与 blockers、explicit skill 使用总数与唯一 skill 数、SKILL.md 读取次数、profile helper 调用次数、`noise_review` 状态、剔除噪声 token 数、`raw_noise_tokens_retained=false`、`max_noise_token_length` 与 `token_privacy_policy`、`manual_evidence` 文件请求/读取数、有效/无效记录数、`raw_notes_retained=false`、`source_paths_retained=false`、`max_path_length`、人工记录隐私策略与来源路径隐私策略、`manual_evidence.conflict_review` 状态、冲突/例外数量、是否需要处置与处置说明、脚本能力边界计数、stable tool-call alias registry 的 policy/evidence level/strong-evidence 禁止标志、alias target 数量和有界 target 摘要、decision recommendation 的 advisory-only / profile-apply 禁止标志、四个决策分桶计数与有界分桶样本、recommendations 条数与前几条建议、字段契约状态/passed/blocker/含 `warning_severity` 的违规分组计数、输出留存门禁状态/checker/violation/local-only 细节和提交前更新/归档门禁状态/checker/提交前标志/既有文件更新复核/OpenSpec 归档复核/变更计数细节，确保非 JSON 运行也能安全复核。
@@ -953,6 +956,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 回归测试还必须覆盖 `module_evidence` recommendation 与阈值不一致的报告，防止旧行把与强/弱证据计数矛盾的按需、dormant 或候选建议带入决策。
 - 回归测试还必须覆盖输出留存门禁：强制加入 Git 的 `.tmp/` 原始报告、位于 `.tmp/` 之外的原始 `skills-usage-*.json` 报告必须被阻断，脱敏 Markdown 摘要必须允许。
 - 回归测试还必须覆盖最终复核状态 checker：允许 pending continuation 在无 candidate/apply 时继续，阻断 `summary-reviewed` 前出现 candidate artifacts，要求 reviewed summary 带显式 outcome，并保持 profile apply 未授权。
+- 回归测试还必须覆盖人工复核决策记录 checker：没有 record 是合法 pending 状态，decision record 前出现 candidate artifacts 被阻断，pending/closed/preview-only 三类 outcome 都被校验，preview-only candidate 必须有 `target_profile` 与复核说明，raw paths/secrets/transcripts/log excerpts 被阻断，多个 active decision records fail closed。
 - 回归测试还必须覆盖 cadence contract checker：锁定的 6 次运行节奏应通过，缺少固定重复次数说明应失败，错误 final end date 应失败，缺少 post-final monitoring-only 证据应失败。
 - 回归测试还必须覆盖提交前更新/归档门禁：报告必须嵌入 `precommit_update_archive` 状态，字段契约必须阻断缺失、未通过或未启用既有文件更新复核 / OpenSpec 归档门禁的报告，脱敏 Markdown 摘要必须渲染该门禁状态。
 - 回归测试还必须覆盖 `output_retention` 字段契约阻断缺失或未通过的留存状态，并要求脱敏 Markdown 摘要渲染输出留存状态与长期证据格式。
@@ -1004,6 +1008,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 记录 warning triage 是事件触发流程，不设固定重复次数。
 - [x] 脚本化最终复核状态 checker 已验证当前 pending/closed/candidate/apply-gate 状态。
 - [x] 脚本化最终复核预检查 checker 已验证 noise/manual-conflict 机器证据，同时保持 final human-review 与 apply gate 未关闭。
+- [x] 脚本化人工复核决策记录 checker 已验证未来可选 decision record，同时保持当前 pending 状态与 apply gate 未关闭。
 - [x] 脚本化 cadence contract checker 已验证重复次数、weekly 节奏、结束日期、warning-triage 频率与 post-final 边界。
 - [ ] 人工复核最终 30 天摘要。
 - [ ] 将最终摘要标记为 `summary-reviewed`，或明确记录 `review-pending + continue monitoring`。
@@ -1070,6 +1075,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 声明 `.tmp/` output 默认不提交，长期证据必须脱敏；
 - 要求 `tools/check_skills_audit_output_retention.py` 阻断 `.tmp/` artifacts 和 raw `skills-usage-*.json` reports 进入 Git，同时允许脱敏 Markdown 摘要；
 - 要求 `tools/check_skills_audit_final_review_state.py` 在未来 continuation、closure 或 candidate decision 前验证最终复核、关闭、candidate 与 apply-gate 状态；
+- 要求 `tools/check_skills_audit_human_review_decision_record.py` 在信任 closure 或 candidate decision 前验证可选人工复核决策记录、精确 outcome 选择、preview-only `target_profile` / 复核说明、apply 授权分离与 raw-retention 阻断；
 - 要求 `tools/check_precommit_update_archive.py` 状态进入 audit JSON 字段契约与 Markdown 摘要，阻断未检查 existing-file update review 或已完成 OpenSpec changes 未归档的报告；
 - 声明 regression-test、OpenSpec guard 与 CI manifest 要求；
 - 声明远端发布仍需 GitLab/GitHub 授权门禁。

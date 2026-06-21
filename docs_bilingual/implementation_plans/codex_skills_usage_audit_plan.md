@@ -19,6 +19,7 @@ runtime_sources:
   - tools/check_skills_audit_output_retention.py
   - tools/check_skills_audit_final_review_state.py
   - tools/check_skills_audit_final_review_precheck.py
+  - tools/check_skills_audit_human_review_decision_record.py
   - tools/check_skills_audit_cadence_contract.py
   - tools/check_precommit_update_archive.py
 ---
@@ -30,7 +31,7 @@ runtime_sources:
 
 **Architecture:** A repo-local Python audit script reads user-level Codex sessions, runtime logs, user-level plugin state, profile registries, manual notes, and repository guard outputs. It emits local JSON reports, sanitized Markdown summaries, preview-only candidate records, and embedded field contracts. Retention and pre-commit gates prevent raw audit artifacts or incomplete reports from becoming commit evidence.
 
-**Tech Stack:** Python audit CLI, JSON report schema, sanitized Markdown renderer, SQLite runtime-log reader, Codex session JSONL reader, profile registry reader, manual-note parser, privacy redactor, output-retention checker, pre-commit update/archive checker, CI manifest, OpenSpec guard.
+**Tech Stack:** Python audit CLI, JSON report schema, sanitized Markdown renderer, SQLite runtime-log reader, Codex session JSONL reader, profile registry reader, manual-note parser, privacy redactor, output-retention checker, final-review state/precheck/decision-record checkers, pre-commit update/archive checker, CI manifest, OpenSpec guard.
 
 ---
 
@@ -177,6 +178,7 @@ Runtime responsibilities:
 - `tools/check_skills_audit_output_retention.py` proves raw audit artifacts stay local-only.
 - `tools/check_skills_audit_final_review_state.py` verifies the final human-review, closure, candidate, and apply-gate state without mutating config or profiles.
 - `tools/check_skills_audit_final_review_precheck.py` verifies machine-level precheck evidence for final-summary noise and manual-conflict items while keeping human-review, candidate, and profile-apply gates closed.
+- `tools/check_skills_audit_human_review_decision_record.py` verifies optional future human-review decision records: no record is a valid pending state, exactly one allowed outcome is required when a record exists, candidate artifacts before review are blocked, preview-only candidate decisions require `target_profile` plus rollback/validation/candidate-review notes, profile apply remains unauthorized unless a later receipt exists, and raw paths/secrets/transcripts/log excerpts are rejected.
 - `tools/check_skills_audit_cadence_contract.py` verifies the locked repeat count, weekly frequency, original end date, event-triggered warning-triage rule, and post-final monitoring-only boundary.
 - `tools/check_precommit_update_archive.py` proves existing-file update review and OpenSpec archive gates were checked before local commits.
 - `tools/run_openspec_guard.py` aggregates repository-level guard evidence.
@@ -596,6 +598,7 @@ Each audit run must report:
 - output retention status from `tools/check_skills_audit_output_retention.py`, proving `.tmp/` artifacts and raw Skills usage JSON are not retained in Git.
 - final review state from `tools/check_skills_audit_final_review_state.py`, proving whether the audit is still `review-pending + continue monitoring`, `summary-reviewed + closed-no-change`, or `summary-reviewed + preview-only candidate`, while keeping profile apply blocked until a later explicit `approved-to-apply` receipt.
 - final review precheck state from `tools/check_skills_audit_final_review_precheck.py`, proving noise/manual-conflict script-level prechecks are evidence-backed without marking the summary reviewed, generating candidates, or applying profiles.
+- human-review decision-record state from `tools/check_skills_audit_human_review_decision_record.py`, proving a missing decision record remains pending, a present record has exactly one allowed outcome, candidate artifacts are blocked before the reviewed decision, preview-only candidate records include `target_profile` and review notes, and raw paths/secrets/transcripts/log excerpts are not retained.
 - cadence contract state from `tools/check_skills_audit_cadence_contract.py`, proving the original observation window remains 2026-05-16 through 2026-06-15, planned audit repeats remain 6 total runs, weekly evidence dates remain fixed, warning triage remains event-triggered, and post-final runs remain monitoring-only.
 - pre-commit update/archive status from `tools/check_precommit_update_archive.py`, proving existing-file update review and OpenSpec archive gates have passed before local commit.
 - default human stdout must also render the audit state, enabled-plugin matched/unmatched summary, current-profile inference, inventory summary, log-evidence availability, recent budget-warning sample count, bounded sanitized budget-warning sample excerpts, and 7-day counts, warning-severity level, reason, and action, all-descriptions-removed / omitted-additional-skills pressure metrics, cadence review late-run / missed-weekly-runs / weekly-report-review state, warning triage status, warning triage window policy, warning/skipped-loading counts, sanitized skipped-loading sample excerpts, skipped-loading review action, warning triage recommended action and blockers, explicit-skill total and unique-skill counts, SKILL.md read count, profile helper call count, script capability boundary counts, decision recommendation, recommendation count plus the first few recommendations, field-contract status and violation groups including `warning_severity`, output-retention gate, and pre-commit update/archive gate, so a non-JSON run is still safe to review.
@@ -606,6 +609,7 @@ Each audit run must report:
 - Regression tests must cover `module_evidence` recommendation-threshold mismatches so stale rows cannot claim an on-demand, dormant, or candidate recommendation that contradicts their strong/weak evidence counts.
 - Regression tests must cover output-retention blocking for forced `.tmp/` raw reports, raw `skills-usage-*.json` reports outside `.tmp/`, and allowed sanitized Markdown summaries.
 - Regression tests must cover the final review state checker: pending continuation is allowed without candidate/apply, candidate artifacts before `summary-reviewed` are blocked, reviewed summaries require an explicit outcome, and profile apply remains unauthorized.
+- Regression tests must cover the human-review decision-record checker: no record is a valid pending state, candidate artifacts before a decision record are blocked, pending/closed/preview-only outcomes are validated, preview-only candidate decisions require `target_profile` plus review notes, raw paths/secrets/transcripts/log excerpts are blocked, and multiple active decision records fail closed.
 - Regression tests must cover the cadence contract checker: locked 6-run cadence passes, missing repeat-count language fails, wrong final end date fails, and missing post-final monitoring-only evidence fails.
 - Regression tests must cover the pre-commit update/archive gate: reports must embed `precommit_update_archive`, field contracts must block missing, non-passing, or disabled existing-file update / OpenSpec archive gate status, and sanitized Markdown summaries must render the gate status.
 - Regression tests must cover `output_retention` field-contract blocking for missing or non-passing retention status, and the sanitized Markdown summary must render the output-retention status and long-term evidence format.
@@ -657,6 +661,7 @@ The original 30-day audit window is closed. These items now distinguish complete
 - [x] Record that warning triage is event-triggered and has no fixed repeat count.
 - [x] Script-backed final review state checker verifies the current pending/closed/candidate/apply-gate state.
 - [x] Script-backed final review precheck checker verifies noise/manual-conflict machine evidence while preserving final human-review and apply gates.
+- [x] Script-backed human-review decision-record checker verifies future optional decision records while preserving the current pending state and apply gate.
 - [x] Script-backed cadence contract checker verifies the repeat count, weekly cadence, end date, warning-triage frequency, and post-final boundary.
 - [ ] Manually review the final 30-day summary.
 - [ ] Mark the final summary as `summary-reviewed`, or explicitly record `review-pending + continue monitoring`.
@@ -723,6 +728,7 @@ This plan is granular enough only when all of the following are true:
 - it states that `.tmp/` output is not committed by default and long-term evidence must be sanitized;
 - it requires `tools/check_skills_audit_output_retention.py` to block `.tmp/` artifacts and raw `skills-usage-*.json` reports from Git while allowing sanitized Markdown summaries;
 - it requires `tools/check_skills_audit_final_review_state.py` to verify final review, closure, candidate, and apply-gate state before future continuation, closure, or candidate decisions;
+- it requires `tools/check_skills_audit_human_review_decision_record.py` to validate optional human-review decision records, exact outcome selection, preview-only target-profile/review-note evidence, apply-authorization separation, and raw-retention blocking before closure or candidate decisions are trusted;
 - it requires `tools/check_skills_audit_cadence_contract.py` to verify the fixed repeat count, weekly cadence, original end date, event-triggered warning triage, and post-final monitoring boundary;
 - it requires `tools/check_precommit_update_archive.py` status to enter the audit JSON field contract and Markdown summary, blocking reports where existing-file update review was not checked or completed OpenSpec changes were not archived before commit;
 - it states regression-test, OpenSpec guard, and CI manifest requirements;

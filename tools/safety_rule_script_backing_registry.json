@@ -197,6 +197,22 @@
       "description": "Verifies machine precheck evidence for final-summary noise and manual-conflict review items while keeping final human review, candidate generation, and profile apply gates closed."
     },
     {
+      "id": "skills-audit-human-review-decision-record",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_human_review_decision_record.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_human_review_decision_record"
+      ],
+      "description": "Verifies optional human-review decision records for the Skills usage audit without automatically marking summary-reviewed, generating candidates, applying profiles, or retaining raw paths, secrets, transcripts, logs, or warning excerpts."
+    },
+    {
       "id": "skills-audit-cadence-contract",
       "owner_level": "project",
       "status": "implemented",

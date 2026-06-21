@@ -124,6 +124,7 @@ def main() -> int:
     skills_audit_output_retention_script = root / "tools" / "check_skills_audit_output_retention.py"
     skills_audit_final_review_state_script = root / "tools" / "check_skills_audit_final_review_state.py"
     skills_audit_final_review_precheck_script = root / "tools" / "check_skills_audit_final_review_precheck.py"
+    skills_audit_human_review_decision_record_script = root / "tools" / "check_skills_audit_human_review_decision_record.py"
     skills_audit_cadence_contract_script = root / "tools" / "check_skills_audit_cadence_contract.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     openspec_comet_superpowers_policy_script = root / "tools" / "check_openspec_comet_superpowers_policy.py"
@@ -215,6 +216,11 @@ def main() -> int:
         raise SystemExit(f"Missing Skills audit final review state check script: {skills_audit_final_review_state_script}")
     if not skills_audit_final_review_precheck_script.exists():
         raise SystemExit(f"Missing Skills audit final review precheck script: {skills_audit_final_review_precheck_script}")
+    if not skills_audit_human_review_decision_record_script.exists():
+        raise SystemExit(
+            "Missing Skills audit human review decision-record check script: "
+            f"{skills_audit_human_review_decision_record_script}"
+        )
     if not skills_audit_cadence_contract_script.exists():
         raise SystemExit(f"Missing Skills audit cadence contract check script: {skills_audit_cadence_contract_script}")
     if not openspec_code_archive_evidence_script.exists():
@@ -456,6 +462,17 @@ def main() -> int:
                 "check_skills_audit_final_review_precheck",
                 [str(python_exe), str(skills_audit_final_review_precheck_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Skills audit final review precheck verification.",
+            ),
+            (
+                "check_skills_audit_human_review_decision_record",
+                [
+                    str(python_exe),
+                    str(skills_audit_human_review_decision_record_script),
+                    "--root",
+                    str(root),
+                    "--json",
+                ],
+                "OpenSpec guard failed during Skills audit human review decision-record verification.",
             ),
             (
                 "check_skills_audit_cadence_contract",
@@ -912,6 +929,11 @@ def main() -> int:
         [str(python_exe), str(skills_audit_final_review_precheck_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Skills audit final review precheck verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_human_review_decision_record_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit human review decision-record verification.",
     )
     run_checked(
         [str(python_exe), str(skills_audit_cadence_contract_script), "--root", str(root)],
