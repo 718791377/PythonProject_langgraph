@@ -108,6 +108,7 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
         self.assertTrue((home / "bin" / "mcp2cli.cmd").exists())
         self.assertTrue((home / "bin" / "skills2cli.cmd").exists())
         self.assertTrue((home / "tools" / "skills2cli" / "codex_skill_frontmatter.py").exists())
+        self.assertTrue((home / "tools" / "skills2cli" / "skills2cli_profile_registry_contract.py").exists())
         self.assertTrue((home / "tools" / "skills2cli" / "references" / "profiles.json").exists())
         skill_path = home / "skills" / "skills2cli" / "SKILL.md"
         self.assertTrue(skill_path.exists())
@@ -138,9 +139,27 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
         self.assertTrue(check_payload["ok"])
         self.assertTrue(check_payload["wrapper_presence"]["mcp2cli_cmd"])
         self.assertTrue(check_payload["wrapper_presence"]["skills2cli_cmd"])
+        self.assertTrue(check_payload["artifact_presence"]["skills2cli_profile_registry_contract"])
         self.assertEqual(check_payload["receipt_count"], 2)
         self.assertIn("skills2cli_profile_suggest", check_payload["smoke_results"])
         self.assertEqual(check_payload["smoke_results"]["skills2cli_profile_suggest"]["returncode"], 0)
+
+        (home / "tools" / "skills2cli" / "skills2cli_profile_registry_contract.py").unlink()
+        missing_code, missing_payload = self.run_json(
+            INSTALL,
+            "check",
+            "--require-installed",
+            "--smoke",
+            "--codex-home",
+            str(home),
+            check=False,
+            env=self.env_with_fake_mcp2cli(home),
+        )
+        self.assertNotEqual(missing_code, 0)
+        self.assertFalse(missing_payload["ok"])
+        self.assertFalse(missing_payload["artifact_presence"]["skills2cli_profile_registry_contract"])
+        self.assertIn("missing_artifact:skills2cli_profile_registry_contract", missing_payload["errors"])
+        self.assertIn("skills2cli_profile_suggest_smoke_failed", missing_payload["errors"])
 
     def test_posix_smoke_uses_safe_execution_for_generated_windows_cmd_wrappers(self) -> None:
         home = self.make_home("posix-smoke-helper")

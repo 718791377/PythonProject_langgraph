@@ -62,6 +62,12 @@ Python runtime 与 checker surface 必须通过一个 shared contract module 共
 - **当** profile suggestion scoring 或 checker smoke cases 发生变化
 - **那么** 稳定 schema/path/accessor constants 可以复用，但 runtime scoring 与 checker expected examples 仍然可以被分别审查。
 
+#### 场景：Installed skills2cli 携带 shared contract module
+
+- **给定** user-level `skills2cli` facade 被安装或模拟安装到 `CODEX_HOME/tools/skills2cli`
+- **当** 生成的 `skills2cli` wrapper 执行 `profile suggest --query ... --json`
+- **那么** installed helper directory 必须包含 `skills2cli_profile_registry_contract.py`，install metadata 必须把它列为 support file，并且 install checks 必须报告该 support file presence，使 smoke 在依赖缺失时 fail closed。
+
 ### 需求：Profile suggestion matrix 覆盖普通 profiles 与显式 full 排障
 
 profile routing checker 必须运行 black-box `skills2cli.py profile suggest` 矩阵，覆盖每个普通 profile family 和显式 all-plugin troubleshooting requests。矩阵行必须保持 preview-only safety flags，且普通行不得把 `full` 选为 top recommendation。

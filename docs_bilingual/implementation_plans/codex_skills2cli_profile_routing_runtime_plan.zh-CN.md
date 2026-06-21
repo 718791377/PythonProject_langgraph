@@ -33,7 +33,7 @@ created_at: 2026-06-21
 - checker 现在除 registry/schema/full 覆盖检查外，还会运行 profile-suggest rerank contract smoke。
 - user-level 安装副本仍可能报告 drift；除非另有授权，repo source 仍是 source of truth。
 - 收口包 `close-skills2cli-profile-routing-gaps-20260622` 补上 `scene_description` 契约字段，同时保留 `scenario_description` 兼容；`profile suggest` 现在输出 profile-level `plugin_hints` 与 `skill_doc_hints`，并记录 archive management outcome evidence。
-- 契约硬化包 `harden-skills2cli-profile-routing-contract-20260622` 集中 shared registry 常量与 accessor，扩展覆盖全部普通 profile family 的 profile-suggest 矩阵，并保持 runtime scoring 与 checker smoke expectation 相互独立。
+- 契约硬化包 `harden-skills2cli-profile-routing-contract-20260622` 集中 shared registry 常量与 accessor，扩展覆盖全部普通 profile family 的 profile-suggest 矩阵，保持 runtime scoring 与 checker smoke expectation 相互独立，并确保 user-level `skills2cli` 安装产物携带真实 `profile suggest` smoke 所需的 shared contract module。
 - 远程发布未授权。
 
 <!-- CURRENT_STATUS_END -->
@@ -132,7 +132,7 @@ Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-m
 - 普通 profile suggestion 返回 `full` 作为 top-1；
 - user-level installed plugin-modules registry 与 repo source 存在差异但未报告 drift；
 - profile suggestion 输出缺少解释、soft/hard boundary 或 excluded-candidate evidence；
-- installed `skills2cli` wrapper 只通过 `--help`，但无法执行真实 `profile suggest` smoke；
+- installed `skills2cli` wrapper 只通过 `--help`，但无法执行真实 `profile suggest` smoke，包括 installed helper directory 缺少 shared profile-routing contract module 的情况；
 - 输出将 `mutates_config`、`edits_plugin_cache` 或 `profile_apply_performed` 设为 true；
 - 输出把 skill/profile routing 当成 native expert 或 native subagent evidence；
 - 当文案涉及 direct MCP handoff 时绕过 paired `mcp2cli` risk-profile / receipt gate。
@@ -179,6 +179,7 @@ Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-m
 - 普通用户任务不会让 `full` 成为 top-1。
 - Profile suggestion 继续保持 advisory，绝不 apply config。
 - `skills2cli` 聚焦测试、`mcp2cli` risk/receipt 测试、agent/skill/profile 边界测试，以及严格 user-level install/smoke 检查，都属于最终 runtime 验证集合。
+- user-level `skills2cli` installation 必须复制 facade 所需的全部 Python module，包括 `skills2cli_profile_registry_contract.py`；install metadata 与 checker output 必须暴露该 support file，使 simulated/live `profile suggest` smoke 在依赖缺失时 fail closed。
 - shared registry contract module 是 canonical profile IDs、required routing fields、registry/installed-copy paths、`scene_description` compatibility accessor、profile/task hint accessor、plugin coverage collector 与显式 `full` troubleshooting trigger terms 的唯一 Python 共享契约来源。
 - checker-backed routing matrix 必须证明每个普通 top-level profile 的正常任务 query 都不会选择 `full`，同时显式英文与中文 all-plugin troubleshooting query 可以选择 `full`；每个 matrix row 都必须保持 `mutates_config=false`、`edits_plugin_cache=false`、`profile_apply_performed=false` 与 `approval_required_for_apply=true`。
 - `check_skills2cli_profile_routing.py --json` 直接输出 UTF-8 JSON bytes，确保中文 matrix rows 在 Windows 上仍然可解码；checker smoke cases 只做 black-box boundary tests，不复制 runtime scoring logic。
@@ -195,6 +196,6 @@ Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-m
 - Stage A 验证证据：`openspec validate improve-skills2cli-profile-routing --strict`、`tools/run_openspec_guard.py --root . --tool codex --json`、`tools/check_precommit_update_archive.py --root . --json` 与 `tools/check_worktree_task_receipt.py --root . --json` 已在 plan-freeze commit 前通过。
 
 - 收口证据：`skills2cli`、`check_skills2cli_profile_routing` 与 `check_plugin_modules_skill` 的聚焦单测覆盖 `scene_description` 兼容和 profile-level hints；本地 main 集成前重新运行 full gates。
-- 契约硬化包 `harden-skills2cli-profile-routing-contract-20260622` 在 `tools/skills2cli_profile_registry_contract.py` 中集中 Python 侧 registry path、canonical profile IDs、required fields、scene/legacy-description accessor、hint accessor、plugin coverage collector 与显式 `full` trigger aliases；runtime scoring 与 checker black-box smokes 保持分离。
+- 契约硬化包 `harden-skills2cli-profile-routing-contract-20260622` 在 `tools/skills2cli_profile_registry_contract.py` 中集中 Python 侧 registry path、canonical profile IDs、required fields、scene/legacy-description accessor、hint accessor、plugin coverage collector 与显式 `full` trigger aliases；runtime scoring 与 checker black-box smokes 保持分离，并且 user-level installer 现在会把该 contract module 复制到 installed `skills2cli.py` 旁边。
 - profile-suggest checker 现在记录矩阵，覆盖普通 `core-dev`、browser automation、`web-saas`、`customer-comms`、`company-ops`、`market-research`、`creative-content`、`pyside6-gui`，以及显式英文/中文 `full` troubleshooting query，同时保持 preview-only safety flags。
 <!-- EVIDENCE_INDEX_END -->

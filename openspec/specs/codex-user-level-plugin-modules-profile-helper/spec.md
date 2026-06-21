@@ -139,6 +139,13 @@ The Python runtime and checker surfaces SHALL share stable registry paths, canon
 - **WHEN** profile suggestion scoring or checker smoke cases are changed
 - **THEN** stable schema/path/accessor constants may be reused, but runtime scoring and checker expected examples remain separately reviewable.
 
+
+#### Scenario: Installed skills2cli carries the shared contract module
+
+- **GIVEN** the user-level `skills2cli` facade is installed or simulated under `CODEX_HOME/tools/skills2cli`
+- **WHEN** the generated `skills2cli` wrapper runs `profile suggest --query ... --json`
+- **THEN** the installed helper directory SHALL contain `skills2cli_profile_registry_contract.py`, install metadata SHALL list it as a support file, and install checks SHALL report the support file presence so the smoke fails closed if it is missing.
+
 ### Requirement: Profile suggestion matrix covers ordinary profiles and explicit full troubleshooting
 
 The profile routing checker SHALL run a black-box `skills2cli.py profile suggest` matrix that covers every ordinary profile family and explicit all-plugin troubleshooting requests. Matrix rows SHALL preserve preview-only safety flags and ordinary rows SHALL NOT select `full` as top recommendation.
@@ -156,7 +163,7 @@ Profile-routing checkers that emit JSON SHALL write UTF-8 bytes directly so Chin
 
 #### Scenario: Chinese full troubleshooting matrix row is JSON-decodable
 
-- **GIVEN** the profile suggestion matrix includes the Chinese query `??????`
+- **GIVEN** the profile suggestion matrix includes the Chinese query represented by codepoints `U+6392 U+969C U+6240 U+6709 U+63D2 U+4EF6`
 - **WHEN** `check_skills2cli_profile_routing.py --json` is executed on Windows
 - **THEN** the JSON stream is UTF-8 decodable by downstream tests and includes the Chinese matrix row without mojibake or replacement characters.
 

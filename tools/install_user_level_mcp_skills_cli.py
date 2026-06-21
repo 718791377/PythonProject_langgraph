@@ -406,6 +406,8 @@ def copy_facades(paths: dict[str, Path], *, upstream_ref: str | None) -> None:
     shutil.copy2(source, target)
     shared_frontmatter = repo_root() / "tools" / "codex_skill_frontmatter.py"
     shutil.copy2(shared_frontmatter, paths["skills2cli_tool_dir"] / "codex_skill_frontmatter.py")
+    shared_profile_contract = repo_root() / "tools" / "skills2cli_profile_registry_contract.py"
+    shutil.copy2(shared_profile_contract, paths["skills2cli_tool_dir"] / "skills2cli_profile_registry_contract.py")
     profile_registry = repo_root() / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
     installed_profile_registry = paths["skills2cli_tool_dir"] / "references" / "profiles.json"
     installed_profile_registry.parent.mkdir(parents=True, exist_ok=True)
@@ -421,6 +423,7 @@ def copy_facades(paths: dict[str, Path], *, upstream_ref: str | None) -> None:
                 "source_hash": h(source.read_text(encoding="utf-8", errors="replace")),
                 "support_files": {
                     "codex_skill_frontmatter.py": h(shared_frontmatter.read_text(encoding="utf-8", errors="replace")),
+                    "skills2cli_profile_registry_contract.py": h(shared_profile_contract.read_text(encoding="utf-8", errors="replace")),
                     "references/profiles.json": h(profile_registry.read_text(encoding="utf-8", errors="replace")),
                 },
                 "upstream_pattern_source": f"{UPSTREAM_URL}/tree/main/skills/mcp2cli",
@@ -1051,6 +1054,9 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
     skills_frontmatter_module = paths["skills2cli_tool_dir"] / "codex_skill_frontmatter.py"
     if not skills_frontmatter_module.exists():
         (errors if args.require_installed else warnings).append("missing_artifact:skills2cli_codex_skill_frontmatter")
+    skills_profile_contract_module = paths["skills2cli_tool_dir"] / "skills2cli_profile_registry_contract.py"
+    if not skills_profile_contract_module.exists():
+        (errors if args.require_installed else warnings).append("missing_artifact:skills2cli_profile_registry_contract")
     receipts = load_receipts(paths["receipt_dir"])
     update_receipts = [item for item in receipts if is_update_receipt(item)]
     smoke_receipts = [item for item in receipts if is_smoke_receipt(item)]
@@ -1109,6 +1115,7 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
         artifact_presence={
             **{key: paths[key].exists() for key in ("mcp2cli_tool_dir", "skills2cli_tool_dir", "skills2cli_skill_dir")},
             "skills2cli_codex_skill_frontmatter": skills_frontmatter_module.exists(),
+            "skills2cli_profile_registry_contract": skills_profile_contract_module.exists(),
         },
         receipt_count=len(update_receipts),
         total_receipt_count=len(receipts),
