@@ -26,10 +26,11 @@ created_at: 2026-06-21
 <!-- CURRENT_STATUS_START -->
 
 - Stage A plan-freeze package is integrated into local `main` at `3d08d6e`.
-- Phase B runtime implementation is complete and committed on `implement-skills2cli-profile-routing-runtime-20260621`.
-- Implemented runtime surfaces include scenario profiles, task modules, advisory `skills2cli profile suggest`, plugin-modules soft-load scripts, checker/test coverage, installed-wrapper profile-suggest smoke, and OpenSpec guard registration.
-- Completed verification: representative routing smokes, focused tests, full Python unittest manifest, OpenSpec guard, local CI, and local MR review.
-- Remaining closeout is local-main-first helper integration, post-merge validation, completed-claim/rollback evidence, and safe feature worktree cleanup; remote publication remains unauthorized.
+- Phase B runtime implementation is integrated into local `main` at `80ec3dd`.
+- The OpenSpec change is archived at `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`.
+- Post-Phase-B follow-up closes the previous audit/warning rerank gap: `profile suggest` reads committed sanitized skills-audit summaries, reports evidence sources, applies evidence-driven warning-pressure penalty to broad `full` recommendations, and remains preview-only with `profile_apply_performed=false`.
+- The checker now runs a profile-suggest rerank contract smoke in addition to registry/schema/full-coverage checks.
+- User-level installed copies may still report drift until a separate install/update step is authorized; repo source remains the source of truth.
 - Remote publication is not authorized.
 
 <!-- CURRENT_STATUS_END -->

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import filecmp
+import subprocess
+import sys
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,6 +13,8 @@ from typing import Any
 CHECK_NAME = "skills2cli_profile_routing"
 REGISTRY_RELATIVE = Path("tools/skill_sources/plugin-modules/references/profiles.json")
 INSTALL_RELATIVE = Path("skills/plugin-modules/references/profiles.json")
+SKILLS2CLI_RELATIVE = Path("tools/skills2cli.py")
+AUDIT_MEMORY_RELATIVE = Path("docs_bilingual/memory")
 REQUIRED_PROFILES = {"core-dev", "web-saas", "company-ops", "market-research", "customer-comms", "creative-content", "pyside6-gui", "full"}
 REQUIRED_TOP_LEVEL_FIELDS = ("scenario_description", "route_when", "negative_examples", "load_policy", "plugin_hints", "skill_doc_hints", "ranking_signals")
 REQUIRED_TASK_FIELDS = ("scenario_description", "route_when", "negative_examples", "load_policy", "plugin_hints", "skill_doc_hints", "routing_explanation", "ranking_signals")
@@ -136,6 +140,81 @@ def validate_registry(root: Path) -> dict[str, Any]:
     if not any(term in full_terms for term in TROUBLESHOOTING_TERMS):
         errors.append("Profile `full` must be described as troubleshooting-only broad discovery.")
 
+    profile_suggest_contract: dict[str, Any] = {
+        "checked": False,
+        "ok": False,
+        "sanitized_audit_summaries_available": False,
+        "audit_strong_evidence_available": False,
+        "warning_pressure_available": False,
+        "warning_pressure_penalty_applied_to_full": False,
+        "error": None,
+    }
+    skills2cli = root / SKILLS2CLI_RELATIVE
+    audit_summary_available = bool(list((root / AUDIT_MEMORY_RELATIVE).glob("skills_usage_audit_30d_summary_*.md"))) if (root / AUDIT_MEMORY_RELATIVE).exists() else False
+    profile_suggest_contract["sanitized_audit_summaries_available"] = audit_summary_available
+    if skills2cli.exists() and registry_path.exists():
+        try:
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(skills2cli),
+                    "profile",
+                    "suggest",
+                    "--query",
+                    "Fix GitLab CI and perform security review",
+                    "--root",
+                    str(root),
+                    "--json",
+                ],
+                cwd=root,
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=30,
+            )
+            profile_suggest_contract["checked"] = True
+            if completed.returncode != 0:
+                profile_suggest_contract["error"] = f"profile_suggest_failed:{completed.returncode}"
+                errors.append("skills2cli profile suggest smoke failed while checking audit/warning rerank contract.")
+            else:
+                suggestion = json.loads(completed.stdout)
+                ranking_inputs = suggestion.get("ranking_inputs") if isinstance(suggestion, dict) else {}
+                selected = suggestion.get("selected_profile") if isinstance(suggestion, dict) else {}
+                profile_suggest_contract["audit_strong_evidence_available"] = bool(
+                    ranking_inputs.get("audit_strong_evidence_available")
+                )
+                profile_suggest_contract["warning_pressure_available"] = bool(ranking_inputs.get("warning_pressure_available"))
+                profile_suggest_contract["warning_pressure_penalty_applied_to_full"] = bool(
+                    ranking_inputs.get("warning_pressure_penalty_applied_to_full")
+                )
+                base_contract_ok = bool(
+                    "audit_strong_evidence_available" in ranking_inputs
+                    and "warning_pressure" in ranking_inputs
+                    and selected.get("target_profile") != "full"
+                    and suggestion.get("mutates_config") is False
+                    and suggestion.get("profile_apply_performed") is False
+                )
+                evidence_contract_ok = bool(
+                    not audit_summary_available
+                    or (
+                        ranking_inputs.get("audit_evidence_sources")
+                        and ranking_inputs.get("warning_pressure_available")
+                        and ranking_inputs.get("warning_pressure_penalty_applied_to_full")
+                    )
+                )
+                profile_suggest_contract["ok"] = base_contract_ok and evidence_contract_ok
+                if not profile_suggest_contract["ok"]:
+                    errors.append("skills2cli profile suggest must report audit/warning rerank contract, non-full ordinary top-1, and preview-only safety.")
+                if profile_suggest_contract["audit_strong_evidence_available"] is False:
+                    warnings.append("No strong audit evidence was available in sanitized summaries; rerank still reports source availability and policy.")
+        except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
+            profile_suggest_contract["checked"] = True
+            profile_suggest_contract["error"] = f"{exc.__class__.__name__}"
+            errors.append("skills2cli profile suggest audit/warning rerank contract check could not run.")
+    else:
+        warnings.append("skills2cli.py or profiles.json missing; skipped profile suggest rerank contract smoke.")
+
     installed_path = Path.home() / ".codex" / INSTALL_RELATIVE
     drift_reported = False
     if installed_path.exists() and registry_path.exists():
@@ -154,6 +233,7 @@ def validate_registry(root: Path) -> dict[str, Any]:
         "registry": str(registry_path),
         "installed_copy": str(installed_path),
         "installed_copy_drift_reported": drift_reported,
+        "profile_suggest_rerank_contract": profile_suggest_contract,
         "errors": errors,
         "warnings": warnings,
         "info": info,

@@ -26,11 +26,11 @@ created_at: 2026-06-21
 <!-- CURRENT_STATUS_START -->
 
 - Stage A 方案冻结包已在本地 `main` 集成，提交为 `3d08d6e`。
-- Phase B runtime 实现已完成，并已提交到 `implement-skills2cli-profile-routing-runtime-20260621`。
-- 已实现的 runtime 表面包括 scenario profiles、task modules、advisory `skills2cli profile suggest`、plugin-modules soft-load scripts、checker/test 覆盖、installed-wrapper profile-suggest smoke 以及 OpenSpec guard 注册。
-- 已完成的验证包括：代表性 routing smoke、聚焦测试、完整 Python unittest manifest、OpenSpec guard、local CI 和 local MR review。
-- OpenSpec change 已移入 archive 路径：`openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`。
-- 剩余收口动作为 local-main-first helper 集成、合并后验证、completed claim/rollback 证据以及安全清理 feature worktree；远程发布仍未授权。
+- Phase B runtime 实现已在本地 `main` 集成，提交为 `80ec3dd`。
+- OpenSpec change 已归档到 `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`。
+- Phase B 后续收口已补齐原 audit/warning rerank 缺口：`profile suggest` 会读取已提交的脱敏 skills-audit 摘要、报告证据来源、对 broad `full` recommendation 施加由 warning pressure 证据驱动的惩罚，并继续保持 preview-only 与 `profile_apply_performed=false`。
+- checker 现在除 registry/schema/full 覆盖检查外，还会运行 profile-suggest rerank contract smoke。
+- user-level 安装副本仍可能报告 drift；除非另有授权，repo source 仍是 source of truth。
 - 远程发布未授权。
 
 <!-- CURRENT_STATUS_END -->

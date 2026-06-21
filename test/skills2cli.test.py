@@ -193,6 +193,107 @@ class Skills2CliTest(unittest.TestCase):
         self.assertIn("messaging", {item["task_module"] for item in payload["task_modules"]})
         self.assertFalse(payload["routing_evidence"]["native_subagent_evidence"])
 
+    def test_profile_suggest_consumes_sanitized_audit_summary_for_rerank(self) -> None:
+        repo, codex_home = self.make_workspace("audit-rerank")
+        registry_source = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        registry_target = repo / "tools" / "skill_sources" / "plugin-modules" / "references"
+        registry_target.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(registry_source, registry_target / "profiles.json")
+        memory = repo / "docs_bilingual" / "memory"
+        memory.mkdir(parents=True, exist_ok=True)
+        (memory / "skills_usage_audit_30d_summary_2099-01-01-0000.md").write_text(
+            "\n".join(
+                [
+                    "- Profile apply allowed: `False`",
+                    "- Summary review state: `human_review_pending`",
+                    "- 30-day budget warning count: `5`",
+                    "- All-descriptions-removed count: `5`",
+                    "- Maximum omitted additional skills: `16`",
+                    "- Highest severity: `high`",
+                    "- Severity recommended action: `avoid_full_profile_and_prefer_smaller_default_or_task_profile_during_audit`",
+                    "",
+                    "| profile | score | evidence reason | unused | review | bucket |",
+                    "| --- | ---: | --- | ---: | --- | --- |",
+                    "| web-saas | 9000 | mapped_tool_calls_present_manual_review_required | None | manual_review_required | candidate_for_project_or_default_profile_review |",
+                    "| core-dev | 100 | no_mapped_tool_call_medium_evidence | None | manual_review_required | candidate_for_project_or_default_profile_review |",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "Vercel deployment and Supabase backend",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+        )
+
+        self.assertTrue(payload["ranking_inputs"]["audit_strong_evidence_available"])
+        self.assertFalse(payload["ranking_inputs"]["audit_profile_apply_allowed"])
+        selected_audit = payload["selected_profile"]["audit_evidence"]
+        self.assertTrue(selected_audit["available"])
+        self.assertGreater(selected_audit["boost"], 0)
+        self.assertEqual(selected_audit["evidence_level"], "strong")
+        self.assertIn("skills_usage_audit_30d_summary_2099-01-01-0000.md", selected_audit["source_file"])
+        self.assertFalse(payload["mutates_config"])
+        self.assertFalse(payload["profile_apply_performed"])
+
+    def test_profile_suggest_warning_pressure_penalty_is_evidence_driven(self) -> None:
+        repo, codex_home = self.make_workspace("warning-pressure-rerank")
+        registry_source = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        registry_target = repo / "tools" / "skill_sources" / "plugin-modules" / "references"
+        registry_target.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(registry_source, registry_target / "profiles.json")
+        memory = repo / "docs_bilingual" / "memory"
+        memory.mkdir(parents=True, exist_ok=True)
+        (memory / "skills_usage_audit_30d_summary_2099-01-01-0000.md").write_text(
+            "\n".join(
+                [
+                    "- Profile apply allowed: `False`",
+                    "- Summary review state: `human_review_pending`",
+                    "- 30-day budget warning count: `7`",
+                    "- All-descriptions-removed count: `7`",
+                    "- Maximum omitted additional skills: `62`",
+                    "- Highest severity: `high`",
+                    "- Severity recommended action: `avoid_full_profile_and_prefer_smaller_default_or_task_profile_during_audit`",
+                    "",
+                    "| profile | score | evidence reason | unused | review | bucket |",
+                    "| --- | ---: | --- | ---: | --- | --- |",
+                    "| full | 9000 | mapped_tool_calls_present_manual_review_required | None | manual_review_required | candidate_for_project_or_default_profile_review |",
+                    "| core-dev | 100 | mapped_tool_calls_present_manual_review_required | None | manual_review_required | candidate_for_project_or_default_profile_review |",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "Browser Cloudflare Canva GitHub Gmail Google Drive HubSpot Slack Stripe Supabase Vercel Figma Expo connector check",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+        )
+
+        self.assertNotEqual(payload["selected_profile"]["target_profile"], "full")
+        self.assertTrue(payload["ranking_inputs"]["warning_pressure_available"])
+        self.assertTrue(payload["ranking_inputs"]["warning_pressure_penalty_applied_to_full"])
+        self.assertEqual(payload["ranking_inputs"]["warning_pressure"]["budget_warning_count"], 7)
+        self.assertEqual(payload["ranking_inputs"]["warning_pressure"]["all_descriptions_removed_count"], 7)
+        self.assertEqual(payload["ranking_inputs"]["warning_pressure"]["max_omitted_additional_skills"], 62)
+        self.assertLess(payload["ranking_inputs"]["warning_pressure"]["penalty_value"], 0)
+        self.assertFalse(payload["profile_apply_performed"])
+
     def test_warning_audit_summarizes_and_redacts_warning_text(self) -> None:
         repo, codex_home = self.make_workspace("warnings")
         self.write_skill(codex_home / "skills", "valid-skill", name="valid-skill", description="Valid current skill.")

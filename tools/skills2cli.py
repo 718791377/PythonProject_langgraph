@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import sqlite3
@@ -384,6 +385,11 @@ def command_show(args: argparse.Namespace) -> int:
 
 
 PROFILE_REGISTRY_RELATIVE = Path("tools/skill_sources/plugin-modules/references/profiles.json")
+AUDIT_MEMORY_RELATIVE = Path("docs_bilingual/memory")
+AUDIT_SUMMARY_PATTERNS = (
+    "skills_usage_audit_30d_summary_*.md",
+    "skills_usage_audit_weekly_summary_*.md",
+)
 QUERY_SYNONYMS = {
     "\u5b89\u5168": "security secure threat review",
     "\u5ba1\u67e5": "review audit",
@@ -405,9 +411,9 @@ EXPLICIT_FULL_TERMS = (
     "all-plugin",
     "troubleshoot all plugins",
     "diagnose missing plugin capability",
-    "????",
-    "????",
-    "????",
+    "\u6392\u969c\u6240\u6709\u63d2\u4ef6",
+    "\u5168\u90e8\u63d2\u4ef6",
+    "\u5b8c\u6574 profile",
 )
 
 
@@ -429,6 +435,174 @@ def load_profile_registry(repo_root: Path, codex_home: Path | None = None) -> di
         except (OSError, json.JSONDecodeError):
             continue
     return {"modules": {}, "scenario_profiles": {}, "known_plugins": [], "_registry_source": None}
+
+
+def repo_relative_path(repo_root: Path, path: Path) -> str:
+    try:
+        return path.resolve().relative_to(repo_root.resolve()).as_posix()
+    except ValueError:
+        return sanitize_text(str(path), limit=220)
+
+
+def parse_backtick_field(text: str, label: str) -> str | None:
+    pattern = re.compile(rf"(?im)^\s*-\s*{re.escape(label)}\s*:\s*`([^`]*)`")
+    match = pattern.search(text)
+    if match:
+        return sanitize_text(match.group(1), limit=120)
+    return None
+
+
+def parse_int_field(text: str, label: str) -> int:
+    raw = parse_backtick_field(text, label)
+    if raw is None:
+        return 0
+    match = re.search(r"-?\d+", raw)
+    return int(match.group(0)) if match else 0
+
+
+def parse_bool_field(text: str, label: str) -> bool | None:
+    raw = parse_backtick_field(text, label)
+    if raw is None:
+        return None
+    if raw.strip().lower() in {"true", "yes", "1", "allowed"}:
+        return True
+    if raw.strip().lower() in {"false", "no", "0", "not_authorized", "not-allowed"}:
+        return False
+    return None
+
+
+def newest_audit_summary_files(repo_root: Path, *, limit: int = 2) -> list[Path]:
+    memory_dir = repo_root / AUDIT_MEMORY_RELATIVE
+    if not memory_dir.exists():
+        return []
+    files: list[Path] = []
+    for pattern in AUDIT_SUMMARY_PATTERNS:
+        matches = sorted(
+            (path for path in memory_dir.glob(pattern) if path.is_file() and ".zh-CN." not in path.name),
+            key=lambda path: path.name,
+            reverse=True,
+        )
+        files.extend(matches[:1])
+    deduped: list[Path] = []
+    seen: set[Path] = set()
+    for path in files:
+        if path in seen:
+            continue
+        deduped.append(path)
+        seen.add(path)
+    return deduped[:limit]
+
+
+def parse_profile_audit_table(text: str, known_profiles: set[str]) -> dict[str, dict[str, Any]]:
+    entries: dict[str, dict[str, Any]] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|") or stripped.startswith("| ---"):
+            continue
+        cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        profile = cells[0]
+        if profile not in known_profiles:
+            continue
+        score_match = re.search(r"-?\d+", cells[1]) if len(cells) > 1 else None
+        usage_score = int(score_match.group(0)) if score_match else 0
+        evidence_reason = sanitize_text(cells[2] if len(cells) > 2 else "", limit=160)
+        review_state = sanitize_text(cells[4] if len(cells) > 4 else "", limit=120)
+        decision_bucket = sanitize_text(cells[5] if len(cells) > 5 else "", limit=160)
+        reason_lower = evidence_reason.lower()
+        if "mapped_tool_calls_present" in reason_lower or "strong" in reason_lower:
+            level = "strong"
+        elif usage_score > 0 or "medium" in reason_lower:
+            level = "medium"
+        else:
+            level = "weak"
+        entries[profile] = {
+            "usage_score": usage_score,
+            "evidence_reason": evidence_reason,
+            "evidence_level": level,
+            "review_state": review_state,
+            "decision_bucket": decision_bucket,
+        }
+    return entries
+
+
+def load_audit_ranking_context(repo_root: Path, profiles: Iterable[str]) -> dict[str, Any]:
+    """Load committed, sanitized skills-audit summaries as advisory rerank input.
+
+    This intentionally reads only repository-retained Markdown summaries.  Raw
+    transcripts, local JSON, runtime logs, user config, and plugin cache files
+    are not touched by profile suggestion.
+    """
+    known_profiles = {str(profile) for profile in profiles if str(profile).strip()}
+    source_files = newest_audit_summary_files(repo_root)
+    profile_entries: dict[str, dict[str, Any]] = {}
+    warning_pressure: dict[str, Any] = {
+        "available": False,
+        "severity": "unknown",
+        "budget_warning_count": 0,
+        "all_descriptions_removed_count": 0,
+        "max_omitted_additional_skills": 0,
+        "recommended_action": "",
+        "penalty_profiles": [],
+        "penalty_value": 0,
+    }
+    summary_review_state = "unknown"
+    profile_apply_allowed = False
+    for path in source_files:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for profile, entry in parse_profile_audit_table(text, known_profiles).items():
+            existing = profile_entries.get(profile)
+            if existing is None or int(entry["usage_score"]) > int(existing.get("usage_score") or 0):
+                entry["source_file"] = repo_relative_path(repo_root, path)
+                profile_entries[profile] = entry
+        severity = parse_backtick_field(text, "Highest severity")
+        if severity:
+            warning_pressure["available"] = True
+            warning_pressure["severity"] = severity
+            warning_pressure["budget_warning_count"] = max(
+                int(warning_pressure["budget_warning_count"]),
+                parse_int_field(text, "Budget warning count"),
+                parse_int_field(text, "Last seven-day budget warning count"),
+                parse_int_field(text, "30-day budget warning count"),
+                parse_int_field(text, "Seven-day budget warning count inside the 30-day report"),
+            )
+            warning_pressure["all_descriptions_removed_count"] = max(
+                int(warning_pressure["all_descriptions_removed_count"]),
+                parse_int_field(text, "All-descriptions-removed count"),
+            )
+            warning_pressure["max_omitted_additional_skills"] = max(
+                int(warning_pressure["max_omitted_additional_skills"]),
+                parse_int_field(text, "Maximum omitted additional skills"),
+            )
+            warning_pressure["recommended_action"] = parse_backtick_field(text, "Severity recommended action") or ""
+        summary_review_state = parse_backtick_field(text, "Summary review state") or summary_review_state
+        allowed = parse_bool_field(text, "Profile apply allowed")
+        if allowed is not None:
+            profile_apply_allowed = bool(allowed)
+    pressure_high = str(warning_pressure.get("severity", "")).lower() in {"medium", "high", "critical"} or int(
+        warning_pressure.get("budget_warning_count") or 0
+    ) >= 3
+    if pressure_high:
+        warning_pressure["penalty_profiles"] = ["full"]
+        warning_pressure["penalty_value"] = -40
+    return {
+        "available": bool(source_files),
+        "source_files": [repo_relative_path(repo_root, path) for path in source_files],
+        "profile_entries": profile_entries,
+        "strong_evidence_available": any(entry.get("evidence_level") == "strong" for entry in profile_entries.values()),
+        "summary_review_state": summary_review_state,
+        "profile_apply_allowed": profile_apply_allowed,
+        "warning_pressure": warning_pressure,
+        "raw_log_paths_retained": False,
+        "raw_skill_bodies_retained": False,
+        "mutates_config": False,
+        "edits_plugin_cache": False,
+        "profile_apply_performed": False,
+    }
 
 
 def as_string_list(value: Any) -> list[str]:
@@ -515,7 +689,62 @@ def build_task_module_recommendations(query_text: str, profile_id: str, entry: d
     return results[:5]
 
 
-def score_profile_candidate(query_text: str, profile_id: str, entry: dict[str, Any], scenario_id: str | None, scenario: dict[str, Any] | None) -> dict[str, Any]:
+def audit_profile_boost(profile_id: str, audit_context: dict[str, Any] | None) -> dict[str, Any]:
+    if not audit_context:
+        return {"available": False, "boost": 0}
+    entry = (audit_context.get("profile_entries") or {}).get(profile_id)
+    if not isinstance(entry, dict):
+        return {"available": False, "boost": 0}
+    usage_score = int(entry.get("usage_score") or 0)
+    level = str(entry.get("evidence_level") or "weak")
+    if level == "strong":
+        boost = 8 + min(12, int(math.log10(max(usage_score, 1)) * 4))
+    elif level == "medium":
+        boost = 3 + min(5, int(math.log10(max(usage_score, 1)) * 2))
+    else:
+        boost = 1 if usage_score > 0 else 0
+    return {
+        "available": True,
+        "profile": profile_id,
+        "boost": boost,
+        "evidence_level": level,
+        "usage_score": usage_score,
+        "evidence_reason": sanitize_text(str(entry.get("evidence_reason") or ""), limit=160),
+        "review_state": sanitize_text(str(entry.get("review_state") or ""), limit=120),
+        "source_file": sanitize_text(str(entry.get("source_file") or ""), limit=220),
+        "policy": "advisory_boost_only_profile_apply_not_authorized",
+    }
+
+
+def warning_pressure_penalty(profile_id: str, explicit_full: bool, audit_context: dict[str, Any] | None) -> dict[str, Any]:
+    pressure = (audit_context or {}).get("warning_pressure") if audit_context else None
+    if not isinstance(pressure, dict) or not pressure.get("available"):
+        return {"available": False, "penalty": 0}
+    penalty_profiles = [str(item) for item in as_string_list(pressure.get("penalty_profiles"))]
+    applies = profile_id in penalty_profiles and not explicit_full
+    penalty = int(pressure.get("penalty_value") or 0) if applies else 0
+    return {
+        "available": True,
+        "profile": profile_id,
+        "applied": applies,
+        "penalty": penalty,
+        "severity": sanitize_text(str(pressure.get("severity") or "unknown"), limit=80),
+        "budget_warning_count": int(pressure.get("budget_warning_count") or 0),
+        "all_descriptions_removed_count": int(pressure.get("all_descriptions_removed_count") or 0),
+        "max_omitted_additional_skills": int(pressure.get("max_omitted_additional_skills") or 0),
+        "recommended_action": sanitize_text(str(pressure.get("recommended_action") or ""), limit=160),
+        "policy": "warning_pressure_penalizes_broad_profiles_without_authorizing_profile_apply",
+    }
+
+
+def score_profile_candidate(
+    query_text: str,
+    profile_id: str,
+    entry: dict[str, Any],
+    scenario_id: str | None,
+    scenario: dict[str, Any] | None,
+    audit_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     profile_hits = match_terms(query_text, profile_candidate_terms(profile_id, entry))
     scenario_hits = match_terms(query_text, scenario_candidate_terms(str(scenario_id), scenario)) if scenario_id and scenario else []
     negative_terms = as_string_list(entry.get("negative_examples")) + as_string_list((scenario or {}).get("negative_examples"))
@@ -547,6 +776,10 @@ def score_profile_candidate(query_text: str, profile_id: str, entry: dict[str, A
         score += 2
     if profile_id == "full" or load_policy == "troubleshooting-only":
         score += 20 if explicit_full else -60
+    audit_boost = audit_profile_boost(profile_id, audit_context)
+    score += int(audit_boost.get("boost") or 0)
+    pressure_penalty = warning_pressure_penalty(profile_id, explicit_full, audit_context)
+    score += int(pressure_penalty.get("penalty") or 0)
     confidence = max(0.1, min(0.98, 0.28 + score / 100.0))
     hits = [*scenario_hits, *profile_hits]
     return {
@@ -562,10 +795,16 @@ def score_profile_candidate(query_text: str, profile_id: str, entry: dict[str, A
         "load_policy": load_policy,
         "task_modules": task_modules,
         "ranking_signals": as_string_list((scenario or {}).get("ranking_signals")) or as_string_list(entry.get("ranking_signals")),
+        "audit_evidence": audit_boost,
+        "warning_pressure_penalty": pressure_penalty,
     }
 
 
-def build_profile_recommendations(registry: dict[str, Any], raw_query: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
+def build_profile_recommendations(
+    registry: dict[str, Any],
+    raw_query: str,
+    audit_context: dict[str, Any] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
     query_text = normalize_query(raw_query)
     modules = registry.get("modules") or {}
     scenarios = registry.get("scenario_profiles") or {}
@@ -580,14 +819,14 @@ def build_profile_recommendations(registry: dict[str, Any], raw_query: str) -> t
             continue
         key = (target, scenario_id)
         seen_keys.add(key)
-        candidates.append(score_profile_candidate(query_text, target, entry, str(scenario_id), scenario))
+        candidates.append(score_profile_candidate(query_text, target, entry, str(scenario_id), scenario, audit_context))
     for profile_id, entry in modules.items():
         if not isinstance(entry, dict):
             continue
         key = (str(profile_id), None)
         if key in seen_keys:
             continue
-        candidates.append(score_profile_candidate(query_text, str(profile_id), entry, None, None))
+        candidates.append(score_profile_candidate(query_text, str(profile_id), entry, None, None, audit_context))
     excluded: list[dict[str, Any]] = []
     retained: list[dict[str, Any]] = []
     for item in candidates:
@@ -605,7 +844,16 @@ def build_profile_recommendations(registry: dict[str, Any], raw_query: str) -> t
             retained.append(item)
     if not retained:
         fallback_entry = modules.get("core-dev") if isinstance(modules.get("core-dev"), dict) else {}
-        retained.append(score_profile_candidate(query_text, "core-dev", fallback_entry, "repo-dev", (registry.get("scenario_profiles") or {}).get("repo-dev") if isinstance(registry.get("scenario_profiles"), dict) else None))
+        retained.append(
+            score_profile_candidate(
+                query_text,
+                "core-dev",
+                fallback_entry,
+                "repo-dev",
+                (registry.get("scenario_profiles") or {}).get("repo-dev") if isinstance(registry.get("scenario_profiles"), dict) else None,
+                audit_context,
+            )
+        )
         retained[-1]["score"] = max(1, int(retained[-1]["score"]))
         retained[-1]["confidence"] = max(0.35, float(retained[-1]["confidence"]))
         retained[-1]["matched_terms"] = retained[-1].get("matched_terms") or []
@@ -626,7 +874,9 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
     repo_root = Path(args.root).resolve()
     codex_home = Path(args.codex_home).resolve()
     registry = load_profile_registry(repo_root, codex_home)
-    recommendations, excluded, explicit_full = build_profile_recommendations(registry, query)
+    modules = registry.get("modules") if isinstance(registry.get("modules"), dict) else {}
+    audit_context = load_audit_ranking_context(repo_root, modules.keys())
+    recommendations, excluded, explicit_full = build_profile_recommendations(registry, query, audit_context)
     selected = recommendations[0]
     selected_modules = selected.get("task_modules") or []
     target_profile = str(selected.get("target_profile") or selected.get("profile"))
@@ -661,6 +911,8 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
                 "load_policy": selected.get("load_policy"),
                 "matched_terms": selected.get("matched_terms", []),
                 "ranking_signals": selected.get("ranking_signals", []),
+                "audit_evidence": selected.get("audit_evidence"),
+                "warning_pressure_penalty": selected.get("warning_pressure_penalty"),
             },
             "task_modules": selected_modules,
             "recommendations": recommendations,
@@ -674,9 +926,18 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
                 "scenario_routing": True,
                 "negative_examples": True,
                 "task_module_rerank": True,
-                "audit_strong_evidence_available": False,
+                "audit_strong_evidence_available": bool(audit_context.get("strong_evidence_available")),
                 "audit_evidence_policy": "strong evidence may boost ranking when present but never authorizes profile apply",
-                "warning_pressure_penalty_applied_to_full": not explicit_full,
+                "audit_evidence_sources": audit_context.get("source_files", []),
+                "audit_summary_review_state": audit_context.get("summary_review_state"),
+                "audit_profile_apply_allowed": bool(audit_context.get("profile_apply_allowed")),
+                "warning_pressure_available": bool((audit_context.get("warning_pressure") or {}).get("available")),
+                "warning_pressure": audit_context.get("warning_pressure"),
+                "warning_pressure_penalty_applied_to_full": bool(
+                    not explicit_full
+                    and (audit_context.get("warning_pressure") or {}).get("available")
+                    and "full" in as_string_list((audit_context.get("warning_pressure") or {}).get("penalty_profiles"))
+                ),
             },
             "mutates_config": False,
             "edits_plugin_cache": False,
