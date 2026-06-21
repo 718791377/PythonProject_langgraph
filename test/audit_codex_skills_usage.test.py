@@ -1,7 +1,9 @@
 import argparse
+import contextlib
 import importlib.util
 import io
 import json
+import re
 import shutil
 import sqlite3
 import time
@@ -34,12 +36,48 @@ class FailingCp936Stdout:
 
 class CodexSkillsUsageAuditTest(unittest.TestCase):
     maxDiff = None
+    runtime_identifier_patterns = (
+        r"123e4567-e89b-12d3-a456-426614174000",
+        r"thread\.id=thread_abc123",
+        r"turn\.id=turn_abc123",
+        r"request_id=req_abc123",
+        r"connection_id=conn_abc123",
+        r"\bcall_abc123\b",
+        r"\bresp_abc123\b",
+        r"token_usage\.input_tokens=123",
+        r"token_usage\.output_tokens=456",
+        r"token_usage\.total_tokens=579",
+        r"token_usage\.cached_input_tokens=1996416",
+        r"token_usage\.non_cached_input_tokens=8",
+        r"\binput_tokens=123\b",
+        r"\boutput_tokens=456\b",
+        r"\btotal_tokens=579\b",
+        r"\bcached_input_tokens=1996416\b",
+        r"\bnon_cached_input_tokens=8\b",
+    )
 
     def make_codex_home(self, name: str) -> Path:
         root = REPO_ROOT / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
         root.mkdir(parents=True, exist_ok=True)
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
         return root
+
+    def runtime_identifier_fixture(self) -> str:
+        return (
+            "thread.id=thread_abc123 turn.id=turn_abc123 "
+            "request_id=req_abc123 connection_id=conn_abc123 "
+            "submission.id=sub_abc123 rpc.request_id=6 app_server.connection_id=0 "
+            "call_abc123 resp_abc123 "
+            "uuid=123e4567-e89b-12d3-a456-426614174000 "
+            "token_usage.input_tokens=123 token_usage.output_tokens=456 token_usage.total_tokens=579 "
+            "codex.turn.token_usage.cached_input_tokens=1996416 "
+            "codex.turn.token_usage.non_cached_input_tokens=8 "
+            "mcp__chrome_devtools__evaluate"
+        )
+
+    def assert_no_runtime_identifiers(self, text: str) -> None:
+        for pattern in self.runtime_identifier_patterns:
+            self.assertIsNone(re.search(pattern, text), pattern)
 
     def test_emit_stdout_falls_back_on_non_utf8_console(self) -> None:
         fake = FailingCp936Stdout()
@@ -716,6 +754,113 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
         self.assertNotIn("session-secret", excerpt)
         self.assertNotIn(r"C:\Users\lenovo", excerpt)
 
+    def test_sanitize_log_excerpt_redacts_runtime_identifiers_and_token_counts(self) -> None:
+        excerpt = audit.sanitize_log_excerpt(self.runtime_identifier_fixture())
+
+        self.assertIn("[REDACTED_ID]", excerpt)
+        self.assertIn("[REDACTED_TOKEN_COUNT]", excerpt)
+        self.assertIn("mcp__chrome_devtools__evaluate", excerpt)
+        self.assert_no_runtime_identifiers(excerpt)
+        self.assertNotIn("rpc.request_id=6", excerpt)
+        self.assertNotIn("app_server.connection_id=0", excerpt)
+        self.assertNotIn("submission.id=sub_abc123", excerpt)
+
+    def test_scan_logs_redacts_runtime_identifiers_from_warning_samples(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-runtime-id-sanitize")
+        db = codex_home / "logs_2.sqlite"
+        with sqlite3.connect(db) as con:
+            con.execute("create table logs(ts integer, level text, target text, feedback_log_body text)")
+            con.execute(
+                "insert into logs values (?, ?, ?, ?)",
+                (
+                    int(time.time()),
+                    "WARN",
+                    "codex_client::transport",
+                    "Exceeded skills context budget of 2%. " + self.runtime_identifier_fixture(),
+                ),
+            )
+            con.execute(
+                "insert into logs values (?, ?, ?, ?)",
+                (
+                    int(time.time()),
+                    "WARN",
+                    "codex_client::skills",
+                    "Skipped loading 2 skill(s) due to invalid SKILL.md files. " + self.runtime_identifier_fixture(),
+                ),
+            )
+
+        report = audit.scan_logs(codex_home, audit.now_utc() - timedelta(days=1))
+        budget_excerpt = report["recent_budget_warnings"][0]["message_excerpt"]
+        budget_sample = report["recent_budget_warning_sample_excerpts"][0]
+        skipped_excerpt = report["recent_skipped_loading"][0]["message_excerpt"]
+
+        for retained in (budget_excerpt, budget_sample, skipped_excerpt):
+            self.assertIn("[REDACTED_ID]", retained)
+            self.assertIn("[REDACTED_TOKEN_COUNT]", retained)
+            self.assertIn("mcp__chrome_devtools__evaluate", retained)
+            self.assert_no_runtime_identifiers(retained)
+
+    def test_report_markdown_json_and_stdout_do_not_retain_runtime_identifiers(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-runtime-id-report-surfaces")
+        db = codex_home / "logs_2.sqlite"
+        with sqlite3.connect(db) as con:
+            con.execute("create table logs(ts integer, level text, target text, feedback_log_body text)")
+            con.execute(
+                "insert into logs values (?, ?, ?, ?)",
+                (
+                    int(time.time()),
+                    "WARN",
+                    "codex_client::transport",
+                    "Exceeded skills context budget of 2%. " + self.runtime_identifier_fixture(),
+                ),
+            )
+            con.execute(
+                "insert into logs values (?, ?, ?, ?)",
+                (
+                    int(time.time()),
+                    "WARN",
+                    "codex_client::skills",
+                    "Skipped loading 2 skill(s) due to invalid SKILL.md files. " + self.runtime_identifier_fixture(),
+                ),
+            )
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=1,
+            since=None,
+            baseline=False,
+            late_run=False,
+            warning_triage=True,
+            planned_audit=False,
+            pause_audit=None,
+            close_audit=None,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            target_profile=None,
+            summary_reviewed=False,
+        )
+
+        report = audit.build_report(args)
+        summary = audit.render_markdown_summary(report)
+        json_report = json.dumps(report, ensure_ascii=False)
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            audit.print_human(report)
+        stdout_text = stdout.getvalue()
+
+        self.assertEqual(report["field_contract"]["status"], "passed")
+        for retained_surface in (summary, json_report, stdout_text):
+            self.assertIn("[REDACTED_ID]", retained_surface)
+            self.assertIn("[REDACTED_TOKEN_COUNT]", retained_surface)
+            self.assertIn("mcp__chrome_devtools__evaluate", retained_surface)
+            self.assert_no_runtime_identifiers(retained_surface)
+            self.assertNotIn("rpc.request_id=6", retained_surface)
+            self.assertNotIn("app_server.connection_id=0", retained_surface)
+
     def test_sanitize_log_excerpt_preserves_redaction_markers_when_truncated(self) -> None:
         private_path = r"C:\Users\lenovo\.codex\sessions\secret.jsonl"
         secret = "api_key=sk-test-secret"
@@ -733,6 +878,24 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
             for prefix_length in range(1, len(marker)):
                 self.assertFalse(path_excerpt.endswith(marker[:prefix_length]))
                 self.assertFalse(secret_excerpt.endswith(marker[:prefix_length]))
+
+    def test_sanitize_log_excerpt_preserves_runtime_redaction_markers_when_truncated(self) -> None:
+        runtime_id_excerpt = audit.sanitize_log_excerpt("x" * 490 + " thread.id=thread_abc123 tail", limit=500)
+        token_counter_excerpt = audit.sanitize_log_excerpt(
+            "x" * 480 + " token_usage.input_tokens=123 tail",
+            limit=500,
+        )
+
+        self.assertIn("[REDACTED_ID]", runtime_id_excerpt)
+        self.assertIn("[REDACTED_TOKEN_COUNT]", token_counter_excerpt)
+        self.assertIn("[truncated]", runtime_id_excerpt)
+        self.assertIn("[truncated]", token_counter_excerpt)
+        self.assert_no_runtime_identifiers(runtime_id_excerpt)
+        self.assert_no_runtime_identifiers(token_counter_excerpt)
+        for marker in audit.REDACTION_MARKERS:
+            for prefix_length in range(1, len(marker)):
+                self.assertFalse(runtime_id_excerpt.endswith(marker[:prefix_length]))
+                self.assertFalse(token_counter_excerpt.endswith(marker[:prefix_length]))
 
     def test_scan_logs_missing_database_keeps_log_evidence_shape(self) -> None:
         codex_home = self.make_codex_home("skills-audit-missing-logs")
@@ -1710,6 +1873,50 @@ class CodexSkillsUsageAuditTest(unittest.TestCase):
 
         self.assertFalse(blocked_contract["passed"])
         self.assertIn("warning_triage:blocked_status_missing_blockers", blocked_contract["blockers"])
+
+    def test_field_contract_blocks_runtime_ids_and_token_counts_in_retained_excerpts(self) -> None:
+        codex_home = self.make_codex_home("skills-audit-runtime-id-contract")
+        args = argparse.Namespace(
+            root=str(REPO_ROOT),
+            codex_home=str(codex_home),
+            days=30,
+            since=None,
+            baseline=False,
+            late_run=False,
+            missed_weekly_runs=None,
+            manual_notes=[],
+            output=None,
+            summary_output=None,
+            candidate_output=None,
+            candidate_summary_output=None,
+            summary_reviewed=False,
+        )
+        report = audit.build_report(args)
+
+        raw_log_excerpt_report = json.loads(json.dumps(report))
+        raw_log_excerpt_report["log_evidence"]["recent_budget_warning_sample_excerpts"] = [
+            "thread.id=thread_abc123 request_id=req_abc123 call_abc123 "
+            "resp_abc123 123e4567-e89b-12d3-a456-426614174000 "
+            "token_usage.total_tokens=579"
+        ]
+        raw_triage_excerpt_report = json.loads(json.dumps(report))
+        raw_triage_excerpt_report["warning_triage"]["recent_skipped_loading_sample_excerpts"] = [
+            "connection_id=conn_abc123 token_usage.input_tokens=123"
+        ]
+
+        log_contract = audit.validate_report_field_contract(raw_log_excerpt_report)
+        triage_contract = audit.validate_report_field_contract(raw_triage_excerpt_report)
+
+        self.assertFalse(log_contract["passed"])
+        self.assertIn(
+            "log_evidence:recent_budget_warning_sample_excerpts_contains_raw_runtime_id_assignment",
+            log_contract["blockers"],
+        )
+        self.assertFalse(triage_contract["passed"])
+        self.assertIn(
+            "warning_triage:recent_skipped_loading_sample_excerpts_contains_raw_runtime_id_assignment",
+            triage_contract["blockers"],
+        )
 
     def test_audit_state_contract_requires_decision_fields(self) -> None:
         codex_home = self.make_codex_home("skills-audit-state-contract")

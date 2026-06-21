@@ -45,7 +45,35 @@ PRIVATE_PATH_PATTERNS = (
 )
 ACCESS_TOKEN_PATTERN = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie)\s*[:=]\s*([^\s,;\"']+)")
 STANDALONE_TOKEN_PATTERN = re.compile(r"(?i)\b(?:sk-[a-z0-9_-]{6,}|xox[baprs]-[a-z0-9_-]{6,})\b")
-REDACTION_MARKERS = ("[REDACTED_PATH]", "[REDACTED_SECRET]")
+UUID_PATTERN = re.compile(r"(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b")
+CALL_ID_PATTERN = re.compile(r"\bcall_(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{6,}\b")
+RESPONSE_ID_PATTERN = re.compile(r"\bresp_(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{6,}\b")
+RUNTIME_ID_ASSIGNMENT_PATTERN = re.compile(
+    r"(?i)\b("
+    r"(?:thread|turn|session|conversation)[._-]?id"
+    r"|submission\.id"
+    r"|rpc\.request_id"
+    r"|app_server\.connection_id"
+    r"|request[._-]?id"
+    r"|connection[._-]?id"
+    r")\s*[:=]\s*(?:\\?\"[^\"\s,;)}]+\\?\"|[^\s,;)}]+)"
+)
+RAW_RUNTIME_ID_ASSIGNMENT_PATTERN = re.compile(
+    r"(?i)\b("
+    r"(?:thread|turn|session|conversation)[._-]?id"
+    r"|submission\.id"
+    r"|rpc\.request_id"
+    r"|app_server\.connection_id"
+    r"|request[._-]?id"
+    r"|connection[._-]?id"
+    r")\s*[:=]\s*(?!\[REDACTED_ID\])(?:\\?\"[^\"\s,;)}]+\\?\"|[^\s,;)}]+)"
+)
+TOKEN_COUNTER_PATTERN = re.compile(
+    r"(?i)\b(?:[A-Za-z0-9_.-]*token_usage\.[A-Za-z0-9_.-]*tokens?|(?:[A-Za-z0-9_.-]*token_usage\.)?"
+    r"(?:(?:cached|non[_-]?cached|uncached)[_-])?"
+    r"(?:input|output|total|cached|reasoning)[_-]?tokens?)\s*[:=]\s*\d+\b"
+)
+REDACTION_MARKERS = ("[REDACTED_PATH]", "[REDACTED_SECRET]", "[REDACTED_ID]", "[REDACTED_TOKEN_COUNT]")
 GENERIC_EXPLICIT_SKILL_NOISE = {
     "a",
     "an",
@@ -713,11 +741,31 @@ def sanitize_log_excerpt(text: str, limit: int = 500) -> str:
         sanitized = pattern.sub("[REDACTED_PATH]", sanitized)
     sanitized = ACCESS_TOKEN_PATTERN.sub(lambda m: m.group(0).replace(m.group(1), "[REDACTED_SECRET]"), sanitized)
     sanitized = STANDALONE_TOKEN_PATTERN.sub("[REDACTED_SECRET]", sanitized)
+    sanitized = RUNTIME_ID_ASSIGNMENT_PATTERN.sub("[REDACTED_ID]", sanitized)
+    sanitized = CALL_ID_PATTERN.sub("[REDACTED_ID]", sanitized)
+    sanitized = RESPONSE_ID_PATTERN.sub("[REDACTED_ID]", sanitized)
+    sanitized = UUID_PATTERN.sub("[REDACTED_ID]", sanitized)
+    sanitized = TOKEN_COUNTER_PATTERN.sub("[REDACTED_TOKEN_COUNT]", sanitized)
     return truncate_preserving_redaction_markers(sanitized, limit)
 
 
 def sanitize_manual_value(value: str, limit: int = 300) -> str:
     return sanitize_log_excerpt(value.strip(), limit=limit)
+
+
+def raw_runtime_identifier_violation(text: str) -> str | None:
+    """Return a field-contract violation suffix for runtime identifiers left in retained excerpts."""
+    if RAW_RUNTIME_ID_ASSIGNMENT_PATTERN.search(text):
+        return "contains_raw_runtime_id_assignment"
+    if CALL_ID_PATTERN.search(text):
+        return "contains_raw_call_id"
+    if RESPONSE_ID_PATTERN.search(text):
+        return "contains_raw_response_id"
+    if UUID_PATTERN.search(text):
+        return "contains_raw_uuid"
+    if TOKEN_COUNTER_PATTERN.search(text):
+        return "contains_raw_token_counter"
+    return None
 
 
 def sanitize_retained_path(value: str | None, limit: int = MANUAL_NOTE_PATH_LIMIT) -> str | None:
@@ -1728,6 +1776,10 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
             if STANDALONE_TOKEN_PATTERN.search(excerpt):
                 log_violations.append("recent_budget_warning_sample_excerpts_contains_standalone_token")
                 break
+            runtime_violation = raw_runtime_identifier_violation(excerpt)
+            if runtime_violation:
+                log_violations.append(f"recent_budget_warning_sample_excerpts_{runtime_violation}")
+                break
     warning_severity = (
         report.get("warning_severity") if isinstance(report.get("warning_severity"), dict) else {}
     )
@@ -1809,6 +1861,10 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
                 break
             if STANDALONE_TOKEN_PATTERN.search(excerpt):
                 warning_triage_violations.append("recent_skipped_loading_sample_excerpts_contains_standalone_token")
+                break
+            runtime_violation = raw_runtime_identifier_violation(excerpt)
+            if runtime_violation:
+                warning_triage_violations.append(f"recent_skipped_loading_sample_excerpts_{runtime_violation}")
                 break
     cadence_review = report.get("cadence_review") if isinstance(report.get("cadence_review"), dict) else {}
     cadence_review_violations = []
