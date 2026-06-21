@@ -108,8 +108,11 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
         self.assertTrue((home / "bin" / "mcp2cli.cmd").exists())
         self.assertTrue((home / "bin" / "skills2cli.cmd").exists())
         self.assertTrue((home / "tools" / "skills2cli" / "codex_skill_frontmatter.py").exists())
+        self.assertTrue((home / "tools" / "skills2cli" / "references" / "profiles.json").exists())
         skill_path = home / "skills" / "skills2cli" / "SKILL.md"
         self.assertTrue(skill_path.exists())
+        skill_text = skill_path.read_text(encoding="utf-8")
+        self.assertIn('profile suggest --query "task summary"', skill_text)
         generated_skill = parse_frontmatter_file(skill_path)
         self.assertTrue(generated_skill.frontmatter_valid)
         self.assertLessEqual(len(generated_skill.data["name"]), CODEX_SKILL_NAME_LIMIT)
@@ -136,6 +139,8 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
         self.assertTrue(check_payload["wrapper_presence"]["mcp2cli_cmd"])
         self.assertTrue(check_payload["wrapper_presence"]["skills2cli_cmd"])
         self.assertEqual(check_payload["receipt_count"], 2)
+        self.assertIn("skills2cli_profile_suggest", check_payload["smoke_results"])
+        self.assertEqual(check_payload["smoke_results"]["skills2cli_profile_suggest"]["returncode"], 0)
 
     def test_posix_smoke_uses_safe_execution_for_generated_windows_cmd_wrappers(self) -> None:
         home = self.make_home("posix-smoke-helper")
@@ -158,7 +163,16 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
             platform_name="posix",
         )
         skills_result = installer.run_wrapper_smoke(
-            [str(paths["skills2cli_cmd"]), "--help"],
+            [
+                str(paths["skills2cli_cmd"]),
+                "profile",
+                "suggest",
+                "--query",
+                "Expo mobile build and Sentry observability",
+                "--json",
+                "--codex-home",
+                str(home),
+            ],
             paths=paths,
             wrapper_key="skills2cli_cmd",
             timeout=10,
@@ -169,6 +183,7 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
         self.assertTrue(mcp_result.skipped)
         self.assertEqual(skills_result.returncode, 0, skills_result.stderr)
         self.assertFalse(skills_result.skipped)
+        self.assertIn('"target_profile": "web-saas"', skills_result.stdout)
 
     def test_check_is_warn_only_without_require_installed(self) -> None:
         home = self.make_home("warn-only")
@@ -246,6 +261,8 @@ class UserLevelMcpSkillsCliInstallTests(unittest.TestCase):
             {item["receipt_kind"] for item in payload["smoke_receipt_summaries"]},
             {"smoke-tested"},
         )
+        smoke_types = {item["tool_name"]: item["smoke_type"] for item in payload["smoke_receipt_summaries"]}
+        self.assertEqual(smoke_types["skills2cli"], "safe-discovery")
 
         for receipt_path in payload["smoke_receipt_paths"]:
             tool_name = "skills2cli" if "skills2cli" in Path(receipt_path).name else "mcp2cli"

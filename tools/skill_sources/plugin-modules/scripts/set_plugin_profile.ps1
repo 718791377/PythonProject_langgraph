@@ -156,6 +156,41 @@ if ([string]::IsNullOrWhiteSpace($Module)) {
   throw "Module is required unless -RestoreLatest is used. Known modules: $known"
 }
 
+
+function Reject-NonCanonicalHardLoadTarget {
+  param([string]$Reason, [string]$TargetProfile = $null, [string]$TaskModule = $null, [string]$ScenarioProfile = $null)
+  $payload = [ordered]@{
+    ok = $false
+    error = $Reason
+    module = $Module
+    target_profile = $TargetProfile
+    task_module = $TaskModule
+    scenario_profile = $ScenarioProfile
+    mode = 'hard-load-preview-rejected'
+    mutates_config = $false
+    edits_plugin_cache = $false
+    profile_apply_performed = $false
+    explanation = 'Task modules and scenario profiles are soft-load guidance only; hard-load applies only to canonical top-level profiles.'
+    guidance = @(
+      'Use load_module.ps1 for scenario or profile.task_module soft-load guidance.',
+      'Use set_plugin_profile.ps1 only with a canonical top-level profile such as core-dev or web-saas.',
+      'No config.toml or plugin cache files were edited.'
+    )
+  }
+  if ($Json) { $payload | ConvertTo-Json -Depth 16 } else { Write-Error $payload.explanation }
+  exit 2
+}
+
+if ($Module.Contains('.')) {
+  $parts = $Module.Split('.', 2)
+  Reject-NonCanonicalHardLoadTarget -Reason 'task_module_not_hard_load_target' -TargetProfile $parts[0] -TaskModule $parts[1]
+}
+
+$scenarioMatch = @($profiles.scenario_profiles.PSObject.Properties | Where-Object { $_.Name -eq $Module } | Select-Object -First 1)
+if ($scenarioMatch) {
+  Reject-NonCanonicalHardLoadTarget -Reason 'scenario_profile_not_hard_load_target' -TargetProfile ([string]$scenarioMatch[0].Value.target_profile) -ScenarioProfile $Module
+}
+
 $result = Get-TargetMap -Profiles $profiles -ModuleName $Module
 $targetMap = $result.target_map
 $currentContent = if (Test-Path -LiteralPath $configFile) { Get-Content -LiteralPath $configFile -Raw -Encoding UTF8 } else { '' }

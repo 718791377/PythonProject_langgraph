@@ -383,31 +383,301 @@ def command_show(args: argparse.Namespace) -> int:
     return 0
 
 
-PROFILE_RULES = [
-    ("browser-automation", ("browser", "chrome", "cdp", "opencli", "devtools", "tab", "screenshot")),
-    ("mcp", ("mcp", "tool", "server", "facade")),
-    ("communications", ("twilio", "wecom", "wxwork", "enterprise wechat", "slack", "gmail")),
-    ("creative-content", ("image", "figma", "presentation", "ppt", "canvas", "design")),
-    ("document-data", ("pdf", "docx", "spreadsheet", "xlsx", "document")),
-    ("core-dev", ("code", "test", "git", "openspec", "docs", "governance", "python")),
-]
+PROFILE_REGISTRY_RELATIVE = Path("tools/skill_sources/plugin-modules/references/profiles.json")
+QUERY_SYNONYMS = {
+    "\u5b89\u5168": "security secure threat review",
+    "\u5ba1\u67e5": "review audit",
+    "\u590d\u6838": "review verify",
+    "\u4fee\u590d": "fix repair",
+    "\u6784\u5efa": "build",
+    "\u79fb\u52a8\u7aef": "mobile expo react native",
+    "\u5ba2\u6237": "customer",
+    "\u901a\u77e5": "notification notice",
+    "\u4f1a\u8bae": "meeting",
+    "\u7eaa\u8981": "meeting notes transcript",
+    "\u79d1\u7814": "science research",
+    "\u6392\u969c": "troubleshoot troubleshooting",
+    "\u5168\u90e8\u63d2\u4ef6": "all plugins full profile",
+}
+EXPLICIT_FULL_TERMS = (
+    "full profile",
+    "all plugins",
+    "all-plugin",
+    "troubleshoot all plugins",
+    "diagnose missing plugin capability",
+    "????",
+    "????",
+    "????",
+)
+
+
+def load_profile_registry(repo_root: Path, codex_home: Path | None = None) -> dict[str, Any]:
+    candidates = [
+        repo_root / PROFILE_REGISTRY_RELATIVE,
+        SCRIPT_DIR / "references" / "profiles.json",
+    ]
+    if codex_home is not None:
+        candidates.append(codex_home / "skills" / "plugin-modules" / "references" / "profiles.json")
+    candidates.append(default_codex_home() / "skills" / "plugin-modules" / "references" / "profiles.json")
+    for path in candidates:
+        try:
+            if path.exists():
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    payload["_registry_source"] = str(path)
+                    return payload
+        except (OSError, json.JSONDecodeError):
+            continue
+    return {"modules": {}, "scenario_profiles": {}, "known_plugins": [], "_registry_source": None}
+
+
+def as_string_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item).strip()]
+    return [str(value)]
+
+
+def normalize_query(value: str) -> str:
+    base = sanitize_text(value, limit=500).lower()
+    additions = [alias for marker, alias in QUERY_SYNONYMS.items() if marker.lower() in base]
+    return " ".join([base, *additions]).strip()
+
+
+def match_terms(haystack: str, terms: Iterable[Any]) -> list[str]:
+    haystack_lower = haystack.lower()
+    hits: list[str] = []
+    seen: set[str] = set()
+    for term in terms:
+        candidate = str(term).strip().lower()
+        if not candidate or candidate in seen:
+            continue
+        if candidate in haystack_lower:
+            hits.append(candidate)
+            seen.add(candidate)
+    return hits
+
+
+def profile_candidate_terms(profile_id: str, entry: dict[str, Any]) -> list[str]:
+    terms: list[str] = [profile_id]
+    terms.extend(as_string_list(entry.get("route_when")))
+    terms.extend(as_string_list(entry.get("plugin_hints")))
+    terms.extend(as_string_list(entry.get("plugins")))
+    terms.append(str(entry.get("scenario_description") or ""))
+    terms.append(str(entry.get("description") or ""))
+    for module_id, module in (entry.get("task_modules") or {}).items():
+        terms.append(str(module_id))
+        terms.extend(as_string_list(module.get("route_when")))
+        terms.extend(as_string_list(module.get("plugin_hints")))
+    return terms
+
+
+def scenario_candidate_terms(scenario_id: str, scenario: dict[str, Any]) -> list[str]:
+    terms: list[str] = [scenario_id]
+    terms.extend(as_string_list(scenario.get("route_when")))
+    terms.extend(as_string_list(scenario.get("positive_examples")))
+    terms.extend(as_string_list(scenario.get("plugin_hints")))
+    terms.append(str(scenario.get("scenario_description") or ""))
+    terms.append(str(scenario.get("description") or ""))
+    return terms
+
+
+def build_task_module_recommendations(query_text: str, profile_id: str, entry: dict[str, Any], default_modules: list[str] | None = None) -> list[dict[str, Any]]:
+    modules = entry.get("task_modules") or {}
+    results: list[dict[str, Any]] = []
+    default_set = set(default_modules or [])
+    for module_id, module in modules.items():
+        terms = [module_id, module.get("description", ""), module.get("scenario_description", "")]
+        terms.extend(as_string_list(module.get("route_when")))
+        terms.extend(as_string_list(module.get("positive_examples")))
+        terms.extend(as_string_list(module.get("plugin_hints")))
+        negative = match_terms(query_text, as_string_list(module.get("negative_examples")))
+        hits = match_terms(query_text, terms)
+        score = len(hits) * 10 + (2 if hits and module_id in default_set else 0) - len(negative) * 8
+        if score > 0:
+            results.append(
+                {
+                    "task_module": module_id,
+                    "qualified_name": f"{profile_id}.{module_id}",
+                    "score": score,
+                    "matched_terms": hits[:10],
+                    "negative_matches": negative[:5],
+                    "load_policy": str(module.get("load_policy") or "soft-load"),
+                    "plugin_hints": as_string_list(module.get("plugin_hints"))[:8],
+                    "skill_doc_hints": as_string_list(module.get("skill_doc_hints"))[:8],
+                    "routing_explanation": sanitize_text(str(module.get("routing_explanation") or module.get("description") or ""), limit=220),
+                }
+            )
+    results.sort(key=lambda item: (-int(item["score"]), str(item["task_module"])))
+    return results[:5]
+
+
+def score_profile_candidate(query_text: str, profile_id: str, entry: dict[str, Any], scenario_id: str | None, scenario: dict[str, Any] | None) -> dict[str, Any]:
+    profile_hits = match_terms(query_text, profile_candidate_terms(profile_id, entry))
+    scenario_hits = match_terms(query_text, scenario_candidate_terms(str(scenario_id), scenario)) if scenario_id and scenario else []
+    negative_terms = as_string_list(entry.get("negative_examples")) + as_string_list((scenario or {}).get("negative_examples"))
+    negative = match_terms(query_text, negative_terms)
+    explicit_full = any(term in query_text for term in EXPLICIT_FULL_TERMS)
+    load_policy = str((scenario or {}).get("load_policy") or entry.get("load_policy") or "default-candidate")
+    default_modules = as_string_list((scenario or {}).get("default_task_modules"))
+    default_module_set = set(default_modules)
+    task_modules = build_task_module_recommendations(query_text, profile_id, entry, default_modules)
+    default_module_hits = [item for item in task_modules if item.get("task_module") in default_module_set]
+
+    if scenario_id:
+        # Scenario candidates are entry points, not aliases for every parent-profile hit.
+        # They must match their own scene text or one of their default task modules;
+        # otherwise ordinary repo/CI/security work must stay with the repo-dev scene.
+        score = len(scenario_hits) * 14 + sum(min(8, int(item["score"])) for item in default_module_hits)
+        score += min(6, len(profile_hits) * 2)
+        if scenario_hits or default_module_hits:
+            score += 5
+        else:
+            score = -100
+    else:
+        score = len(profile_hits) * 10
+        if task_modules:
+            score += min(15, sum(min(5, int(item["score"])) for item in task_modules))
+
+    score -= len(negative) * 8
+    if profile_id == "core-dev":
+        score += 2
+    if profile_id == "full" or load_policy == "troubleshooting-only":
+        score += 20 if explicit_full else -60
+    confidence = max(0.1, min(0.98, 0.28 + score / 100.0))
+    hits = [*scenario_hits, *profile_hits]
+    return {
+        "scenario_profile": scenario_id,
+        "profile": profile_id,
+        "target_profile": profile_id,
+        "score": score,
+        "confidence": round(confidence, 2),
+        "matched_terms": hits[:12],
+        "scenario_matched_terms": scenario_hits[:12],
+        "profile_matched_terms": profile_hits[:12],
+        "negative_matches": negative[:8],
+        "load_policy": load_policy,
+        "task_modules": task_modules,
+        "ranking_signals": as_string_list((scenario or {}).get("ranking_signals")) or as_string_list(entry.get("ranking_signals")),
+    }
+
+
+def build_profile_recommendations(registry: dict[str, Any], raw_query: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
+    query_text = normalize_query(raw_query)
+    modules = registry.get("modules") or {}
+    scenarios = registry.get("scenario_profiles") or {}
+    candidates: list[dict[str, Any]] = []
+    seen_keys: set[tuple[str, str | None]] = set()
+    for scenario_id, scenario in scenarios.items():
+        if not isinstance(scenario, dict):
+            continue
+        target = str(scenario.get("target_profile") or "")
+        entry = modules.get(target)
+        if not isinstance(entry, dict):
+            continue
+        key = (target, scenario_id)
+        seen_keys.add(key)
+        candidates.append(score_profile_candidate(query_text, target, entry, str(scenario_id), scenario))
+    for profile_id, entry in modules.items():
+        if not isinstance(entry, dict):
+            continue
+        key = (str(profile_id), None)
+        if key in seen_keys:
+            continue
+        candidates.append(score_profile_candidate(query_text, str(profile_id), entry, None, None))
+    excluded: list[dict[str, Any]] = []
+    retained: list[dict[str, Any]] = []
+    for item in candidates:
+        if item["negative_matches"] and item["score"] <= 0:
+            excluded.append(
+                {
+                    "profile": item["profile"],
+                    "target_profile": item["target_profile"],
+                    "scenario_profile": item.get("scenario_profile"),
+                    "reason": "negative_examples_matched",
+                    "negative_matches": item["negative_matches"],
+                }
+            )
+        elif item["score"] > 0:
+            retained.append(item)
+    if not retained:
+        fallback_entry = modules.get("core-dev") if isinstance(modules.get("core-dev"), dict) else {}
+        retained.append(score_profile_candidate(query_text, "core-dev", fallback_entry, "repo-dev", (registry.get("scenario_profiles") or {}).get("repo-dev") if isinstance(registry.get("scenario_profiles"), dict) else None))
+        retained[-1]["score"] = max(1, int(retained[-1]["score"]))
+        retained[-1]["confidence"] = max(0.35, float(retained[-1]["confidence"]))
+        retained[-1]["matched_terms"] = retained[-1].get("matched_terms") or []
+        retained[-1]["fallback_reason"] = "no_positive_profile_match_default_to_core_dev_preview"
+    retained.sort(key=lambda item: (-int(item["score"]), 1 if item["profile"] == "full" else 0, str(item.get("scenario_profile") or item["profile"])))
+    explicit_full = any(term in query_text for term in EXPLICIT_FULL_TERMS)
+    if retained and retained[0]["profile"] == "full" and not explicit_full:
+        non_full = [item for item in retained if item["profile"] != "full"]
+        if non_full:
+            retained.remove(non_full[0])
+            retained.insert(0, non_full[0])
+    return retained[:5], excluded[:10], explicit_full
 
 
 def command_profile_suggest(args: argparse.Namespace) -> int:
-    task = sanitize_text(args.task, limit=500)
-    lowered = task.lower()
-    suggestions = []
-    for profile, keywords in PROFILE_RULES:
-        hits = [keyword for keyword in keywords if keyword in lowered]
-        if hits:
-            suggestions.append({"profile": profile, "matched_terms": hits, "confidence": min(0.95, 0.45 + 0.1 * len(hits))})
-    if not suggestions:
-        suggestions.append({"profile": "core-dev", "matched_terms": [], "confidence": 0.35})
+    raw_query = getattr(args, "query", None) or getattr(args, "task", "")
+    query = sanitize_text(raw_query, limit=500)
+    repo_root = Path(args.root).resolve()
+    codex_home = Path(args.codex_home).resolve()
+    registry = load_profile_registry(repo_root, codex_home)
+    recommendations, excluded, explicit_full = build_profile_recommendations(registry, query)
+    selected = recommendations[0]
+    selected_modules = selected.get("task_modules") or []
+    target_profile = str(selected.get("target_profile") or selected.get("profile"))
+    soft_load_commands = [
+        f".\\tools\\skill_sources\\plugin-modules\\scripts\\load_module.ps1 {item['qualified_name']} -Json"
+        for item in selected_modules[:3]
+    ]
+    if not soft_load_commands:
+        soft_load_commands = [f".\\tools\\skill_sources\\plugin-modules\\scripts\\load_module.ps1 {target_profile} -Json"]
+    hard_load_preview_command = None if target_profile == "full" and not explicit_full else f".\\tools\\skill_sources\\plugin-modules\\scripts\\set_plugin_profile.ps1 {target_profile} -Json"
+    suggestions = [
+        {
+            "profile": item["profile"],
+            "target_profile": item["target_profile"],
+            "scenario_profile": item.get("scenario_profile"),
+            "matched_terms": item.get("matched_terms", []),
+            "confidence": item.get("confidence", 0),
+            "task_modules": [module["task_module"] for module in item.get("task_modules", [])],
+        }
+        for item in recommendations
+    ]
     payload = envelope(
         "profile suggest",
         {
-            "task_summary": task,
+            "query": query,
+            "task_summary": query,
+            "selected_profile": {
+                "profile": selected["profile"],
+                "target_profile": target_profile,
+                "scenario_profile": selected.get("scenario_profile"),
+                "confidence": selected.get("confidence"),
+                "load_policy": selected.get("load_policy"),
+                "matched_terms": selected.get("matched_terms", []),
+                "ranking_signals": selected.get("ranking_signals", []),
+            },
+            "task_modules": selected_modules,
+            "recommendations": recommendations,
             "suggestions": suggestions,
+            "excluded_candidates": excluded,
+            "soft_load_commands": soft_load_commands,
+            "hard_load_preview_command": hard_load_preview_command,
+            "soft_hard_boundary": "profile_suggest and load_module are advisory soft-load/preview surfaces; set_plugin_profile without -Apply is preview only; hard-load apply requires separate explicit authorization and restart.",
+            "registry_source": sanitize_text(str(registry.get("_registry_source") or "missing"), limit=220),
+            "ranking_inputs": {
+                "scenario_routing": True,
+                "negative_examples": True,
+                "task_module_rerank": True,
+                "audit_strong_evidence_available": False,
+                "audit_evidence_policy": "strong evidence may boost ranking when present but never authorizes profile apply",
+                "warning_pressure_penalty_applied_to_full": not explicit_full,
+            },
             "mutates_config": False,
             "edits_plugin_cache": False,
             "profile_apply_performed": False,
@@ -683,7 +953,9 @@ def build_parser() -> argparse.ArgumentParser:
     profile = subparsers.add_parser("profile", help="Profile suggestion commands.")
     profile_sub = profile.add_subparsers(dest="profile_command")
     suggest = profile_sub.add_parser("suggest", help="Suggest a profile for a task without applying it.")
-    suggest.add_argument("--task", required=True)
+    group = suggest.add_mutually_exclusive_group(required=True)
+    group.add_argument("--query")
+    group.add_argument("--task")
     suggest.add_argument("--root", default=str(default_repo_root()))
     suggest.add_argument("--codex-home", default=str(default_codex_home()))
     suggest.add_argument("--json", action="store_true")

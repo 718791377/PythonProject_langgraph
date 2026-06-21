@@ -25,9 +25,12 @@ created_at: 2026-06-21
 
 <!-- CURRENT_STATUS_START -->
 
-- Stage A 方案冻结包正在 `freeze-skills2cli-profile-routing-plan-20260621` 中实施。
-- OpenSpec change `improve-skills2cli-profile-routing` 是本工作的当前活动契约。
-- Phase B runtime 实现等待 Stage A 验证与本地 main 集成后开始。
+- Stage A 方案冻结包已在本地 `main` 集成，提交为 `3d08d6e`。
+- Phase B runtime 实现已完成，并已提交到 `implement-skills2cli-profile-routing-runtime-20260621`。
+- 已实现的 runtime 表面包括 scenario profiles、task modules、advisory `skills2cli profile suggest`、plugin-modules soft-load scripts、checker/test 覆盖、installed-wrapper profile-suggest smoke 以及 OpenSpec guard 注册。
+- 已完成的验证包括：代表性 routing smoke、聚焦测试、完整 Python unittest manifest、OpenSpec guard、local CI 和 local MR review。
+- OpenSpec change 已移入 archive 路径：`openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`。
+- 剩余收口动作为 local-main-first helper 集成、合并后验证、completed claim/rollback 证据以及安全清理 feature worktree；远程发布仍未授权。
 - 远程发布未授权。
 
 <!-- CURRENT_STATUS_END -->
@@ -151,17 +154,17 @@ Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-m
 - [x] 更新 `codex_skills_usage_audit_plan.md` 与 `.zh-CN.md`，声明 audit evidence 仅作为 advisory routing/rerank 输入。
 - [x] 在 `docs_bilingual/docs_registry.yaml` 登记本双语方案。
 - [x] 运行 plan-level validation 并提交 plan-freeze package。
-- [ ] 通过 local-main-first helper 将 Phase A 集成到本地 `main` 并清理 worktree/branch。
+- [x] 通过 local-main-first helper 将 Phase A 集成到本地 `main` 并清理 worktree/branch。
 
 ## 8. Phase B 任务
 
-- [ ] 扩展 `profiles.json`，加入场景 metadata 与 task modules，同时保留现有 profile IDs。
-- [ ] 扩展 plugin-modules 脚本，支持 nested `profile.task_module` soft-load 和 top-level-only hard-load。
-- [ ] 添加 `skills2cli.py profile suggest`，输出 positive/negative/rerank evidence 与紧凑脱敏结果。
-- [ ] 添加 checker 与测试，覆盖 schema、only-`full` coverage、普通任务不得 `full` top-1、installed-copy drift reporting。
-- [ ] 如果新增 checker/test 文件需要登记，同步更新 CI manifest 与 guard registration。
-- [ ] 通过 checker、代表性 suggestions、OpenSpec guard、local gate 与 local MR review 验证 Phase B。
-- [ ] runtime validation 通过后 archive OpenSpec change，再集成到本地 `main`。
+- [x] 扩展 `profiles.json`，加入场景 metadata 与 task modules，同时保留现有 profile IDs。
+- [x] 扩展 plugin-modules 脚本，支持 nested `profile.task_module` soft-load 和 top-level-only hard-load。
+- [x] 添加 `skills2cli.py profile suggest`，输出 positive/negative/rerank evidence 与紧凑脱敏结果。
+- [x] 添加 checker 与测试，覆盖 schema、only-`full` coverage、普通任务不走 `full` top-1、installed-copy drift reporting。
+- [x] 如新增 checker/test 文件需要登记，同步更新 CI manifest 与 guard registration。
+- [x] 通过 checker、代表性 suggestions、OpenSpec guard、local gate 和 local MR review 验证 Phase B。
+- [x] runtime validation 通过后 archive OpenSpec change，并准备由 local-main-first helper 集成。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -181,7 +184,7 @@ Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-m
 
 - `docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md` - Stage A 冻结实施方案与 runtime 验证契约。
 - `docs_bilingual/docs_registry.yaml` - active 双语方案登记。
-- `openspec/changes/improve-skills2cli-profile-routing/` - 当前 OpenSpec change，包含 proposal、design、tasks、management record 与 delta spec。
+- `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/` - 已归档 OpenSpec change，包含 proposal、design、tasks、management record 与 delta spec。
 - `docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md` - advisory audit 输入关联；profile apply 仍未授权。
 - Stage A 验证证据：`openspec validate improve-skills2cli-profile-routing --strict`、`tools/run_openspec_guard.py --root . --tool codex --json`、`tools/check_precommit_update_archive.py --root . --json` 与 `tools/check_worktree_task_receipt.py --root . --json` 已在 plan-freeze commit 前通过。
 

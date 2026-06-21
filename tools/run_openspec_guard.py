@@ -158,6 +158,7 @@ def main() -> int:
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     launcher_payload_context_boundary_script = root / "tools" / "check_launcher_payload_context_boundary.py"
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
+    skills2cli_profile_routing_script = root / "tools" / "check_skills2cli_profile_routing.py"
     pyside6_shared_runtime_contract_script = root / "tools" / "check_pyside6_shared_runtime_contract.py"
     pyside6_gui_template_contract_script = root / "tools" / "check_pyside6_gui_template_contract.py"
     pyside6_gui_preview_helper_contract_script = root / "tools" / "check_pyside6_gui_preview_helper_contract.py"
@@ -652,6 +653,11 @@ def main() -> int:
                 "OpenSpec guard failed during plugin-modules skill verification.",
             ),
             (
+                "check_skills2cli_profile_routing",
+                [str(python_exe), str(skills2cli_profile_routing_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during skills2cli profile routing verification.",
+            ),
+            (
                 "check_pyside6_shared_runtime_contract",
                 [str(python_exe), str(pyside6_shared_runtime_contract_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during PySide6 shared runtime contract verification.",
@@ -1127,6 +1133,12 @@ def main() -> int:
         [str(python_exe), str(plugin_modules_skill_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during plugin-modules skill verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(skills2cli_profile_routing_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during skills2cli profile routing verification.",
     )
 
     run_checked(

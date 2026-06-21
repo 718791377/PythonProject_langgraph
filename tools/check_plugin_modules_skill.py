@@ -41,6 +41,8 @@ PYSIDE6_REPO_HINT_TARGETS = [
     Path("tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template"),
 ]
 REQUIRED_SCRIPT_MARKERS = {
+    "nested_hard_load_reject": "task_module_not_hard_load_target",
+    "scenario_hard_load_reject": "scenario_profile_not_hard_load_target",
     "apply_gate": "[switch]$Apply",
     "restore_gate": "[switch]$RestoreLatest",
     "backup_function": "Backup-CodexPluginModulesConfig",
@@ -110,6 +112,16 @@ def validate(root: Path) -> dict[str, Any]:
             if profiles.get("schema_version") != 1:
                 errors.append("profiles.json schema_version must be 1.")
             modules = profiles.get("modules", {})
+
+            scenario_profiles = profiles.get("scenario_profiles", {})
+            if not isinstance(scenario_profiles, dict) or not scenario_profiles:
+                errors.append("profiles.json must define advisory scenario_profiles.")
+            for scenario_name, scenario_entry in scenario_profiles.items() if isinstance(scenario_profiles, dict) else []:
+                target = scenario_entry.get("target_profile") if isinstance(scenario_entry, dict) else None
+                if target not in modules:
+                    errors.append(f"Scenario profile `{scenario_name}` target_profile must resolve to a canonical module.")
+                if scenario_name in modules:
+                    errors.append(f"Scenario profile `{scenario_name}` must not be a canonical hard-load module.")
             for module in REQUIRED_MODULES:
                 entry = modules.get(module)
                 if not isinstance(entry, dict):
@@ -123,6 +135,18 @@ def validate(root: Path) -> dict[str, Any]:
                 soft_load = entry.get("soft_load", {})
                 if "skill_doc_hints" not in soft_load:
                     errors.append(f"Module `{module}` is missing soft_load.skill_doc_hints.")
+                if module != "full":
+                    for field in ("scenario_description", "route_when", "negative_examples", "load_policy", "ranking_signals", "task_modules"):
+                        if not entry.get(field):
+                            errors.append(f"Module `{module}` is missing routing field `{field}`.")
+                    task_modules = entry.get("task_modules", {})
+                    if isinstance(task_modules, dict):
+                        for task_name, task_entry in task_modules.items():
+                            for field in ("scenario_description", "route_when", "negative_examples", "load_policy", "routing_explanation", "ranking_signals"):
+                                if not task_entry.get(field):
+                                    errors.append(f"Task module `{module}.{task_name}` is missing field `{field}`.")
+                    else:
+                        errors.append(f"Module `{module}` task_modules must be an object.")
             safety = profiles.get("safety", {})
             if safety.get("backup_before_config_write") is not True:
                 errors.append("profiles.json safety.backup_before_config_write must be true.")
@@ -157,7 +181,7 @@ def validate(root: Path) -> dict[str, Any]:
     load_script = skill_root / "scripts" / "load_module.ps1"
     if load_script.exists():
         text = read_text(load_script)
-        for phrase in ["[string]$RepoRoot", "repo_root", "StartsWith('repo:'", "Join-Path $repoRootPath"]:
+        for phrase in ["[string]$RepoRoot", "repo_root", "StartsWith('repo:'", "Join-Path $repoRootPath", "entry_kind", "target_profile", "task_module"]:
             if phrase not in text:
                 errors.append(f"load_module.ps1 missing repo-local hint support marker: {phrase}")
 

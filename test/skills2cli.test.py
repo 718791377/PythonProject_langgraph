@@ -130,11 +130,68 @@ class Skills2CliTest(unittest.TestCase):
         self.assertFalse(payload["edits_plugin_cache"])
         self.assertFalse(payload["profile_apply_performed"])
         self.assertTrue(payload["approval_required_for_apply"])
+        self.assertIn("soft_hard_boundary", payload)
         self.assertEqual(payload["routing_evidence"]["surface_type"], "skill_profile_suggestion")
         self.assertFalse(payload["routing_evidence"]["native_subagent_evidence"])
         self.assertFalse(payload["routing_evidence"]["expert_evidence"])
         self.assertTrue(payload["routing_evidence"]["separate_native_agent_required_for_expert_claims"])
-        self.assertTrue(any(item["profile"] == "browser-automation" for item in payload["suggestions"]))
+        self.assertTrue(any(item.get("scenario_profile") == "browser-automation" and item["target_profile"] == "core-dev" for item in payload["suggestions"]))
+
+    def test_profile_suggest_returns_explainable_web_saas_task_modules(self) -> None:
+        payload = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "Expo mobile build and Sentry observability",
+            "--json",
+        )
+
+        self.assertEqual(payload["selected_profile"]["target_profile"], "web-saas")
+        self.assertNotEqual(payload["selected_profile"]["target_profile"], "full")
+        task_modules = {item["task_module"] for item in payload["task_modules"]}
+        self.assertIn("mobile-app", task_modules)
+        self.assertIn("observability", task_modules)
+        self.assertFalse(payload["mutates_config"])
+        self.assertFalse(payload["profile_apply_performed"])
+        self.assertTrue(payload["soft_load_commands"])
+        self.assertIn("hard_load_preview_command", payload)
+
+    def test_profile_suggest_penalizes_full_unless_explicit_troubleshooting(self) -> None:
+        ordinary = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "Fix GitLab CI and perform security review",
+            "--json",
+        )
+        self.assertNotEqual(ordinary["selected_profile"]["target_profile"], "full")
+        self.assertEqual(ordinary["selected_profile"]["target_profile"], "core-dev")
+        self.assertNotEqual(ordinary["selected_profile"].get("scenario_profile"), "browser-automation")
+        self.assertIn("code-review", {item["task_module"] for item in ordinary["task_modules"]})
+        self.assertIn("security-review", {item["task_module"] for item in ordinary["task_modules"]})
+
+        troubleshooting = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "Troubleshoot all plugins with full profile broad discovery",
+            "--json",
+        )
+        self.assertEqual(troubleshooting["selected_profile"]["target_profile"], "full")
+
+    def test_profile_suggest_preserves_scenario_to_canonical_mapping(self) -> None:
+        payload = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "Twilio WhatsApp customer notification",
+            "--json",
+        )
+        selected = payload["selected_profile"]
+        self.assertEqual(selected["target_profile"], "customer-comms")
+        self.assertEqual(selected["scenario_profile"], "customer-messaging")
+        self.assertIn("messaging", {item["task_module"] for item in payload["task_modules"]})
+        self.assertFalse(payload["routing_evidence"]["native_subagent_evidence"])
 
     def test_warning_audit_summarizes_and_redacts_warning_text(self) -> None:
         repo, codex_home = self.make_workspace("warnings")

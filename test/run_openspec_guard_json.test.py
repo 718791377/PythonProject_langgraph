@@ -98,6 +98,7 @@ GUARD_STEPS = [
         "launcher_payload_context_boundary",
     ),
     ("check_plugin_modules_skill", "check_plugin_modules_skill.py", "plugin_modules_skill"),
+    ("check_skills2cli_profile_routing", "check_skills2cli_profile_routing.py", "skills2cli_profile_routing"),
     ("check_pyside6_shared_runtime_contract", "check_pyside6_shared_runtime_contract.py", "pyside6_shared_runtime_contract"),
     ("check_pyside6_gui_template_contract", "check_pyside6_gui_template_contract.py", "pyside6_gui_template_contract"),
     ("check_pyside6_gui_preview_helper_contract", "check_pyside6_gui_preview_helper_contract.py", "pyside6_gui_preview_helper_contract"),
@@ -239,6 +240,7 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertIn("check_reference8_capability_install", [step["step"] for step in payload["steps"]])
         self.assertIn("check_reference_recursive_capability_install", [step["step"] for step in payload["steps"]])
         self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_skills2cli_profile_routing", [step["step"] for step in payload["steps"]])
         self.assertIn("check_multi_plan_family_r6_live_runtime", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:

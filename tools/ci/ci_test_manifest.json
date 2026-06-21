@@ -45,6 +45,7 @@
     "check_fanout_write_ownership_evidence.test.py",
     "check_comet_superpowers_visibility.test.py",
     "check_plugin_modules_skill.test.py",
+    "check_skills2cli_profile_routing.test.py",
     "evidence_intake_pipeline.test.py",
     "evidence_adapters.test.py",
     "check_pyside6_shared_runtime_contract.test.py",

@@ -25,9 +25,11 @@ created_at: 2026-06-21
 
 <!-- CURRENT_STATUS_START -->
 
-- Stage A plan-freeze package is in progress in `freeze-skills2cli-profile-routing-plan-20260621`.
-- OpenSpec change `improve-skills2cli-profile-routing` is the active contract for this work.
-- Phase B runtime implementation is pending Stage A validation and local-main integration.
+- Stage A plan-freeze package is integrated into local `main` at `3d08d6e`.
+- Phase B runtime implementation is complete and committed on `implement-skills2cli-profile-routing-runtime-20260621`.
+- Implemented runtime surfaces include scenario profiles, task modules, advisory `skills2cli profile suggest`, plugin-modules soft-load scripts, checker/test coverage, installed-wrapper profile-suggest smoke, and OpenSpec guard registration.
+- Completed verification: representative routing smokes, focused tests, full Python unittest manifest, OpenSpec guard, local CI, and local MR review.
+- Remaining closeout is local-main-first helper integration, post-merge validation, completed-claim/rollback evidence, and safe feature worktree cleanup; remote publication remains unauthorized.
 - Remote publication is not authorized.
 
 <!-- CURRENT_STATUS_END -->
@@ -152,17 +154,17 @@ Representative routing tests must cover:
 - [x] Update `codex_skills_usage_audit_plan.md` and `.zh-CN.md` to link audit evidence to advisory routing/rerank only.
 - [x] Register the bilingual plan in `docs_bilingual/docs_registry.yaml`.
 - [x] Run plan-level validation and commit the plan-freeze package.
-- [ ] Integrate Phase A into local `main` and clean the worktree/branch through the local-main-first helper.
+- [x] Integrate Phase A into local `main` and clean the worktree/branch through the local-main-first helper.
 
 ## 8. Phase B tasks
 
-- [ ] Extend `profiles.json` with scenario metadata and task modules while preserving existing profile IDs.
-- [ ] Extend plugin-modules scripts for nested `profile.task_module` soft-load and top-level-only hard-load.
-- [ ] Add `skills2cli.py profile suggest` with positive/negative/rerank evidence and compact sanitized output.
-- [ ] Add checker and tests for schema, only-`full` coverage, no ordinary `full` top-1, and installed-copy drift reporting.
-- [ ] Update CI manifest and guard registrations if new checker/test files require registration.
-- [ ] Validate Phase B with checker, representative suggestions, OpenSpec guard, local gate, and local MR review.
-- [ ] Archive the OpenSpec change after runtime validation passes, then integrate into local `main`.
+- [x] Extend `profiles.json` with scenario metadata and task modules while preserving existing profile IDs.
+- [x] Extend plugin-modules scripts for nested `profile.task_module` soft-load and top-level-only hard-load.
+- [x] Add `skills2cli.py profile suggest` with positive/negative/rerank evidence and compact sanitized output.
+- [x] Add checker and tests for schema, only-`full` coverage, no ordinary `full` top-1, and installed-copy drift reporting.
+- [x] Update CI manifest and guard registrations if new checker/test files require registration.
+- [x] Validate Phase B with checker, representative suggestions, OpenSpec guard, local gate, and local MR review.
+- [x] Archive the OpenSpec change after runtime validation passes and prepare the package for local-main-first helper integration.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -182,7 +184,7 @@ Representative routing tests must cover:
 
 - `docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md` - Stage A frozen implementation plan and runtime validation contract.
 - `docs_bilingual/docs_registry.yaml` - active bilingual plan registry entry.
-- `openspec/changes/improve-skills2cli-profile-routing/` - active OpenSpec change containing proposal, design, tasks, management record, and delta spec.
+- `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/` - archived OpenSpec change containing proposal, design, tasks, management record, and delta spec.
 - `docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md` - advisory audit input linkage; profile apply remains unauthorized.
 - Stage A validation evidence: `openspec validate improve-skills2cli-profile-routing --strict`, `tools/run_openspec_guard.py --root . --tool codex --json`, `tools/check_precommit_update_archive.py --root . --json`, and `tools/check_worktree_task_receipt.py --root . --json` passed before the plan-freeze commit.
 

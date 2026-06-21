@@ -65,6 +65,131 @@ class PluginModulesSkillCheckTest(unittest.TestCase):
         parsed = json.loads(result.stdout)
         self.assertTrue(any("customer-comms" in error for error in parsed["errors"]))
 
+
+    def test_fails_when_non_full_profile_lacks_scenario_routing_metadata(self) -> None:
+        root = self.make_root("plugin-modules-missing-routing")
+        self.copy_skill_source(root)
+        profiles_path = root / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        del payload["modules"]["core-dev"]["scenario_description"]
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("scenario_description" in error for error in parsed["errors"]))
+
+    def test_fails_when_task_module_is_malformed(self) -> None:
+        root = self.make_root("plugin-modules-malformed-task")
+        self.copy_skill_source(root)
+        profiles_path = root / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        del payload["modules"]["web-saas"]["task_modules"]["mobile-app"]["routing_explanation"]
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("web-saas.mobile-app" in error and "routing_explanation" in error for error in parsed["errors"]))
+
+    def test_scenario_profile_resolves_to_canonical_target(self) -> None:
+        profiles_path = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        scenario = payload["scenario_profiles"]["customer-messaging"]
+
+        self.assertEqual(scenario["target_profile"], "customer-comms")
+        self.assertNotIn("customer-messaging", payload["modules"])
+
+    @unittest.skipUnless(shutil.which("powershell") or shutil.which("pwsh"), "PowerShell is required for plugin module loader tests.")
+    def test_load_module_accepts_nested_task_module(self) -> None:
+        shell = shutil.which("powershell") or shutil.which("pwsh")
+        script = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "scripts" / "load_module.ps1"
+        result = subprocess.run(
+            [
+                shell,
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(script),
+                "web-saas.mobile-app",
+                "-RepoRoot",
+                str(REPO_ROOT),
+                "-Json",
+            ],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["entry_kind"], "task_module")
+        self.assertEqual(payload["target_profile"], "web-saas")
+        self.assertEqual(payload["task_module"], "mobile-app")
+        self.assertEqual(payload["plugins"], ["Expo"])
+
+    @unittest.skipUnless(shutil.which("powershell") or shutil.which("pwsh"), "PowerShell is required for plugin module loader tests.")
+    def test_set_plugin_profile_rejects_nested_task_module(self) -> None:
+        shell = shutil.which("powershell") or shutil.which("pwsh")
+        script = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "scripts" / "set_plugin_profile.ps1"
+        result = subprocess.run(
+            [
+                shell,
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(script),
+                "web-saas.mobile-app",
+                "-Json",
+            ],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["error"], "task_module_not_hard_load_target")
+        self.assertFalse(payload["mutates_config"])
+        self.assertIn("hard-load applies only to canonical top-level profiles", payload["explanation"])
+
+
+    @unittest.skipUnless(shutil.which("powershell") or shutil.which("pwsh"), "PowerShell is required for plugin module loader tests.")
+    def test_set_plugin_profile_rejects_scenario_profile(self) -> None:
+        shell = shutil.which("powershell") or shutil.which("pwsh")
+        script = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "scripts" / "set_plugin_profile.ps1"
+        result = subprocess.run(
+            [
+                shell,
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(script),
+                "customer-messaging",
+                "-Json",
+            ],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["error"], "scenario_profile_not_hard_load_target")
+        self.assertEqual(payload["target_profile"], "customer-comms")
+        self.assertEqual(payload["scenario_profile"], "customer-messaging")
+        self.assertFalse(payload["mutates_config"])
+        self.assertIn("hard-load applies only to canonical top-level profiles", payload["explanation"])
+
     def test_fails_when_apply_gate_is_removed(self) -> None:
         root = self.make_root("plugin-modules-no-apply")
         self.copy_skill_source(root)

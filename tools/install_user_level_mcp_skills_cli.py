@@ -386,7 +386,7 @@ skills2cli index --json
 skills2cli search <query> --json
 skills2cli show <skill_id> --json
 skills2cli audit warnings --since 7d --json
-skills2cli profile suggest --task "task summary" --json
+skills2cli profile suggest --query "task summary" --json
 ```
 
 ## Safety
@@ -406,6 +406,10 @@ def copy_facades(paths: dict[str, Path], *, upstream_ref: str | None) -> None:
     shutil.copy2(source, target)
     shared_frontmatter = repo_root() / "tools" / "codex_skill_frontmatter.py"
     shutil.copy2(shared_frontmatter, paths["skills2cli_tool_dir"] / "codex_skill_frontmatter.py")
+    profile_registry = repo_root() / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+    installed_profile_registry = paths["skills2cli_tool_dir"] / "references" / "profiles.json"
+    installed_profile_registry.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(profile_registry, installed_profile_registry)
     write(paths["skills2cli_skill_dir"] / "SKILL.md", skills2cli_skill())
     write(
         paths["skills2cli_tool_dir"] / "install-metadata.json",
@@ -416,7 +420,8 @@ def copy_facades(paths: dict[str, Path], *, upstream_ref: str | None) -> None:
                 "source_file": "tools/skills2cli.py",
                 "source_hash": h(source.read_text(encoding="utf-8", errors="replace")),
                 "support_files": {
-                    "codex_skill_frontmatter.py": h(shared_frontmatter.read_text(encoding="utf-8", errors="replace"))
+                    "codex_skill_frontmatter.py": h(shared_frontmatter.read_text(encoding="utf-8", errors="replace")),
+                    "references/profiles.json": h(profile_registry.read_text(encoding="utf-8", errors="replace")),
                 },
                 "upstream_pattern_source": f"{UPSTREAM_URL}/tree/main/skills/mcp2cli",
                 "upstream_ref": upstream_ref or "main",
@@ -737,6 +742,16 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
     mcp_help = [str(paths["mcp2cli_cmd"]), "--help"]
     mcp_version = [str(paths["mcp2cli_cmd"]), "--version"]
     skills_help = [str(paths["skills2cli_cmd"]), "--help"]
+    skills_profile_suggest = [
+        str(paths["skills2cli_cmd"]),
+        "profile",
+        "suggest",
+        "--query",
+        "Expo mobile build and Sentry observability",
+        "--json",
+        "--codex-home",
+        str(codex_home),
+    ]
 
     uv_env = {"UV_CACHE_DIR": str(paths["uv_cache_dir"])}
     results = {
@@ -754,6 +769,11 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
             if not args.simulate_external
             else CommandResult(skills_help, 0, "usage: skills2cli\n", "")
         ),
+        "skills2cli_profile_suggest": (
+            run_wrapper_smoke(skills_profile_suggest, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+            if not args.simulate_external
+            else CommandResult(skills_profile_suggest, 0, '{"selected_profile":{"target_profile":"web-saas"}}\n', "")
+        ),
     }
     mcp_smoke = results["mcp2cli_wrapper_version"]
     if mcp_smoke.returncode != 0:
@@ -767,6 +787,8 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
         blockers.append("mcp2cli_wrapper_smoke_failed")
     if results["skills2cli_wrapper_help"].returncode != 0:
         blockers.append("skills2cli_wrapper_smoke_failed")
+    if results["skills2cli_profile_suggest"].returncode != 0:
+        blockers.append("skills2cli_profile_suggest_smoke_failed")
 
     local_mcp_exe = Path.home() / ".local" / "bin" / "mcp2cli.exe"
     mcp_install_path: str | Path = local_mcp_exe if local_mcp_exe.exists() else "uv-tool:mcp2cli"
@@ -798,7 +820,7 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
         install_path=paths["skills2cli_tool_dir"],
         wrapper_path=paths["skills2cli_cmd"],
         state_path=paths["skills2cli_state"],
-        smoke=results["skills2cli_wrapper_help"],
+        smoke=results["skills2cli_profile_suggest"],
         updater_command=[sys.executable, str(Path(__file__).resolve()), "apply", "--apply"],
         rollback_pointer=rollback,
         owner_lane="skills2cli",
@@ -807,6 +829,7 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
             "upstream_skill_ref": UPSTREAM_SKILL_REF,
             "full_skill_bodies_included_by_default": False,
             "profile_suggest_preview_only": True,
+            "profile_suggest_smoke": summarize_result(results["skills2cli_profile_suggest"]),
             "native_subagent_evidence": False,
         },
     )
@@ -870,11 +893,25 @@ def command_smoke(args: argparse.Namespace) -> dict[str, Any]:
     else:
         blockers.append("missing_wrapper:mcp2cli_cmd")
 
-    skills_help = [str(paths["skills2cli_cmd"]), "--help"]
-    smoke_commands["skills2cli"] = skills_help
-    smoke_types["skills2cli"] = "help"
+    skills_profile_suggest = [
+        str(paths["skills2cli_cmd"]),
+        "profile",
+        "suggest",
+        "--query",
+        "Expo mobile build and Sentry observability",
+        "--json",
+        "--codex-home",
+        str(paths["codex_home"]),
+    ]
+    smoke_commands["skills2cli"] = skills_profile_suggest
+    smoke_types["skills2cli"] = "safe-discovery"
     if paths["skills2cli_cmd"].exists():
-        skills_result = run_wrapper_smoke(skills_help, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+        skills_result = run_wrapper_smoke(skills_profile_suggest, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+        if skills_result.returncode != 0:
+            skills_help = [str(paths["skills2cli_cmd"]), "--help"]
+            skills_result = run_wrapper_smoke(skills_help, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+            smoke_commands["skills2cli"] = skills_help
+            smoke_types["skills2cli"] = "help"
         smoke_results["skills2cli"] = skills_result
         if skills_result.returncode != 0:
             blockers.append("skills2cli_smoke_failed")
@@ -1045,6 +1082,20 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
         smoke["skills2cli_help"] = summarize_result(result)
         if args.require_installed and result.returncode != 0:
             errors.append("skills2cli_help_smoke_failed")
+        profile_suggest_command = [
+            str(paths["skills2cli_cmd"]),
+            "profile",
+            "suggest",
+            "--query",
+            "Expo mobile build and Sentry observability",
+            "--json",
+            "--codex-home",
+            str(paths["codex_home"]),
+        ]
+        suggest_result = run_wrapper_smoke(profile_suggest_command, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+        smoke["skills2cli_profile_suggest"] = summarize_result(suggest_result)
+        if args.require_installed and suggest_result.returncode != 0:
+            errors.append("skills2cli_profile_suggest_smoke_failed")
     return base(
         "check",
         not errors,

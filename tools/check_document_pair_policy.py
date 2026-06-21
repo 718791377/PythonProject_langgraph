@@ -51,7 +51,15 @@ def changed_markdown(root: Path, base_ref: str) -> dict[str, str]:
                 continue
             parts = raw.split("\t")
             status = parts[0][:1]
-            path = normalize(parts[-1])
+            paths = [normalize(item) for item in parts[1:]]
+            if status in {"R", "C"} and len(paths) >= 2:
+                source_path, target_path = paths[-2], paths[-1]
+                if is_target_markdown(source_path):
+                    changed[source_path] = "D"
+                if is_target_markdown(target_path):
+                    changed[target_path] = "A"
+                continue
+            path = paths[-1] if paths else ""
             if is_target_markdown(path):
                 changed[path] = status
     # Include staged, unstaged, and untracked files for pre-commit / dirty guard runs.
