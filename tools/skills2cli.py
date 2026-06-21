@@ -37,6 +37,14 @@ UNC_PATH_RE = re.compile(r"\\\\[^\s\"'<>|]+(?:\\[^\s\"'<>|]+)+")
 POSIX_PRIVATE_PATH_RE = re.compile(r"(?<![\w.-])/(?:Users|home|private|var|tmp|mnt|Volumes|builds)/[^\s\"'<>|]+")
 TOKEN_RE = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie|password)\s*[:=]\s*([^\s,;\"']+)")
 STANDALONE_SECRET_RE = re.compile(r"(?i)\b(?:sk-[a-z0-9_-]{6,}|xox[baprs]-[a-z0-9_-]{6,}|gh[pousr]_[a-z0-9_]{8,})\b")
+UUID_RE = re.compile(r"(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b")
+CALL_ID_RE = re.compile(r"\bcall_[A-Za-z0-9_-]{8,}\b")
+RESPONSE_ID_RE = re.compile(r"\bresp_[A-Za-z0-9_-]{8,}\b")
+RUNTIME_ID_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b(thread_id|session_id|conversation_id|turn_id|submission\.id|rpc\.request_id|request_id|connection_id)"
+    r"\s*=\s*(?:\\?\"[^\"\s,;)}]+\\?\"|[^\s,;)}]+)"
+)
+TOKEN_COUNTER_RE = re.compile(r"(?i)\b(?:input|output|total|cached)[_-]?tokens?\s*[:=]\s*\d+\b")
 BUDGET_WARNING_RE = re.compile(r"Exceeded skills context budget of 2%", re.IGNORECASE)
 SKIPPED_LOADING_RE = re.compile(r"Skipped loading\s+\d+\s+skill|Skipped loading|invalid SKILL\.md|missing YAML frontmatter", re.IGNORECASE)
 OMITTED_ADDITIONAL_RE = re.compile(r"(\d+)\s+additional skills were not included", re.IGNORECASE)
@@ -80,6 +88,11 @@ def sanitize_text(value: str, *, limit: int | None = None) -> str:
     text = POSIX_PRIVATE_PATH_RE.sub("[REDACTED_PATH]", text)
     text = TOKEN_RE.sub(lambda match: match.group(0).split(match.group(1))[0] + "[REDACTED_SECRET]", text)
     text = STANDALONE_SECRET_RE.sub("[REDACTED_SECRET]", text)
+    text = RUNTIME_ID_ASSIGNMENT_RE.sub(lambda match: f"{match.group(1)}=[REDACTED_ID]", text)
+    text = CALL_ID_RE.sub("[REDACTED_ID]", text)
+    text = RESPONSE_ID_RE.sub("[REDACTED_ID]", text)
+    text = UUID_RE.sub("[REDACTED_ID]", text)
+    text = TOKEN_COUNTER_RE.sub("[REDACTED_TOKEN_COUNT]", text)
     text = re.sub(r"\s+", " ", text).strip()
     if limit is not None and len(text) > limit:
         return text[: max(0, limit - len("...[truncated]"))].rstrip() + "...[truncated]"

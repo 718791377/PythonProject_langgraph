@@ -142,9 +142,11 @@ class Skills2CliTest(unittest.TestCase):
         sessions.mkdir(parents=True)
         now = datetime.now(timezone.utc).isoformat()
         warning_message = (
-            r"? Exceeded skills context budget of 2%. All skill descriptions were removed. "
-            r"? Skipped loading 2 skill(s) due to invalid SKILL.md files. "
-            r"C:\Users\lenovo\.codex\plugins\cache\secret\SKILL.md api_key=sk-test-warning-secret"
+            r"Exceeded skills context budget of 2%. Skipped loading 2 skill(s). "
+            r"C:\Users\lenovo\.codex\plugins\cache\secret\SKILL.md api_key=sk-test-warning-secret "
+            r"thread_id=019ee780-f410-7c90-96c7-49928f42b6fa input_tokens=1234 "
+            r"submission.id=\"019ee780-fae5-7c02-a192-abb289bf47db\" "
+            r"function_call_output call_KRG60tVpaPmlKsJyGpcvufJJ resp_039ab27082c4ef3b"
         )
         (sessions / "session.jsonl").write_text(
             json.dumps({"timestamp": now, "type": "event_msg", "payload": {"message": warning_message}}, ensure_ascii=False) + "\n",
@@ -161,8 +163,15 @@ class Skills2CliTest(unittest.TestCase):
         self.assertFalse(payload["raw_skill_bodies_retained"])
         self.assertNotIn(r"C:\Users\lenovo", serialized)
         self.assertNotIn("sk-test-warning-secret", serialized)
+        self.assertNotIn("019ee780-f410-7c90-96c7-49928f42b6fa", serialized)
+        self.assertNotIn("019ee780-fae5-7c02-a192-abb289bf47db", serialized)
+        self.assertNotIn("call_KRG60tVpaPmlKsJyGpcvufJJ", serialized)
+        self.assertNotIn("resp_039ab27082c4ef3b", serialized)
+        self.assertNotIn("input_tokens=1234", serialized)
         self.assertIn("[REDACTED_PATH]", serialized)
         self.assertIn("[REDACTED_SECRET]", serialized)
+        self.assertIn("[REDACTED_ID]", serialized)
+        self.assertIn("[REDACTED_TOKEN_COUNT]", serialized)
 
     def test_warning_audit_also_reads_logs_2_sqlite_without_raw_paths(self) -> None:
         _repo, codex_home = self.make_workspace("sqlite-warnings")
@@ -176,9 +185,12 @@ class Skills2CliTest(unittest.TestCase):
                     "WARN",
                     "codex_runtime",
                     "Exceeded skills context budget of 2%. "
+                    r"output_tokens=5678 thread_id=019ee780-f410-7c90-96c7-49928f42b6fa "
+                    r"C:\Users\lenovo\.codex\skills\bad\SKILL.md api_key=sk-test-sqlite-secret "
                     "All skill descriptions were removed and 16 additional skills were not included. "
-                    r"Skipped loading 286 skill(s) due to invalid SKILL.md files. "
-                    r"C:\Users\lenovo\.codex\skills\bad\SKILL.md api_key=sk-test-sqlite-secret",
+                    r"Skipped loading 286 skill(s). "
+                    r"submission.id=\"019ee780-fae5-7c02-a192-abb289bf47db\" "
+                    r"call_hTEFffZpfgH3Ci0PPRbSyTB3 resp_039ab27082c4ef3b",
                 ),
             )
 
@@ -199,8 +211,15 @@ class Skills2CliTest(unittest.TestCase):
         self.assertFalse(payload["raw_skill_bodies_retained"])
         self.assertNotIn(r"C:\Users\lenovo", serialized)
         self.assertNotIn("sk-test-sqlite-secret", serialized)
+        self.assertNotIn("019ee780-f410-7c90-96c7-49928f42b6fa", serialized)
+        self.assertNotIn("019ee780-fae5-7c02-a192-abb289bf47db", serialized)
+        self.assertNotIn("call_hTEFffZpfgH3Ci0PPRbSyTB3", serialized)
+        self.assertNotIn("resp_039ab27082c4ef3b", serialized)
+        self.assertNotIn("output_tokens=5678", serialized)
         self.assertIn("[REDACTED_PATH]", serialized)
         self.assertIn("[REDACTED_SECRET]", serialized)
+        self.assertIn("[REDACTED_ID]", serialized)
+        self.assertIn("[REDACTED_TOKEN_COUNT]", serialized)
 
 
 if __name__ == "__main__":
