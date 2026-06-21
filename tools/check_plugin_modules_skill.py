@@ -8,18 +8,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from skills2cli_profile_registry_contract import (
+    CANONICAL_PROFILE_IDS,
+    PLUGIN_MODULES_SKILL_RELATIVE,
+    REQUIRED_TASK_FIELDS,
+    truthy_list,
+)
+
 CHECK_NAME = "plugin_modules_skill"
-SKILL_RELATIVE = Path("tools/skill_sources/plugin-modules")
-REQUIRED_MODULES = [
-    "core-dev",
-    "web-saas",
-    "company-ops",
-    "market-research",
-    "customer-comms",
-    "creative-content",
-    "pyside6-gui",
-    "full",
-]
+SKILL_RELATIVE = PLUGIN_MODULES_SKILL_RELATIVE
+REQUIRED_MODULES = list(CANONICAL_PROFILE_IDS)
 REQUIRED_FILES = [
     "SKILL.md",
     "references/profiles.json",
@@ -137,13 +135,15 @@ def validate(root: Path) -> dict[str, Any]:
                     errors.append(f"Module `{module}` is missing soft_load.skill_doc_hints.")
                 if module != "full":
                     for field in ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "ranking_signals", "task_modules"):
-                        if not entry.get(field):
+                        if not truthy_list(entry.get(field)):
                             errors.append(f"Module `{module}` is missing routing field `{field}`.")
                     task_modules = entry.get("task_modules", {})
                     if isinstance(task_modules, dict):
                         for task_name, task_entry in task_modules.items():
-                            for field in ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "routing_explanation", "ranking_signals"):
-                                if not task_entry.get(field):
+                            for field in REQUIRED_TASK_FIELDS:
+                                if field == "plugin_hints" and module == "pyside6-gui":
+                                    continue
+                                if not truthy_list(task_entry.get(field)):
                                     errors.append(f"Task module `{module}.{task_name}` is missing field `{field}`.")
                     else:
                         errors.append(f"Module `{module}` task_modules must be an object.")

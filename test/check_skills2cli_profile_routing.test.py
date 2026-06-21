@@ -45,6 +45,23 @@ class Skills2CliProfileRoutingCheckTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["errors"], 0)
         self.assertGreaterEqual(payload["counts"]["scenario_profiles"], 6)
 
+    def test_repository_checker_reports_profile_suggest_matrix(self) -> None:
+        result = self.run_check(REPO_ROOT)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        matrix = payload["profile_suggest_rerank_contract"]["matrix"]
+        names = {item["name"] for item in matrix}
+
+        self.assertIn("market-research-paper-report", names)
+        self.assertIn("creative-content-brand-assets", names)
+        self.assertIn("pyside6-gui-packaging", names)
+        self.assertIn("explicit-full-zh", names)
+        self.assertTrue(all(item["ok"] for item in matrix))
+        explicit_zh = next(item for item in matrix if item["name"] == "explicit-full-zh")
+        self.assertEqual(explicit_zh["selected_profile"], "full")
+        ordinary = [item for item in matrix if not item["name"].startswith("explicit-full")]
+        self.assertTrue(all(item["selected_profile"] != "full" for item in ordinary))
+
     def test_fails_when_known_plugin_is_only_full_without_allowlist(self) -> None:
         root = self.make_root("only-full-plugin")
         profiles_path = self.copy_registry(root)

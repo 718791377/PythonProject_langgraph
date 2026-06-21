@@ -29,6 +29,14 @@ from codex_skill_frontmatter import (  # noqa: E402
     CODEX_SKILL_NAME_LIMIT,
     codex_frontmatter_report,
 )
+from skills2cli_profile_registry_contract import (  # noqa: E402
+    as_string_list,
+    is_explicit_full_request,
+    load_profile_registry as load_profile_registry_contract,
+    plugin_hints as contract_plugin_hints,
+    scene_description as contract_scene_description,
+    skill_doc_hints as contract_skill_doc_hints,
+)
 
 SCHEMA_VERSION = 1
 SUMMARY_LIMIT = 160
@@ -384,7 +392,6 @@ def command_show(args: argparse.Namespace) -> int:
     return 0
 
 
-PROFILE_REGISTRY_RELATIVE = Path("tools/skill_sources/plugin-modules/references/profiles.json")
 AUDIT_MEMORY_RELATIVE = Path("docs_bilingual/memory")
 AUDIT_SUMMARY_PATTERNS = (
     "skills_usage_audit_30d_summary_*.md",
@@ -405,36 +412,14 @@ QUERY_SYNONYMS = {
     "\u6392\u969c": "troubleshoot troubleshooting",
     "\u5168\u90e8\u63d2\u4ef6": "all plugins full profile",
 }
-EXPLICIT_FULL_TERMS = (
-    "full profile",
-    "all plugins",
-    "all-plugin",
-    "troubleshoot all plugins",
-    "diagnose missing plugin capability",
-    "\u6392\u969c\u6240\u6709\u63d2\u4ef6",
-    "\u5168\u90e8\u63d2\u4ef6",
-    "\u5b8c\u6574 profile",
-)
-
 
 def load_profile_registry(repo_root: Path, codex_home: Path | None = None) -> dict[str, Any]:
-    candidates = [
-        repo_root / PROFILE_REGISTRY_RELATIVE,
-        SCRIPT_DIR / "references" / "profiles.json",
-    ]
-    if codex_home is not None:
-        candidates.append(codex_home / "skills" / "plugin-modules" / "references" / "profiles.json")
-    candidates.append(default_codex_home() / "skills" / "plugin-modules" / "references" / "profiles.json")
-    for path in candidates:
-        try:
-            if path.exists():
-                payload = json.loads(path.read_text(encoding="utf-8"))
-                if isinstance(payload, dict):
-                    payload["_registry_source"] = str(path)
-                    return payload
-        except (OSError, json.JSONDecodeError):
-            continue
-    return {"modules": {}, "scenario_profiles": {}, "known_plugins": [], "_registry_source": None}
+    return load_profile_registry_contract(
+        repo_root,
+        codex_home,
+        script_dir=SCRIPT_DIR,
+        default_codex_home=default_codex_home(),
+    )
 
 
 def repo_relative_path(repo_root: Path, path: Path) -> str:
@@ -605,16 +590,6 @@ def load_audit_ranking_context(repo_root: Path, profiles: Iterable[str]) -> dict
     }
 
 
-def as_string_list(value: Any) -> list[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, list):
-        return [str(item) for item in value if str(item).strip()]
-    return [str(value)]
-
-
 def normalize_query(value: str) -> str:
     base = sanitize_text(value, limit=500).lower()
     additions = [alias for marker, alias in QUERY_SYNONYMS.items() if marker.lower() in base]
@@ -638,27 +613,15 @@ def match_terms(haystack: str, terms: Iterable[Any]) -> list[str]:
 def scene_description(entry: dict[str, Any]) -> str:
     """Return the new scene_description field while preserving legacy compatibility."""
 
-    return str(entry.get("scene_description") or entry.get("scenario_description") or "")
+    return contract_scene_description(entry)
 
 
 def profile_plugin_hints(entry: dict[str, Any]) -> list[str]:
-    hints = as_string_list(entry.get("plugin_hints"))
-    if not hints:
-        hints = as_string_list(entry.get("plugins"))
-    return hints[:12]
+    return contract_plugin_hints(entry)
 
 
 def profile_skill_doc_hints(entry: dict[str, Any]) -> list[str]:
-    soft_load = entry.get("soft_load") if isinstance(entry.get("soft_load"), dict) else {}
-    hints = [*as_string_list(entry.get("skill_doc_hints")), *as_string_list(soft_load.get("skill_doc_hints"))]
-    seen: set[str] = set()
-    result: list[str] = []
-    for hint in hints:
-        if hint in seen:
-            continue
-        seen.add(hint)
-        result.append(hint)
-    return result[:12]
+    return contract_skill_doc_hints(entry)
 
 
 def profile_candidate_terms(profile_id: str, entry: dict[str, Any]) -> list[str]:
@@ -770,12 +733,13 @@ def score_profile_candidate(
     scenario_id: str | None,
     scenario: dict[str, Any] | None,
     audit_context: dict[str, Any] | None = None,
+    explicit_full: bool | None = None,
 ) -> dict[str, Any]:
     profile_hits = match_terms(query_text, profile_candidate_terms(profile_id, entry))
     scenario_hits = match_terms(query_text, scenario_candidate_terms(str(scenario_id), scenario)) if scenario_id and scenario else []
     negative_terms = as_string_list(entry.get("negative_examples")) + as_string_list((scenario or {}).get("negative_examples"))
     negative = match_terms(query_text, negative_terms)
-    explicit_full = any(term in query_text for term in EXPLICIT_FULL_TERMS)
+    explicit_full = is_explicit_full_request(query_text) if explicit_full is None else explicit_full
     load_policy = str((scenario or {}).get("load_policy") or entry.get("load_policy") or "default-candidate")
     default_modules = as_string_list((scenario or {}).get("default_task_modules"))
     default_module_set = set(default_modules)
@@ -836,6 +800,7 @@ def build_profile_recommendations(
     query_text = normalize_query(raw_query)
     modules = registry.get("modules") or {}
     scenarios = registry.get("scenario_profiles") or {}
+    explicit_full = is_explicit_full_request(query_text, registry)
     candidates: list[dict[str, Any]] = []
     seen_keys: set[tuple[str, str | None]] = set()
     for scenario_id, scenario in scenarios.items():
@@ -847,14 +812,14 @@ def build_profile_recommendations(
             continue
         key = (target, scenario_id)
         seen_keys.add(key)
-        candidates.append(score_profile_candidate(query_text, target, entry, str(scenario_id), scenario, audit_context))
+        candidates.append(score_profile_candidate(query_text, target, entry, str(scenario_id), scenario, audit_context, explicit_full))
     for profile_id, entry in modules.items():
         if not isinstance(entry, dict):
             continue
         key = (str(profile_id), None)
         if key in seen_keys:
             continue
-        candidates.append(score_profile_candidate(query_text, str(profile_id), entry, None, None, audit_context))
+        candidates.append(score_profile_candidate(query_text, str(profile_id), entry, None, None, audit_context, explicit_full))
     excluded: list[dict[str, Any]] = []
     retained: list[dict[str, Any]] = []
     for item in candidates:
@@ -880,6 +845,7 @@ def build_profile_recommendations(
                 "repo-dev",
                 (registry.get("scenario_profiles") or {}).get("repo-dev") if isinstance(registry.get("scenario_profiles"), dict) else None,
                 audit_context,
+                explicit_full,
             )
         )
         retained[-1]["score"] = max(1, int(retained[-1]["score"]))
@@ -887,7 +853,6 @@ def build_profile_recommendations(
         retained[-1]["matched_terms"] = retained[-1].get("matched_terms") or []
         retained[-1]["fallback_reason"] = "no_positive_profile_match_default_to_core_dev_preview"
     retained.sort(key=lambda item: (-int(item["score"]), 1 if item["profile"] == "full" else 0, str(item.get("scenario_profile") or item["profile"])))
-    explicit_full = any(term in query_text for term in EXPLICIT_FULL_TERMS)
     if retained and retained[0]["profile"] == "full" and not explicit_full:
         non_full = [item for item in retained if item["profile"] != "full"]
         if non_full:

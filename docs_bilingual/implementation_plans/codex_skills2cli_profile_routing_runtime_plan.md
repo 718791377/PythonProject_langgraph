@@ -32,6 +32,7 @@ created_at: 2026-06-21
 - The checker now runs a profile-suggest rerank contract smoke in addition to registry/schema/full-coverage checks.
 - User-level installed copies may still report drift until a separate install/update step is authorized; repo source remains the source of truth.
 - Closeout package `close-skills2cli-profile-routing-gaps-20260622` adds the `scene_description` contract field while preserving `scenario_description` compatibility, adds profile-level `plugin_hints` and `skill_doc_hints` to `profile suggest`, and records archive management outcome evidence.
+- Contract hardening package `harden-skills2cli-profile-routing-contract-20260622` centralizes shared registry constants/accessors, extends the profile-suggest matrix across all ordinary profile families, and keeps runtime scoring separate from checker smoke expectations.
 - Remote publication is not authorized.
 
 <!-- CURRENT_STATUS_END -->
@@ -178,6 +179,9 @@ Representative routing tests must cover:
 - `full` is not top-1 for ordinary user tasks.
 - Profile suggestion remains advisory and never applies config.
 - `skills2cli` focused tests, `mcp2cli` risk/receipt tests, agent/skill/profile boundary tests, and strict user-level install/smoke checks are part of the final runtime validation set.
+- The shared registry contract module is the only Python source for canonical profile IDs, required routing fields, registry/installed-copy paths, `scene_description` compatibility accessors, profile/task hint accessors, plugin coverage collection, and explicit `full` troubleshooting trigger terms.
+- The checker-backed routing matrix proves that normal task queries for every ordinary top-level profile do not select `full`, while explicit English and Chinese all-plugin troubleshooting queries may select `full`; every matrix row must keep `mutates_config=false`, `edits_plugin_cache=false`, `profile_apply_performed=false`, and `approval_required_for_apply=true`.
+- `check_skills2cli_profile_routing.py --json` emits UTF-8 JSON bytes so Chinese matrix rows remain decodable on Windows, and checker smoke cases remain black-box boundary tests rather than duplicated runtime scoring logic.
 - Local OpenSpec validation, repository guard, local CI, and local MR review pass before local `main` integration.
 
 ## Evidence Index
@@ -190,5 +194,7 @@ Representative routing tests must cover:
 - `docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md` - advisory audit input linkage; profile apply remains unauthorized.
 - Stage A validation evidence: `openspec validate improve-skills2cli-profile-routing --strict`, `tools/run_openspec_guard.py --root . --tool codex --json`, `tools/check_precommit_update_archive.py --root . --json`, and `tools/check_worktree_task_receipt.py --root . --json` passed before the plan-freeze commit.
 - Closeout evidence: focused unit tests for `skills2cli`, `check_skills2cli_profile_routing`, and `check_plugin_modules_skill` cover `scene_description` compatibility and profile-level hints; full gates are rerun before local-main integration.
+- Contract hardening package `harden-skills2cli-profile-routing-contract-20260622` centralizes the Python-side registry path, canonical profile IDs, required fields, scene/legacy-description accessor, hint accessor, plugin coverage collector, and explicit `full` trigger aliases in `tools/skills2cli_profile_registry_contract.py`; runtime scoring and checker black-box smokes remain separate.
+- The profile-suggest checker now records a matrix covering ordinary `core-dev`, browser automation, `web-saas`, `customer-comms`, `company-ops`, `market-research`, `creative-content`, `pyside6-gui`, and explicit English/Chinese `full` troubleshooting queries, while preserving preview-only safety flags.
 
 <!-- EVIDENCE_INDEX_END -->

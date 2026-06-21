@@ -242,6 +242,104 @@ class Skills2CliTest(unittest.TestCase):
         )
         self.assertEqual(troubleshooting["selected_profile"]["target_profile"], "full")
 
+    def assert_advisory_only_profile_suggest(self, payload: dict) -> None:
+        self.assertFalse(payload["mutates_config"])
+        self.assertFalse(payload["edits_plugin_cache"])
+        self.assertFalse(payload["profile_apply_performed"])
+        self.assertTrue(payload["approval_required_for_apply"])
+        self.assertIn("soft_hard_boundary", payload)
+        self.assertEqual(payload["routing_evidence"]["surface_type"], "skill_profile_suggestion")
+        self.assertFalse(payload["routing_evidence"]["native_subagent_evidence"])
+        self.assertFalse(payload["routing_evidence"]["expert_evidence"])
+
+    def test_profile_suggest_typical_query_matrix(self) -> None:
+        cases = [
+            (
+                "Fix GitLab CI and perform security review",
+                "core-dev",
+                "repo-dev",
+                {"code-review", "security-review"},
+                False,
+            ),
+            (
+                "Debug Chrome DevTools and CDP browser automation warnings",
+                "core-dev",
+                "browser-automation",
+                {"browser-verification"},
+                False,
+            ),
+            (
+                "Expo mobile build and Sentry observability",
+                "web-saas",
+                "web-product",
+                {"mobile-app", "observability"},
+                False,
+            ),
+            (
+                "Twilio WhatsApp customer notification",
+                "customer-comms",
+                "customer-messaging",
+                {"messaging"},
+                False,
+            ),
+            (
+                "Fireflies meeting notes and HubSpot CRM follow-up",
+                "company-ops",
+                "ops-knowledge",
+                {"meeting-intel", "crm-workflow"},
+                False,
+            ),
+            (
+                "PitchBook market research and Zotero paper citation report",
+                "market-research",
+                "research-analysis",
+                {"paper-citation", "company-research"},
+                False,
+            ),
+            (
+                "Canva Figma presentation video brand assets",
+                "creative-content",
+                "design-media",
+                {"brand-assets", "design-generation"},
+                False,
+            ),
+            (
+                "PySide6 Qt desktop GUI packaging preflight",
+                "pyside6-gui",
+                "repo-local-gui",
+                {"qt-gui-dev", "gui-packaging-preflight"},
+                False,
+            ),
+            (
+                "Troubleshoot all plugins with full profile broad discovery",
+                "full",
+                "troubleshooting",
+                set(),
+                True,
+            ),
+            (
+                "排障所有插件",
+                "full",
+                "troubleshooting",
+                set(),
+                True,
+            ),
+        ]
+        for query, target_profile, scenario_profile, expected_tasks, explicit_full in cases:
+            with self.subTest(query=query):
+                payload = self.run_cli("profile", "suggest", "--query", query, "--json")
+                self.assert_advisory_only_profile_suggest(payload)
+                selected = payload["selected_profile"]
+                self.assertEqual(selected["target_profile"], target_profile)
+                self.assertEqual(selected["scenario_profile"], scenario_profile)
+                task_modules = {item["task_module"] for item in payload["task_modules"]}
+                self.assertTrue(expected_tasks.issubset(task_modules))
+                if explicit_full:
+                    self.assertEqual(selected["target_profile"], "full")
+                    self.assertIsNotNone(payload["hard_load_preview_command"])
+                else:
+                    self.assertNotEqual(selected["target_profile"], "full")
+
     def test_profile_suggest_preserves_scenario_to_canonical_mapping(self) -> None:
         payload = self.run_cli(
             "profile",

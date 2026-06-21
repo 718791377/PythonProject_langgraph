@@ -52,6 +52,36 @@ profile registry 必须支持 top-level profiles 下的 task modules，使当前
 - **当** profile routing checker 校验 registry
 - **那么** 每个 plugin 都有非 `full` top-level profile 或 task-module route，除非明确 allowlist reason 表明它仅用于 troubleshooting。
 
+### 需求：Shared profile-routing contract 保持集中且有边界
+
+Python runtime 与 checker surface 必须通过一个 shared contract module 共享稳定 registry paths、canonical profile IDs、required routing-field names、profile/task hint accessors、plugin-coverage collection 与显式 `full` troubleshooting trigger aliases。该 contract module 不得拥有 scoring behavior、runtime ranking weights 或 checker black-box smoke matrix。
+
+#### 场景：Contract module 不把 scoring 和 checker smoke 绑死
+
+- **给定** `skills2cli.py`、`check_skills2cli_profile_routing.py` 与 `check_plugin_modules_skill.py` 都导入 shared contract module
+- **当** profile suggestion scoring 或 checker smoke cases 发生变化
+- **那么** 稳定 schema/path/accessor constants 可以复用，但 runtime scoring 与 checker expected examples 仍然可以被分别审查。
+
+### 需求：Profile suggestion matrix 覆盖普通 profiles 与显式 full 排障
+
+profile routing checker 必须运行 black-box `skills2cli.py profile suggest` 矩阵，覆盖每个普通 profile family 和显式 all-plugin troubleshooting requests。矩阵行必须保持 preview-only safety flags，且普通行不得把 `full` 选为 top recommendation。
+
+#### 场景：矩阵区分普通 routing 与显式 full
+
+- **给定** 矩阵包含 repository development、browser verification、web/SaaS、customer communications、company operations、market research、creative content 与 PySide6 GUI work 的普通任务
+- **当** checker 运行 profile suggestion matrix
+- **那么** 普通行选择非 `full` target profiles，显式英文或中文 all-plugin troubleshooting 行可以选择 `full`，并且每行都报告 `mutates_config=false`、`edits_plugin_cache=false`、`profile_apply_performed=false` 与 `approval_required_for_apply=true`。
+
+### 需求：Checker JSON output 保持 UTF-8 稳定
+
+profile-routing checkers 在输出 JSON 时必须直接写入 UTF-8 bytes，使中文 query 和 evidence text 在 Windows terminal 上不依赖 process default console encoding 也能被机器读取。
+
+#### 场景：中文 full troubleshooting 矩阵行可被 JSON 解码
+
+- **给定** profile suggestion matrix 包含中文 query `排障所有插件`
+- **当** 在 Windows 上执行 `check_skills2cli_profile_routing.py --json`
+- **那么** JSON stream 可被下游测试以 UTF-8 解码，并包含没有 mojibake 或 replacement characters 的中文矩阵行。
+
 ### 需求：Scenario profiles 解析到 canonical target profiles
 
 Scenario profiles 必须是 advisory recommendation entries，解析到现有 canonical `target_profile`；它们不得替代 audit candidate 或 hard-load target 语义。

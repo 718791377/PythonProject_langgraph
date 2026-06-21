@@ -10,15 +10,99 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from skills2cli_profile_registry_contract import (
+    CANONICAL_PROFILE_IDS,
+    INSTALLED_PROFILE_REGISTRY_RELATIVE,
+    PROFILE_REGISTRY_RELATIVE,
+    REQUIRED_SCENARIO_FIELDS,
+    REQUIRED_TASK_FIELDS,
+    REQUIRED_TOP_LEVEL_FIELDS,
+    SKILLS2CLI_RELATIVE,
+    as_string_list,
+    collect_plugins,
+    explicit_full_terms,
+    truthy_list,
+)
+
 CHECK_NAME = "skills2cli_profile_routing"
-REGISTRY_RELATIVE = Path("tools/skill_sources/plugin-modules/references/profiles.json")
-INSTALL_RELATIVE = Path("skills/plugin-modules/references/profiles.json")
-SKILLS2CLI_RELATIVE = Path("tools/skills2cli.py")
 AUDIT_MEMORY_RELATIVE = Path("docs_bilingual/memory")
-REQUIRED_PROFILES = {"core-dev", "web-saas", "company-ops", "market-research", "customer-comms", "creative-content", "pyside6-gui", "full"}
-REQUIRED_TOP_LEVEL_FIELDS = ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "plugin_hints", "skill_doc_hints", "ranking_signals")
-REQUIRED_TASK_FIELDS = ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "plugin_hints", "skill_doc_hints", "routing_explanation", "ranking_signals")
-TROUBLESHOOTING_TERMS = ("all plugins", "full profile", "troubleshoot", "broad discovery", "diagnose missing plugin")
+REQUIRED_PROFILES = set(CANONICAL_PROFILE_IDS)
+
+PROFILE_SUGGEST_SMOKE_MATRIX = (
+    {
+        "name": "core-dev-ci-security",
+        "query": "Fix GitLab CI and perform security review",
+        "target_profile": "core-dev",
+        "task_modules": {"code-review", "security-review"},
+        "explicit_full": False,
+    },
+    {
+        "name": "core-dev-browser",
+        "query": "Debug Chrome DevTools and CDP browser automation warnings",
+        "target_profile": "core-dev",
+        "scenario_profile": "browser-automation",
+        "task_modules": {"browser-verification"},
+        "explicit_full": False,
+    },
+    {
+        "name": "web-saas-mobile-observability",
+        "query": "Expo mobile build and Sentry observability",
+        "target_profile": "web-saas",
+        "task_modules": {"mobile-app", "observability"},
+        "explicit_full": False,
+    },
+    {
+        "name": "customer-comms-messaging",
+        "query": "Twilio WhatsApp customer notification",
+        "target_profile": "customer-comms",
+        "task_modules": {"messaging"},
+        "explicit_full": False,
+    },
+    {
+        "name": "company-ops-meeting-crm",
+        "query": "Fireflies meeting notes and HubSpot CRM follow-up",
+        "target_profile": "company-ops",
+        "task_modules": {"meeting-intel", "crm-workflow"},
+        "explicit_full": False,
+    },
+    {
+        "name": "market-research-paper-report",
+        "query": "PitchBook market research and Zotero paper citation report",
+        "target_profile": "market-research",
+        "task_modules": {"paper-citation", "company-research"},
+        "explicit_full": False,
+    },
+    {
+        "name": "creative-content-brand-assets",
+        "query": "Canva Figma presentation video brand assets",
+        "target_profile": "creative-content",
+        "task_modules": {"brand-assets", "design-generation"},
+        "explicit_full": False,
+    },
+    {
+        "name": "pyside6-gui-packaging",
+        "query": "PySide6 Qt desktop GUI packaging preflight",
+        "target_profile": "pyside6-gui",
+        "task_modules": {"qt-gui-dev", "gui-packaging-preflight"},
+        "explicit_full": False,
+    },
+    {
+        "name": "explicit-full-troubleshooting",
+        "query": "Troubleshoot all plugins with full profile broad discovery",
+        "target_profile": "full",
+        "scenario_profile": "troubleshooting",
+        "task_modules": set(),
+        "explicit_full": True,
+    },
+    {
+        "name": "explicit-full-zh",
+        "query": "排障所有插件",
+        "target_profile": "full",
+        "scenario_profile": "troubleshooting",
+        "task_modules": set(),
+        "explicit_full": True,
+    },
+)
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -26,45 +110,17 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def as_list(value: Any) -> list[Any]:
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return value
-    if isinstance(value, str):
-        return [value]
-    return [value]
-
-
-def truthy_list(value: Any) -> bool:
-    return any(str(item).strip() for item in as_list(value))
-
-
-def collect_plugins(value: Any, out: set[str]) -> None:
-    if value is None:
-        return
-    if isinstance(value, dict):
-        for key in ("plugins", "plugin_hints", "enable_plugins"):
-            collect_plugins(value.get(key), out)
-        for child_key in ("hard_load", "soft_load", "task_modules"):
-            collect_plugins(value.get(child_key), out)
-        return
-    if isinstance(value, list):
-        for item in value:
-            collect_plugins(item, out)
-        return
-    if isinstance(value, str) and value != "all_known_plugins":
-        if value.strip():
-            out.add(value.strip())
+    return list(as_string_list(value))
 
 
 def validate_registry(root: Path) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
     info: list[str] = []
-    registry_path = root / REGISTRY_RELATIVE
+    registry_path = root / PROFILE_REGISTRY_RELATIVE
     registry: dict[str, Any] = {}
     if not registry_path.exists():
-        errors.append(f"Missing profile registry: {REGISTRY_RELATIVE.as_posix()}")
+        errors.append(f"Missing profile registry: {PROFILE_REGISTRY_RELATIVE.as_posix()}")
     else:
         try:
             registry = read_json(registry_path)
@@ -118,7 +174,7 @@ def validate_registry(root: Path) -> dict[str, Any]:
             errors.append(f"Scenario profile `{scenario_id}` target_profile `{target}` does not resolve to a canonical profile.")
         if scenario_id in modules:
             errors.append(f"Scenario profile `{scenario_id}` must not shadow a canonical hard-load profile ID.")
-        for field in ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "ranking_signals"):
+        for field in REQUIRED_SCENARIO_FIELDS:
             if not truthy_list(scenario.get(field)):
                 errors.append(f"Scenario profile `{scenario_id}` missing field `{field}`.")
 
@@ -136,18 +192,17 @@ def validate_registry(root: Path) -> dict[str, Any]:
             errors.append(f"Known plugin `{plugin}` is reachable only through `full` without an allowlist reason.")
 
     full_entry = modules.get("full") if isinstance(modules.get("full"), dict) else {}
-    full_terms = " ".join(
-        str(item).lower()
-        for item in as_list(full_entry.get("route_when"))
-        + as_list(full_entry.get("scene_description"))
-        + as_list(full_entry.get("scenario_description"))
-    )
-    if not any(term in full_terms for term in TROUBLESHOOTING_TERMS):
+    full_terms = set(explicit_full_terms(registry))
+    for term in ("all plugins", "full profile", "troubleshoot all plugins", "diagnose missing plugin capability", "broad discovery"):
+        if term not in full_terms:
+            errors.append(f"Profile `full` explicit-trigger contract missing term `{term}`.")
+    if not any(term in full_terms for term in ("all plugins", "full profile", "troubleshoot all plugins")):
         errors.append("Profile `full` must be described as troubleshooting-only broad discovery.")
 
     profile_suggest_contract: dict[str, Any] = {
         "checked": False,
         "ok": False,
+        "matrix": [],
         "sanitized_audit_summaries_available": False,
         "audit_strong_evidence_available": False,
         "warning_pressure_available": False,
@@ -159,31 +214,77 @@ def validate_registry(root: Path) -> dict[str, Any]:
     profile_suggest_contract["sanitized_audit_summaries_available"] = audit_summary_available
     if skills2cli.exists() and registry_path.exists():
         try:
-            completed = subprocess.run(
-                [
-                    sys.executable,
-                    str(skills2cli),
-                    "profile",
-                    "suggest",
-                    "--query",
-                    "Fix GitLab CI and perform security review",
-                    "--root",
-                    str(root),
-                    "--json",
-                ],
-                cwd=root,
-                check=False,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                timeout=30,
-            )
             profile_suggest_contract["checked"] = True
-            if completed.returncode != 0:
-                profile_suggest_contract["error"] = f"profile_suggest_failed:{completed.returncode}"
-                errors.append("skills2cli profile suggest smoke failed while checking audit/warning rerank contract.")
-            else:
+            matrix_ok = True
+            first_suggestion: dict[str, Any] | None = None
+            for case in PROFILE_SUGGEST_SMOKE_MATRIX:
+                completed = subprocess.run(
+                    [
+                        sys.executable,
+                        str(skills2cli),
+                        "profile",
+                        "suggest",
+                        "--query",
+                        str(case["query"]),
+                        "--root",
+                        str(root),
+                        "--json",
+                    ],
+                    cwd=root,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    timeout=30,
+                )
+                row: dict[str, Any] = {"name": case["name"], "query": case["query"], "ok": False}
+                if completed.returncode != 0:
+                    row["error"] = f"profile_suggest_failed:{completed.returncode}"
+                    matrix_ok = False
+                    profile_suggest_contract["matrix"].append(row)
+                    continue
                 suggestion = json.loads(completed.stdout)
+                if first_suggestion is None:
+                    first_suggestion = suggestion
+                selected = suggestion.get("selected_profile") if isinstance(suggestion, dict) else {}
+                task_modules = {
+                    str(item.get("task_module"))
+                    for item in suggestion.get("task_modules", [])
+                    if isinstance(item, dict) and item.get("task_module")
+                }
+                expected_tasks = set(case.get("task_modules", set()))
+                expected_profile = str(case["target_profile"])
+                row.update(
+                    {
+                        "selected_profile": selected.get("target_profile"),
+                        "scenario_profile": selected.get("scenario_profile"),
+                        "task_modules": sorted(task_modules),
+                    }
+                )
+                ok = bool(
+                    selected.get("target_profile") == expected_profile
+                    and expected_tasks.issubset(task_modules)
+                    and suggestion.get("mutates_config") is False
+                    and suggestion.get("edits_plugin_cache") is False
+                    and suggestion.get("profile_apply_performed") is False
+                    and suggestion.get("approval_required_for_apply") is True
+                )
+                if case.get("scenario_profile"):
+                    ok = ok and selected.get("scenario_profile") == case.get("scenario_profile")
+                if not case.get("explicit_full"):
+                    ok = ok and selected.get("target_profile") != "full"
+                else:
+                    ok = ok and selected.get("target_profile") == "full" and bool(suggestion.get("hard_load_preview_command"))
+                row["ok"] = ok
+                if not ok:
+                    row["error"] = "profile_suggest_matrix_expectation_failed"
+                    matrix_ok = False
+                profile_suggest_contract["matrix"].append(row)
+
+            if not matrix_ok:
+                errors.append("skills2cli profile suggest matrix must route ordinary profile queries away from `full`, allow explicit full troubleshooting, and preserve preview-only safety flags.")
+            if first_suggestion is not None:
+                suggestion = first_suggestion
                 ranking_inputs = suggestion.get("ranking_inputs") if isinstance(suggestion, dict) else {}
                 selected = suggestion.get("selected_profile") if isinstance(suggestion, dict) else {}
                 profile_suggest_contract["audit_strong_evidence_available"] = bool(
@@ -210,7 +311,7 @@ def validate_registry(root: Path) -> dict[str, Any]:
                         and ranking_inputs.get("warning_pressure_penalty_applied_to_full")
                     )
                 )
-                profile_suggest_contract["ok"] = base_contract_ok and evidence_contract_ok
+                profile_suggest_contract["ok"] = matrix_ok and base_contract_ok and evidence_contract_ok
                 if not profile_suggest_contract["ok"]:
                     errors.append("skills2cli profile suggest must report audit/warning rerank contract, profile-level hints, non-full ordinary top-1, and preview-only safety.")
                 if profile_suggest_contract["audit_strong_evidence_available"] is False:
@@ -222,7 +323,7 @@ def validate_registry(root: Path) -> dict[str, Any]:
     else:
         warnings.append("skills2cli.py or profiles.json missing; skipped profile suggest rerank contract smoke.")
 
-    installed_path = Path.home() / ".codex" / INSTALL_RELATIVE
+    installed_path = Path.home() / ".codex" / INSTALLED_PROFILE_REGISTRY_RELATIVE
     drift_reported = False
     if installed_path.exists() and registry_path.exists():
         drift_reported = not filecmp.cmp(registry_path, installed_path, shallow=False)
@@ -262,7 +363,11 @@ def main() -> int:
     args = parser.parse_args()
     payload = validate_registry(Path(args.root).resolve())
     if args.json:
-        print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+        data = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+        try:
+            sys.stdout.buffer.write(data.encode("utf-8"))
+        except AttributeError:  # pragma: no cover - nonstandard stdout shim.
+            sys.stdout.write(data)
     else:
         print("Skills2CLI profile routing check passed." if payload["ok"] else "Skills2CLI profile routing check failed:")
         for error in payload["errors"]:

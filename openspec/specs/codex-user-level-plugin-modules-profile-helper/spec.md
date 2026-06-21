@@ -24,7 +24,7 @@ The skill SHALL expose a concise metadata description and SHALL route the operat
 
 ### Requirement: Plugin modules registry SHALL define task-scoped module families
 
-The plugin modules skill SHALL include a JSON registry defining the initial module families `core-dev`, `web-saas`, `company-ops`, `market-research`, `customer-comms`, `creative-content`, and `full`.
+The plugin modules skill SHALL include a JSON registry defining the initial module families `core-dev`, `web-saas`, `company-ops`, `market-research`, `customer-comms`, `creative-content`, `pyside6-gui`, and `full`.
 
 Each module SHALL define a description, plugin family list, soft-load skill document hints, and hard-load plugin enablement behavior.
 
@@ -129,6 +129,37 @@ The registry checker SHALL fail when a known plugin is reachable only through `f
 - **WHEN** the profile routing checker validates the registry
 - **THEN** each plugin has a non-`full` top-level profile or task-module route, unless an explicit allowlist reason says it is troubleshooting-only.
 
+### Requirement: Shared profile-routing contract remains centralized and bounded
+
+The Python runtime and checker surfaces SHALL share stable registry paths, canonical profile IDs, required routing-field names, profile/task hint accessors, plugin-coverage collection, and explicit `full` troubleshooting trigger aliases through one shared contract module. That contract module SHALL NOT own scoring behavior, runtime ranking weights, or the checker black-box smoke matrix.
+
+#### Scenario: Contract module does not couple scoring to checker smoke
+
+- **GIVEN** the shared contract module is imported by `skills2cli.py`, `check_skills2cli_profile_routing.py`, and `check_plugin_modules_skill.py`
+- **WHEN** profile suggestion scoring or checker smoke cases are changed
+- **THEN** stable schema/path/accessor constants may be reused, but runtime scoring and checker expected examples remain separately reviewable.
+
+### Requirement: Profile suggestion matrix covers ordinary profiles and explicit full troubleshooting
+
+The profile routing checker SHALL run a black-box `skills2cli.py profile suggest` matrix that covers every ordinary profile family and explicit all-plugin troubleshooting requests. Matrix rows SHALL preserve preview-only safety flags and ordinary rows SHALL NOT select `full` as top recommendation.
+
+#### Scenario: Matrix distinguishes ordinary routing from explicit full
+
+- **GIVEN** the matrix includes ordinary tasks for repository development, browser verification, web/SaaS, customer communications, company operations, market research, creative content, and PySide6 GUI work
+- **WHEN** the checker runs the profile suggestion matrix
+- **THEN** ordinary rows select non-`full` target profiles, explicit English or Chinese all-plugin troubleshooting rows may select `full`, and every row reports `mutates_config=false`, `edits_plugin_cache=false`, `profile_apply_performed=false`, and `approval_required_for_apply=true`.
+
+
+### Requirement: Checker JSON output is UTF-8 stable
+
+Profile-routing checkers that emit JSON SHALL write UTF-8 bytes directly so Chinese queries and evidence text are machine-readable on Windows terminals without relying on the process default console encoding.
+
+#### Scenario: Chinese full troubleshooting matrix row is JSON-decodable
+
+- **GIVEN** the profile suggestion matrix includes the Chinese query `??????`
+- **WHEN** `check_skills2cli_profile_routing.py --json` is executed on Windows
+- **THEN** the JSON stream is UTF-8 decodable by downstream tests and includes the Chinese matrix row without mojibake or replacement characters.
+
 ### Requirement: Scenario profiles resolve to canonical target profiles
 
 Scenario profiles SHALL be advisory recommendation entries that resolve to an existing canonical `target_profile`; they SHALL NOT replace audit candidate or hard-load target semantics.
@@ -138,4 +169,3 @@ Scenario profiles SHALL be advisory recommendation entries that resolve to an ex
 - **GIVEN** a scenario profile recommends security review for repository work
 - **WHEN** `skills2cli.py profile suggest --query ... --json` is executed
 - **THEN** the output includes both a scenario identifier and `target_profile=core-dev`, and reports that profile apply was not performed.
-
