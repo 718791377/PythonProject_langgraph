@@ -21,6 +21,7 @@ runtime_sources:
   - tools/check_skills_audit_final_review_precheck.py
   - tools/check_skills_audit_human_review_decision_record.py
   - tools/check_skills_audit_cadence_contract.py
+  - tools/check_skills_audit_zh_evidence_encoding.py
   - tools/check_precommit_update_archive.py
 ---
 # Codex Skills Usage Audit Plan
@@ -559,11 +560,13 @@ The detailed implementation work is complete except for final human review and a
 - [x] Output-retention gate.
 - [x] Pre-commit update/archive gate.
 - [x] Tests and CI coverage.
+- [x] `tools/check_skills_audit_zh_evidence_encoding.py` implemented and registered in OpenSpec guard, safety-rule backing, and CI manifest.
 - [x] Real 30-day usage audit observation window: 2026-05-16 through 2026-06-15.
 - [x] Standard scheduled repeat count fixed: 1 Day 0 baseline, 4 weekly runs, and 1 Day 30 final run.
 - [x] Standard scheduled frequency fixed: weekly `--days 7` during the audit, Day 30 final once, and warning triage only after new warnings.
 - [x] Original audit end date fixed: 2026-06-15.
 - [x] Script-backed cadence contract checker verifies the fixed repeat count, frequency, end date, event-triggered warning triage, and post-final monitoring boundary.
+- [x] Script-backed zh-CN evidence encoding checker verifies current, future, changed, or explicitly protected Skills audit zh-CN evidence and reports untouched historical mojibake as warning-only.
 - [x] Final 30-day evidence package generated and retained as sanitized Markdown evidence.
 - [ ] Final human review of the 30-day evidence package.
 - [x] Explicit current decision outcome recorded: `review-pending + continue monitoring`.
@@ -600,6 +603,7 @@ Each audit run must report:
 - final review precheck state from `tools/check_skills_audit_final_review_precheck.py`, proving noise/manual-conflict script-level prechecks are evidence-backed without marking the summary reviewed, generating candidates, or applying profiles.
 - human-review decision-record state from `tools/check_skills_audit_human_review_decision_record.py`, proving a missing decision record remains pending, a present record has exactly one allowed outcome, candidate artifacts are blocked before the reviewed decision, preview-only candidate records include `target_profile` and review notes, and raw paths/secrets/transcripts/log excerpts are not retained.
 - cadence contract state from `tools/check_skills_audit_cadence_contract.py`, proving the original observation window remains 2026-05-16 through 2026-06-15, planned audit repeats remain 6 total runs, weekly evidence dates remain fixed, warning triage remains event-triggered, and post-final runs remain monitoring-only.
+- zh-CN evidence encoding state from `tools/check_skills_audit_zh_evidence_encoding.py`, proving current, future, changed, or explicitly protected Skills usage audit zh-CN evidence is valid UTF-8 and does not retain replacement characters, placeholder question-mark runs, or high-signal mojibake markers; untouched legacy evidence remains warning-only.
 - pre-commit update/archive status from `tools/check_precommit_update_archive.py`, proving existing-file update review and OpenSpec archive gates have passed before local commit.
 - default human stdout must also render the audit state, enabled-plugin matched/unmatched summary, current-profile inference, inventory summary, log-evidence availability, recent budget-warning sample count, bounded sanitized budget-warning sample excerpts, and 7-day counts, warning-severity level, reason, and action, all-descriptions-removed / omitted-additional-skills pressure metrics, cadence review late-run / missed-weekly-runs / weekly-report-review state, warning triage status, warning triage window policy, warning/skipped-loading counts, sanitized skipped-loading sample excerpts, skipped-loading review action, warning triage recommended action and blockers, explicit-skill total and unique-skill counts, SKILL.md read count, profile helper call count, script capability boundary counts, decision recommendation, recommendation count plus the first few recommendations, field-contract status and violation groups including `warning_severity`, output-retention gate, and pre-commit update/archive gate, so a non-JSON run is still safe to review.
 - `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, cadence-review field-contract and Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized log-excerpt redaction marker integrity, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates and Markdown blocker output, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, candidate-record contract failures for unsafe or incomplete candidate records, and candidate Markdown non-action text.
@@ -611,6 +615,7 @@ Each audit run must report:
 - Regression tests must cover the final review state checker: pending continuation is allowed without candidate/apply, candidate artifacts before `summary-reviewed` are blocked, reviewed summaries require an explicit outcome, and profile apply remains unauthorized.
 - Regression tests must cover the human-review decision-record checker: no record is a valid pending state, candidate artifacts before a decision record are blocked, pending/closed/preview-only outcomes are validated, preview-only candidate decisions require `target_profile` plus review notes, raw paths/secrets/transcripts/log excerpts are blocked, and multiple active decision records fail closed.
 - Regression tests must cover the cadence contract checker: locked 6-run cadence passes, missing repeat-count language fails, wrong final end date fails, and missing post-final monitoring-only evidence fails.
+- Regression tests must cover the zh-CN evidence encoding checker: clean current evidence passes, untouched legacy mojibake warns only, current `???` fails, `\ufffd` fails, active-current mojibake fails, edited legacy target files fail, and non-target Markdown remains unaffected.
 - Regression tests must cover the pre-commit update/archive gate: reports must embed `precommit_update_archive`, field contracts must block missing, non-passing, or disabled existing-file update / OpenSpec archive gate status, and sanitized Markdown summaries must render the gate status.
 - Regression tests must cover `output_retention` field-contract blocking for missing or non-passing retention status, and the sanitized Markdown summary must render the output-retention status and long-term evidence format.
 - Regression tests must cover `manual_evidence.conflict_review` field-contract blocking plus sanitized Markdown rendering for manual exception / approved hard-load exception notes.
@@ -729,6 +734,7 @@ This plan is granular enough only when all of the following are true:
 - it requires `tools/check_skills_audit_output_retention.py` to block `.tmp/` artifacts and raw `skills-usage-*.json` reports from Git while allowing sanitized Markdown summaries;
 - it requires `tools/check_skills_audit_final_review_state.py` to verify final review, closure, candidate, and apply-gate state before future continuation, closure, or candidate decisions;
 - it requires `tools/check_skills_audit_human_review_decision_record.py` to validate optional human-review decision records, exact outcome selection, preview-only target-profile/review-note evidence, apply-authorization separation, and raw-retention blocking before closure or candidate decisions are trusted;
+- it requires `tools/check_skills_audit_zh_evidence_encoding.py` to fail closed on invalid UTF-8, `\ufffd`, repeated question-mark placeholders, and high-signal mojibake markers in current, future, changed, or explicitly protected zh-CN evidence while keeping untouched historical legacy findings warning-only;
 - it requires `tools/check_skills_audit_cadence_contract.py` to verify the fixed repeat count, weekly cadence, original end date, event-triggered warning triage, and post-final monitoring boundary;
 - it requires `tools/check_precommit_update_archive.py` status to enter the audit JSON field contract and Markdown summary, blocking reports where existing-file update review was not checked or completed OpenSpec changes were not archived before commit;
 - it states regression-test, OpenSpec guard, and CI manifest requirements;

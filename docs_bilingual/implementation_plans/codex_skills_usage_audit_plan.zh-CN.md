@@ -21,6 +21,7 @@ runtime_sources:
   - tools/check_skills_audit_final_review_precheck.py
   - tools/check_skills_audit_human_review_decision_record.py
   - tools/check_skills_audit_cadence_contract.py
+  - tools/check_skills_audit_zh_evidence_encoding.py
   - tools/check_precommit_update_archive.py
 ---
 # Codex Skills Usage Audit 计划
@@ -800,6 +801,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 增加 `test/check_skills_audit_cadence_contract.test.py`。
 - [x] 将 cadence 测试登记到 `tools/ci/ci_test_manifest.json`。
 - [x] Guard JSON 聚合测试覆盖 cadence checker。
+- [x] 将 zh-CN evidence encoding checker 接入 `tools/run_openspec_guard.py`、`tools/safety_rule_script_backing_registry.json` 和 `tools/ci/ci_test_manifest.json`。
 - [x] 支持 warning 延迟 triage 恢复路径。
 - [x] 日志不可读时避免把 0 warning 当成无 warning。
 - [x] 隐私脱敏失败时支持暂停并重跑。
@@ -900,6 +902,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 覆盖 skipped-loading triage。
 - [x] 覆盖 warning severity。
 - [x] `tools/ci/ci_test_manifest.json` 已包含相关测试。
+- [x] 增加 `test/check_skills_audit_zh_evidence_encoding.test.py`，覆盖当前清洁证据通过、legacy warning-only、当前问号占位 fail、replacement character fail、active-current mojibake fail、已修改 legacy fail 与非目标 Markdown 不受影响。
 
 
 ### Task 17：真实观察期与最终复核节奏
@@ -1010,6 +1013,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 脚本化最终复核预检查 checker 已验证 noise/manual-conflict 机器证据，同时保持 final human-review 与 apply gate 未关闭。
 - [x] 脚本化人工复核决策记录 checker 已验证未来可选 decision record，同时保持当前 pending 状态与 apply gate 未关闭。
 - [x] 脚本化 cadence contract checker 已验证重复次数、weekly 节奏、结束日期、warning-triage 频率与 post-final 边界。
+- [x] 新增 `tools/check_skills_audit_zh_evidence_encoding.py`，对当前、未来、已修改或明确保护的 skills audit zh-CN 证据执行 UTF-8 / 乱码 fail-closed 检查，并将未修改的历史 legacy 乱码证据降级为 warning-only。
 - [ ] 人工复核最终 30 天摘要。
 - [x] 已明确记录 `review-pending + continue monitoring`，并保持最终摘要 `human_review_pending`。
 - [x] 收口 `reference_files/10.md` 中 invalid `SKILL.md` runtime repair loop：post-repair audit 报告 `invalid_total=0`。
@@ -1076,6 +1080,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 要求 `tools/check_skills_audit_output_retention.py` 阻断 `.tmp/` artifacts 和 raw `skills-usage-*.json` reports 进入 Git，同时允许脱敏 Markdown 摘要；
 - 要求 `tools/check_skills_audit_final_review_state.py` 在未来 continuation、closure 或 candidate decision 前验证最终复核、关闭、candidate 与 apply-gate 状态；
 - 要求 `tools/check_skills_audit_human_review_decision_record.py` 在信任 closure 或 candidate decision 前验证可选人工复核决策记录、精确 outcome 选择、preview-only `target_profile` / 复核说明、apply 授权分离与 raw-retention 阻断；
+- 要求 `tools/check_skills_audit_zh_evidence_encoding.py` 在 guard/CI 中 fail closed：当前、未来、已修改或明确保护的 zh-CN 证据不得包含 invalid UTF-8、`\ufffd`、`???` 连续占位或高信号 mojibake 哨兵，且未修改历史 legacy 问题只作 warning-only；
 - 要求 `tools/check_precommit_update_archive.py` 状态进入 audit JSON 字段契约与 Markdown 摘要，阻断未检查 existing-file update review 或已完成 OpenSpec changes 未归档的报告；
 - 声明 regression-test、OpenSpec guard 与 CI manifest 要求；
 - 声明远端发布仍需 GitLab/GitHub 授权门禁。

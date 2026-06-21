@@ -229,6 +229,22 @@
       "description": "Verifies the Skills usage audit repeat count, weekly frequency, original end date, event-triggered warning triage, and post-final monitoring-only boundary."
     },
     {
+      "id": "skills-audit-zh-evidence-encoding",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_zh_evidence_encoding.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_zh_evidence_encoding"
+      ],
+      "description": "Fails closed when current, future, changed, or explicitly protected Skills usage audit zh-CN evidence is unreadable UTF-8, contains replacement characters, placeholder question-mark runs, or high-signal mojibake markers; untouched legacy evidence is warning-only."
+    },
+    {
       "id": "name-clarity-rule",
       "owner_level": "project",
       "status": "implemented",

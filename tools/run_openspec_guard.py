@@ -126,6 +126,7 @@ def main() -> int:
     skills_audit_final_review_precheck_script = root / "tools" / "check_skills_audit_final_review_precheck.py"
     skills_audit_human_review_decision_record_script = root / "tools" / "check_skills_audit_human_review_decision_record.py"
     skills_audit_cadence_contract_script = root / "tools" / "check_skills_audit_cadence_contract.py"
+    skills_audit_zh_evidence_encoding_script = root / "tools" / "check_skills_audit_zh_evidence_encoding.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     openspec_comet_superpowers_policy_script = root / "tools" / "check_openspec_comet_superpowers_policy.py"
     comet_superpowers_visibility_script = root / "tools" / "check_comet_superpowers_visibility.py"
@@ -223,6 +224,11 @@ def main() -> int:
         )
     if not skills_audit_cadence_contract_script.exists():
         raise SystemExit(f"Missing Skills audit cadence contract check script: {skills_audit_cadence_contract_script}")
+    if not skills_audit_zh_evidence_encoding_script.exists():
+        raise SystemExit(
+            "Missing Skills audit zh-CN evidence encoding check script: "
+            f"{skills_audit_zh_evidence_encoding_script}"
+        )
     if not openspec_code_archive_evidence_script.exists():
         raise SystemExit(f"Missing OpenSpec code archive evidence check script: {openspec_code_archive_evidence_script}")
     if not openspec_comet_superpowers_policy_script.exists():
@@ -478,6 +484,11 @@ def main() -> int:
                 "check_skills_audit_cadence_contract",
                 [str(python_exe), str(skills_audit_cadence_contract_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Skills audit cadence-contract verification.",
+            ),
+            (
+                "check_skills_audit_zh_evidence_encoding",
+                [str(python_exe), str(skills_audit_zh_evidence_encoding_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Skills audit zh-CN evidence encoding verification.",
             ),
             (
                 "check_openspec_code_archive_evidence",
@@ -939,6 +950,11 @@ def main() -> int:
         [str(python_exe), str(skills_audit_cadence_contract_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Skills audit cadence-contract verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_zh_evidence_encoding_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit zh-CN evidence encoding verification.",
     )
     run_checked(
         [str(python_exe), str(openspec_code_archive_evidence_script), "--root", str(root)],
