@@ -27,6 +27,34 @@ $Script:ManagedBy = 'codex-user-level-team-mode-p0'
 $Script:NativeCodexNames = @('codex', 'codex.cmd', 'codex.ps1')
 $Script:StartupProfileStartMarker = '# OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-STARTUP:START'
 $Script:StartupProfileEndMarker = '# OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-STARTUP:END'
+$Script:AllowedAgentModels = @('gpt-5.4', 'gpt-5.5')
+$Script:DefaultNormalizedAgentModel = 'gpt-5.4'
+$Script:AgentModelDefaults = @{
+  'analyst' = 'gpt-5.4'
+  'architect' = 'gpt-5.5'
+  'bug-finder' = 'gpt-5.4'
+  'bug-judge' = 'gpt-5.4'
+  'bug-rebutter' = 'gpt-5.4'
+  'build-fixer' = 'gpt-5.4'
+  'code-reviewer' = 'gpt-5.5'
+  'code-simplifier' = 'gpt-5.5'
+  'critic' = 'gpt-5.5'
+  'debugger' = 'gpt-5.5'
+  'dependency-expert' = 'gpt-5.4'
+  'designer' = 'gpt-5.4'
+  'executor' = 'gpt-5.5'
+  'explore' = 'gpt-5.4'
+  'git-master' = 'gpt-5.4'
+  'planner' = 'gpt-5.5'
+  'researcher' = 'gpt-5.4'
+  'security-reviewer' = 'gpt-5.5'
+  'team-executor' = 'gpt-5.5'
+  'team-leader' = 'gpt-5.5'
+  'test-engineer' = 'gpt-5.5'
+  'verifier' = 'gpt-5.5'
+  'vision' = 'gpt-5.4'
+  'writer' = 'gpt-5.4'
+}
 
 function Resolve-TargetCodexHome {
   $candidate = $null
@@ -173,6 +201,141 @@ function Write-ManagedTextFile {
 
   Set-Content -LiteralPath $Path -Value $Content -Encoding ASCII -NoNewline
   return 'written'
+}
+
+function Get-TopLevelTomlStringValue {
+  param(
+    [AllowEmptyString()]
+    [string]$Content,
+    [Parameter(Mandatory)]
+    [string]$Name
+  )
+
+  $match = [regex]::Match($Content, ('(?m)^\s*{0}\s*=\s*"([^"]*)"\s*$' -f [regex]::Escape($Name)))
+  if (-not $match.Success) {
+    return $null
+  }
+  return [string]$match.Groups[1].Value
+}
+
+function Resolve-AgentModelDefault {
+  param(
+    [AllowEmptyString()]
+    [string]$RoleName,
+    [AllowEmptyString()]
+    [string]$CurrentModel
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace($RoleName)) {
+    $roleKey = $RoleName.ToLowerInvariant()
+    if ($Script:AgentModelDefaults.ContainsKey($roleKey)) {
+      return [string]$Script:AgentModelDefaults[$roleKey]
+    }
+  }
+
+  if ($CurrentModel -in $Script:AllowedAgentModels) {
+    return $CurrentModel
+  }
+
+  return $Script:DefaultNormalizedAgentModel
+}
+
+function Normalize-AgentModelContent {
+  param(
+    [Parameter(Mandatory)]
+    [string]$Content
+  )
+
+  $roleName = Get-TopLevelTomlStringValue -Content $Content -Name 'name'
+  $currentModel = Get-TopLevelTomlStringValue -Content $Content -Name 'model'
+  if ([string]::IsNullOrWhiteSpace($roleName) -or [string]::IsNullOrWhiteSpace($currentModel)) {
+    return [ordered]@{
+      content = $Content
+      changed = $false
+      role = $roleName
+      model = $currentModel
+      target_model = $null
+    }
+  }
+
+  $targetModel = Resolve-AgentModelDefault -RoleName $roleName -CurrentModel $currentModel
+  $updated = $Content
+  $updated = [regex]::Replace($updated, '(?m)^\s*model\s*=\s*"[^"]+"\s*$', ('model = "{0}"' -f $targetModel))
+  $updated = [regex]::Replace($updated, '(?m)^(\s*-\s*resolved_model:\s*)\S+\s*$', ('${1}' + $targetModel))
+  $updated = [regex]::Replace($updated, 'This role is executing under the exact \S+ model\.', ('This role is executing under the exact {0} model.' -f $targetModel))
+  $updated = [regex]::Replace($updated, 'gpt-5\.3-codex-spark|gpt-5\.3-codex|gpt-5\.3|gpt-5\.4-mini|gpt-5\.5-mini', $targetModel)
+
+  return [ordered]@{
+    content = $updated
+    changed = ($updated -ne $Content)
+    role = $roleName
+    model = $currentModel
+    target_model = $targetModel
+  }
+}
+
+function Normalize-AgentModelFile {
+  param(
+    [Parameter(Mandatory)]
+    [string]$Path
+  )
+
+  if (-not (Test-Path -LiteralPath $Path)) {
+    return $null
+  }
+
+  $existing = Get-Content -LiteralPath $Path -Raw
+  $normalized = Normalize-AgentModelContent -Content $existing
+  if (-not [bool]$normalized.changed) {
+    return [ordered]@{
+      path = $Path
+      role = $normalized.role
+      previous_model = $normalized.model
+      model = $normalized.target_model
+      status = 'unchanged'
+    }
+  }
+
+  Set-Content -LiteralPath $Path -Value ([string]$normalized.content) -Encoding ASCII -NoNewline
+  return [ordered]@{
+    path = $Path
+    role = $normalized.role
+    previous_model = $normalized.model
+    model = $normalized.target_model
+    status = 'model_normalized'
+  }
+}
+
+function Get-AgentTomlPaths {
+  param(
+    [Parameter(Mandatory)]
+    [string]$AgentsDirectory
+  )
+
+  if (-not (Test-Path -LiteralPath $AgentsDirectory)) {
+    return @()
+  }
+
+  return @(
+    Get-ChildItem -LiteralPath $AgentsDirectory -Filter '*.toml' -File -ErrorAction SilentlyContinue |
+      ForEach-Object { [string]$_.FullName }
+  )
+}
+
+function Normalize-AgentModelFiles {
+  param(
+    [Parameter(Mandatory)]
+    [string]$AgentsDirectory
+  )
+
+  $results = @()
+  foreach ($path in Get-AgentTomlPaths -AgentsDirectory $AgentsDirectory) {
+    $result = Normalize-AgentModelFile -Path $path
+    if ($null -ne $result) {
+      $results += $result
+    }
+  }
+  return $results
 }
 
 function New-DefaultState {
@@ -1141,7 +1304,7 @@ function Get-TeamLeaderTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "team-leader"
 description = "Current main Codex CLI session profile for user-level team mode"
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "medium"
 developer_instructions = """
 <identity>
@@ -1279,7 +1442,7 @@ function Get-VerifierTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "verifier"
 description = "Completion evidence, claim validation, test adequacy"
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "high"
 developer_instructions = """
 <identity>
@@ -1386,7 +1549,7 @@ This role is tuned for standard-capability models.
 
 <exact_model_guidance>
 
-This role is executing under the exact gpt-5.4 model.
+This role is executing under the exact gpt-5.5 model.
 - Use a strict execution order: inspect -> plan -> act -> verify.
 - Treat completion criteria as explicit: only report done after the requested work is implemented and fresh verification passes.
 - If requirements are ambiguous or a blocker appears, state the blocker plainly and stop guessing until the missing decision is resolved.
@@ -1399,7 +1562,7 @@ This role is executing under the exact gpt-5.4 model.
 - posture: frontier-orchestrator
 - model_class: standard
 - routing_role: leader
-- resolved_model: gpt-5.4
+- resolved_model: gpt-5.5
 """
 '@
 }
@@ -1409,7 +1572,7 @@ function Get-DebuggerTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "debugger"
 description = "Root-cause analysis, regression isolation, failure diagnosis"
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "high"
 developer_instructions = """
 <identity>
@@ -1546,7 +1709,7 @@ This role is tuned for standard-capability models.
 
 <exact_model_guidance>
 
-This role is executing under the exact gpt-5.4 model.
+This role is executing under the exact gpt-5.5 model.
 - Use a strict execution order: inspect -> plan -> act -> verify.
 - Treat completion criteria as explicit: only report done after the requested work is implemented and fresh verification passes.
 - If requirements are ambiguous or a blocker appears, state the blocker plainly and stop guessing until the missing decision is resolved.
@@ -1559,7 +1722,7 @@ This role is executing under the exact gpt-5.4 model.
 - posture: deep-worker
 - model_class: standard
 - routing_role: executor
-- resolved_model: gpt-5.4
+- resolved_model: gpt-5.5
 """
 '@
 }
@@ -2016,7 +2179,7 @@ function Get-BugFinderTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "bug-finder"
 description = "Recall-first candidate bug finder for contested or noisy review"
-model = "gpt-5.4-mini"
+model = "gpt-5.4"
 model_reasoning_effort = "high"
 developer_instructions = """
 <identity>
@@ -2069,7 +2232,7 @@ function Get-BugRebutterTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "bug-rebutter"
 description = "Evidence-first rebuttal role for candidate bug triage"
-model = "gpt-5.4-mini"
+model = "gpt-5.4"
 model_reasoning_effort = "high"
 developer_instructions = """
 <identity>
@@ -15284,10 +15447,13 @@ foreach ($asset in $assets) {
 Assert-ManagedAssetWriteAllowed -Assets $assets -ForceWrite:$Force
 
 $backupSnapshot = $null
-$backupPaths = @($assets | ForEach-Object { $_.Path }) + @($statePath, $nativeSubagentLimitsPath, $modelInstructionsFilePath) + @($resolvedPowerShellProfilePath)
+$existingAgentTomlPaths = Get-AgentTomlPaths -AgentsDirectory $agentsDirectory
+$backupPaths = @($assets | ForEach-Object { $_.Path }) + $existingAgentTomlPaths + @($statePath, $nativeSubagentLimitsPath, $modelInstructionsFilePath) + @($resolvedPowerShellProfilePath)
+$backupPaths = @($backupPaths | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Select-Object -Unique)
 $backupSnapshot = New-InstallBackupSnapshot -TargetCodexHome $targetCodexHome -Paths $backupPaths
 
 $generatedFiles = @()
+$agentModelNormalization = @()
 $stateStatus = $null
 $nativeSubagentLimitsStatus = $null
 $profileStatus = $null
@@ -15325,6 +15491,8 @@ try {
       }
     }
   }
+
+  $agentModelNormalization = Normalize-AgentModelFiles -AgentsDirectory $agentsDirectory
 
   Invoke-TestFailPoint -Name 'after_assets'
 
@@ -15407,6 +15575,11 @@ $manifest = [ordered]@{
     max_threads = [int]$currentNativeSubagentLimits['max_threads']
     max_depth = [int]$currentNativeSubagentLimits['max_depth']
     updated_at = [string]$currentNativeSubagentLimits['updated_at']
+  }
+  agent_model_policy = [ordered]@{
+    allowed_models = $Script:AllowedAgentModels
+    default_normalized_model = $Script:DefaultNormalizedAgentModel
+    normalized_files = $agentModelNormalization
   }
   generated_files = $generatedFiles
   startup_binding = [ordered]@{

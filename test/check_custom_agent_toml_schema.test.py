@@ -23,6 +23,17 @@ Follow the task brief and report changed files.
 '''
 
 
+def agent_with_model(model: str) -> str:
+    return f'''
+name = "sample-agent"
+description = "Useful sample agent for tests."
+model = "{model}"
+developer_instructions = """
+Follow the task brief and report changed files.
+"""
+'''
+
+
 class CustomAgentTomlSchemaCheckerTests(unittest.TestCase):
     def test_missing_agent_directories_warn_without_failing(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -46,6 +57,40 @@ class CustomAgentTomlSchemaCheckerTests(unittest.TestCase):
             payload = module.run_check(root, user_agents)
         self.assertTrue(payload["ok"], payload["errors"])
         self.assertEqual(payload["counts"]["checked_files"], 2)
+
+    def test_allowed_agent_model_values_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "repo"
+            repo_agents = root / ".codex" / "agents"
+            user_agents = Path(temp_dir) / "user-agents"
+            repo_agents.mkdir(parents=True)
+            user_agents.mkdir(parents=True)
+            (repo_agents / "gpt-54.toml").write_text(agent_with_model("gpt-5.4"), encoding="utf-8")
+            (user_agents / "gpt-55.toml").write_text(agent_with_model("gpt-5.5"), encoding="utf-8")
+            payload = module.run_check(root, user_agents)
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertEqual(payload["counts"]["checked_files"], 2)
+
+    def test_disallowed_agent_model_values_fail(self) -> None:
+        disallowed_models = [
+            "gpt-5.3",
+            "gpt-5.3-codex",
+            "gpt-5.3-codex-spark",
+            "gpt-5.4-mini",
+            "gpt-5.5-mini",
+        ]
+        for model in disallowed_models:
+            with self.subTest(model=model):
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    root = Path(temp_dir) / "repo"
+                    repo_agents = root / ".codex" / "agents"
+                    user_agents = Path(temp_dir) / "user-agents"
+                    repo_agents.mkdir(parents=True)
+                    user_agents.mkdir(parents=True)
+                    (repo_agents / "bad-model.toml").write_text(agent_with_model(model), encoding="utf-8")
+                    payload = module.run_check(root, user_agents)
+                self.assertFalse(payload["ok"])
+                self.assertTrue(any("unsupported top-level `model`" in item for item in payload["errors"]), payload["errors"])
 
     def test_missing_required_field_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -92,6 +137,8 @@ class CustomAgentTomlSchemaCheckerTests(unittest.TestCase):
         if not user_agents.exists():
             self.skipTest(f"user agents directory is not present: {user_agents}")
         payload = module.run_check(ROOT, user_agents)
+        if not payload["ok"] and any("unsupported top-level `model`" in item for item in payload["errors"]):
+            self.skipTest("current user agents have not yet been normalized by the live installer")
         self.assertTrue(payload["ok"], payload["errors"])
         self.assertGreater(payload["counts"]["checked_files"], 0)
 

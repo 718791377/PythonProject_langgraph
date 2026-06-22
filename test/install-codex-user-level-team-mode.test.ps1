@@ -115,6 +115,26 @@ function Assert-ArrayHasOrderedSubsequence {
   }
 }
 
+function Assert-AgentModelPolicy {
+  param(
+    [Parameter(Mandatory)]
+    [string]$ProfilePath,
+    [Parameter(Mandatory)]
+    [string]$ExpectedModel,
+    [Parameter(Mandatory)]
+    [string]$RoleName
+  )
+
+  $profile = Get-Content -LiteralPath $ProfilePath -Raw
+  $modelMatches = [regex]::Matches($profile, '(?m)^\s*model\s*=\s*"([^"]+)"\s*$')
+  Assert-Equal $modelMatches.Count 1 "$RoleName profile must declare exactly one top-level model line."
+  $actualModel = [string]$modelMatches[0].Groups[1].Value
+  Assert-Equal $actualModel $ExpectedModel "$RoleName profile declared the wrong model."
+  Assert-True ($actualModel -in @('gpt-5.4', 'gpt-5.5')) "$RoleName profile model is outside the exact gpt-5.4/gpt-5.5 allowlist."
+  Assert-True (-not ($profile -match 'gpt-5\.3')) "$RoleName profile still references gpt-5.3."
+  Assert-True (-not ($profile -match 'gpt-5\.4-mini')) "$RoleName profile still references gpt-5.4-mini."
+}
+
 function Ensure-Directory {
   param(
     [Parameter(Mandatory)]
@@ -371,6 +391,43 @@ if ($Arguments.Count -ge 2 -and [string]$Arguments[0] -eq 'team') {
 }
 
 $result | ConvertTo-Json -Depth 6
+'@
+
+Set-Content -LiteralPath (Join-Path $CodexHome 'agents\explore.toml') -Encoding ASCII -NoNewline -Value @'
+# oh-my-codex agent: explore
+name = "explore"
+description = "Fast codebase search and file/symbol mapping"
+model = "gpt-5.3-codex-spark"
+model_reasoning_effort = "low"
+developer_instructions = """
+## OMX Agent Metadata
+- role: explore
+- resolved_model: gpt-5.3-codex-spark
+"""
+'@
+Set-Content -LiteralPath (Join-Path $CodexHome 'agents\executor.toml') -Encoding ASCII -NoNewline -Value @'
+# oh-my-codex agent: executor
+name = "executor"
+description = "Code implementation, refactoring, feature work"
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+developer_instructions = """
+## OMX Agent Metadata
+- role: executor
+- resolved_model: gpt-5.4
+"""
+'@
+Set-Content -LiteralPath (Join-Path $CodexHome 'agents\team-executor.toml') -Encoding ASCII -NoNewline -Value @'
+# oh-my-codex agent: team-executor
+name = "team-executor"
+description = "Supervised team execution for conservative delivery lanes"
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+developer_instructions = """
+## OMX Agent Metadata
+- role: team-executor
+- resolved_model: gpt-5.4
+"""
 '@
 
 $manifest = Invoke-PowerShellScriptJson -FilePath $InstallerPath -Arguments @(
@@ -659,13 +716,36 @@ Assert-True (-not $modelInstructions.Contains('checkbox/status-list semantics'))
 Assert-True ($modelInstructions.Contains('exactly one literal `Updated Plan` label') -and $modelInstructions.Contains('CLI/tree progress panel')) 'model instructions file does not document the single Updated Plan panel contract.'
 $generatedFilePaths = @($manifest.generated_files | ForEach-Object { [string]$_.path })
 Assert-True ($generatedFilePaths -contains $modelInstructionsPath) 'Installer manifest did not list the generated model instructions file.'
+$expectedAgentModels = [ordered]@{
+  'team-leader' = 'gpt-5.5'
+  'verifier' = 'gpt-5.5'
+  'debugger' = 'gpt-5.5'
+  'researcher' = 'gpt-5.4'
+  'dependency-expert' = 'gpt-5.4'
+  'writer' = 'gpt-5.4'
+  'bug-finder' = 'gpt-5.4'
+  'bug-rebutter' = 'gpt-5.4'
+  'bug-judge' = 'gpt-5.4'
+}
+foreach ($roleName in $expectedAgentModels.Keys) {
+  Assert-AgentModelPolicy -ProfilePath (Join-Path $CodexHome "agents\$roleName.toml") -ExpectedModel ([string]$expectedAgentModels[$roleName]) -RoleName $roleName
+}
+Assert-AgentModelPolicy -ProfilePath (Join-Path $CodexHome 'agents\explore.toml') -ExpectedModel 'gpt-5.4' -RoleName 'explore'
+Assert-AgentModelPolicy -ProfilePath (Join-Path $CodexHome 'agents\executor.toml') -ExpectedModel 'gpt-5.5' -RoleName 'executor'
+Assert-AgentModelPolicy -ProfilePath (Join-Path $CodexHome 'agents\team-executor.toml') -ExpectedModel 'gpt-5.5' -RoleName 'team-executor'
+$exploreProfile = Get-Content -LiteralPath (Join-Path $CodexHome 'agents\explore.toml') -Raw
+Assert-True ($exploreProfile.Contains('- resolved_model: gpt-5.4')) 'explore.toml resolved_model metadata was not normalized to gpt-5.4.'
+$executorProfile = Get-Content -LiteralPath (Join-Path $CodexHome 'agents\executor.toml') -Raw
+Assert-True ($executorProfile.Contains('- resolved_model: gpt-5.5')) 'executor.toml resolved_model metadata was not normalized to gpt-5.5.'
+$teamExecutorProfile = Get-Content -LiteralPath (Join-Path $CodexHome 'agents\team-executor.toml') -Raw
+Assert-True ($teamExecutorProfile.Contains('- resolved_model: gpt-5.5')) 'team-executor.toml resolved_model metadata was not normalized to gpt-5.5.'
 $verifierProfile = Get-Content -LiteralPath (Join-Path $CodexHome 'agents\verifier.toml') -Raw
 Assert-True ($verifierProfile.Contains('name = "verifier"')) 'verifier.toml was not generated with the expected role name.'
-Assert-True ($verifierProfile.Contains('model = "gpt-5.4"')) 'verifier.toml did not promote the model to gpt-5.4.'
+Assert-True ($verifierProfile.Contains('model = "gpt-5.5"')) 'verifier.toml did not promote the model to gpt-5.5.'
 Assert-True ($verifierProfile.Contains('model_reasoning_effort = "high"')) 'verifier.toml did not preserve high reasoning effort.'
 $debuggerProfile = Get-Content -LiteralPath (Join-Path $CodexHome 'agents\debugger.toml') -Raw
 Assert-True ($debuggerProfile.Contains('name = "debugger"')) 'debugger.toml was not generated with the expected role name.'
-Assert-True ($debuggerProfile.Contains('model = "gpt-5.4"')) 'debugger.toml did not promote the model to gpt-5.4.'
+Assert-True ($debuggerProfile.Contains('model = "gpt-5.5"')) 'debugger.toml did not promote the model to gpt-5.5.'
 Assert-True ($debuggerProfile.Contains('model_reasoning_effort = "high"')) 'debugger.toml did not preserve high reasoning effort.'
 $researcherProfile = Get-Content -LiteralPath (Join-Path $CodexHome 'agents\researcher.toml') -Raw
 Assert-True ($researcherProfile.Contains('name = "researcher"')) 'researcher.toml was not generated with the expected role name.'

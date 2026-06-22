@@ -12,6 +12,7 @@ from typing import Any
 
 CHECK_NAME = "custom_agent_toml_schema"
 REQUIRED_FIELDS = ("name", "description", "developer_instructions")
+ALLOWED_MODEL_VALUES = frozenset(("gpt-5.4", "gpt-5.5"))
 
 
 def default_user_agents_dir() -> Path:
@@ -52,12 +53,21 @@ def validate_agent_file(path: Path, source: str, errors: list[str]) -> dict[str,
                 message = f"{source} agent TOML missing non-empty top-level `{field}` string: {rel}"
                 errors.append(message)
                 file_errors.append(message)
+        model = data.get("model")
+        if model is not None and model not in ALLOWED_MODEL_VALUES:
+            message = (
+                f"{source} agent TOML has unsupported top-level `model` value: {rel}: "
+                f"{model!r}; expected one of {sorted(ALLOWED_MODEL_VALUES)!r}"
+            )
+            errors.append(message)
+            file_errors.append(message)
 
     return {
         "source": source,
         "path": rel,
         "ok": not file_errors,
         "required_fields": list(REQUIRED_FIELDS),
+        "allowed_model_values": sorted(ALLOWED_MODEL_VALUES),
         "present_fields": [field for field in REQUIRED_FIELDS if isinstance(fields.get(field), str) and fields[field].strip()],
         "errors": file_errors,
     }
@@ -111,6 +121,7 @@ def run_check(root: Path, user_agents_dir: Path | None = None) -> dict[str, Any]
             "errors": len(errors),
             "warnings": len(warnings),
             "required_fields": len(REQUIRED_FIELDS),
+            "allowed_model_values": len(ALLOWED_MODEL_VALUES),
         },
     }
 
