@@ -31,11 +31,13 @@ from codex_skill_frontmatter import (  # noqa: E402
 )
 from skills2cli_profile_registry_contract import (  # noqa: E402
     as_string_list,
+    explicit_full_selection_reason,
     is_explicit_full_request,
     load_profile_registry as load_profile_registry_contract,
     plugin_hints as contract_plugin_hints,
     scene_description as contract_scene_description,
     skill_doc_hints as contract_skill_doc_hints,
+    task_module_identity,
 )
 
 SCHEMA_VERSION = 1
@@ -661,10 +663,12 @@ def build_task_module_recommendations(query_text: str, profile_id: str, entry: d
         hits = match_terms(query_text, terms)
         score = len(hits) * 10 + (2 if hits and module_id in default_set else 0) - len(negative) * 8
         if score > 0:
+            identity = task_module_identity(profile_id, module_id, module)
             results.append(
                 {
                     "task_module": module_id,
-                    "qualified_name": f"{profile_id}.{module_id}",
+                    "qualified_name": str(identity["qualified_name"]),
+                    "identity": identity,
                     "score": score,
                     "matched_terms": hits[:10],
                     "negative_matches": negative[:5],
@@ -740,6 +744,8 @@ def score_profile_candidate(
     negative_terms = as_string_list(entry.get("negative_examples")) + as_string_list((scenario or {}).get("negative_examples"))
     negative = match_terms(query_text, negative_terms)
     explicit_full = is_explicit_full_request(query_text) if explicit_full is None else explicit_full
+    full_explicit_required = profile_id == "full" or str(entry.get("load_policy") or "") == "troubleshooting-only"
+    full_selection_reason = explicit_full_selection_reason(query_text) if full_explicit_required and explicit_full else None
     load_policy = str((scenario or {}).get("load_policy") or entry.get("load_policy") or "default-candidate")
     default_modules = as_string_list((scenario or {}).get("default_task_modules"))
     default_module_set = set(default_modules)
@@ -764,7 +770,7 @@ def score_profile_candidate(
     score -= len(negative) * 8
     if profile_id == "core-dev":
         score += 2
-    if profile_id == "full" or load_policy == "troubleshooting-only":
+    if full_explicit_required:
         score += 20 if explicit_full else -60
     audit_boost = audit_profile_boost(profile_id, audit_context)
     score += int(audit_boost.get("boost") or 0)
@@ -782,6 +788,22 @@ def score_profile_candidate(
         "scenario_matched_terms": scenario_hits[:12],
         "profile_matched_terms": profile_hits[:12],
         "negative_matches": negative[:8],
+        "eligibility": {
+            "eligible": not (full_explicit_required and not explicit_full),
+            "reason": "eligible" if not (full_explicit_required and not explicit_full) else "explicit_full_request_required",
+            "explicit_full_request_required": full_explicit_required,
+            "explicit_full_request": explicit_full,
+        },
+        "rank_factors": {
+            "scenario_match_count": len(scenario_hits),
+            "profile_match_count": len(profile_hits),
+            "task_module_match_count": len(task_modules),
+            "negative_match_count": len(negative),
+            "audit_boost": int(audit_boost.get("boost") or 0),
+            "warning_pressure_penalty": int(pressure_penalty.get("penalty") or 0),
+            "full_selection_reason": full_selection_reason,
+        },
+        "why_full_selected": full_selection_reason if profile_id == "full" and explicit_full else None,
         "load_policy": load_policy,
         "task_modules": task_modules,
         "ranking_signals": as_string_list((scenario or {}).get("ranking_signals")) or as_string_list(entry.get("ranking_signals")),
@@ -823,7 +845,19 @@ def build_profile_recommendations(
     excluded: list[dict[str, Any]] = []
     retained: list[dict[str, Any]] = []
     for item in candidates:
-        if item["negative_matches"] and item["score"] <= 0:
+        eligibility = item.get("eligibility") if isinstance(item.get("eligibility"), dict) else {}
+        if item["profile"] == "full" and not eligibility.get("eligible", True):
+            excluded.append(
+                {
+                    "profile": item["profile"],
+                    "target_profile": item["target_profile"],
+                    "scenario_profile": item.get("scenario_profile"),
+                    "reason": "explicit_full_request_required",
+                    "eligibility": eligibility,
+                    "rank_factors": item.get("rank_factors", {}),
+                }
+            )
+        elif item["negative_matches"] and item["score"] <= 0:
             excluded.append(
                 {
                     "profile": item["profile"],
@@ -831,6 +865,7 @@ def build_profile_recommendations(
                     "scenario_profile": item.get("scenario_profile"),
                     "reason": "negative_examples_matched",
                     "negative_matches": item["negative_matches"],
+                    "rank_factors": item.get("rank_factors", {}),
                 }
             )
         elif item["score"] > 0:
@@ -853,11 +888,6 @@ def build_profile_recommendations(
         retained[-1]["matched_terms"] = retained[-1].get("matched_terms") or []
         retained[-1]["fallback_reason"] = "no_positive_profile_match_default_to_core_dev_preview"
     retained.sort(key=lambda item: (-int(item["score"]), 1 if item["profile"] == "full" else 0, str(item.get("scenario_profile") or item["profile"])))
-    if retained and retained[0]["profile"] == "full" and not explicit_full:
-        non_full = [item for item in retained if item["profile"] != "full"]
-        if non_full:
-            retained.remove(non_full[0])
-            retained.insert(0, non_full[0])
     return retained[:5], excluded[:10], explicit_full
 
 
@@ -896,6 +926,8 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
         {
             "query": query,
             "task_summary": query,
+            "explicit_full_request": explicit_full,
+            "eligibility_policy": "full profile is explicit-only; ordinary tasks receive focused non-full profiles and full is reported only in excluded_candidates.",
             "selected_profile": {
                 "profile": selected["profile"],
                 "target_profile": target_profile,
@@ -908,6 +940,10 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
                 "skill_doc_hints": selected.get("skill_doc_hints", []),
                 "audit_evidence": selected.get("audit_evidence"),
                 "warning_pressure_penalty": selected.get("warning_pressure_penalty"),
+                "eligibility": selected.get("eligibility"),
+                "rank_factors": selected.get("rank_factors"),
+                "negative_matches": selected.get("negative_matches", []),
+                "why_full_selected": selected.get("why_full_selected"),
             },
             "task_modules": selected_modules,
             "recommendations": recommendations,

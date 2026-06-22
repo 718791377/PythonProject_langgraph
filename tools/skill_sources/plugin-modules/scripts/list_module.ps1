@@ -52,6 +52,11 @@ function ConvertTo-ModuleSummary {
     scenario_profile = $ScenarioProfile
     description = [string]$(if (Get-ProfilePropertyValue -Object $Entry -Name 'description') { Get-ProfilePropertyValue -Object $Entry -Name 'description' } elseif (Get-ProfilePropertyValue -Object $Entry -Name 'scene_description') { Get-ProfilePropertyValue -Object $Entry -Name 'scene_description' } else { Get-ProfilePropertyValue -Object $Entry -Name 'scenario_description' })
     load_policy = [string](Get-ProfilePropertyValue -Object $Entry -Name 'load_policy')
+    qualified_name = $(if ($TaskModule) { [string](Get-ProfilePropertyValue -Object $Entry -Name 'qualified_name' -Default "$TargetProfile.$TaskModule") } else { $null })
+    routing_scope = [string](Get-ProfilePropertyValue -Object $Entry -Name 'routing_scope')
+    activation_scope = [string](Get-ProfilePropertyValue -Object $Entry -Name 'activation_scope')
+    governance_scope = [string](Get-ProfilePropertyValue -Object $Entry -Name 'governance_scope')
+    evidence_scope = [string](Get-ProfilePropertyValue -Object $Entry -Name 'evidence_scope')
     plugins = @($plugins)
     hard_load_disables_other_known_plugins = [bool](Get-ProfilePropertyValue -Object $hardLoad -Name 'disable_other_known_plugins' -Default $false)
     soft_load_hint_count = $(if ($null -ne $softLoad) { ConvertTo-ArrayCount (Get-ProfilePropertyValue -Object $softLoad -Name 'skill_doc_hints') } else { ConvertTo-ArrayCount (Get-ProfilePropertyValue -Object $Entry -Name 'skill_doc_hints') })

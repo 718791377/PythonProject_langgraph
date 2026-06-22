@@ -89,7 +89,11 @@
         "boost repo and CI terms",
         "keep full below focused developer work"
       ],
-      "scene_description": "Daily repository development, code review, CI repair, security review, OpenAI development, browser verification, and docs artifacts."
+      "scene_description": "Daily repository development, code review, CI repair, security review, OpenAI development, browser verification, and docs artifacts.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "browser-automation": {
       "target_profile": "core-dev",
@@ -114,7 +118,11 @@
       "ranking_signals": [
         "boost browser verification task module"
       ],
-      "scene_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification task entry."
+      "scene_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification task entry.",
+      "routing_scope": "task-or-scenario",
+      "activation_scope": "soft-load",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "web-product": {
       "target_profile": "web-saas",
@@ -151,7 +159,11 @@
       "ranking_signals": [
         "boost web deployment and app platform terms"
       ],
-      "scene_description": "Web/SaaS product construction, deployment, backend, payments, observability, mobile, and design implementation."
+      "scene_description": "Web/SaaS product construction, deployment, backend, payments, observability, mobile, and design implementation.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "ops-knowledge": {
       "target_profile": "company-ops",
@@ -186,7 +198,11 @@
       "ranking_signals": [
         "boost live office connector terms"
       ],
-      "scene_description": "One-person-company operations, email/calendar, knowledge, CRM, meeting intelligence, Slack, and planning."
+      "scene_description": "One-person-company operations, email/calendar, knowledge, CRM, meeting intelligence, Slack, and planning.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "research-analysis": {
       "target_profile": "market-research",
@@ -220,7 +236,11 @@
       "ranking_signals": [
         "boost research-source plugin terms"
       ],
-      "scene_description": "Market, company, paper, library, model/dataset, science visual, and report research."
+      "scene_description": "Market, company, paper, library, model/dataset, science visual, and report research.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "design-media": {
       "target_profile": "creative-content",
@@ -254,7 +274,11 @@
       "ranking_signals": [
         "boost design and media production terms"
       ],
-      "scene_description": "Creative content, visual design, slides, documents, video, brand, and media assets."
+      "scene_description": "Creative content, visual design, slides, documents, video, brand, and media assets.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "repo-local-gui": {
       "target_profile": "pyside6-gui",
@@ -280,7 +304,11 @@
       "ranking_signals": [
         "boost PySide6 and local GUI terms"
       ],
-      "scene_description": "Repo-local PySide6/Qt desktop GUI helper work without enabling unrelated plugin bundles."
+      "scene_description": "Repo-local PySide6/Qt desktop GUI helper work without enabling unrelated plugin bundles.",
+      "routing_scope": "repo-local",
+      "activation_scope": "soft-load",
+      "governance_scope": "repo-local-only",
+      "evidence_scope": "repo-local-evidence"
     },
     "troubleshooting": {
       "target_profile": "full",
@@ -302,7 +330,17 @@
       "ranking_signals": [
         "penalize unless explicit broad troubleshooting appears"
       ],
-      "scene_description": "Broad all-plugin troubleshooting only when the user explicitly asks to inspect or diagnose all plugin capabilities."
+      "scene_description": "Broad all-plugin troubleshooting only when the user explicitly asks to inspect or diagnose all plugin capabilities.",
+      "routing_scope": "explicit-full-troubleshooting",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "explicit-approval-required",
+      "evidence_scope": "explicit-full-request",
+      "explicit_full_request_required": true,
+      "allowed_full_selection_reasons": [
+        "explicit_all_plugins",
+        "explicit_broad_discovery",
+        "explicit_missing_plugin_capability"
+      ]
     },
     "customer-messaging": {
       "target_profile": "customer-comms",
@@ -332,7 +370,11 @@
       "ranking_signals": [
         "boost channel-specific communication terms"
       ],
-      "scene_description": "Customer communication tasks over Twilio, WhatsApp, SMS, voice, SendGrid, Slack, Gmail, and payment messaging."
+      "scene_description": "Customer communication tasks over Twilio, WhatsApp, SMS, voice, SendGrid, Slack, Gmail, and payment messaging.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     }
   },
   "allow_full_only_plugins": {},
@@ -519,7 +561,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Repository governance, OpenSpec, local gates, local MR review, and local-main-first workflow."
+          "scene_description": "Repository governance, OpenSpec, local gates, local MR review, and local-main-first workflow.",
+          "qualified_name": "core-dev.repo-governance",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "code-review": {
           "description": "Code review, CI repair, pull/MR feedback, GitHub/GitLab-adjacent review, and CodeRabbit review flows.",
@@ -583,7 +630,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Code review, CI repair, pull/MR feedback, GitHub/GitLab-adjacent review, and CodeRabbit review flows."
+          "scene_description": "Code review, CI repair, pull/MR feedback, GitHub/GitLab-adjacent review, and CodeRabbit review flows.",
+          "qualified_name": "core-dev.code-review",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "security-review": {
           "description": "Security review, threat modeling, vulnerability triage, and secure code changes.",
@@ -643,7 +695,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Security review, threat modeling, vulnerability triage, and secure code changes."
+          "scene_description": "Security review, threat modeling, vulnerability triage, and secure code changes.",
+          "qualified_name": "core-dev.security-review",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "openai-dev": {
           "description": "OpenAI API, Agents SDK, ChatGPT Apps, Responses, model/tool integration, and troubleshooting.",
@@ -703,7 +760,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "OpenAI API, Agents SDK, ChatGPT Apps, Responses, model/tool integration, and troubleshooting."
+          "scene_description": "OpenAI API, Agents SDK, ChatGPT Apps, Responses, model/tool integration, and troubleshooting.",
+          "qualified_name": "core-dev.openai-dev",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "workflow-orchestration": {
           "description": "Temporal/workflow orchestration and durable execution design connected to development workflows.",
@@ -755,7 +817,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Temporal/workflow orchestration and durable execution design connected to development workflows."
+          "scene_description": "Temporal/workflow orchestration and durable execution design connected to development workflows.",
+          "qualified_name": "core-dev.workflow-orchestration",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "docs-artifacts": {
           "description": "Documents, spreadsheets, and presentations for developer artifacts and evidence packages.",
@@ -816,7 +883,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Documents, spreadsheets, and presentations for developer artifacts and evidence packages."
+          "scene_description": "Documents, spreadsheets, and presentations for developer artifacts and evidence packages.",
+          "qualified_name": "core-dev.docs-artifacts",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "browser-verification": {
           "description": "Browser, Chrome DevTools, CDP, screenshot, and web verification support for developer tasks.",
@@ -876,10 +948,19 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification support for developer tasks."
+          "scene_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification support for developer tasks.",
+          "qualified_name": "core-dev.browser-verification",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         }
       },
-      "scene_description": "Daily developer profile for repository work, code review, security checks, OpenAI/ChatGPT Apps development, workflow orchestration, browser verification, and document artifacts."
+      "scene_description": "Daily developer profile for repository work, code review, security checks, OpenAI/ChatGPT Apps development, workflow orchestration, browser verification, and document artifacts.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "web-saas": {
       "description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Expo, Figma, browser checks, and GitHub workflows.",
@@ -1047,7 +1128,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Frontend, Next.js, Vercel, web UI, and browser-facing product builds."
+          "scene_description": "Frontend, Next.js, Vercel, web UI, and browser-facing product builds.",
+          "qualified_name": "web-saas.frontend-build",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "deploy-runtime": {
           "description": "Cloudflare/Vercel deployment runtime, workers, CI/CD, and edge deployment work.",
@@ -1111,7 +1197,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Cloudflare/Vercel deployment runtime, workers, CI/CD, and edge deployment work."
+          "scene_description": "Cloudflare/Vercel deployment runtime, workers, CI/CD, and edge deployment work.",
+          "qualified_name": "web-saas.deploy-runtime",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "db-backend": {
           "description": "Supabase/database/backend API work for web products.",
@@ -1166,7 +1257,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Supabase/database/backend API work for web products."
+          "scene_description": "Supabase/database/backend API work for web products.",
+          "qualified_name": "web-saas.db-backend",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "payments": {
           "description": "Stripe payments, billing, checkout, subscriptions, and payment integration.",
@@ -1221,7 +1317,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Stripe payments, billing, checkout, subscriptions, and payment integration."
+          "scene_description": "Stripe payments, billing, checkout, subscriptions, and payment integration.",
+          "qualified_name": "web-saas.payments",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "observability": {
           "description": "Sentry/monitoring/error tracking and production observability for web or mobile apps.",
@@ -1276,7 +1377,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Sentry/monitoring/error tracking and production observability for web or mobile apps."
+          "scene_description": "Sentry/monitoring/error tracking and production observability for web or mobile apps.",
+          "qualified_name": "web-saas.observability",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "mobile-app": {
           "description": "Expo/React Native/mobile app build, native UI, and app deployment work.",
@@ -1334,7 +1440,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Expo/React Native/mobile app build, native UI, and app deployment work."
+          "scene_description": "Expo/React Native/mobile app build, native UI, and app deployment work.",
+          "qualified_name": "web-saas.mobile-app",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "design-implementation": {
           "description": "Figma-to-code, design implementation, and UI handoff for web/SaaS products.",
@@ -1386,7 +1497,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Figma-to-code, design implementation, and UI handoff for web/SaaS products."
+          "scene_description": "Figma-to-code, design implementation, and UI handoff for web/SaaS products.",
+          "qualified_name": "web-saas.design-implementation",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "browser-verification": {
           "description": "Browser verification, screenshots, DevTools checks, and visual QA for web products.",
@@ -1443,10 +1559,19 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Browser verification, screenshots, DevTools checks, and visual QA for web products."
+          "scene_description": "Browser verification, screenshots, DevTools checks, and visual QA for web products.",
+          "qualified_name": "web-saas.browser-verification",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         }
       },
-      "scene_description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Expo, Figma, browser checks, and GitHub workflows."
+      "scene_description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Expo, Figma, browser checks, and GitHub workflows.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "company-ops": {
       "description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, HubSpot, Fireflies, Linear, and office artifacts.",
@@ -1622,7 +1747,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Gmail and Google Calendar triage, scheduling, and daily briefing."
+          "scene_description": "Gmail and Google Calendar triage, scheduling, and daily briefing.",
+          "qualified_name": "company-ops.mail-calendar",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "docs-sheets-slides": {
           "description": "Google Drive Docs/Sheets/Slides and office artifacts.",
@@ -1691,7 +1821,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Google Drive Docs/Sheets/Slides and office artifacts."
+          "scene_description": "Google Drive Docs/Sheets/Slides and office artifacts.",
+          "qualified_name": "company-ops.docs-sheets-slides",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "knowledge-capture": {
           "description": "Notion/Drive knowledge capture, notes, and operating-system documentation.",
@@ -1744,7 +1879,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Notion/Drive knowledge capture, notes, and operating-system documentation."
+          "scene_description": "Notion/Drive knowledge capture, notes, and operating-system documentation.",
+          "qualified_name": "company-ops.knowledge-capture",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "crm-workflow": {
           "description": "HubSpot CRM records, pipeline notes, customer follow-up, and sales operations.",
@@ -1799,7 +1939,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "HubSpot CRM records, pipeline notes, customer follow-up, and sales operations."
+          "scene_description": "HubSpot CRM records, pipeline notes, customer follow-up, and sales operations.",
+          "qualified_name": "company-ops.crm-workflow",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "team-comms": {
           "description": "Slack team communications and collaboration flows.",
@@ -1851,7 +1996,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Slack team communications and collaboration flows."
+          "scene_description": "Slack team communications and collaboration flows.",
+          "qualified_name": "company-ops.team-comms",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "meeting-intel": {
           "description": "Fireflies meeting intelligence, meeting notes, transcripts, and follow-up extraction.",
@@ -1904,7 +2054,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Fireflies meeting intelligence, meeting notes, transcripts, and follow-up extraction."
+          "scene_description": "Fireflies meeting intelligence, meeting notes, transcripts, and follow-up extraction.",
+          "qualified_name": "company-ops.meeting-intel",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "issue-planning": {
           "description": "Linear planning, issue triage, roadmap, backlog, and execution tracking.",
@@ -1959,10 +2114,19 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Linear planning, issue triage, roadmap, backlog, and execution tracking."
+          "scene_description": "Linear planning, issue triage, roadmap, backlog, and execution tracking.",
+          "qualified_name": "company-ops.issue-planning",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         }
       },
-      "scene_description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, HubSpot, Fireflies, Linear, and office artifacts."
+      "scene_description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, HubSpot, Fireflies, Linear, and office artifacts.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "market-research": {
       "description": "Market, company, investment, news, library, scientific visual, and model/dataset research profile.",
@@ -2121,7 +2285,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Company, market, investment, and competitive research."
+          "scene_description": "Company, market, investment, and competitive research.",
+          "qualified_name": "market-research.company-research",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "news-library": {
           "description": "News/archive/library ingestion and source tracking.",
@@ -2178,7 +2347,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "News/archive/library ingestion and source tracking."
+          "scene_description": "News/archive/library ingestion and source tracking.",
+          "qualified_name": "market-research.news-library",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "paper-citation": {
           "description": "Academic paper, Zotero, citation, and literature review work.",
@@ -2231,7 +2405,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Academic paper, Zotero, citation, and literature review work."
+          "scene_description": "Academic paper, Zotero, citation, and literature review work.",
+          "qualified_name": "market-research.paper-citation",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "model-dataset-inspection": {
           "description": "Hugging Face model, dataset, and ML artifact inspection.",
@@ -2285,7 +2464,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Hugging Face model, dataset, and ML artifact inspection."
+          "scene_description": "Hugging Face model, dataset, and ML artifact inspection.",
+          "qualified_name": "market-research.model-dataset-inspection",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "science-visuals": {
           "description": "BioRender scientific figure and research visual preparation.",
@@ -2337,7 +2521,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "BioRender scientific figure and research visual preparation."
+          "scene_description": "BioRender scientific figure and research visual preparation.",
+          "qualified_name": "market-research.science-visuals",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "report-artifacts": {
           "description": "Research report documents and spreadsheet artifacts.",
@@ -2389,10 +2578,19 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Research report documents and spreadsheet artifacts."
+          "scene_description": "Research report documents and spreadsheet artifacts.",
+          "qualified_name": "market-research.report-artifacts",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         }
       },
-      "scene_description": "Market, company, investment, news, library, scientific visual, and model/dataset research profile."
+      "scene_description": "Market, company, investment, news, library, scientific visual, and model/dataset research profile.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "customer-comms": {
       "description": "Customer communications profile for Twilio, SendGrid, Slack, Gmail, and Stripe-adjacent customer/payment messaging.",
@@ -2534,7 +2732,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Twilio SMS, WhatsApp, and voice customer messaging."
+          "scene_description": "Twilio SMS, WhatsApp, and voice customer messaging.",
+          "qualified_name": "customer-comms.messaging",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "email-delivery": {
           "description": "SendGrid/Gmail customer email delivery and deliverability tasks.",
@@ -2589,7 +2792,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "SendGrid/Gmail customer email delivery and deliverability tasks."
+          "scene_description": "SendGrid/Gmail customer email delivery and deliverability tasks.",
+          "qualified_name": "customer-comms.email-delivery",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "support-comms": {
           "description": "Slack/Gmail support communications and customer support coordination.",
@@ -2645,7 +2853,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Slack/Gmail support communications and customer support coordination."
+          "scene_description": "Slack/Gmail support communications and customer support coordination.",
+          "qualified_name": "customer-comms.support-comms",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "payment-comms": {
           "description": "Stripe-adjacent customer payment, invoice, and billing messaging.",
@@ -2698,10 +2911,19 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Stripe-adjacent customer payment, invoice, and billing messaging."
+          "scene_description": "Stripe-adjacent customer payment, invoice, and billing messaging.",
+          "qualified_name": "customer-comms.payment-comms",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         }
       },
-      "scene_description": "Customer communications profile for Twilio, SendGrid, Slack, Gmail, and Stripe-adjacent customer/payment messaging."
+      "scene_description": "Customer communications profile for Twilio, SendGrid, Slack, Gmail, and Stripe-adjacent customer/payment messaging.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "creative-content": {
       "description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, Cloudinary, presentations, and document deliverables.",
@@ -2845,7 +3067,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Canva/Figma design generation and visual concept creation."
+          "scene_description": "Canva/Figma design generation and visual concept creation.",
+          "qualified_name": "creative-content.design-generation",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "design-implementation": {
           "description": "Figma design implementation, design-to-code, and UI handoff.",
@@ -2891,7 +3118,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Figma design implementation, design-to-code, and UI handoff."
+          "scene_description": "Figma design implementation, design-to-code, and UI handoff.",
+          "qualified_name": "creative-content.design-implementation",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "slides-docs": {
           "description": "Presentations and document deliverables for creative content.",
@@ -2944,7 +3176,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Presentations and document deliverables for creative content."
+          "scene_description": "Presentations and document deliverables for creative content.",
+          "qualified_name": "creative-content.slides-docs",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "video-motion": {
           "description": "Remotion and HyperFrames video/motion production.",
@@ -2999,7 +3236,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Remotion and HyperFrames video/motion production."
+          "scene_description": "Remotion and HyperFrames video/motion production.",
+          "qualified_name": "creative-content.video-motion",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "brand-assets": {
           "description": "Brand asset planning and reusable creative asset production.",
@@ -3050,7 +3292,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Brand asset planning and reusable creative asset production."
+          "scene_description": "Brand asset planning and reusable creative asset production.",
+          "qualified_name": "creative-content.brand-assets",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         },
         "media-assets": {
           "description": "Cloudinary/media asset pipeline, transformations, and hosted creative assets.",
@@ -3102,10 +3349,19 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Cloudinary/media asset pipeline, transformations, and hosted creative assets."
+          "scene_description": "Cloudinary/media asset pipeline, transformations, and hosted creative assets.",
+          "qualified_name": "creative-content.media-assets",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         }
       },
-      "scene_description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, Cloudinary, presentations, and document deliverables."
+      "scene_description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, Cloudinary, presentations, and document deliverables.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "pyside6-gui": {
       "description": "Project-local PySide6 desktop GUI profile for preview/apply helper guidance, GUI templates, import-smoke checks, and packaging opt-in boundaries without enabling unrelated plugins.",
@@ -3210,7 +3466,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "PySide6/Qt local desktop GUI development guidance."
+          "scene_description": "PySide6/Qt local desktop GUI development guidance.",
+          "qualified_name": "pyside6-gui.qt-gui-dev",
+          "routing_scope": "repo-local",
+          "activation_scope": "soft-load",
+          "governance_scope": "repo-local-only",
+          "evidence_scope": "repo-local-evidence"
         },
         "gui-preview-apply": {
           "description": "Preview/apply helper usage for project-local PySide6 GUI setup.",
@@ -3257,7 +3518,12 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "Preview/apply helper usage for project-local PySide6 GUI setup."
+          "scene_description": "Preview/apply helper usage for project-local PySide6 GUI setup.",
+          "qualified_name": "pyside6-gui.gui-preview-apply",
+          "routing_scope": "repo-local",
+          "activation_scope": "soft-load",
+          "governance_scope": "repo-local-only",
+          "evidence_scope": "repo-local-evidence"
         },
         "gui-packaging-preflight": {
           "description": "PySide6 executable packaging preflight and opt-in packaging boundary.",
@@ -3304,10 +3570,19 @@
               "Hard-load previews resolve to the canonical top-level target_profile."
             ]
           },
-          "scene_description": "PySide6 executable packaging preflight and opt-in packaging boundary."
+          "scene_description": "PySide6 executable packaging preflight and opt-in packaging boundary.",
+          "qualified_name": "pyside6-gui.gui-packaging-preflight",
+          "routing_scope": "repo-local",
+          "activation_scope": "soft-load",
+          "governance_scope": "repo-local-only",
+          "evidence_scope": "repo-local-evidence"
         }
       },
-      "scene_description": "Project-local PySide6 desktop GUI profile for preview/apply helper guidance, GUI templates, import-smoke checks, and packaging opt-in boundaries without enabling unrelated plugins."
+      "scene_description": "Project-local PySide6 desktop GUI profile for preview/apply helper guidance, GUI templates, import-smoke checks, and packaging opt-in boundaries without enabling unrelated plugins.",
+      "routing_scope": "repo-local",
+      "activation_scope": "soft-load",
+      "governance_scope": "repo-local-only",
+      "evidence_scope": "repo-local-evidence"
     },
     "full": {
       "description": "Troubleshooting profile that enables every known installed plugin family.",
@@ -3385,7 +3660,18 @@
         "disable_other_known_plugins": false
       },
       "task_modules": {},
-      "scene_description": "Broad all-plugin troubleshooting only; not a normal daily or task-specific recommendation."
+      "scene_description": "Broad all-plugin troubleshooting only; not a normal daily or task-specific recommendation.",
+      "routing_scope": "explicit-full-troubleshooting",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "explicit-approval-required",
+      "evidence_scope": "explicit-full-request",
+      "explicit_full_request_required": true,
+      "allowed_full_selection_reasons": [
+        "explicit_all_plugins",
+        "explicit_broad_discovery",
+        "explicit_missing_plugin_capability"
+      ],
+      "ordinary_top1_allowed": false
     }
   }
 }

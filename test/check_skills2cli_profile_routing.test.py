@@ -61,6 +61,21 @@ class Skills2CliProfileRoutingCheckTest(unittest.TestCase):
         self.assertEqual(explicit_zh["selected_profile"], "full")
         ordinary = [item for item in matrix if not item["name"].startswith("explicit-full")]
         self.assertTrue(all(item["selected_profile"] != "full" for item in ordinary))
+        self.assertTrue(
+            all(
+                any(candidate["target_profile"] == "full" and candidate["reason"] == "explicit_full_request_required" for candidate in item["excluded_candidates"])
+                for item in ordinary
+            )
+        )
+        artifact_names = {item["artifact"] for item in payload["installed_artifact_drift_report"]}
+        self.assertEqual(
+            {"skills2cli.py", "skills2cli_profile_registry_contract.py", "profiles.json"},
+            artifact_names,
+        )
+        self.assertEqual(
+            set(payload["orthogonal_scope_fields"]),
+            {"routing_scope", "activation_scope", "governance_scope", "evidence_scope"},
+        )
 
     def test_fails_when_known_plugin_is_only_full_without_allowlist(self) -> None:
         root = self.make_root("only-full-plugin")
@@ -105,6 +120,30 @@ class Skills2CliProfileRoutingCheckTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         parsed = json.loads(result.stdout)
         self.assertTrue(any("web-saas.mobile-app" in error for error in parsed["errors"]))
+
+    def test_fails_when_task_module_missing_qualified_name(self) -> None:
+        root = self.make_root("missing-task-qualified-name")
+        profiles_path = self.copy_registry(root)
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        del payload["modules"]["web-saas"]["task_modules"]["mobile-app"]["qualified_name"]
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("web-saas.mobile-app" in error and "qualified_name" in error for error in parsed["errors"]))
+
+    def test_fails_when_orthogonal_scope_mapping_is_wrong(self) -> None:
+        root = self.make_root("wrong-orthogonal-scope")
+        profiles_path = self.copy_registry(root)
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        payload["modules"]["web-saas"]["activation_scope"] = "soft-load"
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("web-saas" in error and "activation_scope" in error for error in parsed["errors"]))
 
     def test_fails_when_profile_lacks_scene_description_alias(self) -> None:
         root = self.make_root("missing-scene-description")

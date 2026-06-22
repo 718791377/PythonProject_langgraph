@@ -232,6 +232,15 @@ class Skills2CliTest(unittest.TestCase):
         self.assertNotEqual(ordinary["selected_profile"].get("scenario_profile"), "browser-automation")
         self.assertIn("code-review", {item["task_module"] for item in ordinary["task_modules"]})
         self.assertIn("security-review", {item["task_module"] for item in ordinary["task_modules"]})
+        self.assertFalse(ordinary["explicit_full_request"])
+        self.assertTrue(
+            any(
+                item["target_profile"] == "full" and item["reason"] == "explicit_full_request_required"
+                for item in ordinary["excluded_candidates"]
+            )
+        )
+        self.assertEqual(ordinary["selected_profile"]["eligibility"]["reason"], "eligible")
+        self.assertIn("rank_factors", ordinary["selected_profile"])
 
         troubleshooting = self.run_cli(
             "profile",
@@ -241,6 +250,11 @@ class Skills2CliTest(unittest.TestCase):
             "--json",
         )
         self.assertEqual(troubleshooting["selected_profile"]["target_profile"], "full")
+        self.assertTrue(troubleshooting["explicit_full_request"])
+        self.assertIn(
+            troubleshooting["selected_profile"]["why_full_selected"],
+            {"explicit_all_plugins", "explicit_broad_discovery", "explicit_missing_plugin_capability"},
+        )
 
     def assert_advisory_only_profile_suggest(self, payload: dict) -> None:
         self.assertFalse(payload["mutates_config"])
@@ -337,8 +351,20 @@ class Skills2CliTest(unittest.TestCase):
                 if explicit_full:
                     self.assertEqual(selected["target_profile"], "full")
                     self.assertIsNotNone(payload["hard_load_preview_command"])
+                    self.assertTrue(payload["explicit_full_request"])
+                    self.assertTrue(selected["why_full_selected"])
                 else:
                     self.assertNotEqual(selected["target_profile"], "full")
+                    self.assertFalse(payload["explicit_full_request"])
+                    self.assertTrue(
+                        any(
+                            item["target_profile"] == "full" and item["reason"] == "explicit_full_request_required"
+                            for item in payload["excluded_candidates"]
+                        )
+                    )
+                    for module in payload["task_modules"]:
+                        self.assertEqual(module["qualified_name"], f'{selected["target_profile"]}.{module["task_module"]}')
+                        self.assertEqual(module["identity"]["expected_qualified_name"], module["qualified_name"])
 
     def test_profile_suggest_preserves_scenario_to_canonical_mapping(self) -> None:
         payload = self.run_cli(

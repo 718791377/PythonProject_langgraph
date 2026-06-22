@@ -10,8 +10,11 @@ from typing import Any
 
 from skills2cli_profile_registry_contract import (
     CANONICAL_PROFILE_IDS,
+    ORTHOGONAL_SCOPE_FIELDS,
     PLUGIN_MODULES_SKILL_RELATIVE,
     REQUIRED_TASK_FIELDS,
+    entry_scope_mismatches,
+    task_module_identity,
     truthy_list,
 )
 
@@ -120,6 +123,13 @@ def validate(root: Path) -> dict[str, Any]:
                     errors.append(f"Scenario profile `{scenario_name}` target_profile must resolve to a canonical module.")
                 if scenario_name in modules:
                     errors.append(f"Scenario profile `{scenario_name}` must not be a canonical hard-load module.")
+                for field in ORTHOGONAL_SCOPE_FIELDS:
+                    if not truthy_list(scenario_entry.get(field) if isinstance(scenario_entry, dict) else None):
+                        errors.append(f"Scenario profile `{scenario_name}` is missing orthogonal field `{field}`.")
+                for mismatch in entry_scope_mismatches(scenario_entry if isinstance(scenario_entry, dict) else {}):
+                    errors.append(
+                        f"Scenario profile `{scenario_name}` orthogonal field `{mismatch['field']}` expected `{mismatch['expected']}` but found `{mismatch['actual']}`."
+                    )
             for module in REQUIRED_MODULES:
                 entry = modules.get(module)
                 if not isinstance(entry, dict):
@@ -137,6 +147,13 @@ def validate(root: Path) -> dict[str, Any]:
                     for field in ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "ranking_signals", "task_modules"):
                         if not truthy_list(entry.get(field)):
                             errors.append(f"Module `{module}` is missing routing field `{field}`.")
+                    for field in ORTHOGONAL_SCOPE_FIELDS:
+                        if not truthy_list(entry.get(field)):
+                            errors.append(f"Module `{module}` is missing orthogonal field `{field}`.")
+                    for mismatch in entry_scope_mismatches(entry):
+                        errors.append(
+                            f"Module `{module}` orthogonal field `{mismatch['field']}` expected `{mismatch['expected']}` but found `{mismatch['actual']}`."
+                        )
                     task_modules = entry.get("task_modules", {})
                     if isinstance(task_modules, dict):
                         for task_name, task_entry in task_modules.items():
@@ -145,8 +162,20 @@ def validate(root: Path) -> dict[str, Any]:
                                     continue
                                 if not truthy_list(task_entry.get(field)):
                                     errors.append(f"Task module `{module}.{task_name}` is missing field `{field}`.")
+                            identity = task_module_identity(str(module), str(task_name), task_entry)
+                            if not identity["declared_matches_expected"]:
+                                errors.append(
+                                    f"Task module `{module}.{task_name}` qualified_name must be `{identity['expected_qualified_name']}`."
+                                )
+                            for mismatch in entry_scope_mismatches(task_entry):
+                                errors.append(
+                                    f"Task module `{module}.{task_name}` orthogonal field `{mismatch['field']}` expected `{mismatch['expected']}` but found `{mismatch['actual']}`."
+                                )
                     else:
                         errors.append(f"Module `{module}` task_modules must be an object.")
+                full_entry = modules.get("full")
+                if isinstance(full_entry, dict) and full_entry.get("explicit_full_request_required") is not True:
+                    errors.append("Module `full` must declare explicit_full_request_required=true.")
             safety = profiles.get("safety", {})
             if safety.get("backup_before_config_write") is not True:
                 errors.append("profiles.json safety.backup_before_config_write must be true.")

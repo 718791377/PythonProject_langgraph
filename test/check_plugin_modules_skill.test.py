@@ -92,6 +92,32 @@ class PluginModulesSkillCheckTest(unittest.TestCase):
         parsed = json.loads(result.stdout)
         self.assertTrue(any("web-saas.mobile-app" in error and "routing_explanation" in error for error in parsed["errors"]))
 
+    def test_fails_when_task_module_qualified_name_is_wrong(self) -> None:
+        root = self.make_root("plugin-modules-wrong-qualified-name")
+        self.copy_skill_source(root)
+        profiles_path = root / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        payload["modules"]["web-saas"]["task_modules"]["mobile-app"]["qualified_name"] = "mobile-app"
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("web-saas.mobile-app" in error and "qualified_name" in error for error in parsed["errors"]))
+
+    def test_fails_when_orthogonal_scope_mapping_is_wrong(self) -> None:
+        root = self.make_root("plugin-modules-wrong-orthogonal")
+        self.copy_skill_source(root)
+        profiles_path = root / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        payload["modules"]["core-dev"]["governance_scope"] = "repo-local-only"
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("core-dev" in error and "governance_scope" in error for error in parsed["errors"]))
+
     def test_scenario_profile_resolves_to_canonical_target(self) -> None:
         profiles_path = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
         payload = json.loads(profiles_path.read_text(encoding="utf-8"))

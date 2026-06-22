@@ -13,6 +13,7 @@ from typing import Any
 from skills2cli_profile_registry_contract import (
     CANONICAL_PROFILE_IDS,
     INSTALLED_PROFILE_REGISTRY_RELATIVE,
+    ORTHOGONAL_SCOPE_FIELDS,
     PROFILE_REGISTRY_RELATIVE,
     REQUIRED_SCENARIO_FIELDS,
     REQUIRED_TASK_FIELDS,
@@ -20,7 +21,10 @@ from skills2cli_profile_registry_contract import (
     SKILLS2CLI_RELATIVE,
     as_string_list,
     collect_plugins,
+    entry_scope_mismatches,
     explicit_full_terms,
+    installed_artifact_surface_paths,
+    task_module_identity,
     truthy_list,
 )
 
@@ -113,6 +117,43 @@ def as_list(value: Any) -> list[Any]:
     return list(as_string_list(value))
 
 
+def file_sha256(path: Path) -> str | None:
+    try:
+        import hashlib
+
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def build_installed_artifact_report(root: Path) -> list[dict[str, Any]]:
+    codex_home = Path.home() / ".codex"
+    report: list[dict[str, Any]] = []
+    for name, paths in installed_artifact_surface_paths(root, codex_home).items():
+        repo_path = Path(paths["repo_path"])
+        installed_path = Path(paths["installed_path"])
+        repo_hash = file_sha256(repo_path)
+        installed_hash = file_sha256(installed_path)
+        item: dict[str, Any] = {
+            "artifact": name,
+            "repo_path": str(repo_path),
+            "installed_path": str(installed_path),
+            "repo_exists": repo_hash is not None,
+            "installed_exists": installed_hash is not None,
+            "hash_equal": bool(repo_hash and installed_hash and repo_hash == installed_hash),
+            "drift_reported": bool(repo_hash and installed_hash and repo_hash != installed_hash),
+        }
+        if "plugin_modules_installed_path" in paths:
+            plugin_modules_path = Path(paths["plugin_modules_installed_path"])
+            plugin_modules_hash = file_sha256(plugin_modules_path)
+            item["plugin_modules_installed_path"] = str(plugin_modules_path)
+            item["plugin_modules_installed_exists"] = plugin_modules_hash is not None
+            item["plugin_modules_hash_equal"] = bool(repo_hash and plugin_modules_hash and repo_hash == plugin_modules_hash)
+            item["plugin_modules_drift_reported"] = bool(repo_hash and plugin_modules_hash and repo_hash != plugin_modules_hash)
+        report.append(item)
+    return report
+
+
 def validate_registry(root: Path) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -146,6 +187,10 @@ def validate_registry(root: Path) -> dict[str, Any]:
                 continue
             if not truthy_list(entry.get(field)):
                 errors.append(f"Profile `{profile_id}` missing routing field `{field}`.")
+        for mismatch in entry_scope_mismatches(entry):
+            errors.append(
+                f"Profile `{profile_id}` orthogonal scope `{mismatch['field']}` expected `{mismatch['expected']}` but found `{mismatch['actual']}`."
+            )
         if profile_id != "full":
             task_modules = entry.get("task_modules")
             if not isinstance(task_modules, dict) or not task_modules:
@@ -159,11 +204,22 @@ def validate_registry(root: Path) -> dict[str, Any]:
                         continue
                     if not truthy_list(task_entry.get(field)):
                         errors.append(f"Task module `{profile_id}.{task_id}` missing field `{field}`.")
+                identity = task_module_identity(str(profile_id), str(task_id), task_entry)
+                if not identity["declared_matches_expected"]:
+                    errors.append(
+                        f"Task module `{profile_id}.{task_id}` qualified_name must be `{identity['expected_qualified_name']}`."
+                    )
+                for mismatch in entry_scope_mismatches(task_entry):
+                    errors.append(
+                        f"Task module `{profile_id}.{task_id}` orthogonal scope `{mismatch['field']}` expected `{mismatch['expected']}` but found `{mismatch['actual']}`."
+                    )
         else:
             if (entry.get("task_modules") or {}) != {}:
                 errors.append("Profile `full` must not define normal task modules.")
             if str(entry.get("load_policy")) != "troubleshooting-only":
                 errors.append("Profile `full` load_policy must be troubleshooting-only.")
+            if entry.get("explicit_full_request_required") is not True:
+                errors.append("Profile `full` must declare explicit_full_request_required=true.")
 
     for scenario_id, scenario in scenarios.items():
         if not isinstance(scenario, dict):
@@ -177,6 +233,10 @@ def validate_registry(root: Path) -> dict[str, Any]:
         for field in REQUIRED_SCENARIO_FIELDS:
             if not truthy_list(scenario.get(field)):
                 errors.append(f"Scenario profile `{scenario_id}` missing field `{field}`.")
+        for mismatch in entry_scope_mismatches(scenario):
+            errors.append(
+                f"Scenario profile `{scenario_id}` orthogonal scope `{mismatch['field']}` expected `{mismatch['expected']}` but found `{mismatch['actual']}`."
+            )
 
     non_full_coverage: set[str] = set()
     for profile_id, entry in modules.items():
@@ -259,6 +319,8 @@ def validate_registry(root: Path) -> dict[str, Any]:
                         "selected_profile": selected.get("target_profile"),
                         "scenario_profile": selected.get("scenario_profile"),
                         "task_modules": sorted(task_modules),
+                        "explicit_full_request": suggestion.get("explicit_full_request"),
+                        "excluded_candidates": suggestion.get("excluded_candidates", []),
                     }
                 )
                 ok = bool(
@@ -273,8 +335,17 @@ def validate_registry(root: Path) -> dict[str, Any]:
                     ok = ok and selected.get("scenario_profile") == case.get("scenario_profile")
                 if not case.get("explicit_full"):
                     ok = ok and selected.get("target_profile") != "full"
+                    ok = ok and any(
+                        item.get("target_profile") == "full" and item.get("reason") == "explicit_full_request_required"
+                        for item in suggestion.get("excluded_candidates", [])
+                    )
                 else:
-                    ok = ok and selected.get("target_profile") == "full" and bool(suggestion.get("hard_load_preview_command"))
+                    ok = (
+                        ok
+                        and selected.get("target_profile") == "full"
+                        and bool(suggestion.get("hard_load_preview_command"))
+                        and bool(selected.get("why_full_selected"))
+                    )
                 row["ok"] = ok
                 if not ok:
                     row["error"] = "profile_suggest_matrix_expectation_failed"
@@ -323,6 +394,7 @@ def validate_registry(root: Path) -> dict[str, Any]:
     else:
         warnings.append("skills2cli.py or profiles.json missing; skipped profile suggest rerank contract smoke.")
 
+    installed_artifacts = build_installed_artifact_report(root)
     installed_path = Path.home() / ".codex" / INSTALLED_PROFILE_REGISTRY_RELATIVE
     drift_reported = False
     if installed_path.exists() and registry_path.exists():
@@ -341,6 +413,8 @@ def validate_registry(root: Path) -> dict[str, Any]:
         "registry": str(registry_path),
         "installed_copy": str(installed_path),
         "installed_copy_drift_reported": drift_reported,
+        "installed_artifact_drift_report": installed_artifacts,
+        "orthogonal_scope_fields": list(ORTHOGONAL_SCOPE_FIELDS),
         "profile_suggest_rerank_contract": profile_suggest_contract,
         "errors": errors,
         "warnings": warnings,

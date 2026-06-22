@@ -171,6 +171,8 @@ function Reject-NonCanonicalHardLoadTarget {
     edits_plugin_cache = $false
     profile_apply_performed = $false
     explanation = 'Task modules and scenario profiles are soft-load guidance only; hard-load applies only to canonical top-level profiles.'
+    canonical_preview_command = $(if ($TargetProfile) { ".\tools\skill_sources\plugin-modules\scripts\set_plugin_profile.ps1 $TargetProfile -Json" } else { $null })
+    soft_load_preview_command = $(if ($TaskModule) { ".\tools\skill_sources\plugin-modules\scripts\load_module.ps1 $TargetProfile.$TaskModule -Json" } elseif ($ScenarioProfile) { ".\tools\skill_sources\plugin-modules\scripts\load_module.ps1 $ScenarioProfile -Json" } else { $null })
     guidance = @(
       'Use load_module.ps1 for scenario or profile.task_module soft-load guidance.',
       'Use set_plugin_profile.ps1 only with a canonical top-level profile such as core-dev or web-saas.',
