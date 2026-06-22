@@ -191,6 +191,65 @@ class SkillsAuditFinalReviewPrecheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("Conflict or exception count" in error for error in payload["errors"]))
 
+    def test_summary_reviewed_preview_candidate_with_decision_record_passes(self) -> None:
+        root = self.make_repo("skills-final-precheck-reviewed-candidate")
+        final_summary = FINAL_SUMMARY.replace(
+            "Summary review state: `human_review_pending`",
+            "Summary review state: `summary-reviewed`",
+        ).replace(
+            "Candidate generation state: `not_requested`",
+            "Candidate generation state: `preview-only`",
+        )
+        self.write_required_files(root, final_summary=final_summary)
+        self.write_file(
+            root,
+            MEMORY / "skills_profile_candidate_core_dev_2026-06-22.json",
+            '{"target_profile":"core-dev","approval_state":"preview-only"}',
+        )
+        self.write_file(
+            root,
+            MEMORY / "skills_profile_candidate_core_dev_2026-06-22.md",
+            """
+# Candidate
+
+- target_profile: `core-dev`
+- Candidate generation state: `preview-only`
+""",
+        )
+        self.write_file(
+            root,
+            MEMORY / "skills_usage_audit_approved_to_apply_2026-06-22-core-dev.md",
+            """
+# Approved-to-Apply Receipt
+
+- Rollback command: `powershell -NoProfile -File tools/skill_sources/plugin-modules/scripts/set_plugin_profile.ps1 -RestoreLatest -Apply -Json`
+""",
+        )
+        self.write_file(
+            root,
+            MEMORY / "skills_usage_audit_human_review_decision_2026-06-21.md",
+            """
+# Human Review Decision
+
+- Outcome: `summary-reviewed + preview-only candidate`
+- Summary review state: `summary-reviewed`
+- Candidate generation state: `preview-only`
+- Profile apply state: `approved-to-apply`
+- target_profile: `core-dev`
+- approved-to-apply receipt: `docs_bilingual/memory/skills_usage_audit_approved_to_apply_2026-06-22-core-dev.md`
+""",
+        )
+
+        result = self.run_check(root)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["decision_state"], "summary_reviewed_candidate_ready")
+        self.assertEqual(payload["human_review_decision_record"]["target_profile"], "core-dev")
+        self.assertEqual(payload["counts"]["candidate_artifacts"], 2)
+        self.assertEqual(payload["open_items"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -15,7 +15,9 @@ MEMORY_DIR = Path("docs_bilingual/memory")
 FINAL_SUMMARY = MEMORY_DIR / "skills_usage_audit_30d_summary_2026-06-15-1059.md"
 
 PENDING_SUMMARY_STATES = {"human_review_pending", "review-pending"}
+REVIEWED_SUMMARY_STATES = {"summary-reviewed", "summary_reviewed"}
 ALLOWED_PENDING_CANDIDATE_STATES = {"not_requested"}
+ALLOWED_REVIEWED_CANDIDATE_STATES = {"preview-only", "preview_only", "requested", "candidate_preview_requested"}
 ALLOWED_PENDING_APPLY_STATES = {"not_authorized"}
 ALLOWED_NOISE_REVIEW_STATES = {"review_required"}
 ALLOWED_MANUAL_CONFLICT_STATES = {"no_manual_conflict_or_exception_notes"}
@@ -30,6 +32,15 @@ CANDIDATE_PATTERNS = (
     "skills_usage_audit_profile_apply_candidate*.json",
     "skills_profile_candidate*.md",
     "skills_profile_candidate*.json",
+)
+
+DECISION_RECORD_PATTERNS = (
+    "skills_usage_audit_human_review_decision_*.md",
+)
+
+APPROVED_TO_APPLY_RECEIPT_PATTERNS = (
+    "skills_usage_audit_approved_to_apply_*.md",
+    "skills_usage_audit_profile_apply_approval_*.md",
 )
 
 
@@ -112,6 +123,29 @@ def existing_candidate_artifacts(root: Path) -> list[str]:
     return sorted({norm(path.relative_to(root)) for path in artifacts})
 
 
+def existing_approval_receipts(root: Path) -> list[str]:
+    receipts: list[Path] = []
+    for pattern in APPROVED_TO_APPLY_RECEIPT_PATTERNS:
+        receipts.extend(
+            path
+            for path in (root / MEMORY_DIR).glob(pattern)
+            if not path.name.endswith(".zh-CN.md")
+        )
+    return sorted({norm(path.relative_to(root)) for path in receipts})
+
+
+def decision_record_paths(root: Path) -> list[Path]:
+    records: list[Path] = []
+    for pattern in DECISION_RECORD_PATTERNS:
+        records.extend(
+            path
+            for path in (root / MEMORY_DIR).glob(pattern)
+            if not path.name.endswith(".zh-CN.md")
+            and "template" not in path.name.lower()
+        )
+    return sorted(records, key=sortable_name_key)
+
+
 def parse_final_summary(text: str) -> dict[str, Any]:
     return {
         "summary_review_state": extract_backtick_value(
@@ -143,6 +177,57 @@ def parse_final_summary(text: str) -> dict[str, Any]:
         "manual_evidence_files_requested": parse_int(
             extract_backtick_value(text, ("Manual evidence files requested",))
         ),
+    }
+
+
+def reviewed_candidate_decision_record(root: Path) -> dict[str, Any]:
+    records = decision_record_paths(root)
+    if len(records) != 1:
+        return {
+            "found": False,
+            "path": None,
+            "record_count": len(records),
+            "supports_preview_candidate": False,
+            "supports_approved_to_apply": False,
+        }
+    path = records[0]
+    text = read_text(path)
+    summary_state = extract_backtick_value(
+        text,
+        ("Summary review state", "Final 30-day summary state", "Final summary state"),
+    )
+    candidate_state = extract_backtick_value(text, ("Candidate generation state", "Candidate generation"))
+    apply_state = extract_backtick_value(text, ("Profile apply state", "Profile apply"))
+    target_profile = extract_backtick_value(
+        text,
+        ("target_profile", "Target profile", "Target profile/module", "Profile target"),
+    )
+    approved_to_apply_receipt = extract_backtick_value(
+        text,
+        ("approved-to-apply receipt", "Approved-to-apply receipt", "Profile apply approval receipt"),
+    )
+    supports_preview_candidate = (
+        "summary-reviewed + preview-only candidate" in text
+        and summary_state in REVIEWED_SUMMARY_STATES
+        and candidate_state in ALLOWED_REVIEWED_CANDIDATE_STATES
+        and bool(target_profile)
+    )
+    supports_approved_to_apply = (
+        supports_preview_candidate
+        and apply_state in {"approved-to-apply", "approved_to_apply", "not_authorized"}
+        and bool(approved_to_apply_receipt)
+    )
+    return {
+        "found": True,
+        "path": norm(path.relative_to(root)),
+        "record_count": 1,
+        "supports_preview_candidate": supports_preview_candidate,
+        "supports_approved_to_apply": supports_approved_to_apply,
+        "summary_review_state": summary_state,
+        "candidate_generation_state": candidate_state,
+        "profile_apply_state": apply_state,
+        "target_profile": target_profile,
+        "approved_to_apply_receipt": approved_to_apply_receipt,
     }
 
 
@@ -192,11 +277,7 @@ def build_report(root: Path) -> dict[str, Any]:
     root = root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
-    open_items: list[str] = [
-        "final_human_review_pending",
-        "closure_decision_pending",
-        "profile_apply_not_authorized",
-    ]
+    open_items: list[str] = []
 
     summary_path = root / FINAL_SUMMARY
     final_text = read_text(summary_path)
@@ -205,21 +286,45 @@ def build_report(root: Path) -> dict[str, Any]:
 
     final_state = parse_final_summary(final_text)
     candidate_artifacts = existing_candidate_artifacts(root)
+    approval_receipts = existing_approval_receipts(root)
+    decision_record = reviewed_candidate_decision_record(root)
     precheck = precheck_evidence_result(root)
 
     summary_state = final_state.get("summary_review_state")
-    if summary_state not in PENDING_SUMMARY_STATES:
+    if summary_state in PENDING_SUMMARY_STATES:
+        open_items.extend(
+            [
+                "final_human_review_pending",
+                "closure_decision_pending",
+                "profile_apply_not_authorized",
+            ]
+        )
+    elif summary_state in REVIEWED_SUMMARY_STATES:
+        pass
+    else:
         errors.append(
-            f"{norm(FINAL_SUMMARY)}: final precheck only supports review-pending summaries; "
+            f"{norm(FINAL_SUMMARY)}: final precheck supports review-pending or summary-reviewed summaries; "
             f"observed {summary_state!r}."
         )
 
     candidate_state = final_state.get("candidate_generation_state")
-    if candidate_state not in ALLOWED_PENDING_CANDIDATE_STATES:
+    if summary_state in PENDING_SUMMARY_STATES and candidate_state not in ALLOWED_PENDING_CANDIDATE_STATES:
         errors.append(
             "final precheck requires candidate generation to remain not_requested; "
             f"observed {candidate_state!r}."
         )
+    if summary_state in REVIEWED_SUMMARY_STATES:
+        if candidate_artifacts and candidate_state not in ALLOWED_REVIEWED_CANDIDATE_STATES:
+            errors.append(
+                "summary-reviewed candidate evidence requires candidate generation to be preview-only/requested; "
+                f"observed {candidate_state!r}."
+            )
+        if candidate_artifacts and not decision_record["supports_preview_candidate"]:
+            errors.append(
+                "profile candidate artifacts require exactly one human-review decision record with "
+                "`summary-reviewed + preview-only candidate`, reviewed summary state, preview candidate state, "
+                "and explicit target_profile."
+            )
 
     apply_state = final_state.get("profile_apply_state")
     if apply_state not in ALLOWED_PENDING_APPLY_STATES:
@@ -260,11 +365,23 @@ def build_report(root: Path) -> dict[str, Any]:
             "field-contract violations while keeping the summary human-review pending."
         )
 
-    if candidate_artifacts:
+    if summary_state in PENDING_SUMMARY_STATES and candidate_artifacts:
         errors.append(
             "profile candidate artifacts exist before an explicit summary-reviewed decision: "
             + ", ".join(candidate_artifacts)
         )
+    if summary_state in REVIEWED_SUMMARY_STATES and approval_receipts and not decision_record["supports_approved_to_apply"]:
+        errors.append(
+            "approved-to-apply receipts require the human-review decision record to reference an "
+            "approved-to-apply receipt and keep a supported preview-candidate decision."
+        )
+
+    decision_state = "precheck_failed"
+    if not errors:
+        if summary_state in REVIEWED_SUMMARY_STATES:
+            decision_state = "summary_reviewed_candidate_ready" if candidate_artifacts else "summary_reviewed_no_change"
+        else:
+            decision_state = "review_pending_continue_monitoring"
 
     return {
         "schema_version": 1,
@@ -272,17 +389,21 @@ def build_report(root: Path) -> dict[str, Any]:
         "check_name": CHECK_NAME,
         "ok": not errors,
         "root": str(root),
-        "decision_state": "review_pending_continue_monitoring" if not errors else "precheck_failed",
+        "decision_state": decision_state,
         "does_not_mutate_config": True,
         "does_not_edit_plugin_cache": True,
         "does_not_apply_profile": True,
         "evidence_paths": {
             "final_summary": norm(FINAL_SUMMARY),
             "precheck_evidence": precheck["path"],
+            "human_review_decision_record": decision_record["path"],
+            "approval_receipts": approval_receipts,
         },
         "final_summary": final_state,
         "precheck": precheck,
+        "human_review_decision_record": decision_record,
         "candidate_artifacts": candidate_artifacts,
+        "approval_receipts": approval_receipts,
         "open_items": open_items,
         "errors": errors,
         "warnings": warnings,
@@ -290,6 +411,7 @@ def build_report(root: Path) -> dict[str, Any]:
             "precheck_is_machine_evidence_only": True,
             "summary_reviewed_must_remain_human_decision": True,
             "candidate_generation_before_summary_reviewed": "blocked",
+            "candidate_artifacts_after_summary_reviewed_require_decision_record": True,
             "profile_apply_requires_later_approved_to_apply": True,
             "raw_noise_tokens_retained": False,
             "manual_conflict_or_exception_count": 0,

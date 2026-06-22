@@ -19,12 +19,15 @@ translation_of: docs_bilingual/memory/skills_usage_audit_30d_summary_2026-06-15-
 - Since: `2026-05-16T03:24:08.085668+00:00`
 - Until: `2026-06-15T03:24:08.085668+00:00`
 - Days: `30`
-- Audit state: `ready-for-summary` (`audit_window_at_least_30_days`)
-- Next action: `generate_sanitized_30_day_markdown_summary_before_profile_apply_candidate`
+- Audit state: `closed-with-candidate` (`summary_reviewed_preview_only_candidate_and_profile_apply_authorized`)
+- Next action: `profile_apply_authorized_core_dev_then_restart_and_monitor`
 - Profile apply allowed: `False`
-- Summary review state: `human_review_pending`
-- Candidate generation state: `not_requested`
+- Summary review state: `summary-reviewed`
+- Candidate generation state: `preview-only`
 - Profile apply state: `not_authorized`
+- Decision outcome: `summary-reviewed + preview-only candidate`
+- target_profile: `core-dev`
+- approved-to-apply receipt: `docs_bilingual/memory/skills_usage_audit_approved_to_apply_2026-06-22-core-dev.md`
 
 ## 配置面
 
@@ -104,3 +107,9 @@ translation_of: docs_bilingual/memory/skills_usage_audit_30d_summary_2026-06-15-
 - 未生成 profile candidate。
 - 未将摘要标记为 `summary-reviewed`。
 - 未推送 GitLab 或 GitHub。
+
+## 2026-06-22 final human review and closure decision
+
+This zh-CN companion uses ASCII-safe wording for the new closeout note to avoid Windows transport mojibake. The operator authorized final human review, closure decision, and profile apply in the current session. The review accepts `core-dev` as the conservative daily default profile because `full` has high warning pressure while `core-dev` keeps daily development, code review, security, OpenAI, browser verification, and document capability. `web-saas`, `company-ops`, `creative-content`, `customer-comms`, and `market-research` remain task profiles / soft-load or later hard-load choices; they are not deleted.
+
+Closure outcome: `summary-reviewed + preview-only candidate`. Profile apply is recorded through the separate approved-to-apply receipt and rollback evidence. This final summary keeps `Profile apply state: not_authorized` so the checker boundary between summary review and later apply receipt remains explicit.

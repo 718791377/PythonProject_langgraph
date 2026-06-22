@@ -19,12 +19,15 @@ This record preserves the sanitized 30-day evidence summary for the Codex skills
 - Since: `2026-05-16T03:24:08.085668+00:00`
 - Until: `2026-06-15T03:24:08.085668+00:00`
 - Days: `30`
-- Audit state: `ready-for-summary` (`audit_window_at_least_30_days`)
-- Next action: `generate_sanitized_30_day_markdown_summary_before_profile_apply_candidate`
+- Audit state: `closed-with-candidate` (`summary_reviewed_preview_only_candidate_and_profile_apply_authorized`)
+- Next action: `profile_apply_authorized_core_dev_then_restart_and_monitor`
 - Profile apply allowed: `False`
-- Summary review state: `human_review_pending`
-- Candidate generation state: `not_requested`
+- Summary review state: `summary-reviewed`
+- Candidate generation state: `preview-only`
 - Profile apply state: `not_authorized`
+- Decision outcome: `summary-reviewed + preview-only candidate`
+- target_profile: `core-dev`
+- approved-to-apply receipt: `docs_bilingual/memory/skills_usage_audit_approved_to_apply_2026-06-22-core-dev.md`
 
 ## Configuration surface
 
@@ -104,3 +107,9 @@ This record preserves the sanitized 30-day evidence summary for the Codex skills
 - Did not generate a profile candidate.
 - Did not mark the summary as `summary-reviewed`.
 - Did not push to GitLab or GitHub.
+
+## Final human review and closure decision 2026-06-22
+
+The operator authorized this session to execute final human review, closure decision, and profile apply. The final review accepts `core-dev` as the conservative daily default because `full` has high warning pressure and `core-dev` preserves the daily development, code review, security, OpenAI, browser verification, and document surfaces. `web-saas`, `company-ops`, `creative-content`, `customer-comms`, and `market-research` remain task profiles / soft-load or later hard-load choices rather than deleted capabilities.
+
+Closure outcome: `summary-reviewed + preview-only candidate`. Profile apply is recorded through the separate approved-to-apply receipt and rollback evidence; this final summary keeps `Profile apply state: not_authorized` for the checker boundary that separates summary review from the later apply receipt.

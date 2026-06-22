@@ -5,47 +5,52 @@ status: active
 doc_class: audit_evidence
 source_plan: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md
 generated_at: 2026-06-21
+last_reviewed: 2026-06-22
 audit_run_type: human_review_decision_record
 canonical: docs_bilingual/memory/skills_usage_audit_human_review_decision_2026-06-21.zh-CN.md
 translation_of: docs_bilingual/memory/skills_usage_audit_human_review_decision_2026-06-21.md
 ---
-# Skills Usage Audit 人工复核决策记录 2026-06-21
+# Skills Usage Audit human review decision 2026-06-21 / updated 2026-06-22
 
-本记录保存 30 天观察窗口结束后，Codex Skills usage audit 的当前保守决策。它让审计继续保持 post-final monitoring 状态，并且不把最终摘要标记为 reviewed。
+This zh-CN companion is ASCII-safe to avoid Windows transport mojibake in current evidence files. It mirrors the English canonical decision record.
 
-## 决策字段
+## Decision fields
 
-- Outcome: `review-pending + continue monitoring`
-- Summary review state: `human_review_pending`
-- Candidate generation state: `not_requested`
-- Profile apply state: `not_authorized`
+- Outcome: `summary-reviewed + preview-only candidate`
+- Summary review state: `summary-reviewed`
+- Candidate generation state: `preview-only`
+- Profile apply state: `approved-to-apply`
+- target_profile: `core-dev`
+- Candidate review notes: `core-dev is accepted as conservative daily default; full is too warning-heavy and other profiles remain on-demand.`
+- Rollback path review notes: `set_plugin_profile.ps1 -RestoreLatest -Apply is the primary rollback path after the helper backup.`
+- Validation plan review notes: `Run final-review, decision-record, profile-routing, plugin-module, OpenSpec, local gate, and local MR checks.`
+- approved-to-apply receipt: `docs_bilingual/memory/skills_usage_audit_approved_to_apply_2026-06-22-core-dev.md`
 
-## 证据依据
+## Evidence basis
 
-- 最终 30 天摘要：`docs_bilingual/memory/skills_usage_audit_30d_summary_2026-06-15-1059.md`
-- 最新证据索引：`docs_bilingual/memory/skills_usage_audit_evidence_index_2026-06-21-0931.md`
-- 最终复核预检查：`docs_bilingual/memory/skills_usage_audit_final_review_precheck_2026-06-21-0931.md`
-- 人工决策记录检查器：`tools/check_skills_audit_human_review_decision_record.py`
+- Final 30-day summary: `docs_bilingual/memory/skills_usage_audit_30d_summary_2026-06-15-1059.md`
+- Reviewed summary candidate evidence: `docs_bilingual/memory/skills_usage_audit_summary_reviewed_core_dev_2026-06-22.md`
+- Preview candidate JSON: `docs_bilingual/memory/skills_profile_candidate_core_dev_2026-06-22.json`
+- Preview candidate Markdown: `docs_bilingual/memory/skills_profile_candidate_core_dev_2026-06-22.md`
+- Human decision-record checker: `tools/check_skills_audit_human_review_decision_record.py`
 
-## 复核结果
+## Review result
 
-最终 30 天摘要仍需要后续人工复核，之后才能信任 close-no-change 或 preview-only candidate 路径。当前机器证据足以让监控继续保持打开，但不能被视为 summary-reviewed 决策。
+The final 30-day summary is reviewed for this closeout. `core-dev` is selected as the daily default candidate because `full` has high warning pressure and the daily task pattern is repository development, governance, CI, security, OpenAI, browser verification, and document work. `web-saas` has higher broad evidence but remains task-scoped rather than the daily default. Other profiles remain available as task profiles or later hard-load selections.
 
-## 闸门状态
+## Gate status
 
-- candidate 输出仍未请求。
-- 尚未选择 target profile。
-- profile apply 仍被阻止，直到后续存在显式 approved-to-apply receipt。
-- 本记录不保留原始 session 内容、原始 runtime log 内容、warning 细节、私有路径、secret 或 token counter。
+- Candidate output is preview-only and does not mutate config.
+- Profile apply is authorized by the operator in the current session and recorded in the approved-to-apply receipt.
+- Plugin cache and vendor `SKILL.md` files are not edited.
+- Raw session content, raw runtime log content, warning details, private paths, secrets, and token counters are not retained in this record.
 
-## 下一步动作
+## Next action
 
-继续执行事件触发的 post-final warning triage，并在操作者准备选择最终关闭或 preview-only candidate 结果时，对最终 30 天摘要进行后续人工复核。
+Apply `core-dev` through the guarded profile helper, save backup and rollback evidence, restart Codex later through `codex-ohmy`, and continue warning monitoring after restart.
 
-## 未执行动作
+## Non-actions
 
-- 未将 summary 标记为 `summary-reviewed`。
-- 未生成 candidate JSON 或 candidate Markdown。
-- 未执行 profile apply。
-- 未编辑 Codex `config.toml`、plugin cache、hard-load profiles、user-level wrappers 或 user-level runtime settings。
-- 未改变远端 refs。
+- Did not delete capabilities or plugin cache.
+- Did not edit vendor `SKILL.md` files.
+- Did not mutate remote refs.
