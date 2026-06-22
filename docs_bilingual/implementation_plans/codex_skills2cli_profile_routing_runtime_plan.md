@@ -33,6 +33,8 @@ archived-with: 2026-06-22-harden-skills2cli-profile-routing-followup
 - Follow-up Phase B runtime implementation was committed on the feature branch at `cfd6376`, with archive ledger repair at `e1844fb` before final archive packaging.
 - Follow-up change `harden-skills2cli-profile-routing-followup` is archived at `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/` and its stable spec has been promoted under `openspec/specs/codex-user-level-plugin-modules-profile-helper/`.
 - Runtime remains advisory and preview-only: no profile apply, no `config.toml` mutation, no plugin-cache edit, and no remote publication.
+- User-level live runtime install artifacts were synchronized on 2026-06-22: `skills2cli.py`, `skills2cli_profile_registry_contract.py`, and `profiles.json` now match the repository source in the installed user-level `skills2cli` helper and the installed `plugin-modules` skill registry copy.
+- Installed-artifact drift is currently clean: `tools/check_skills2cli_profile_routing.py --root . --json` reports `hash_equal=true` for `skills2cli.py`, the profile registry contract module, and `profiles.json`, including the installed `plugin-modules` registry copy.
 - `codex_skills_usage_audit` evidence remains advisory input for recall/rerank only; it does not authorize profile apply.
 - Remote publication is not authorized.
 
@@ -243,4 +245,8 @@ Representative routing tests must cover:
 - Contract hardening package `harden-skills2cli-profile-routing-contract-20260622` centralizes the Python-side registry path, canonical profile IDs, required fields, scene/legacy-description accessor, hint accessor, plugin coverage collector, and explicit `full` trigger aliases in `tools/skills2cli_profile_registry_contract.py`; runtime scoring and checker black-box smokes remain separate, and the user-level installer now copies that contract module beside installed `skills2cli.py`.
 - The profile-suggest checker now records a matrix covering ordinary `core-dev`, browser automation, `web-saas`, `customer-comms`, `company-ops`, `market-research`, `creative-content`, `pyside6-gui`, and explicit English/Chinese `full` troubleshooting queries, while preserving preview-only safety flags.
 
+- Live runtime install sync evidence on 2026-06-22: `tools/install_user_level_mcp_skills_cli.py apply --apply --operator-confirmation --skip-upstream-skill-install --json` refreshed the user-level `skills2cli` install artifacts without installing upstream skills, editing `config.toml`, editing plugin cache, or applying a profile.
+- Live plugin-modules install sync evidence on 2026-06-22: `tools/install-plugin-modules-skill.ps1 -Force` refreshed the installed `plugin-modules` skill registry copy while preserving advisory-only profile routing semantics.
+- Live install smoke evidence on 2026-06-22: `tools/install_user_level_mcp_skills_cli.py check --require-installed --smoke --json` returned `ok=true`, `skills2cli_profile_registry_contract=true`, and a passing `skills2cli_profile_suggest` smoke.
+- Drift-clean runtime evidence on 2026-06-22: `tools/check_skills2cli_profile_routing.py --root . --json` returned `ok=true`, no warnings, and no installed-artifact drift for `skills2cli.py`, `skills2cli_profile_registry_contract.py`, or `profiles.json`; `tools/check_plugin_modules_skill.py --root . --json` also returned `ok=true`.
 <!-- EVIDENCE_INDEX_END -->

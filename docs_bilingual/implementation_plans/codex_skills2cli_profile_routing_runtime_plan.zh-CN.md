@@ -33,6 +33,8 @@ archived-with: 2026-06-22-harden-skills2cli-profile-routing-followup
 - Follow-up Phase B runtime 实现已在 feature branch 提交为 `cfd6376`，并在最终归档打包前以 `e1844fb` 修复 archive ledger。
 - Follow-up change `harden-skills2cli-profile-routing-followup` 已归档到 `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/`，stable spec 已提升到 `openspec/specs/codex-user-level-plugin-modules-profile-helper/`。
 - Runtime 仍保持 advisory 与 preview-only：不执行 profile apply，不修改 `config.toml`，不编辑 plugin cache，也不进行远程发布。
+- 用户级 live runtime 安装产物已在 2026-06-22 同步：`skills2cli.py`、`skills2cli_profile_registry_contract.py` 与 `profiles.json` 在已安装的用户级 `skills2cli` helper 和已安装的 `plugin-modules` skill registry 副本中均与仓库源保持一致。
+- installed-artifact drift 当前为 clean：`tools/check_skills2cli_profile_routing.py --root . --json` 对 `skills2cli.py`、profile registry contract module、`profiles.json` 以及已安装的 `plugin-modules` registry 副本均报告 `hash_equal=true`。
 - `codex_skills_usage_audit` evidence 仅作为 recall/rerank advisory input；不授权 profile apply。
 - 远程发布未授权。
 
@@ -242,4 +244,8 @@ Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-m
 - 收口证据：`skills2cli`、`check_skills2cli_profile_routing` 与 `check_plugin_modules_skill` 的聚焦单测覆盖 `scene_description` 兼容和 profile-level hints；本地 main 集成前重新运行 full gates。
 - 契约硬化包 `harden-skills2cli-profile-routing-contract-20260622` 在 `tools/skills2cli_profile_registry_contract.py` 中集中 Python 侧 registry path、canonical profile IDs、required fields、scene/legacy-description accessor、hint accessor、plugin coverage collector 与显式 `full` trigger aliases；runtime scoring 与 checker black-box smokes 保持分离，并且 user-level installer 现在会把该 contract module 复制到 installed `skills2cli.py` 旁边。
 - profile-suggest checker 现在记录矩阵，覆盖普通 `core-dev`、browser automation、`web-saas`、`customer-comms`、`company-ops`、`market-research`、`creative-content`、`pyside6-gui`，以及显式英文/中文 `full` troubleshooting query，同时保持 preview-only safety flags。
+- 2026-06-22 live runtime install sync 证据：`tools/install_user_level_mcp_skills_cli.py apply --apply --operator-confirmation --skip-upstream-skill-install --json` 刷新了用户级 `skills2cli` 安装产物；该操作没有安装 upstream skills、没有编辑 `config.toml`、没有编辑 plugin cache，也没有 apply profile。
+- 2026-06-22 live plugin-modules install sync 证据：`tools/install-plugin-modules-skill.ps1 -Force` 刷新了已安装的 `plugin-modules` skill registry 副本，并保持 advisory-only profile routing 语义。
+- 2026-06-22 live install smoke 证据：`tools/install_user_level_mcp_skills_cli.py check --require-installed --smoke --json` 返回 `ok=true`、`skills2cli_profile_registry_contract=true`，且 `skills2cli_profile_suggest` smoke 通过。
+- 2026-06-22 drift-clean runtime 证据：`tools/check_skills2cli_profile_routing.py --root . --json` 返回 `ok=true`、无 warning，且 `skills2cli.py`、`skills2cli_profile_registry_contract.py`、`profiles.json` 均无 installed-artifact drift；`tools/check_plugin_modules_skill.py --root . --json` 同样返回 `ok=true`。
 <!-- EVIDENCE_INDEX_END -->
