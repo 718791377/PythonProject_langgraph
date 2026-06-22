@@ -7,8 +7,8 @@ status: active
 doc_class: implementation_plan
 created_at: 2026-05-16
 last_reviewed: 2026-06-21
-plan_readiness: final-review-pending
-implementation_lane: audit_only_profile_decision_support
+plan_readiness: profile-applied-monitoring
+implementation_lane: profile_applied_monitoring_support
 related_docs:
   - docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md
   - docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md
@@ -42,7 +42,7 @@ runtime_sources:
 
 关联路由方案：`codex_skills2cli_profile_routing_runtime_plan.zh-CN.md` 使用本审计方案的 strong evidence、warning pressure 与 final-review state 作为 profile routing 与 rerank 的 advisory 输入。该关联不授权 profile apply，也不改变 audit candidate 中 `target_profile` 的语义：它仍然表示 canonical hard-load profile ID。
 
-本方案状态为 active，并继续保持 audit-only。本次 Comet 结构重构不授权 hard-load/profile apply，也不改变实施边界：现有脚本、checker、report contract、retention 与 candidate-preview 规则仍是执行层 source of truth。本次重构将治理原则、运行时/数据源架构、CLI 契约、字段契约、实施切片、任务级 backlog、本地集成、验收证据和长期监控事项拆开，便于后续按 /comet 方式执行与复核。
+本方案状态为 active；30 天审计、最终人工复核、preview-only candidate 与一次授权的 core-dev profile apply 已完成，后续仅保持 post-apply monitoring / rollback support。本次 Comet 结构重构自身不授权 hard-load/profile apply；后续已由单独用户授权完成 core-dev apply。现有脚本、checker、report contract、retention、candidate-preview 与 approved-to-apply receipt 规则仍是执行层 source of truth。本次重构将治理原则、运行时/数据源架构、CLI 契约、字段契约、实施切片、任务级 backlog、本地集成、验收证据和长期监控事项拆开，便于后续按 /comet 方式执行与复核。
 
 `soft-load` 后 Codex 启动阶段 warning 消失，是启动压力改善的有用证据，但不能证明 live-turn skills-budget warning 不会再次出现。会话中 warning 必须通过审计脚本 triage，而不是删除 plugin cache 或过早收缩默认 profile。
 
@@ -918,9 +918,9 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 明确 warning triage 是事件触发流程，不设固定次数；每次新的 warning 只运行一次窄窗口 triage。
 - [x] 明确 2026-06-15 之后的运行属于 post-final monitoring，不得延长原始 30 天审计窗口。
 - [x] 生成最终 30 天 evidence package，并以脱敏 Markdown 长期留证。
-- [ ] 人工复核最终 30 天 evidence package。
-- [x] 已明确记录当前决策结果：`review-pending + continue monitoring`。
-- [ ] 如选择 candidate 路径，必须先明确 `target_profile`，并且只生成 preview-only candidate。
+- [x] 人工复核最终 30 天 evidence package。
+- [x] 已明确记录早期决策结果：`review-pending + continue monitoring`。
+- [x] 已选择 candidate 路径，明确 `target_profile=core-dev`，并生成 preview-only candidate。
 
 ## 13. 本地集成顺序
 
@@ -1018,27 +1018,27 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 脚本化人工复核决策记录 checker 已验证未来可选 decision record，同时保持当前 pending 状态与 apply gate 未关闭。
 - [x] 脚本化 cadence contract checker 已验证重复次数、weekly 节奏、结束日期、warning-triage 频率与 post-final 边界。
 - [x] 新增 `tools/check_skills_audit_zh_evidence_encoding.py`，对当前、未来、已修改或明确保护的 skills audit zh-CN 证据执行 UTF-8 / 乱码 fail-closed 检查，并将未修改的历史 legacy 乱码证据降级为 warning-only。
-- [ ] 人工复核最终 30 天摘要。
-- [x] 已明确记录 `review-pending + continue monitoring`，并保持最终摘要 `human_review_pending`。
+- [x] 人工复核最终 30 天摘要。
+- [x] 已明确记录早期 `review-pending + continue monitoring`，随后更新为 `summary-reviewed + preview-only candidate`。
 - [x] 收口 `reference_files/10.md` 中 invalid `SKILL.md` runtime repair loop：post-repair audit 报告 `invalid_total=0`。
 - [x] 增加 frontmatter-resolution checker，把 `reference_files/10.md` 历史 invalid `SKILL.md` warning 标记与当前 `invalid_total=0` 证据桥接起来。
 - [x] 收口 `mcp2cli` / `skills2cli` R3/R4 user-level runtime evidence loop：install/update receipts、smoke receipts 与 rollback pointer 均已存在。
-- [ ] 处理最终摘要中的噪声误报。
-- [ ] 处理最终摘要中的人工冲突或例外。
-- [ ] 判断本轮审计是否进入 `closed-no-change`。
-- [ ] 如果证据支持变更，生成 profile apply candidate。
-- [ ] 为 candidate 指定明确 `target_profile`。
-- [ ] 生成 candidate JSON preview。
-- [ ] 生成 candidate Markdown preview。
-- [ ] 复核 candidate rollback path。
-- [ ] 复核 candidate validation plan。
+- [x] 处理最终摘要中的噪声误报：机器预检查通过，噪声 token 不计入强证据。
+- [x] 处理最终摘要中的人工冲突或例外：当前记录为 no_manual_conflict_or_exception_notes。
+- [x] 判断本轮审计不进入 `closed-no-change`，而是进入 `closed-with-candidate`。
+- [x] 证据支持变更，已生成 profile apply candidate。
+- [x] 为 candidate 指定明确 `target_profile=core-dev`。
+- [x] 生成 candidate JSON preview。
+- [x] 生成 candidate Markdown preview。
+- [x] 复核 candidate rollback path。
+- [x] 复核 candidate validation plan。
 - [x] 增加 `skills2cli audit warnings` 作为 post-final 紧凑只读 warning 来源，同时覆盖 session JSONL 与 `logs_2.sqlite`。
 - [x] 在 `skills2cli audit warnings` 中增加当前 frontmatter compatibility 摘要与旧 session 文件 mtime 过滤。
 - [ ] post-final 阶段每次新的 `2% skills context budget` warning 后运行窄窗口 warning triage。
 - [ ] 对新的 post-final warning triage 结果做人工复核。
 - [ ] 对新的 post-final skipped-loading 样本做来源复核。
-- [ ] 获得明确 `approved-to-apply` 授权前不执行 profile apply。
-- [ ] 如未来获授权执行 profile apply，保存 apply 前后脱敏 diff。
+- [x] 已遵守：获得明确 `approved-to-apply` 授权前未执行 profile apply。
+- [x] 已获授权执行 profile apply，并保存 apply 结果、备份路径与 post-apply preview 证据。
 - [ ] 如 apply 后 warning 仍出现，按 rollback path 回滚。
 - [ ] 如 apply 后关键能力缺失，按 rollback path 回滚。
 

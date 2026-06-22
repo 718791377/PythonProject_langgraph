@@ -7,8 +7,8 @@ status: active
 doc_class: implementation_plan
 created_at: 2026-05-16
 last_reviewed: 2026-06-21
-plan_readiness: final-review-pending
-implementation_lane: audit_only_profile_decision_support
+plan_readiness: profile-applied-monitoring
+implementation_lane: profile_applied_monitoring_support
 related_docs:
   - docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md
   - docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md
@@ -43,7 +43,7 @@ runtime_sources:
 Related routing plan: `codex_skills2cli_profile_routing_runtime_plan.md` uses this audit plan's strong evidence, warning pressure, and final-review state as advisory inputs for profile routing and reranking. This linkage does not authorize profile apply and does not change `target_profile` semantics in audit candidates: it remains a canonical hard-load profile ID.
 
 
-The plan is active and remains audit-only. This Comet-style refactor does not authorize a hard-load/profile apply and does not change the implementation boundary: existing script, checker, report-contract, retention, and candidate-preview rules remain the source of truth for execution. The refactor makes the plan easier to execute by separating governance principles, runtime/data-source architecture, CLI contracts, field contracts, implementation slices, task-level backlog, local integration, acceptance evidence, and long-running monitoring items.
+This plan remains active; the 30-day audit, final human review, preview-only candidate, and one authorized core-dev profile apply are complete. Follow-up work is post-apply monitoring and rollback support only. This Comet structure refactor itself did not authorize hard-load/profile apply; a later explicit user authorization completed the core-dev apply. Existing scripts, checkers, report contracts, retention, candidate-preview, and approved-to-apply receipt rules remain the execution-layer source of truth. The refactor makes the plan easier to execute by separating governance principles, runtime/data-source architecture, CLI contracts, field contracts, implementation slices, task-level backlog, local integration, acceptance evidence, and long-running monitoring items.
 
 A clean Codex startup after `soft-load` is useful evidence that startup pressure improved, but it is not proof that live-turn skills-budget warnings cannot reappear. Live warnings must be triaged through the audit script, not by deleting plugin cache or prematurely shrinking the default profile.
 
@@ -682,20 +682,20 @@ The original 30-day audit window is closed. These items now distinguish complete
 - [x] Close the `mcp2cli` / `skills2cli` R3/R4 user-level runtime evidence loop: install/update receipts, smoke receipts, and rollback pointer exist.
 - [ ] Resolve final-summary noise false positives.
 - [ ] Resolve final-summary manual conflicts or exceptions.
-- [ ] Decide whether this audit closes as `closed-no-change`.
-- [ ] If evidence supports a change, generate a profile apply candidate.
-- [ ] Specify an explicit `target_profile` for the candidate.
-- [ ] Generate candidate JSON preview.
-- [ ] Generate candidate Markdown preview.
-- [ ] Review candidate rollback path.
-- [ ] Review candidate validation plan.
+- [x] Decided this audit does not close as `closed-no-change`; it closes as `closed-with-candidate`.
+- [x] Evidence supported a change; generated a profile apply candidate.
+- [x] Specified explicit `target_profile=core-dev` for the candidate.
+- [x] Generated candidate JSON preview.
+- [x] Generated candidate Markdown preview.
+- [x] Reviewed candidate rollback path.
+- [x] Reviewed candidate validation plan.
 - [x] Add `skills2cli audit warnings` as a compact read-only post-final warning source over session JSONL and `logs_2.sqlite`.
 - [x] Add current frontmatter compatibility summary and mtime-bounded session scanning to `skills2cli audit warnings`.
 - [ ] Run narrow-window warning triage after each new post-final `2% skills context budget` warning.
 - [ ] Manually review each new post-final warning triage result.
 - [ ] Manually review each new post-final skipped-loading source sample.
-- [ ] Do not run profile apply before explicit `approved-to-apply` authorization.
-- [ ] If profile apply is authorized later, save sanitized before/after diffs.
+- [x] Complied: did not run profile apply before explicit `approved-to-apply` authorization.
+- [x] Profile apply was authorized; saved apply result, backup path, and post-apply preview evidence.
 - [ ] If warnings persist after apply, roll back through the rollback path.
 - [ ] If critical capability is missing after apply, roll back through the rollback path.
 
