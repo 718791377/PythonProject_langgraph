@@ -1,7 +1,7 @@
 ---
 doc_id: embedded_codex_governance_in_one_person_company_plan
 doc_class: implementation_plan
-status: final
+status: active
 canonical_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.md
 zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.zh-CN.md
 translation_of: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.md
