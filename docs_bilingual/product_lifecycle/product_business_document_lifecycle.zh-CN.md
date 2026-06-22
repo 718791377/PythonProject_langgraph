@@ -225,7 +225,7 @@
 - OMTM 分析：选择当前阶段最重要的 One Metric That Matters。
 - 护栏指标设计：保护质量、成本、信任、安全、可靠性和 operator attention。
 - Tracking plan 和数据字典设计：定义事件、维度、owner 和指标口径。
-- `metrics.yaml` 是机器可读指标契约；它定义北极星、输入、护栏和阶段指标。
+- `metrics.md` 是机器可读指标契约；它定义北极星、输入、护栏和阶段指标。
 - `tracking_plan.md` 是埋点计划；它定义事件、来源、owner 和质量检查。
 - `data_dictionary.md` 是数据字典；它定义指标术语和数据 ownership。
 
@@ -457,7 +457,7 @@
 
 对 Codex CLI durable-team 平台，`docs_bilingual/north_star_plan.zh-CN.md` 是仓库级北极星 Plan。它定义主成功指标、输入指标、护栏指标、分阶段决策阈值，以及 12 层平台/下游清单对照。
 
-对下游一人公司操作系统，轻量起步底线是 `one_person_company_inventory_map.zh-CN.md` 定义的 12 个最小启动文档：`company-thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.yaml`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。只有当客户证据、收入暴露、交付复杂度、治理风险或长期运营成本证明需要更深覆盖时，下游项目才应扩展到 60 文档系统。
+对下游一人公司操作系统，轻量起步底线是 `one_person_company_inventory_map.zh-CN.md` 定义的 12 个最小启动文档：`thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.md`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。只有当客户证据、收入暴露、交付复杂度、治理风险或长期运营成本证明需要更深覆盖时，下游项目才应扩展到 60 文档系统。
 
 项目越影响金钱、用户、信任、合规或长期平台行为，这套文档栈就越应该显式化。轻量模式只有在低风险早期工作中才能覆盖整个项目；其他情况应让高风险阶段或模块保持完整架构路径，只对边界清晰的低风险切片轻量化。
 

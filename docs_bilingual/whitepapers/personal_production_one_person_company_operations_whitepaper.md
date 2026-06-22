@@ -60,11 +60,11 @@ Each layer has a primary question and an I/T/O contract. I/T/O means Inputs, Too
 
 | # | Layer | Primary question | Inputs | Tools and Techniques | Outputs |
 | ---: | --- | --- | --- | --- | --- |
-| 0 | Cognitive narrative | Why should this company exist? | Founder belief, customer pain, personal constraints, market signal | Thesis writing, PR/FAQ thinking, strategy diagnosis, stop-condition framing | `company-thesis.md`, vision statement, explicit non-goals |
+| 0 | Cognitive narrative | Why should this company exist? | Founder belief, customer pain, personal constraints, market signal | Thesis writing, PR/FAQ thinking, strategy diagnosis, stop-condition framing | `thesis.md`, vision statement, explicit non-goals |
 | 1 | Business | How does the company earn and stay viable? | Offer hypothesis, cost base, pricing signal, cash runway | Business-model mapping, unit-economics review, cashflow modeling, scenario checks | `business-model.md`, `finance-model.md`, `cashflow.md` |
 | 2 | Market | Which users and segments matter first? | User interviews, alternative solutions, channel observations, competitor evidence | Segmentation, positioning, competitor analysis, interview synthesis | `market-map.md`, `user-segments.md`, research repository |
 | 3 | Strategy | What is the narrow win condition? | Narrative, business model, market evidence, capacity constraints | Good-strategy diagnosis, annual/quarterly planning, trade-off review, decision logging | `strategy.md`, `annual-plan.md`, `quarterly-plan.md` |
-| 4 | Metrics | What evidence changes the next move? | North Star candidate, funnel events, financial limits, support signals | OMTM selection, OKR review, tracking-plan design, guardrail definition | `north-star.md`, `metrics.yaml`, funnel dashboard, experiment log |
+| 4 | Metrics | What evidence changes the next move? | North Star candidate, funnel events, financial limits, support signals | OMTM selection, OKR review, tracking-plan design, guardrail definition | `north-star.md`, `metrics.md`, funnel dashboard, experiment log |
 | 5 | Product | What is sold and delivered? | Customer jobs, offer promise, constraints, acceptance evidence | Product discovery, PRD writing, service-blueprint design, MVP slicing | `offer.md`, `prd.md`, service blueprint, roadmap |
 | 6 | Technical | Which systems and automation support delivery? | Product promise, data needs, security constraints, support load | Architecture review, automation mapping, vendor review, backup/restore planning | `tech-stack.md`, `automation-map.md`, dependency map, recovery notes |
 | 7 | Organization | How do the founder, agents, and partners divide work? | Role load, agent candidates, vendor boundaries, review needs | Responsibility mapping, agent-governance design, permission review, human-review gates | role map, `agent-governance.md`, permissions, review checklist |
@@ -101,13 +101,13 @@ The full document system has ten families. A one-person company starts from the 
 
 | Family | Documents |
 | --- | --- |
-| Company strategy | `company-thesis.md`, `vision.md`, `strategy.md`, `annual-plan.md`, `quarterly-plan.md`, `decision-log.md` |
+| Company strategy | `thesis.md`, `vision.md`, `strategy.md`, `annual-plan.md`, `quarterly-plan.md`, `decision-log.md` |
 | Business and finance | `business-model.md`, `offer.md`, `pricing.md`, `unit-economics.md`, `finance-model.md`, `cashflow.md` |
 | Market and users | `market-map.md`, `user-segments.md`, `competitor-analysis.md`, `alternative-solutions.md`, `research-repository.md`, `interview-guide.md` |
 | Product and service | `product-strategy.md`, `prd.md`, `service-blueprint.md`, `onboarding.md`, `customer-journey.md`, `roadmap.md` |
-| Metrics and data | `metrics.yaml`, `north-star.md`, `funnel-dashboard.md`, `tracking-plan.md`, `data-dictionary.md`, `experiment-log.md` |
+| Metrics and data | `metrics.md`, `north-star.md`, `funnel-dashboard.md`, `tracking-plan.md`, `data-dictionary.md`, `experiment-log.md` |
 | Growth and sales | `growth-model.md`, `channel-map.md`, `sales-playbook.md`, `landing-page.md`, `email-sequences.md`, `content-calendar.md` |
-| Operations and customer success | `ops-playbook.md`, `customer-success-playbook.md`, `support-policy.md`, `faq.md`, `refund-policy.md`, `feedback-triage.md` |
+| Operations and customer success | `ops-playbook.md`, `customer-success-playbook.md`, `support-playbook.md`, `faq.md`, `refund-policy.md`, `feedback-triage.md` |
 | Technical and automation | `tech-stack.md`, `automation-map.md`, `tool-stack.md`, `vendor-register.md`, `api-dependency-map.md`, `backup-restore.md` |
 | Governance and risk | `legal-checklist.md`, `terms-of-service.md`, `privacy-policy.md`, `contract-template.md`, `risk-register.md`, `compliance-checklist.md` |
 | Agents and knowledge | `agent-governance.md`, `agent-role-map.md`, `agent-permissions.md`, `human-review-checklist.md`, `monthly-review.md`, `learning-log.md` |
@@ -116,7 +116,7 @@ The full document system has ten families. A one-person company starts from the 
 
 The startup set is intentionally smaller than the full system:
 
-1. `company-thesis.md` - states why the company exists and what belief it tests.
+1. `thesis.md` - states why the company exists and what belief it tests.
 2. `business-model.md` - explains how the company creates, delivers, and captures value.
 3. `offer.md` - defines the first paid or validated promise.
 4. `pricing.md` - records packaging, price logic, and discount boundaries.
@@ -124,7 +124,7 @@ The startup set is intentionally smaller than the full system:
 6. `growth-model.md` - explains the first demand and adoption loop.
 7. `finance-model.md` - tracks cost, runway, cashflow, and viability assumptions.
 8. `ops-playbook.md` - defines fulfillment, support, and operating cadence.
-9. `metrics.yaml` - keeps the machine-readable metric contract.
+9. `metrics.md` - keeps the machine-readable metric contract.
 10. `risk-register.md` - records risks, triggers, responses, and owners.
 11. `agent-governance.md` - defines AI-agent roles, permissions, and human review.
 12. `monthly-review.md` - captures learning, decisions, and next-cycle updates.
@@ -198,6 +198,15 @@ A one-person company should not default to the full 60-document system. Tailorin
 | Hybrid | Discovery is uncertain, but final delivery may affect production, users, trust, revenue, compliance, runtime behavior, or release safety | Lightweight discovery followed by full controls for affected delivery layers |
 
 The default is local lightness, not global informality. Start small, then expand the exact layer, phase, or module that carries risk. Expand the whole project only when coupling becomes systemic.
+
+
+## Embedded Codex Governance Boundary
+
+When a one-person-company project uses the Codex CLI durable team, Codex is embedded as an execution and governance capability. It owns AI-agent execution, code delivery, durable execution, validation gates, release boundaries, worktree hygiene, and repo-local durable state. The one-person-company system owns customers, revenue, finance, legal commitments, support, market work, and business learning.
+
+Shared ledgers such as `decision-log.md`, `risk-register.md`, `metrics.md`, `learning-log.md`, `agent-role-map.md`, `agent-permissions.md`, `human-review-checklist.md`, and `monthly-review.md` may be shared only when each record names `scope`, `truth_owner`, `evidence_source`, `decision_right`, and linked evidence. Mixed business-plus-Codex matters must pass both the business gate and the Codex execution gate.
+
+The detailed boundary is governed by `docs_bilingual/governance/one_person_company_embedded_codex_governance_policy.md`.
 
 ## Relationship To The Codex CLI Durable-Team White Paper
 

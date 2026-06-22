@@ -231,7 +231,7 @@ Core question: What evidence tells us whether the strategy is working?
 - OMTM analysis selects the one metric that matters most for the current stage.
 - Guardrail metric design protects quality, cost, trust, security, reliability, and operator attention.
 - Tracking-plan and data-dictionary design define event names, dimensions, owners, and metric definitions.
-- `metrics.yaml` is the machine-readable metrics contract; it defines North Star, input, guardrail, and stage metrics.
+- `metrics.md` is the machine-readable metrics contract; it defines North Star, input, guardrail, and stage metrics.
 - `tracking_plan.md` is the tracking plan; it defines events, sources, owners, and quality checks.
 - `data_dictionary.md` is the data dictionary; it defines metric terms and data ownership.
 
@@ -463,6 +463,6 @@ Small internal tooling work usually needs a short strategy or North Star note, m
 
 For the Codex CLI durable-team platform, `docs_bilingual/north_star_plan.md` is the repository-level North Star plan. It defines the primary success metric, input metrics, guardrails, staged decision thresholds, and the 12-layer platform/downstream inventory comparison.
 
-For a downstream one-person-company operating system, the lightweight floor is the 12 minimal startup documents defined in `one_person_company_inventory_map.md` and measured by the dedicated North Star at `../north_star/personal_production_one_person_company_operations_north_star.md`: `company-thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`. A downstream project should expand toward the 60-document system only when customer evidence, revenue exposure, delivery complexity, governance risk, or long-term operating cost justifies the deeper architecture.
+For a downstream one-person-company operating system, the lightweight floor is the 12 minimal startup documents defined in `one_person_company_inventory_map.md` and measured by the dedicated North Star at `../north_star/personal_production_one_person_company_operations_north_star.md`: `thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.md`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`. A downstream project should expand toward the 60-document system only when customer evidence, revenue exposure, delivery complexity, governance risk, or long-term operating cost justifies the deeper architecture.
 
 The more a project affects money, users, trust, compliance, or long-term platform behavior, the more of this stack should be explicit. Lightweight mode may be whole-project only for low-risk early work; otherwise keep high-risk phases or modules on the full architecture path and lighten only bounded low-risk slices.

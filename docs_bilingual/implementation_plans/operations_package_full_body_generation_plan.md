@@ -55,10 +55,10 @@ The 48 body documents are derived from the tracked Codex core-document list:
 
 1. Strategy and business: `vision.md`, `thesis.md`, `business-model.md`, `pricing.md`, `unit-economics.md`, `strategy.md`.
 2. Market and product: `user-segments.md`, `market-map.md`, `research-repository.md`, `product-strategy.md`, `prd.md`, `cli-ux.md`.
-3. Metrics and data: `metrics.yaml`, `north-star.md`, `tracking-plan.md`, `data-dictionary.md`, `data-quality-checklist.md`, `experiment-log.md`.
+3. Metrics and data: `metrics.md`, `north-star.md`, `tracking-plan.md`, `data-dictionary.md`, `data-quality-checklist.md`, `experiment-log.md`.
 4. Engineering and platform: `architecture.md`, `adr.md`, `module-boundaries.md`, `tech-stack.md`, `delivery-plan.md`, `observability.md`.
 5. Security and risk: `security-policy.md`, `access-control.md`, `privacy-policy.md`, `incident-response.md`, `risk-register.md`, `backup-restore.md`.
-6. Agent governance: `agent-role-map.md`, `agent-permissions.md`, `agent-tool-policy.md`, `human-review-checklist.md`, `agent-evaluation.md`, `agent-failure-modes.md`.
+6. Agent governance: `agent-role-map.md`, `agent-permissions.md`, `agent-governance.md`, `human-review-checklist.md`, `agent-evaluation.md`, `agent-failure-modes.md`.
 7. Growth and operations: `growth-model.md`, `docs-plan.md`, `support-playbook.md`, `faq.md`, `trust-page.md`, `changelog.md`.
 8. Retrospective and knowledge: `decision-log.md`, `weekly-review.md`, `monthly-review.md`, `postmortem.md`, `learning-log.md`, `template-library.md`.
 
@@ -70,13 +70,13 @@ The generator must create 60 English primary body documents and 60 zh-CN compani
 
 The 60 body documents are derived from the tracked one-person-company core-document list:
 
-1. Company strategy: `company-thesis.md`, `vision.md`, `strategy.md`, `annual-plan.md`, `quarterly-plan.md`, `decision-log.md`.
+1. Company strategy: `thesis.md`, `vision.md`, `strategy.md`, `annual-plan.md`, `quarterly-plan.md`, `decision-log.md`.
 2. Business and finance: `business-model.md`, `offer.md`, `pricing.md`, `unit-economics.md`, `finance-model.md`, `cashflow.md`.
 3. Market and user: `market-map.md`, `user-segments.md`, `competitor-analysis.md`, `alternative-solutions.md`, `research-repository.md`, `interview-guide.md`.
 4. Product and service: `product-strategy.md`, `prd.md`, `service-blueprint.md`, `onboarding.md`, `customer-journey.md`, `roadmap.md`.
-5. Metrics and data: `metrics.yaml`, `north-star.md`, `funnel-dashboard.md`, `tracking-plan.md`, `data-dictionary.md`, `experiment-log.md`.
+5. Metrics and data: `metrics.md`, `north-star.md`, `funnel-dashboard.md`, `tracking-plan.md`, `data-dictionary.md`, `experiment-log.md`.
 6. Growth and sales: `growth-model.md`, `channel-map.md`, `sales-playbook.md`, `landing-page.md`, `email-sequences.md`, `content-calendar.md`.
-7. Operations and customer success: `ops-playbook.md`, `customer-success-playbook.md`, `support-policy.md`, `faq.md`, `refund-policy.md`, `feedback-triage.md`.
+7. Operations and customer success: `ops-playbook.md`, `customer-success-playbook.md`, `support-playbook.md`, `faq.md`, `refund-policy.md`, `feedback-triage.md`.
 8. Technology and automation: `tech-stack.md`, `automation-map.md`, `tool-stack.md`, `vendor-register.md`, `api-dependency-map.md`, `backup-restore.md`.
 9. Governance and risk: `legal-checklist.md`, `terms-of-service.md`, `privacy-policy.md`, `contract-template.md`, `risk-register.md`, `compliance-checklist.md`.
 10. Agent and knowledge: `agent-governance.md`, `agent-role-map.md`, `agent-permissions.md`, `human-review-checklist.md`, `monthly-review.md`, `learning-log.md`.

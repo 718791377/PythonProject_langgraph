@@ -16,13 +16,13 @@ translation_of: docs_bilingual/product_lifecycle/one_person_company_operations_d
 
 | 文档家族 | 数量 | 规范文档 |
 | --- | --- | --- |
-| Company strategy | 6 | company-thesis.md, vision.md, strategy.md, annual-plan.md, quarterly-plan.md, decision-log.md |
+| Company strategy | 6 | thesis.md, vision.md, strategy.md, annual-plan.md, quarterly-plan.md, decision-log.md |
 | Business and finance | 6 | business-model.md, offer.md, pricing.md, unit-economics.md, finance-model.md, cashflow.md |
 | Market and user | 6 | market-map.md, user-segments.md, competitor-analysis.md, alternative-solutions.md, research-repository.md, interview-guide.md |
 | Product and service | 6 | product-strategy.md, prd.md, service-blueprint.md, onboarding.md, customer-journey.md, roadmap.md |
-| Metrics and data | 6 | metrics.yaml, north-star.md, funnel-dashboard.md, tracking-plan.md, data-dictionary.md, experiment-log.md |
+| Metrics and data | 6 | metrics.md, north-star.md, funnel-dashboard.md, tracking-plan.md, data-dictionary.md, experiment-log.md |
 | Growth and sales | 6 | growth-model.md, channel-map.md, sales-playbook.md, landing-page.md, email-sequences.md, content-calendar.md |
-| Operations and customer success | 6 | ops-playbook.md, customer-success-playbook.md, support-policy.md, faq.md, refund-policy.md, feedback-triage.md |
+| Operations and customer success | 6 | ops-playbook.md, customer-success-playbook.md, support-playbook.md, faq.md, refund-policy.md, feedback-triage.md |
 | Technology and automation | 6 | tech-stack.md, automation-map.md, tool-stack.md, vendor-register.md, api-dependency-map.md, backup-restore.md |
 | Governance and risk | 6 | legal-checklist.md, terms-of-service.md, privacy-policy.md, contract-template.md, risk-register.md, compliance-checklist.md |
 | Agent and knowledge | 6 | agent-governance.md, agent-role-map.md, agent-permissions.md, human-review-checklist.md, monthly-review.md, learning-log.md |

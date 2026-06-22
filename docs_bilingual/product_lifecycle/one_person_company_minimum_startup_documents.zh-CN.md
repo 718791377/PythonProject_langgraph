@@ -16,7 +16,7 @@ translation_of: docs_bilingual/product_lifecycle/one_person_company_minimum_star
 
 | # | Document | 治理用途 |
 | --- | --- | --- |
-| 1 | company-thesis.md | 映射到 owner、gate、证据与复盘 |
+| 1 | thesis.md | 映射到 owner、gate、证据与复盘 |
 | 2 | business-model.md | 映射到 owner、gate、证据与复盘 |
 | 3 | offer.md | 映射到 owner、gate、证据与复盘 |
 | 4 | pricing.md | 映射到 owner、gate、证据与复盘 |
@@ -24,7 +24,7 @@ translation_of: docs_bilingual/product_lifecycle/one_person_company_minimum_star
 | 6 | growth-model.md | 映射到 owner、gate、证据与复盘 |
 | 7 | finance-model.md | 映射到 owner、gate、证据与复盘 |
 | 8 | ops-playbook.md | 映射到 owner、gate、证据与复盘 |
-| 9 | metrics.yaml | 映射到 owner、gate、证据与复盘 |
+| 9 | metrics.md | 映射到 owner、gate、证据与复盘 |
 | 10 | risk-register.md | 映射到 owner、gate、证据与复盘 |
 | 11 | agent-governance.md | 映射到 owner、gate、证据与复盘 |
 | 12 | monthly-review.md | 映射到 owner、gate、证据与复盘 |

@@ -175,7 +175,7 @@
 
 对于下游一人公司经营系统，不要一开始创建全部 60 个文档。先从 12 个最小启动文档开始：
 
-`company-thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.yaml`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。
+`thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.md`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。
 
 当业务获得付费客户、重复交付、支持义务、财务复杂度、合规暴露、敏感数据、外部伙伴、重复事故，或低风险支持以外的 Agent 自动化时，再扩展到更完整治理。
 

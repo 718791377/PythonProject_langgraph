@@ -60,11 +60,11 @@ status: draft
 
 | # | 层级 | 主问题 | 输入 | 工具与技术 | 输出 |
 | ---: | --- | --- | --- | --- | --- |
-| 0 | 认知叙事 | 为什么公司应该存在？ | 创始人信念、客户痛点、个人约束、市场信号 | thesis 写作、PR/FAQ 思考、战略诊断、停止条件 framing | `company-thesis.md`、愿景陈述、明确非目标 |
+| 0 | 认知叙事 | 为什么公司应该存在？ | 创始人信念、客户痛点、个人约束、市场信号 | thesis 写作、PR/FAQ 思考、战略诊断、停止条件 framing | `thesis.md`、愿景陈述、明确非目标 |
 | 1 | 商业 | 公司如何赚钱并保持可持续？ | offer 假设、成本基础、定价信号、现金 runway | 商业模式映射、单位经济复核、现金流建模、情景检查 | `business-model.md`、`finance-model.md`、`cashflow.md` |
 | 2 | 市场 | 哪些用户和细分最先重要？ | 用户访谈、替代方案、渠道观察、竞品证据 | 分层、定位、竞品分析、访谈综合 | `market-map.md`、`user-segments.md`、研究仓库 |
 | 3 | 战略 | 狭窄胜利条件是什么？ | 叙事、商业模式、市场证据、产能约束 | 好战略诊断、年度/季度规划、取舍复核、决策记录 | `strategy.md`、`annual-plan.md`、`quarterly-plan.md` |
-| 4 | 指标 | 什么证据会改变下一步？ | 北极星候选、漏斗事件、财务限制、支持信号 | OMTM 选择、OKR review、tracking plan 设计、护栏定义 | `north-star.md`、`metrics.yaml`、漏斗 dashboard、实验日志 |
+| 4 | 指标 | 什么证据会改变下一步？ | 北极星候选、漏斗事件、财务限制、支持信号 | OMTM 选择、OKR review、tracking plan 设计、护栏定义 | `north-star.md`、`metrics.md`、漏斗 dashboard、实验日志 |
 | 5 | 产品 | 到底卖什么、交付什么？ | 客户任务、offer 承诺、约束、验收证据 | 产品发现、PRD 写作、服务蓝图设计、MVP 切片 | `offer.md`、`prd.md`、服务蓝图、路线图 |
 | 6 | 技术 | 哪些系统与自动化支撑交付？ | 产品承诺、数据需求、安全约束、支持负载 | 架构审查、自动化映射、供应商复核、备份恢复规划 | `tech-stack.md`、`automation-map.md`、依赖地图、恢复说明 |
 | 7 | 组织 | 创始人、Agent、合作方如何分工？ | 角色负载、Agent 候选、供应商边界、评审需求 | 责任映射、Agent 治理设计、权限复核、人工评审门 | 角色图、`agent-governance.md`、权限、评审清单 |
@@ -101,13 +101,13 @@ status: draft
 
 | 文档族 | 文档 |
 | --- | --- |
-| 公司战略 | `company-thesis.md`、`vision.md`、`strategy.md`、`annual-plan.md`、`quarterly-plan.md`、`decision-log.md` |
+| 公司战略 | `thesis.md`、`vision.md`、`strategy.md`、`annual-plan.md`、`quarterly-plan.md`、`decision-log.md` |
 | 商业与财务 | `business-model.md`、`offer.md`、`pricing.md`、`unit-economics.md`、`finance-model.md`、`cashflow.md` |
 | 市场与用户 | `market-map.md`、`user-segments.md`、`competitor-analysis.md`、`alternative-solutions.md`、`research-repository.md`、`interview-guide.md` |
 | 产品与服务 | `product-strategy.md`、`prd.md`、`service-blueprint.md`、`onboarding.md`、`customer-journey.md`、`roadmap.md` |
-| 指标与数据 | `metrics.yaml`、`north-star.md`、`funnel-dashboard.md`、`tracking-plan.md`、`data-dictionary.md`、`experiment-log.md` |
+| 指标与数据 | `metrics.md`、`north-star.md`、`funnel-dashboard.md`、`tracking-plan.md`、`data-dictionary.md`、`experiment-log.md` |
 | 增长与销售 | `growth-model.md`、`channel-map.md`、`sales-playbook.md`、`landing-page.md`、`email-sequences.md`、`content-calendar.md` |
-| 运营与客户成功 | `ops-playbook.md`、`customer-success-playbook.md`、`support-policy.md`、`faq.md`、`refund-policy.md`、`feedback-triage.md` |
+| 运营与客户成功 | `ops-playbook.md`、`customer-success-playbook.md`、`support-playbook.md`、`faq.md`、`refund-policy.md`、`feedback-triage.md` |
 | 技术与自动化 | `tech-stack.md`、`automation-map.md`、`tool-stack.md`、`vendor-register.md`、`api-dependency-map.md`、`backup-restore.md` |
 | 治理与风险 | `legal-checklist.md`、`terms-of-service.md`、`privacy-policy.md`、`contract-template.md`、`risk-register.md`、`compliance-checklist.md` |
 | Agent 与知识 | `agent-governance.md`、`agent-role-map.md`、`agent-permissions.md`、`human-review-checklist.md`、`monthly-review.md`、`learning-log.md` |
@@ -116,7 +116,7 @@ status: draft
 
 启动集合刻意小于完整系统：
 
-1. `company-thesis.md` - 说明公司为什么存在，以及正在验证什么信念。
+1. `thesis.md` - 说明公司为什么存在，以及正在验证什么信念。
 2. `business-model.md` - 解释公司如何创造、交付并获取价值。
 3. `offer.md` - 定义第一个付费或已验证承诺。
 4. `pricing.md` - 记录套餐、价格逻辑和折扣边界。
@@ -124,7 +124,7 @@ status: draft
 6. `growth-model.md` - 解释第一条需求与采用循环。
 7. `finance-model.md` - 跟踪成本、runway、现金流和可持续假设。
 8. `ops-playbook.md` - 定义履约、支持和运行节奏。
-9. `metrics.yaml` - 保持机器可读指标契约。
+9. `metrics.md` - 保持机器可读指标契约。
 10. `risk-register.md` - 记录风险、触发器、响应和 owner。
 11. `agent-governance.md` - 定义 AI Agent 角色、权限和人工评审。
 12. `monthly-review.md` - 沉淀学习、决策和下一周期更新。
@@ -198,6 +198,14 @@ Agent 扩展的是产能，不是最终权威。
 | 混合方式 | discovery 仍不确定，但最终交付可能影响生产、用户、信任、收入、合规、runtime behavior 或 release safety | 轻量 discovery，随后对受影响交付层级使用完整控制 |
 
 默认应是局部轻量，而不是整体随意。先小启动，再扩展真正承载风险的层级、阶段或模块。只有耦合变成系统性时，才扩展整个项目。
+
+## 内嵌 Codex 治理边界
+
+当一人公司项目使用 Codex CLI 持久化团队时，Codex 是内嵌的执行与治理能力。它负责 AI Agent 执行、代码交付、持久化执行、验证门、发布边界、worktree 卫生和 repo-local durable state。一人公司运营系统负责客户、收入、财务、法务承诺、支持、市场工作和业务学习。
+
+`decision-log.md`、`risk-register.md`、`metrics.md`、`learning-log.md`、`agent-role-map.md`、`agent-permissions.md`、`human-review-checklist.md` 和 `monthly-review.md` 等共享台账只有在每条记录都标明 `scope`、`truth_owner`、`evidence_source`、`decision_right` 和关联证据时才可共用。业务加 Codex 的混合事项必须同时通过业务门和 Codex 执行门。
+
+详细边界由 `docs_bilingual/governance/one_person_company_embedded_codex_governance_policy.zh-CN.md` 治理。
 
 ## 与 Codex CLI 持久化团队白皮书的关系
 

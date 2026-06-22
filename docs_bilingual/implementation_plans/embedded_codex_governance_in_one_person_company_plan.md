@@ -1,7 +1,7 @@
 ---
 doc_id: embedded_codex_governance_in_one_person_company_plan
 doc_class: implementation_plan
-status: active
+status: final
 canonical_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.md
 zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.zh-CN.md
 ---
@@ -39,10 +39,10 @@ The generator must change these source names and regenerate affected files:
 
 | Package | Legacy name | Canonical name | Reason |
 | --- | --- | --- | --- |
-| both | `metrics.yaml` | `metrics.md` | Generated physical files and registry already use Markdown; source inventory must match. |
-| one-person-company | `company-thesis.md` | `thesis.md` | Align the existence thesis slot across both packages. |
-| Codex durable team | `agent-tool-policy.md` | `agent-governance.md` | Align the Agent governance slot across both packages. |
-| one-person-company | `support-policy.md` | `support-playbook.md` | Align the support operating slot across both packages. |
+| both | legacy machine-readable metrics filename | `metrics.md` | Generated physical files and registry already use Markdown; source inventory must match. |
+| one-person-company | legacy company-specific thesis filename | `thesis.md` | Align the existence thesis slot across both packages. |
+| Codex durable team | legacy Agent governance filename | `agent-governance.md` | Align the Agent governance slot across both packages. |
+| one-person-company | legacy support governance filename | `support-playbook.md` | Align the support operating slot across both packages. |
 
 The implementation may preserve other distinct names when they are not one-to-one equivalents, even if a semantic bridge exists. For example, `ops-playbook.md`, `tool-stack.md`, `automation-map.md`, `funnel-dashboard.md`, and `roadmap.md` remain package-specific unless a later plan creates directory-level subtypes to avoid collisions.
 
@@ -55,8 +55,11 @@ Update:
 - `test/operations_package_docs.test.py` - covers generator and checker regression behavior.
 - `docs_bilingual/docs_registry.yaml` - registers canonical generated document paths.
 - `docs_bilingual/operations_packages/` - contains the regenerated operations-package body documents.
+- `docs_bilingual/governance/one_person_company_embedded_codex_governance_policy.md` - records the embedded-governance truth boundary and links the white paper, North Star, implementation plan, registry, and separated operations-package directories.
+- `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md` - links the detailed embedded-governance policy from the one-person-company operating-system narrative.
+- `docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.md` - links the detailed policy from the mixed-loop counting gate.
 
-The checker must fail if generated operations-package directories still contain stale legacy files for `company-thesis`, `agent-tool-policy`, or `support-policy`. It must also fail if registry entries point to legacy paths or if generated content still uses `metrics.yaml` as the source list item.
+The checker must fail if generated operations-package directories still contain stale legacy thesis, Agent governance, or support governance generated files. It must also fail if registry entries point to legacy paths or if generated content still uses the legacy machine-readable metrics source list item.
 
 ## Verification
 
@@ -75,26 +78,31 @@ Before local main integration, run local gate and local MR review. Stop before r
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-- Stage A plan-freeze package is being prepared on branch `docs/force-unify-ops-packages`.
-- Stage B runtime regeneration and forced rename must start only after this plan package is integrated into local `main`.
-- Remote publication is not authorized.
+- Stage A governance package is integrated into local `main` at `7cf8dba` and recorded the implementation-confirmation gate.
+- Stage B runtime regeneration and forced canonical rename are integrated into local `main` at `75ccbb4`.
+- Generated body packages remain separated by package directory; shared semantics use shared canonical filenames only.
+- Remote publication is not authorized and has not been performed.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- Stage A: validate and commit this forced-rename governance plan.
-- Stage A: integrate the plan package into local `main` and preserve the receipt that implementation may begin.
-- Stage B: update the generator, checker, tests, registry, and generated operations-package documents.
-- Stage B: regenerate the 48/60 logical body packages with canonical names and remove stale legacy generated paths.
-- Closeout: run local gates, integrate into local `main`, clean the feature worktree, and stop at the remote-publication gate.
+- Completed: Stage A validated and integrated the forced-rename governance plan.
+- Completed: Stage A preserved the confirmation receipt that allowed implementation to begin.
+- Completed: Stage B updated the generator, checker, tests, registry, and generated operations-package documents.
+- Completed: Stage B regenerated the 48/60 logical body packages with canonical names and removed stale legacy generated paths.
+- Completed: local gates passed, local `main` was updated, the feature worktree was cleaned, and execution stopped at the remote-publication gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- `docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.md` - frozen English forced-rename implementation plan.
-- `docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.zh-CN.md` - bilingual companion for the forced-rename implementation plan.
-- `docs_bilingual/docs_registry.yaml` - registry entry for this implementation plan.
-- pending implementation evidence: `tools/generate_operations_package.py`, `tools/check_operations_package_docs.py`, `test/operations_package_docs.test.py`, and regenerated `docs_bilingual/operations_packages/` outputs.
+- `7cf8dba` - local `main` commit that activated the Stage A governance plan for implementation confirmation.
+- `75ccbb4` - local `main` commit that regenerated the 48/60 operations-package body documents and canonical naming runtime.
+- `.omx/session-claims/completed/implement-force-unify-ops-packages-stageb.json` - completed claim and cleanup record.
+- `refs/backup/local-main/20260623-024252-before-implement-force-unify-ops-packages-stageb` - rollback ref before Stage B local-main integration.
+- `tools/generate_operations_package.py` - canonical generated operations-package inventories and renderer.
+- `tools/check_operations_package_docs.py` - generated package, registry, and stale-name guard.
+- `test/operations_package_docs.test.py` - regression coverage for generation, stale names, registry drift, and package isolation.
+- `docs_bilingual/operations_packages/` - regenerated package-specific body documents.
 <!-- EVIDENCE_INDEX_END -->

@@ -46,7 +46,7 @@ For downstream business work that is a real one-person-company operating system,
 - 15 governed AI agents: Strategy, Research, Product, UX/Copy, Engineering, QA, Data, Growth, Sales, Customer Success, Support, Finance, Legal/Risk, Knowledge, and Chief of Staff.
 - 15 recommended books: Scaling People; Working Backwards; High Output Management; INSPIRED; Product Operations; Measure What Matters; Lean Analytics; The Lean Startup; Obviously Awesome; Traction; Deploy Empathy; Shape Up; Team Topologies; Company of One; The E-Myth Revisited.
 
-The minimum startup set is deliberately only 12 documents: `company-thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
+The minimum startup set is deliberately only 12 documents: `thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.md`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
 
 Do not start a downstream one-person company by creating all 60 documents. Start with the 12 minimal documents, then expand only when risk, customer evidence, revenue, compliance, delivery, or operations requires deeper coverage.
 

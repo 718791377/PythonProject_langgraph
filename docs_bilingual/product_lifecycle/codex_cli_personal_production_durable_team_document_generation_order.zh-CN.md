@@ -18,10 +18,10 @@ translation_of: docs_bilingual/product_lifecycle/codex_cli_personal_production_d
 | --- | --- | --- |
 | Strategy and business | 6 | vision.md, thesis.md, business-model.md, pricing.md, unit-economics.md, strategy.md |
 | Market and product | 6 | user-segments.md, market-map.md, research-repository.md, product-strategy.md, prd.md, cli-ux.md |
-| Metrics and data | 6 | metrics.yaml, north-star.md, tracking-plan.md, data-dictionary.md, data-quality-checklist.md, experiment-log.md |
+| Metrics and data | 6 | metrics.md, north-star.md, tracking-plan.md, data-dictionary.md, data-quality-checklist.md, experiment-log.md |
 | Engineering and platform | 6 | architecture.md, adr.md, module-boundaries.md, tech-stack.md, delivery-plan.md, observability.md |
 | Security and risk | 6 | security-policy.md, access-control.md, privacy-policy.md, incident-response.md, risk-register.md, backup-restore.md |
-| Agent governance | 6 | agent-role-map.md, agent-permissions.md, agent-tool-policy.md, human-review-checklist.md, agent-evaluation.md, agent-failure-modes.md |
+| Agent governance | 6 | agent-role-map.md, agent-permissions.md, agent-governance.md, human-review-checklist.md, agent-evaluation.md, agent-failure-modes.md |
 | Growth and operations | 6 | growth-model.md, docs-plan.md, support-playbook.md, faq.md, trust-page.md, changelog.md |
 | Retrospective and knowledge | 6 | decision-log.md, weekly-review.md, monthly-review.md, postmortem.md, learning-log.md, template-library.md |
 ## 权威边界

@@ -104,13 +104,13 @@
 
 | 文档族 | 数量 | 规范文档 |
 | --- | ---: | --- |
-| 公司战略 | 6 | `company-thesis.md`、`vision.md`、`strategy.md`、`annual-plan.md`、`quarterly-plan.md`、`decision-log.md` |
+| 公司战略 | 6 | `thesis.md`、`vision.md`、`strategy.md`、`annual-plan.md`、`quarterly-plan.md`、`decision-log.md` |
 | 商业与财务 | 6 | `business-model.md`、`offer.md`、`pricing.md`、`unit-economics.md`、`finance-model.md`、`cashflow.md` |
 | 市场与用户 | 6 | `market-map.md`、`user-segments.md`、`competitor-analysis.md`、`alternative-solutions.md`、`research-repository.md`、`interview-guide.md` |
 | 产品与服务 | 6 | `product-strategy.md`、`prd.md`、`service-blueprint.md`、`onboarding.md`、`customer-journey.md`、`roadmap.md` |
-| 指标与数据 | 6 | `metrics.yaml`、`north-star.md`、`funnel-dashboard.md`、`tracking-plan.md`、`data-dictionary.md`、`experiment-log.md` |
+| 指标与数据 | 6 | `metrics.md`、`north-star.md`、`funnel-dashboard.md`、`tracking-plan.md`、`data-dictionary.md`、`experiment-log.md` |
 | 增长与销售 | 6 | `growth-model.md`、`channel-map.md`、`sales-playbook.md`、`landing-page.md`、`email-sequences.md`、`content-calendar.md` |
-| 运营与客户成功 | 6 | `ops-playbook.md`、`customer-success-playbook.md`、`support-policy.md`、`faq.md`、`refund-policy.md`、`feedback-triage.md` |
+| 运营与客户成功 | 6 | `ops-playbook.md`、`customer-success-playbook.md`、`support-playbook.md`、`faq.md`、`refund-policy.md`、`feedback-triage.md` |
 | 技术与自动化 | 6 | `tech-stack.md`、`automation-map.md`、`tool-stack.md`、`vendor-register.md`、`api-dependency-map.md`、`backup-restore.md` |
 | 治理与风险 | 6 | `legal-checklist.md`、`terms-of-service.md`、`privacy-policy.md`、`contract-template.md`、`risk-register.md`、`compliance-checklist.md` |
 | Agent 与知识 | 6 | `agent-governance.md`、`agent-role-map.md`、`agent-permissions.md`、`human-review-checklist.md`、`monthly-review.md`、`learning-log.md` |
@@ -155,7 +155,7 @@
 
 ## 12 个最小启动文档
 
-1. `company-thesis.md` - 说明公司为什么存在，以及正在验证什么核心信念。
+1. `thesis.md` - 说明公司为什么存在，以及正在验证什么核心信念。
 2. `business-model.md` - 定义公司如何创造、交付并获取价值。
 3. `offer.md` - 描述第一个付费或已验证 offer。
 4. `pricing.md` - 记录定价逻辑、套餐和折扣边界。
@@ -163,7 +163,7 @@
 6. `growth-model.md` - 解释第一条需求与采用增长循环。
 7. `finance-model.md` - 跟踪成本、现金流假设和 runway 约束。
 8. `ops-playbook.md` - 定义交付、支持和运行节奏。
-9. `metrics.yaml` - 提供机器可读指标契约。
+9. `metrics.md` - 提供机器可读指标契约。
 10. `risk-register.md` - 记录风险、触发器、响应和 owner。
 11. `agent-governance.md` - 定义 AI Agent 角色、权限和人工评审。
 12. `monthly-review.md` - 沉淀学习、决策和下一周期更新。

@@ -46,7 +46,7 @@
 - 15 个受治理 AI Agent：Strategy、Research、Product、UX/Copy、Engineering、QA、Data、Growth、Sales、Customer Success、Support、Finance、Legal/Risk、Knowledge、Chief of Staff。
 - 15 本推荐书籍：Scaling People、Working Backwards、High Output Management、INSPIRED、Product Operations、Measure What Matters、Lean Analytics、The Lean Startup、Obviously Awesome、Traction、Deploy Empathy、Shape Up、Team Topologies、Company of One、The E-Myth Revisited。
 
-最小启动集刻意只有 12 个文档：`company-thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.yaml`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。
+最小启动集刻意只有 12 个文档：`thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.md`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。
 
 不要一开始就为下游一人公司创建全部 60 个文档。先用 12 个最小文档启动；只有当风险、客户证据、收入、合规、交付或运营要求更深覆盖时，再逐步扩展。
 

@@ -76,3 +76,7 @@ The metric counts validated loops, not raw tasks, words, commits, or agent messa
 - Do not treat this North Star as a task list.
 - Do not measure agent activity as business progress unless it passes human and operating-loop validation.
 - Do not use this North Star to replace project-specific customer, finance, legal, support, or release records.
+
+## Embedded Codex Gate
+
+If a measured loop also changes code, agents, runtime, worktrees, durable state, validation gates, release boundaries, or repository evidence, it is a mixed loop. A mixed loop counts only after the business gate and the Codex execution gate both pass under `docs_bilingual/governance/one_person_company_embedded_codex_governance_policy.md`.

@@ -175,7 +175,7 @@ Do not launch a durable team just because the full architecture is referenced. D
 
 For a downstream one-person-company operating system, do not start by creating all 60 documents. Start with the 12 minimal startup documents:
 
-`company-thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
+`thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.md`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
 
 Expand to fuller governance when the business gains paying customers, repeatable delivery, support obligations, financial complexity, compliance exposure, sensitive data, external partners, recurring incidents, or agent automation beyond low-risk support.
 

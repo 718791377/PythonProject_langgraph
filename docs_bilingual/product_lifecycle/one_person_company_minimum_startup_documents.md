@@ -15,7 +15,7 @@ Defines the 12-document startup path before expanding into the complete 60-docum
 
 | # | Document | Governance use |
 | --- | --- | --- |
-| 1 | company-thesis.md | Mapped to owner, gate, evidence, and retrospective |
+| 1 | thesis.md | Mapped to owner, gate, evidence, and retrospective |
 | 2 | business-model.md | Mapped to owner, gate, evidence, and retrospective |
 | 3 | offer.md | Mapped to owner, gate, evidence, and retrospective |
 | 4 | pricing.md | Mapped to owner, gate, evidence, and retrospective |
@@ -23,7 +23,7 @@ Defines the 12-document startup path before expanding into the complete 60-docum
 | 6 | growth-model.md | Mapped to owner, gate, evidence, and retrospective |
 | 7 | finance-model.md | Mapped to owner, gate, evidence, and retrospective |
 | 8 | ops-playbook.md | Mapped to owner, gate, evidence, and retrospective |
-| 9 | metrics.yaml | Mapped to owner, gate, evidence, and retrospective |
+| 9 | metrics.md | Mapped to owner, gate, evidence, and retrospective |
 | 10 | risk-register.md | Mapped to owner, gate, evidence, and retrospective |
 | 11 | agent-governance.md | Mapped to owner, gate, evidence, and retrospective |
 | 12 | monthly-review.md | Mapped to owner, gate, evidence, and retrospective |

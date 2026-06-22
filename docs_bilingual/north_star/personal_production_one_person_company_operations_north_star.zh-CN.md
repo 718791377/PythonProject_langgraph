@@ -76,3 +76,7 @@ status: draft
 - 不把本北极星当作任务清单。
 - 除非通过人工和运营循环验证，否则不把 Agent 活动量当作业务进展。
 - 不用本北极星替代项目自己的客户、财务、法务、支持或发布记录。
+
+## 内嵌 Codex 门
+
+如果被计量的循环同时改变代码、Agent、runtime、worktree、durable state、验证门、发布边界或仓库证据，则该循环属于混合循环。混合循环只有在 `docs_bilingual/governance/one_person_company_embedded_codex_governance_policy.zh-CN.md` 规定的业务门和 Codex 执行门都通过后，才能计入北极星。
