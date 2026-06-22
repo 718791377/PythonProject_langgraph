@@ -30,7 +30,7 @@ archived-with: 2026-06-22-harden-skills2cli-profile-routing-followup
 - 基线 Phase B runtime 实现已在本地 `main` 集成，提交为 `80ec3dd`。
 - 基线 OpenSpec change 已归档到 `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`。
 - Follow-up Phase A 方案冻结包已在本地 `main` 集成，提交为 `6919f0b`。
-- Follow-up Phase B runtime 实现已在 feature branch 提交为 `cfd6376`，并在最终归档打包前以 `e1844fb` 修复 archive ledger。
+- Follow-up Phase B runtime 实现已集成到本地 `main`：`cfd6376` 包含 runtime hardening，`e1844fb` 修复 archive ledger，`04b8686` 归档 follow-up OpenSpec change，`bf8b380` 记录用户级 install-sync 证据。
 - Follow-up change `harden-skills2cli-profile-routing-followup` 已归档到 `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/`，stable spec 已提升到 `openspec/specs/codex-user-level-plugin-modules-profile-helper/`。
 - Runtime 仍保持 advisory 与 preview-only：不执行 profile apply，不修改 `config.toml`，不编辑 plugin cache，也不进行远程发布。
 - 用户级 live runtime 安装产物已在 2026-06-22 同步：`skills2cli.py`、`skills2cli_profile_registry_contract.py` 与 `profiles.json` 在已安装的用户级 `skills2cli` helper 和已安装的 `plugin-modules` skill registry 副本中均与仓库源保持一致。

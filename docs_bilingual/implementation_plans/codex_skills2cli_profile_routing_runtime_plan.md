@@ -30,7 +30,7 @@ archived-with: 2026-06-22-harden-skills2cli-profile-routing-followup
 - Baseline Phase B runtime implementation was integrated into local `main` at `80ec3dd`.
 - The baseline OpenSpec change is archived at `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`.
 - Follow-up Phase A plan-freeze package was integrated into local `main` at `6919f0b`.
-- Follow-up Phase B runtime implementation was committed on the feature branch at `cfd6376`, with archive ledger repair at `e1844fb` before final archive packaging.
+- Follow-up Phase B runtime implementation has been integrated into local `main`: `cfd6376` contains runtime hardening, `e1844fb` repairs the archive ledger, `04b8686` archives the follow-up OpenSpec change, and `bf8b380` records user-level install-sync evidence.
 - Follow-up change `harden-skills2cli-profile-routing-followup` is archived at `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/` and its stable spec has been promoted under `openspec/specs/codex-user-level-plugin-modules-profile-helper/`.
 - Runtime remains advisory and preview-only: no profile apply, no `config.toml` mutation, no plugin-cache edit, and no remote publication.
 - User-level live runtime install artifacts were synchronized on 2026-06-22: `skills2cli.py`, `skills2cli_profile_registry_contract.py`, and `profiles.json` now match the repository source in the installed user-level `skills2cli` helper and the installed `plugin-modules` skill registry copy.
