@@ -1,20 +1,20 @@
 ---
-doc_id: one_person_company_company_thesis
+doc_id: one_person_company_support_playbook
 doc_class: operations_package
 status: active
 package: one-person-company
-body_kind: company_strategy_body
+body_kind: operations_and_customer_success_body
 generated_by: tools/generate_operations_package.py
 lang: en
 ---
 
 <!-- GENERATED_BY: tools/generate_operations_package.py; DO NOT EDIT BY HAND. -->
 
-# One-Person Company Company Thesis Body Document
+# One-Person Company Support Playbook Body Document
 
 ## Purpose
 
-Defines how the solo production business operating system uses the company-thesis.md artifact inside the company strategy family to make decisions, collect evidence, and select the right tailoring depth.
+Defines how the solo production business operating system uses the support-playbook.md artifact inside the operations and customer success family to make decisions, collect evidence, and select the right tailoring depth.
 
 ## Authority Boundary
 
@@ -24,10 +24,10 @@ Defines how the solo production business operating system uses the company-thesi
 
 ## Lifecycle Placement
 
-- Primary lifecycle layers: L0 Cognitive narrative, L1 Business, L3 Strategy
-- Primary process groups: Initiating, Planning, Closing
-- Owner surface: Strategy Office
-- Document family: Company strategy; source list item: `company-thesis.md`.
+- Primary lifecycle layers: L10 Operations, L8 Execution
+- Primary process groups: Executing, Monitoring and Controlling, Closing
+- Owner surface: Operations Office
+- Document family: Operations and customer success; source list item: `support-playbook.md`.
 
 ## Tailoring Rules
 
@@ -43,16 +43,16 @@ Default tailoring mode: Hybrid architecture. This choice must explain why it is 
 
 ### Why this mode is not heavier or lighter
 
-`company-thesis.md` uses the default mode because the company strategy family needs governed evidence, but a heavier mode is reserved for external commitment, sensitive information, shared state, or difficult recovery.
+`support-playbook.md` uses the default mode because the operations and customer success family needs governed evidence, but a heavier mode is reserved for external commitment, sensitive information, shared state, or difficult recovery.
 
 ### Escalation triggers
 
-Escalate to a heavier tailoring mode when scope, trust, compliance, revenue exposure, recovery difficulty, or cross-boundary coordination exceeds the assumptions recorded for the current mode. For `company-thesis.md`, also escalate when the owner cannot confirm evidence, validation is no longer repeatable, or outputs affect an external commitment.
+Escalate to a heavier tailoring mode when scope, trust, compliance, revenue exposure, recovery difficulty, or cross-boundary coordination exceeds the assumptions recorded for the current mode. For `support-playbook.md`, also escalate when the owner cannot confirm evidence, validation is no longer repeatable, or outputs affect an external commitment.
 
 ## Inputs
 
-- Current offer, customers, cashflow, delivery capacity, risk, compliance, and Strategy Office owner constraints.
-- The `company-thesis.md` document family, business assumptions, evidence sources, dependencies, and stop or expand conditions.
+- Current offer, customers, cashflow, delivery capacity, risk, compliance, and Operations Office owner constraints.
+- The `support-playbook.md` document family, business assumptions, evidence sources, dependencies, and stop or expand conditions.
 - Solo-operator time budget, automation boundary, and monthly review inputs.
 
 ## Tools And Techniques
@@ -63,7 +63,7 @@ Escalate to a heavier tailoring mode when scope, trust, compliance, revenue expo
 
 ## Outputs
 
-- Governed `Company Thesis` body document, zh-CN companion, and registry entry.
+- Governed `Support Playbook` body document, zh-CN companion, and registry entry.
 - Next update for offer, pricing, channel, support, finance, compliance, or knowledge base.
 - Evidence for monthly keep, stop, pivot, expand, or re-tailor decisions.
 
@@ -71,14 +71,14 @@ Escalate to a heavier tailoring mode when scope, trust, compliance, revenue expo
 
 | Process group | Inputs | Tools And Techniques | Outputs |
 | --- | --- | --- | --- |
-| Initiating | source need, owner signal, scope boundary, first risk; document `company-thesis.md` | charter framing, stakeholder scan, tailoring pre-check | authorized operating slice, named owner, initial risk log |
-| Planning | approved purpose, dependencies, constraints, acceptance target; document `company-thesis.md` | I/T/O planning, RACI mapping, validation design, rollback design | document plan, validation path, rollback boundary |
-| Executing | approved slice, templates, evidence, local state; document `company-thesis.md` | controlled drafting, review, test, evidence capture | updated operating artifact, change evidence, handoff record |
-| Monitoring and Controlling | active artifact, metrics, issues, review feedback; document `company-thesis.md` | quality checks, variance review, change control, gate rerun | issue log, decision record, gate evidence |
-| Closing | accepted artifact, final evidence, residual risk; document `company-thesis.md` | closeout review, archive or registry sync, retrospective | final body doc, registry entry, lessons learned |
+| Initiating | source need, owner signal, scope boundary, first risk; document `support-playbook.md` | charter framing, stakeholder scan, tailoring pre-check | authorized operating slice, named owner, initial risk log |
+| Planning | approved purpose, dependencies, constraints, acceptance target; document `support-playbook.md` | I/T/O planning, RACI mapping, validation design, rollback design | document plan, validation path, rollback boundary |
+| Executing | approved slice, templates, evidence, local state; document `support-playbook.md` | controlled drafting, review, test, evidence capture | updated operating artifact, change evidence, handoff record |
+| Monitoring and Controlling | active artifact, metrics, issues, review feedback; document `support-playbook.md` | quality checks, variance review, change control, gate rerun | issue log, decision record, gate evidence |
+| Closing | accepted artifact, final evidence, residual risk; document `support-playbook.md` | closeout review, archive or registry sync, retrospective | final body doc, registry entry, lessons learned |
 
 ## Closeout And Registry
 
-- Registry `doc_id` remains unique: `one_person_company_company_thesis`.
-- English primary `docs_bilingual/operations_packages/one_person_company/company-thesis.md` and zh-CN companion `docs_bilingual/operations_packages/one_person_company/company-thesis.zh-CN.md` stay paired.
+- Registry `doc_id` remains unique: `one_person_company_support_playbook`.
+- English primary `docs_bilingual/operations_packages/one_person_company/support-playbook.md` and zh-CN companion `docs_bilingual/operations_packages/one_person_company/support-playbook.zh-CN.md` stay paired.
 - Closeout confirms owner, tailoring mode, escalation triggers, output evidence, and next-cycle input.

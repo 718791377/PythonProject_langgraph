@@ -1,21 +1,21 @@
 ---
-doc_id: one_person_company_company_thesis
+doc_id: one_person_company_thesis
 doc_class: operations_package
 status: active
 package: one-person-company
 body_kind: company_strategy_body
 generated_by: tools/generate_operations_package.py
 lang: zh-CN
-translation_of: docs_bilingual/operations_packages/one_person_company/company-thesis.md
+translation_of: docs_bilingual/operations_packages/one_person_company/thesis.md
 ---
 
 <!-- GENERATED_BY: tools/generate_operations_package.py; DO NOT EDIT BY HAND. -->
 
-# 一人公司 Company Thesis 正文运营文档
+# 一人公司 Thesis 正文运营文档
 
 ## 目的
 
-定义单人生产级业务运营系统如何在公司战略文档族中使用 company-thesis.md 产物，以支持业务决策、证据收集和合适裁剪深度选择。
+定义单人生产级业务运营系统如何在公司战略文档族中使用 thesis.md 产物，以支持业务决策、证据收集和合适裁剪深度选择。
 
 ## 权威边界
 
@@ -28,7 +28,7 @@ translation_of: docs_bilingual/operations_packages/one_person_company/company-th
 - 主生命周期层级：L0 认知叙事, L1 商业, L3 战略
 - 主过程组：Initiating, Planning, Closing
 - 负责人界面：战略办公室
-- 文档族：公司战略；源清单项：`company-thesis.md`。
+- 文档族：公司战略；源清单项：`thesis.md`。
 
 ## 裁剪规则
 
@@ -44,16 +44,16 @@ translation_of: docs_bilingual/operations_packages/one_person_company/company-th
 
 ### 为什么不更重也不更轻
 
-`company-thesis.md` 默认采用上述模式，因为 公司战略 的风险需要被治理，但只有触及外部承诺、敏感信息、共享状态或恢复困难时才需要扩大到更重模式。
+`thesis.md` 默认采用上述模式，因为 公司战略 的风险需要被治理，但只有触及外部承诺、敏感信息、共享状态或恢复困难时才需要扩大到更重模式。
 
 ### 升级触发器
 
-当范围、信任、合规、收入暴露、恢复难度或跨边界协同超出当前模式记录的假设时，必须升级到更重的裁剪模式。 针对 `company-thesis.md`，如果 owner 无法确认、证据不可复现、验证路径失效或输出影响外部承诺，也必须升级。
+当范围、信任、合规、收入暴露、恢复难度或跨边界协同超出当前模式记录的假设时，必须升级到更重的裁剪模式。 针对 `thesis.md`，如果 owner 无法确认、证据不可复现、验证路径失效或输出影响外部承诺，也必须升级。
 
 ## 输入
 
 - 当前产品、客户、现金流、交付容量、风险、合规和 战略办公室 的 owner 约束。
-- `company-thesis.md` 所属文档族、业务假设、证据来源、依赖和停止或扩展条件。
+- `thesis.md` 所属文档族、业务假设、证据来源、依赖和停止或扩展条件。
 - 单人 operator 的时间预算、自动化边界和月度复盘输入。
 
 ## 工具与技术
@@ -64,7 +64,7 @@ translation_of: docs_bilingual/operations_packages/one_person_company/company-th
 
 ## 输出
 
-- `Company Thesis` 的受治理正文、配套 zh-CN companion 和 registry 条目。
+- `Thesis` 的受治理正文、配套 zh-CN companion 和 registry 条目。
 - 产品、价格、渠道、支持、财务、合规或知识库中的下一步更新。
 - 可在月度复盘中使用的保留、停止、转向、扩展或重新裁剪证据。
 
@@ -72,14 +72,14 @@ translation_of: docs_bilingual/operations_packages/one_person_company/company-th
 
 | 过程组 | 输入 | 工具与技术 | 输出 |
 | --- | --- | --- | --- |
-| 启动 | 来源需求、负责人信号、范围边界、首轮风险；文档 `company-thesis.md` | 章程式界定、干系人扫描、裁剪预检 | 获准继续的运营切片、已命名负责人、初始风险日志 |
-| 规划 | 已批准目的、依赖、约束、验收目标；文档 `company-thesis.md` | I/T/O 规划、RACI 映射、验证设计、回滚设计 | 文档计划、验证路径、回滚边界 |
-| 执行 | 已批准切片、模板、证据、本地状态；文档 `company-thesis.md` | 受控起草、评审、测试、证据捕获 | 已更新运营产物、变更证据、交接记录 |
-| 监控 | 活动产物、指标、问题、评审反馈；文档 `company-thesis.md` | 质量检查、偏差复核、变更控制、门禁重跑 | 问题日志、决策记录、门禁证据 |
-| 收尾 | 已验收产物、最终证据、剩余风险；文档 `company-thesis.md` | 收尾评审、归档或登记同步、复盘 | 最终正文文档、登记条目、经验教训 |
+| 启动 | 来源需求、负责人信号、范围边界、首轮风险；文档 `thesis.md` | 章程式界定、干系人扫描、裁剪预检 | 获准继续的运营切片、已命名负责人、初始风险日志 |
+| 规划 | 已批准目的、依赖、约束、验收目标；文档 `thesis.md` | I/T/O 规划、RACI 映射、验证设计、回滚设计 | 文档计划、验证路径、回滚边界 |
+| 执行 | 已批准切片、模板、证据、本地状态；文档 `thesis.md` | 受控起草、评审、测试、证据捕获 | 已更新运营产物、变更证据、交接记录 |
+| 监控 | 活动产物、指标、问题、评审反馈；文档 `thesis.md` | 质量检查、偏差复核、变更控制、门禁重跑 | 问题日志、决策记录、门禁证据 |
+| 收尾 | 已验收产物、最终证据、剩余风险；文档 `thesis.md` | 收尾评审、归档或登记同步、复盘 | 最终正文文档、登记条目、经验教训 |
 
 ## 收尾与登记
 
-- Registry 中的 `doc_id` 必须保持唯一：`one_person_company_company_thesis`。
-- 英文主文件 `docs_bilingual/operations_packages/one_person_company/company-thesis.md` 与中文 companion `docs_bilingual/operations_packages/one_person_company/company-thesis.zh-CN.md` 必须成对更新。
+- Registry 中的 `doc_id` 必须保持唯一：`one_person_company_thesis`。
+- 英文主文件 `docs_bilingual/operations_packages/one_person_company/thesis.md` 与中文 companion `docs_bilingual/operations_packages/one_person_company/thesis.zh-CN.md` 必须成对更新。
 - 收尾时确认 owner、裁剪模式、升级触发器、输出证据和下一周期输入。

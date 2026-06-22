@@ -889,6 +889,18 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.zh-CN.md
 
+  - doc_id: codex_skills2cli_profile_routing_runtime_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.zh-CN.md
+
+  - doc_id: embedded_codex_governance_in_one_person_company_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.zh-CN.md
+
   - doc_id: codex_cli_durable_team_vision
     doc_class: operations_package
     status: active
@@ -1081,11 +1093,11 @@ documents:
     canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-permissions.md
     zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-permissions.zh-CN.md
 
-  - doc_id: codex_cli_durable_team_agent_tool_policy
+  - doc_id: codex_cli_durable_team_agent_governance
     doc_class: operations_package
     status: active
-    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.md
-    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.zh-CN.md
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.zh-CN.md
 
   - doc_id: codex_cli_durable_team_human_review_checklist
     doc_class: operations_package
@@ -1177,11 +1189,11 @@ documents:
     canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/template-library.md
     zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/template-library.zh-CN.md
 
-  - doc_id: one_person_company_company_thesis
+  - doc_id: one_person_company_thesis
     doc_class: operations_package
     status: active
-    canonical_path: docs_bilingual/operations_packages/one_person_company/company-thesis.md
-    zh_cn_path: docs_bilingual/operations_packages/one_person_company/company-thesis.zh-CN.md
+    canonical_path: docs_bilingual/operations_packages/one_person_company/thesis.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/thesis.zh-CN.md
 
   - doc_id: one_person_company_vision
     doc_class: operations_package
@@ -1405,11 +1417,11 @@ documents:
     canonical_path: docs_bilingual/operations_packages/one_person_company/customer-success-playbook.md
     zh_cn_path: docs_bilingual/operations_packages/one_person_company/customer-success-playbook.zh-CN.md
 
-  - doc_id: one_person_company_support_policy
+  - doc_id: one_person_company_support_playbook
     doc_class: operations_package
     status: active
-    canonical_path: docs_bilingual/operations_packages/one_person_company/support-policy.md
-    zh_cn_path: docs_bilingual/operations_packages/one_person_company/support-policy.zh-CN.md
+    canonical_path: docs_bilingual/operations_packages/one_person_company/support-playbook.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/support-playbook.zh-CN.md
 
   - doc_id: one_person_company_faq
     doc_class: operations_package
@@ -1536,13 +1548,3 @@ documents:
     status: active
     canonical_path: docs_bilingual/operations_packages/one_person_company/learning-log.md
     zh_cn_path: docs_bilingual/operations_packages/one_person_company/learning-log.zh-CN.md
-  - doc_id: codex_skills2cli_profile_routing_runtime_plan
-    doc_class: implementation_plan
-    status: final
-    canonical_path: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
-    zh_cn_path: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.zh-CN.md
-  - doc_id: embedded_codex_governance_in_one_person_company_plan
-    doc_class: implementation_plan
-    status: active
-    canonical_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.md
-    zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.zh-CN.md

@@ -14,6 +14,12 @@ MANIFEST = REPO_ROOT / "tools" / "ci" / "ci_test_manifest.json"
 CODEX_DOC = Path("docs_bilingual/operations_packages/codex_cli_durable_team/vision.md")
 CODEX_ZH = Path("docs_bilingual/operations_packages/codex_cli_durable_team/vision.zh-CN.md")
 OPC_DOC = Path("docs_bilingual/operations_packages/one_person_company/offer.md")
+CODEX_AGENT_GOVERNANCE = Path("docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.md")
+CODEX_AGENT_TOOL_POLICY = Path("docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.md")
+OPC_THESIS = Path("docs_bilingual/operations_packages/one_person_company/thesis.md")
+OPC_COMPANY_THESIS = Path("docs_bilingual/operations_packages/one_person_company/company-thesis.md")
+OPC_SUPPORT_PLAYBOOK = Path("docs_bilingual/operations_packages/one_person_company/support-playbook.md")
+OPC_SUPPORT_POLICY = Path("docs_bilingual/operations_packages/one_person_company/support-policy.md")
 
 
 class OperationsPackageDocsTest(unittest.TestCase):
@@ -57,6 +63,12 @@ class OperationsPackageDocsTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["required_pairs"], 108)
         self.assertEqual(payload["counts"]["required_files"], 216)
         self.assertEqual(payload["counts"]["tailoring_modes"], 5)
+        self.assertTrue((REPO_ROOT / CODEX_AGENT_GOVERNANCE).exists())
+        self.assertTrue((REPO_ROOT / OPC_THESIS).exists())
+        self.assertTrue((REPO_ROOT / OPC_SUPPORT_PLAYBOOK).exists())
+        self.assertFalse((REPO_ROOT / CODEX_AGENT_TOOL_POLICY).exists())
+        self.assertFalse((REPO_ROOT / OPC_COMPANY_THESIS).exists())
+        self.assertFalse((REPO_ROOT / OPC_SUPPORT_POLICY).exists())
 
     def test_generator_check_is_idempotent_for_current_repository(self) -> None:
         result = self.run_python([str(GENERATOR), "--root", str(REPO_ROOT), "--package", "all", "--check", "--json"])
@@ -205,6 +217,69 @@ class OperationsPackageDocsTest(unittest.TestCase):
         errors = checked["payload"]["errors"]
         self.assertTrue(any("readable Chinese snippets" in error for error in errors))
         self.assertTrue(any("mojibake sentinel" in error for error in errors))
+
+    def test_generator_removes_stale_legacy_files_and_registry_entries(self) -> None:
+        root = self.make_root()
+        stale_paths = [CODEX_AGENT_TOOL_POLICY, OPC_COMPANY_THESIS, OPC_SUPPORT_POLICY]
+        for rel in stale_paths:
+            target = root / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("stale legacy generated document\n", encoding="utf-8")
+        registry = root / "docs_bilingual" / "docs_registry.yaml"
+        registry.write_text(
+            registry.read_text(encoding="utf-8")
+            + "\n  - doc_id: codex_cli_durable_team_agent_tool_policy\n"
+            + "    doc_class: operations_package\n"
+            + "    status: active\n"
+            + "    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.md\n"
+            + "    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.zh-CN.md\n",
+            encoding="utf-8",
+        )
+
+        before = self.run_python([str(GENERATOR), "--root", str(root), "--package", "all", "--check", "--json"])
+        self.assertNotEqual(before.returncode, 0, before.stdout + before.stderr)
+        write = self.run_python([str(GENERATOR), "--root", str(root), "--package", "all", "--json"])
+        self.assertEqual(write.returncode, 0, write.stdout + write.stderr)
+
+        for rel in stale_paths:
+            self.assertFalse((root / rel).exists(), str(rel))
+        registry_text = registry.read_text(encoding="utf-8")
+        self.assertNotIn("agent-tool-policy", registry_text)
+        self.assertNotIn("company-thesis", registry_text)
+        self.assertNotIn("support-policy", registry_text)
+
+    def test_checker_fails_on_stale_legacy_file_or_registry_entry(self) -> None:
+        root = self.make_root()
+        stale = root / CODEX_AGENT_TOOL_POLICY
+        stale.write_text("stale legacy generated document\n", encoding="utf-8")
+        registry = root / "docs_bilingual" / "docs_registry.yaml"
+        registry.write_text(
+            registry.read_text(encoding="utf-8")
+            + "\n  - doc_id: one_person_company_company_thesis\n"
+            + "    doc_class: operations_package\n"
+            + "    status: active\n"
+            + "    canonical_path: docs_bilingual/operations_packages/one_person_company/company-thesis.md\n"
+            + "    zh_cn_path: docs_bilingual/operations_packages/one_person_company/company-thesis.zh-CN.md\n",
+            encoding="utf-8",
+        )
+
+        checked = self.run_checker(root)
+
+        self.assertNotEqual(checked["returncode"], 0)
+        errors = checked["payload"]["errors"]
+        self.assertTrue(any("Stale legacy generated operations-package file remains" in error for error in errors))
+        self.assertTrue(any("stale legacy generated doc_id" in error for error in errors))
+        self.assertTrue(any("stale legacy generated canonical_path" in error for error in errors))
+
+    def test_checker_fails_when_generated_content_mentions_metrics_yaml(self) -> None:
+        root = self.make_root()
+        target = root / CODEX_DOC
+        target.write_text(target.read_text(encoding="utf-8") + "\nsource list item `metrics.yaml`\n", encoding="utf-8")
+
+        checked = self.run_checker(root)
+
+        self.assertNotEqual(checked["returncode"], 0)
+        self.assertTrue(any("metrics.yaml" in error for error in checked["payload"]["errors"]))
 
     def test_new_test_is_registered_in_ci_manifest(self) -> None:
         manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))

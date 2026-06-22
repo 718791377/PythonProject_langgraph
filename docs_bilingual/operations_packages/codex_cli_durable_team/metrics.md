@@ -14,7 +14,7 @@ lang: en
 
 ## Purpose
 
-Defines how the personal production command-line team system operates the metrics.yaml artifact inside the metrics and data family with evidence gates, expert routing discipline, and approval boundaries.
+Defines how the personal production command-line team system operates the metrics.md artifact inside the metrics and data family with evidence gates, expert routing discipline, and approval boundaries.
 
 ## Authority Boundary
 
@@ -27,7 +27,7 @@ Defines how the personal production command-line team system operates the metric
 - Primary lifecycle layers: L4 Metrics, L8 Execution, L11 Retrospective
 - Primary process groups: Planning, Monitoring and Controlling, Closing
 - Owner surface: Engineering and Platform Office
-- Document family: Metrics and data; source list item: `metrics.yaml`.
+- Document family: Metrics and data; source list item: `metrics.md`.
 
 ## Tailoring Rules
 
@@ -43,16 +43,16 @@ Default tailoring mode: Phase-local lightweight. This choice must explain why it
 
 ### Why this mode is not heavier or lighter
 
-`metrics.yaml` uses the default mode because the metrics and data family needs governed evidence, but a heavier mode is reserved for external commitment, sensitive information, shared state, or difficult recovery.
+`metrics.md` uses the default mode because the metrics and data family needs governed evidence, but a heavier mode is reserved for external commitment, sensitive information, shared state, or difficult recovery.
 
 ### Escalation triggers
 
-Escalate to a heavier tailoring mode when scope, trust, compliance, revenue exposure, recovery difficulty, or cross-boundary coordination exceeds the assumptions recorded for the current mode. For `metrics.yaml`, also escalate when the owner cannot confirm evidence, validation is no longer repeatable, or outputs affect an external commitment.
+Escalate to a heavier tailoring mode when scope, trust, compliance, revenue exposure, recovery difficulty, or cross-boundary coordination exceeds the assumptions recorded for the current mode. For `metrics.md`, also escalate when the owner cannot confirm evidence, validation is no longer repeatable, or outputs affect an external commitment.
 
 ## Inputs
 
 - Current local workspace, OpenSpec state, registry state, validation gates, and Engineering and Platform Office owner constraints.
-- The `metrics.yaml` document family, risk profile, dependencies, rollback path, or retirement path.
+- The `metrics.md` document family, risk profile, dependencies, rollback path, or retirement path.
 - Latest boundaries for expert routing, durable execution, and local-first evidence.
 
 ## Tools And Techniques
@@ -71,11 +71,11 @@ Escalate to a heavier tailoring mode when scope, trust, compliance, revenue expo
 
 | Process group | Inputs | Tools And Techniques | Outputs |
 | --- | --- | --- | --- |
-| Initiating | source need, owner signal, scope boundary, first risk; document `metrics.yaml` | charter framing, stakeholder scan, tailoring pre-check | authorized operating slice, named owner, initial risk log |
-| Planning | approved purpose, dependencies, constraints, acceptance target; document `metrics.yaml` | I/T/O planning, RACI mapping, validation design, rollback design | document plan, validation path, rollback boundary |
-| Executing | approved slice, templates, evidence, local state; document `metrics.yaml` | controlled drafting, review, test, evidence capture | updated operating artifact, change evidence, handoff record |
-| Monitoring and Controlling | active artifact, metrics, issues, review feedback; document `metrics.yaml` | quality checks, variance review, change control, gate rerun | issue log, decision record, gate evidence |
-| Closing | accepted artifact, final evidence, residual risk; document `metrics.yaml` | closeout review, archive or registry sync, retrospective | final body doc, registry entry, lessons learned |
+| Initiating | source need, owner signal, scope boundary, first risk; document `metrics.md` | charter framing, stakeholder scan, tailoring pre-check | authorized operating slice, named owner, initial risk log |
+| Planning | approved purpose, dependencies, constraints, acceptance target; document `metrics.md` | I/T/O planning, RACI mapping, validation design, rollback design | document plan, validation path, rollback boundary |
+| Executing | approved slice, templates, evidence, local state; document `metrics.md` | controlled drafting, review, test, evidence capture | updated operating artifact, change evidence, handoff record |
+| Monitoring and Controlling | active artifact, metrics, issues, review feedback; document `metrics.md` | quality checks, variance review, change control, gate rerun | issue log, decision record, gate evidence |
+| Closing | accepted artifact, final evidence, residual risk; document `metrics.md` | closeout review, archive or registry sync, retrospective | final body doc, registry entry, lessons learned |
 
 ## Closeout And Registry
 

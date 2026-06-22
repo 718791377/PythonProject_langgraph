@@ -174,6 +174,8 @@ def validate_body_doc(root: Path, doc: generator.GeneratedDoc, rel: str, expecte
         errors.append(f"{rel} is not current with tools/generate_operations_package.py.")
     if generator.GENERATED_MARKER not in text:
         errors.append(f"{rel} is missing generated marker.")
+    if "metrics.yaml" in text:
+        errors.append(f"{rel} contains stale legacy source list item `metrics.yaml`; expected `metrics.md`.")
     validate_front_matter(doc, rel, text, zh, errors)
 
     headings = ZH_HEADINGS if zh else EN_HEADINGS
@@ -231,6 +233,14 @@ def validate_registry(root: Path, errors: list[str]) -> None:
         errors.append(f"docs_registry.yaml has duplicate doc_id `{doc_id}`.")
     for path in sorted(duplicate_paths):
         errors.append(f"docs_registry.yaml has duplicate path `{path}`.")
+    stale_ids = set(generator.stale_legacy_doc_ids("all"))
+    stale_paths = set(generator.stale_legacy_files("all"))
+    for entry in entries:
+        if entry.get("doc_id") in stale_ids:
+            errors.append(f"docs_registry.yaml contains stale legacy generated doc_id `{entry.get('doc_id')}`.")
+        for key in ("canonical_path", "zh_cn_path"):
+            if entry.get(key) in stale_paths:
+                errors.append(f"docs_registry.yaml contains stale legacy generated {key} `{entry.get(key)}`.")
     for entry in generator.registry_entries_for_generated_docs("all"):
         actual = by_doc_id.get(entry["doc_id"])
         if actual is None:
@@ -241,6 +251,12 @@ def validate_registry(root: Path, errors: list[str]) -> None:
                 errors.append(
                     f"docs_registry.yaml entry `{entry['doc_id']}` has {key}={actual.get(key)!r}; expected {value!r}."
                 )
+
+
+def validate_stale_legacy_files(root: Path, errors: list[str]) -> None:
+    for rel in generator.stale_legacy_files("all"):
+        if (root / rel).exists():
+            errors.append(f"Stale legacy generated operations-package file remains: {rel}")
 
 
 def validate_package_isolation(root: Path, errors: list[str]) -> None:
@@ -305,6 +321,7 @@ def evaluate(root: Path) -> dict[str, Any]:
             if fm.get("translation_of") != doc.rel_path:
                 errors.append(f"{doc.zh_path} translation_of={fm.get('translation_of')!r}; expected {doc.rel_path!r}.")
 
+    validate_stale_legacy_files(root, errors)
     validate_registry(root, errors)
     validate_package_isolation(root, errors)
     out_of_date, _matched = generator.check_expected(root, "all")

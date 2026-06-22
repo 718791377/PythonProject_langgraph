@@ -1,5 +1,5 @@
 ---
-doc_id: codex_cli_durable_team_agent_tool_policy
+doc_id: codex_cli_durable_team_agent_governance
 doc_class: operations_package
 status: active
 package: codex
@@ -10,11 +10,11 @@ lang: en
 
 <!-- GENERATED_BY: tools/generate_operations_package.py; DO NOT EDIT BY HAND. -->
 
-# Codex CLI Durable Team Agent Tool Policy Body Document
+# Codex CLI Durable Team Agent Governance Body Document
 
 ## Purpose
 
-Defines how the personal production command-line team system operates the agent-tool-policy.md artifact inside the agent governance family with evidence gates, expert routing discipline, and approval boundaries.
+Defines how the personal production command-line team system operates the agent-governance.md artifact inside the agent governance family with evidence gates, expert routing discipline, and approval boundaries.
 
 ## Authority Boundary
 
@@ -27,7 +27,7 @@ Defines how the personal production command-line team system operates the agent-
 - Primary lifecycle layers: L7 Organization, L8 Execution
 - Primary process groups: Planning, Executing, Monitoring and Controlling
 - Owner surface: Agent Governance Office
-- Document family: Agent governance; source list item: `agent-tool-policy.md`.
+- Document family: Agent governance; source list item: `agent-governance.md`.
 
 ## Tailoring Rules
 
@@ -43,16 +43,16 @@ Default tailoring mode: Full architecture. This choice must explain why it is no
 
 ### Why this mode is not heavier or lighter
 
-`agent-tool-policy.md` uses the default mode because the agent governance family needs governed evidence, but a heavier mode is reserved for external commitment, sensitive information, shared state, or difficult recovery.
+`agent-governance.md` uses the default mode because the agent governance family needs governed evidence, but a heavier mode is reserved for external commitment, sensitive information, shared state, or difficult recovery.
 
 ### Escalation triggers
 
-Escalate to a heavier tailoring mode when scope, trust, compliance, revenue exposure, recovery difficulty, or cross-boundary coordination exceeds the assumptions recorded for the current mode. For `agent-tool-policy.md`, also escalate when the owner cannot confirm evidence, validation is no longer repeatable, or outputs affect an external commitment.
+Escalate to a heavier tailoring mode when scope, trust, compliance, revenue exposure, recovery difficulty, or cross-boundary coordination exceeds the assumptions recorded for the current mode. For `agent-governance.md`, also escalate when the owner cannot confirm evidence, validation is no longer repeatable, or outputs affect an external commitment.
 
 ## Inputs
 
 - Current local workspace, OpenSpec state, registry state, validation gates, and Agent Governance Office owner constraints.
-- The `agent-tool-policy.md` document family, risk profile, dependencies, rollback path, or retirement path.
+- The `agent-governance.md` document family, risk profile, dependencies, rollback path, or retirement path.
 - Latest boundaries for expert routing, durable execution, and local-first evidence.
 
 ## Tools And Techniques
@@ -63,7 +63,7 @@ Escalate to a heavier tailoring mode when scope, trust, compliance, revenue expo
 
 ## Outputs
 
-- Governed `Agent Tool Policy` body document, zh-CN companion, and registry entry.
+- Governed `Agent Governance` body document, zh-CN companion, and registry entry.
 - Owner, tailoring mode, escalation triggers, validation path, and publication approval boundary record.
 - Operating evidence for later implementation, verification, retrospective, or archive work.
 
@@ -71,14 +71,14 @@ Escalate to a heavier tailoring mode when scope, trust, compliance, revenue expo
 
 | Process group | Inputs | Tools And Techniques | Outputs |
 | --- | --- | --- | --- |
-| Initiating | source need, owner signal, scope boundary, first risk; document `agent-tool-policy.md` | charter framing, stakeholder scan, tailoring pre-check | authorized operating slice, named owner, initial risk log |
-| Planning | approved purpose, dependencies, constraints, acceptance target; document `agent-tool-policy.md` | I/T/O planning, RACI mapping, validation design, rollback design | document plan, validation path, rollback boundary |
-| Executing | approved slice, templates, evidence, local state; document `agent-tool-policy.md` | controlled drafting, review, test, evidence capture | updated operating artifact, change evidence, handoff record |
-| Monitoring and Controlling | active artifact, metrics, issues, review feedback; document `agent-tool-policy.md` | quality checks, variance review, change control, gate rerun | issue log, decision record, gate evidence |
-| Closing | accepted artifact, final evidence, residual risk; document `agent-tool-policy.md` | closeout review, archive or registry sync, retrospective | final body doc, registry entry, lessons learned |
+| Initiating | source need, owner signal, scope boundary, first risk; document `agent-governance.md` | charter framing, stakeholder scan, tailoring pre-check | authorized operating slice, named owner, initial risk log |
+| Planning | approved purpose, dependencies, constraints, acceptance target; document `agent-governance.md` | I/T/O planning, RACI mapping, validation design, rollback design | document plan, validation path, rollback boundary |
+| Executing | approved slice, templates, evidence, local state; document `agent-governance.md` | controlled drafting, review, test, evidence capture | updated operating artifact, change evidence, handoff record |
+| Monitoring and Controlling | active artifact, metrics, issues, review feedback; document `agent-governance.md` | quality checks, variance review, change control, gate rerun | issue log, decision record, gate evidence |
+| Closing | accepted artifact, final evidence, residual risk; document `agent-governance.md` | closeout review, archive or registry sync, retrospective | final body doc, registry entry, lessons learned |
 
 ## Closeout And Registry
 
-- Registry `doc_id` remains unique: `codex_cli_durable_team_agent_tool_policy`.
-- English primary `docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.md` and zh-CN companion `docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.zh-CN.md` stay paired.
+- Registry `doc_id` remains unique: `codex_cli_durable_team_agent_governance`.
+- English primary `docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.md` and zh-CN companion `docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.zh-CN.md` stay paired.
 - Closeout confirms owner, tailoring mode, escalation triggers, output evidence, and next-cycle input.

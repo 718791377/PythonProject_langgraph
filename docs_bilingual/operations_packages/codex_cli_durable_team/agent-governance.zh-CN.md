@@ -1,21 +1,21 @@
 ---
-doc_id: codex_cli_durable_team_agent_tool_policy
+doc_id: codex_cli_durable_team_agent_governance
 doc_class: operations_package
 status: active
 package: codex
 body_kind: agent_governance_body
 generated_by: tools/generate_operations_package.py
 lang: zh-CN
-translation_of: docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.md
+translation_of: docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.md
 ---
 
 <!-- GENERATED_BY: tools/generate_operations_package.py; DO NOT EDIT BY HAND. -->
 
-# Codex CLI 持久化团队 Agent Tool Policy 正文运营文档
+# Codex CLI 持久化团队 Agent Governance 正文运营文档
 
 ## 目的
 
-定义个人生产级命令行团队系统如何在Agent 治理文档族中运行 agent-tool-policy.md 产物，并保留证据门禁、专家路由纪律和审批边界。
+定义个人生产级命令行团队系统如何在Agent 治理文档族中运行 agent-governance.md 产物，并保留证据门禁、专家路由纪律和审批边界。
 
 ## 权威边界
 
@@ -28,7 +28,7 @@ translation_of: docs_bilingual/operations_packages/codex_cli_durable_team/agent-
 - 主生命周期层级：L7 组织, L8 执行
 - 主过程组：Planning, Executing, Monitoring and Controlling
 - 负责人界面：Agent 治理办公室
-- 文档族：Agent 治理；源清单项：`agent-tool-policy.md`。
+- 文档族：Agent 治理；源清单项：`agent-governance.md`。
 
 ## 裁剪规则
 
@@ -44,16 +44,16 @@ translation_of: docs_bilingual/operations_packages/codex_cli_durable_team/agent-
 
 ### 为什么不更重也不更轻
 
-`agent-tool-policy.md` 默认采用上述模式，因为 Agent 治理 的风险需要被治理，但只有触及外部承诺、敏感信息、共享状态或恢复困难时才需要扩大到更重模式。
+`agent-governance.md` 默认采用上述模式，因为 Agent 治理 的风险需要被治理，但只有触及外部承诺、敏感信息、共享状态或恢复困难时才需要扩大到更重模式。
 
 ### 升级触发器
 
-当范围、信任、合规、收入暴露、恢复难度或跨边界协同超出当前模式记录的假设时，必须升级到更重的裁剪模式。 针对 `agent-tool-policy.md`，如果 owner 无法确认、证据不可复现、验证路径失效或输出影响外部承诺，也必须升级。
+当范围、信任、合规、收入暴露、恢复难度或跨边界协同超出当前模式记录的假设时，必须升级到更重的裁剪模式。 针对 `agent-governance.md`，如果 owner 无法确认、证据不可复现、验证路径失效或输出影响外部承诺，也必须升级。
 
 ## 输入
 
 - 当前本地工作区、OpenSpec、registry、验证门禁和 Agent 治理办公室 的 owner 约束。
-- `agent-tool-policy.md` 所属文档族、风险画像、依赖、回滚或退休路径。
+- `agent-governance.md` 所属文档族、风险画像、依赖、回滚或退休路径。
 - 专家路由、持久执行和本地优先证据的最新边界。
 
 ## 工具与技术
@@ -64,7 +64,7 @@ translation_of: docs_bilingual/operations_packages/codex_cli_durable_team/agent-
 
 ## 输出
 
-- `Agent Tool Policy` 的受治理正文、配套 zh-CN companion 和 registry 条目。
+- `Agent Governance` 的受治理正文、配套 zh-CN companion 和 registry 条目。
 - owner、裁剪模式、升级触发器、验证路径和发布审批边界记录。
 - 可供后续实施、验证、复盘或归档使用的运营证据。
 
@@ -72,14 +72,14 @@ translation_of: docs_bilingual/operations_packages/codex_cli_durable_team/agent-
 
 | 过程组 | 输入 | 工具与技术 | 输出 |
 | --- | --- | --- | --- |
-| 启动 | 来源需求、负责人信号、范围边界、首轮风险；文档 `agent-tool-policy.md` | 章程式界定、干系人扫描、裁剪预检 | 获准继续的运营切片、已命名负责人、初始风险日志 |
-| 规划 | 已批准目的、依赖、约束、验收目标；文档 `agent-tool-policy.md` | I/T/O 规划、RACI 映射、验证设计、回滚设计 | 文档计划、验证路径、回滚边界 |
-| 执行 | 已批准切片、模板、证据、本地状态；文档 `agent-tool-policy.md` | 受控起草、评审、测试、证据捕获 | 已更新运营产物、变更证据、交接记录 |
-| 监控 | 活动产物、指标、问题、评审反馈；文档 `agent-tool-policy.md` | 质量检查、偏差复核、变更控制、门禁重跑 | 问题日志、决策记录、门禁证据 |
-| 收尾 | 已验收产物、最终证据、剩余风险；文档 `agent-tool-policy.md` | 收尾评审、归档或登记同步、复盘 | 最终正文文档、登记条目、经验教训 |
+| 启动 | 来源需求、负责人信号、范围边界、首轮风险；文档 `agent-governance.md` | 章程式界定、干系人扫描、裁剪预检 | 获准继续的运营切片、已命名负责人、初始风险日志 |
+| 规划 | 已批准目的、依赖、约束、验收目标；文档 `agent-governance.md` | I/T/O 规划、RACI 映射、验证设计、回滚设计 | 文档计划、验证路径、回滚边界 |
+| 执行 | 已批准切片、模板、证据、本地状态；文档 `agent-governance.md` | 受控起草、评审、测试、证据捕获 | 已更新运营产物、变更证据、交接记录 |
+| 监控 | 活动产物、指标、问题、评审反馈；文档 `agent-governance.md` | 质量检查、偏差复核、变更控制、门禁重跑 | 问题日志、决策记录、门禁证据 |
+| 收尾 | 已验收产物、最终证据、剩余风险；文档 `agent-governance.md` | 收尾评审、归档或登记同步、复盘 | 最终正文文档、登记条目、经验教训 |
 
 ## 收尾与登记
 
-- Registry 中的 `doc_id` 必须保持唯一：`codex_cli_durable_team_agent_tool_policy`。
-- 英文主文件 `docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.md` 与中文 companion `docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.zh-CN.md` 必须成对更新。
+- Registry 中的 `doc_id` 必须保持唯一：`codex_cli_durable_team_agent_governance`。
+- 英文主文件 `docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.md` 与中文 companion `docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.zh-CN.md` 必须成对更新。
 - 收尾时确认 owner、裁剪模式、升级触发器、输出证据和下一周期输入。

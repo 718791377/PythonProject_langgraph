@@ -70,22 +70,22 @@ TAILORING_MODES = [
 CORE_48 = [
     ("Strategy and business", ["vision.md", "thesis.md", "business-model.md", "pricing.md", "unit-economics.md", "strategy.md"]),
     ("Market and product", ["user-segments.md", "market-map.md", "research-repository.md", "product-strategy.md", "prd.md", "cli-ux.md"]),
-    ("Metrics and data", ["metrics.yaml", "north-star.md", "tracking-plan.md", "data-dictionary.md", "data-quality-checklist.md", "experiment-log.md"]),
+    ("Metrics and data", ["metrics.md", "north-star.md", "tracking-plan.md", "data-dictionary.md", "data-quality-checklist.md", "experiment-log.md"]),
     ("Engineering and platform", ["architecture.md", "adr.md", "module-boundaries.md", "tech-stack.md", "delivery-plan.md", "observability.md"]),
     ("Security and risk", ["security-policy.md", "access-control.md", "privacy-policy.md", "incident-response.md", "risk-register.md", "backup-restore.md"]),
-    ("Agent governance", ["agent-role-map.md", "agent-permissions.md", "agent-tool-policy.md", "human-review-checklist.md", "agent-evaluation.md", "agent-failure-modes.md"]),
+    ("Agent governance", ["agent-role-map.md", "agent-permissions.md", "agent-governance.md", "human-review-checklist.md", "agent-evaluation.md", "agent-failure-modes.md"]),
     ("Growth and operations", ["growth-model.md", "docs-plan.md", "support-playbook.md", "faq.md", "trust-page.md", "changelog.md"]),
     ("Retrospective and knowledge", ["decision-log.md", "weekly-review.md", "monthly-review.md", "postmortem.md", "learning-log.md", "template-library.md"]),
 ]
 
 CORE_60 = [
-    ("Company strategy", ["company-thesis.md", "vision.md", "strategy.md", "annual-plan.md", "quarterly-plan.md", "decision-log.md"]),
+    ("Company strategy", ["thesis.md", "vision.md", "strategy.md", "annual-plan.md", "quarterly-plan.md", "decision-log.md"]),
     ("Business and finance", ["business-model.md", "offer.md", "pricing.md", "unit-economics.md", "finance-model.md", "cashflow.md"]),
     ("Market and user", ["market-map.md", "user-segments.md", "competitor-analysis.md", "alternative-solutions.md", "research-repository.md", "interview-guide.md"]),
     ("Product and service", ["product-strategy.md", "prd.md", "service-blueprint.md", "onboarding.md", "customer-journey.md", "roadmap.md"]),
-    ("Metrics and data", ["metrics.yaml", "north-star.md", "funnel-dashboard.md", "tracking-plan.md", "data-dictionary.md", "experiment-log.md"]),
+    ("Metrics and data", ["metrics.md", "north-star.md", "funnel-dashboard.md", "tracking-plan.md", "data-dictionary.md", "experiment-log.md"]),
     ("Growth and sales", ["growth-model.md", "channel-map.md", "sales-playbook.md", "landing-page.md", "email-sequences.md", "content-calendar.md"]),
-    ("Operations and customer success", ["ops-playbook.md", "customer-success-playbook.md", "support-policy.md", "faq.md", "refund-policy.md", "feedback-triage.md"]),
+    ("Operations and customer success", ["ops-playbook.md", "customer-success-playbook.md", "support-playbook.md", "faq.md", "refund-policy.md", "feedback-triage.md"]),
     ("Technology and automation", ["tech-stack.md", "automation-map.md", "tool-stack.md", "vendor-register.md", "api-dependency-map.md", "backup-restore.md"]),
     ("Governance and risk", ["legal-checklist.md", "terms-of-service.md", "privacy-policy.md", "contract-template.md", "risk-register.md", "compliance-checklist.md"]),
     ("Agent and knowledge", ["agent-governance.md", "agent-role-map.md", "agent-permissions.md", "human-review-checklist.md", "monthly-review.md", "learning-log.md"]),
@@ -285,6 +285,41 @@ def _build_docs() -> tuple[list[GeneratedDoc], list[GeneratedDoc]]:
 
 CODEX_DOCS, OPC_DOCS = _build_docs()
 ALL_DOCS = CODEX_DOCS + OPC_DOCS
+
+STALE_LEGACY_FILES = {
+    "codex": (
+        "docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.md",
+        "docs_bilingual/operations_packages/codex_cli_durable_team/agent-tool-policy.zh-CN.md",
+    ),
+    "one-person-company": (
+        "docs_bilingual/operations_packages/one_person_company/company-thesis.md",
+        "docs_bilingual/operations_packages/one_person_company/company-thesis.zh-CN.md",
+        "docs_bilingual/operations_packages/one_person_company/support-policy.md",
+        "docs_bilingual/operations_packages/one_person_company/support-policy.zh-CN.md",
+    ),
+}
+
+STALE_LEGACY_DOC_IDS = (
+    "codex_cli_durable_team_agent_tool_policy",
+    "one_person_company_company_thesis",
+    "one_person_company_support_policy",
+)
+
+
+def stale_legacy_files(package: str = "all") -> list[str]:
+    if package == "codex":
+        return list(STALE_LEGACY_FILES["codex"])
+    if package == "one-person-company":
+        return list(STALE_LEGACY_FILES["one-person-company"])
+    return list(STALE_LEGACY_FILES["codex"] + STALE_LEGACY_FILES["one-person-company"])
+
+
+def stale_legacy_doc_ids(package: str = "all") -> list[str]:
+    if package == "codex":
+        return ["codex_cli_durable_team_agent_tool_policy"]
+    if package == "one-person-company":
+        return ["one_person_company_company_thesis", "one_person_company_support_policy"]
+    return list(STALE_LEGACY_DOC_IDS)
 
 
 def selected_docs(package: str) -> list[GeneratedDoc]:
@@ -624,7 +659,16 @@ def update_registry(root: Path, package: str) -> list[str]:
     entries = parse_registry(path)
     generated = registry_entries_for_generated_docs(package)
     generated_ids = {entry["doc_id"] for entry in generated}
-    updated = [entry for entry in entries if entry.get("doc_id") not in generated_ids] + generated
+    stale_ids = set(stale_legacy_doc_ids(package))
+    stale_paths = set(stale_legacy_files(package))
+    updated = [
+        entry
+        for entry in entries
+        if entry.get("doc_id") not in generated_ids
+        and entry.get("doc_id") not in stale_ids
+        and entry.get("canonical_path") not in stale_paths
+        and entry.get("zh_cn_path") not in stale_paths
+    ] + generated
     lines = ["version: 1", "documents:"]
     for entry in updated:
         lines.append("")
@@ -647,6 +691,11 @@ def write_expected(root: Path, package: str) -> list[str]:
         if old != content:
             path.write_text(content, encoding="utf-8", newline="\n")
             changed.append(rel)
+    for rel in stale_legacy_files(package):
+        path = root / rel
+        if path.exists():
+            path.unlink()
+            changed.append(rel)
     changed.extend(update_registry(root, package))
     return sorted(dict.fromkeys(changed))
 
@@ -664,7 +713,20 @@ def check_expected(root: Path, package: str) -> tuple[list[str], list[str]]:
             matched.append(rel)
         else:
             out_of_date.append(rel)
-    by_doc_id = {entry.get("doc_id", ""): entry for entry in parse_registry(root / "docs_bilingual" / "docs_registry.yaml")}
+    for rel in stale_legacy_files(package):
+        if (root / rel).exists():
+            out_of_date.append(rel)
+    registry_entries = parse_registry(root / "docs_bilingual" / "docs_registry.yaml")
+    by_doc_id = {entry.get("doc_id", ""): entry for entry in registry_entries}
+    stale_ids = set(stale_legacy_doc_ids(package))
+    stale_paths = set(stale_legacy_files(package))
+    if any(
+        entry.get("doc_id") in stale_ids
+        or entry.get("canonical_path") in stale_paths
+        or entry.get("zh_cn_path") in stale_paths
+        for entry in registry_entries
+    ):
+        out_of_date.append("docs_bilingual/docs_registry.yaml")
     for entry in registry_entries_for_generated_docs(package):
         actual = by_doc_id.get(entry["doc_id"])
         if actual is None or any(actual.get(key) != value for key, value in entry.items()):
