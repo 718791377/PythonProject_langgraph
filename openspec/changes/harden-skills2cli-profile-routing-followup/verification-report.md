@@ -6,17 +6,17 @@ Stage B implements the frozen Skills2CLI profile routing hardening package local
 
 ## Fresh verification evidence
 
-- `python test\skills2cli.test.py` — pass, 16 tests.
-- `python test\check_skills2cli_profile_routing.test.py` — pass, 8 tests.
-- `python test\check_plugin_modules_skill.test.py` — pass, 15 tests.
-- `python -X utf8 tools\check_plugin_modules_skill.py --root . --json` — pass, `ok=true`, `errors=0`.
-- `python -X utf8 tools\check_skills2cli_profile_routing.py --root . --json` — pass, `ok=true`, `errors=0`; expected warning reports installed user-level drift.
+- `python test\skills2cli.test.py` - pass, 16 tests.
+- `python test\check_skills2cli_profile_routing.test.py` - pass, 8 tests.
+- `python test\check_plugin_modules_skill.test.py` - pass, 15 tests.
+- `python -X utf8 tools\check_plugin_modules_skill.py --root . --json` - pass, `ok=true`, `errors=0`.
+- `python -X utf8 tools\check_skills2cli_profile_routing.py --root . --json` - pass, `ok=true`, `errors=0`; expected warning reports installed user-level drift.
 - Representative `skills2cli profile suggest` smokes show focused top profile recommendations for GitLab CI/security, Expo/Sentry, Twilio WhatsApp, and explicit-only `full` for all-plugin troubleshooting.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File tools\skill_sources\plugin-modules\scripts\load_module.ps1 web-saas.mobile-app -Json` — emits soft-load task-module guidance with no mutation flags.
-- `powershell -NoProfile -ExecutionPolicy Bypass -File tools\skill_sources\plugin-modules\scripts\set_plugin_profile.ps1 web-saas.mobile-app -Json` — rejects nested hard-load with preview/soft-load guidance and no mutation flags.
-- `openspec validate harden-skills2cli-profile-routing-followup --strict` — pass.
-- `python tools\run_openspec_guard.py --root . --tool codex --json` — pass, `77/77` steps.
-- `python tools\check_precommit_update_archive.py --root . --json` — pass, `ok=true`.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File tools\skill_sources\plugin-modules\scripts\load_module.ps1 web-saas.mobile-app -Json` - emits soft-load task-module guidance with no mutation flags.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File tools\skill_sources\plugin-modules\scripts\set_plugin_profile.ps1 web-saas.mobile-app -Json` - rejects nested hard-load with preview/soft-load guidance and no mutation flags.
+- `openspec validate harden-skills2cli-profile-routing-followup --strict` - pass.
+- `python tools\run_openspec_guard.py --root . --tool codex --json` - pass, `77/77` steps.
+- `python tools\check_precommit_update_archive.py --root . --json` - pass, `ok=true`.
 
 ## Acceptance mapping
 
