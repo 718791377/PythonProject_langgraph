@@ -3,10 +3,11 @@ doc_id: codex_skills2cli_profile_routing_runtime_plan
 lang: en
 canonical: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
 translation: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.zh-CN.md
-status: active
+status: final
 doc_class: implementation_plan
 change: improve-skills2cli-profile-routing
 created_at: 2026-06-21
+archived-with: 2026-06-22-harden-skills2cli-profile-routing-followup
 ---
 
 # Skills2CLI Scenario-Based Profile Routing Runtime Plan
@@ -28,9 +29,10 @@ created_at: 2026-06-21
 - Baseline Stage A plan-freeze package was integrated into local `main` at `3d08d6e`.
 - Baseline Phase B runtime implementation was integrated into local `main` at `80ec3dd`.
 - The baseline OpenSpec change is archived at `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`.
-- Active follow-up change: `harden-skills2cli-profile-routing-followup` freezes additional routing-quality and safety requirements before any new runtime edit.
-- Current follow-up phase: Phase A plan-freeze only. Runtime code, `profiles.json`, helper scripts, checkers, tests, user-level installed copies, `config.toml`, and plugin cache are out of scope until Phase A is locally integrated.
-- Follow-up Phase B must implement orthogonal schema fields, first-class `profile.task_module` identity, explicit `full` eligibility gates, behavior-level no-auto-apply evidence, and full installed-artifact drift reporting.
+- Follow-up Phase A plan-freeze package was integrated into local `main` at `6919f0b`.
+- Follow-up Phase B runtime implementation was committed on the feature branch at `cfd6376`, with archive ledger repair at `e1844fb` before final archive packaging.
+- Follow-up change `harden-skills2cli-profile-routing-followup` is archived at `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/` and its stable spec has been promoted under `openspec/specs/codex-user-level-plugin-modules-profile-helper/`.
+- Runtime remains advisory and preview-only: no profile apply, no `config.toml` mutation, no plugin-cache edit, and no remote publication.
 - `codex_skills_usage_audit` evidence remains advisory input for recall/rerank only; it does not authorize profile apply.
 - Remote publication is not authorized.
 
@@ -234,6 +236,7 @@ Representative routing tests must cover:
 - `docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md` - Stage A frozen implementation plan and runtime validation contract.
 - `docs_bilingual/docs_registry.yaml` - active bilingual plan registry entry.
 - `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/` - archived OpenSpec change containing proposal, design, tasks, management record, and delta spec.
+- `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/` - archived follow-up OpenSpec change and promoted stable-spec evidence for the hardened routing runtime.
 - `docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md` - advisory audit input linkage; profile apply remains unauthorized.
 - Stage A validation evidence: `openspec validate improve-skills2cli-profile-routing --strict`, `tools/run_openspec_guard.py --root . --tool codex --json`, `tools/check_precommit_update_archive.py --root . --json`, and `tools/check_worktree_task_receipt.py --root . --json` passed before the plan-freeze commit.
 - Closeout evidence: focused unit tests for `skills2cli`, `check_skills2cli_profile_routing`, and `check_plugin_modules_skill` cover `scene_description` compatibility and profile-level hints; full gates are rerun before local-main integration.

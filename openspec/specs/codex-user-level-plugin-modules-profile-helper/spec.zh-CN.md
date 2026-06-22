@@ -1,7 +1,9 @@
-# Delta Spec：Codex 用户级 Plugin Modules Profile Helper
+# codex-user-level-plugin-modules-profile-helper 规范
 
-## 新增需求
+## 目的
+定义用户级 `plugin-modules` skill 与 profile helper 契约，覆盖任务域 plugin soft-load、带备份保护的 hard-load profile 切换、advisory Skills2CLI profile suggestion、场景/task-module routing，以及显式安装到 Codex 用户级 skills 目录。
 
+## 需求
 ### 需求：场景化 profile routing metadata
 
 plugin-modules profile registry 必须保留现有 top-level canonical profile ID，同时允许每个非 `full` profile 和每个 scenario profile 声明场景 routing metadata。 主字段名必须是 `scene_description`；`scenario_description` 可以作为 existing consumers 的兼容别名保留。

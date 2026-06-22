@@ -3,10 +3,11 @@ doc_id: codex_skills2cli_profile_routing_runtime_plan
 lang: zh-CN
 canonical: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
 translation_of: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
-status: active
+status: final
 doc_class: implementation_plan
 change: improve-skills2cli-profile-routing
 created_at: 2026-06-21
+archived-with: 2026-06-22-harden-skills2cli-profile-routing-followup
 ---
 
 # Skills2CLI 场景化 Profile 路由 Runtime 计划
@@ -28,9 +29,10 @@ created_at: 2026-06-21
 - 基线 Stage A 方案冻结包已在本地 `main` 集成，提交为 `3d08d6e`。
 - 基线 Phase B runtime 实现已在本地 `main` 集成，提交为 `80ec3dd`。
 - 基线 OpenSpec change 已归档到 `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`。
-- 当前 active follow-up change：`harden-skills2cli-profile-routing-followup`，用于在任何新 runtime edit 前冻结额外 routing-quality 与 safety requirements。
-- 当前 follow-up 阶段：Phase A 仅做方案冻结。Runtime code、`profiles.json`、helper scripts、checkers、tests、user-level installed copies、`config.toml` 与 plugin cache 在 Phase A 本地集成前均不在范围内。
-- Follow-up Phase B 必须实现 orthogonal schema fields、一等 `profile.task_module` identity、显式 `full` eligibility gate、行为级 no-auto-apply evidence，以及完整 installed-artifact drift reporting。
+- Follow-up Phase A 方案冻结包已在本地 `main` 集成，提交为 `6919f0b`。
+- Follow-up Phase B runtime 实现已在 feature branch 提交为 `cfd6376`，并在最终归档打包前以 `e1844fb` 修复 archive ledger。
+- Follow-up change `harden-skills2cli-profile-routing-followup` 已归档到 `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/`，stable spec 已提升到 `openspec/specs/codex-user-level-plugin-modules-profile-helper/`。
+- Runtime 仍保持 advisory 与 preview-only：不执行 profile apply，不修改 `config.toml`，不编辑 plugin cache，也不进行远程发布。
 - `codex_skills_usage_audit` evidence 仅作为 recall/rerank advisory input；不授权 profile apply。
 - 远程发布未授权。
 
@@ -233,6 +235,7 @@ Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-m
 - `docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md` - Stage A 冻结实施方案与 runtime 验证契约。
 - `docs_bilingual/docs_registry.yaml` - active 双语方案登记。
 - `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/` - 已归档 OpenSpec change，包含 proposal、design、tasks、management record 与 delta spec。
+- `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/` - 已归档的 follow-up OpenSpec change，以及 hardened routing runtime 的 stable-spec promotion 证据。
 - `docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md` - advisory audit 输入关联；profile apply 仍未授权。
 - Stage A 验证证据：`openspec validate improve-skills2cli-profile-routing --strict`、`tools/run_openspec_guard.py --root . --tool codex --json`、`tools/check_precommit_update_archive.py --root . --json` 与 `tools/check_worktree_task_receipt.py --root . --json` 已在 plan-freeze commit 前通过。
 
