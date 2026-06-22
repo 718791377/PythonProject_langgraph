@@ -25,14 +25,13 @@ created_at: 2026-06-21
 
 <!-- CURRENT_STATUS_START -->
 
-- Stage A plan-freeze package is integrated into local `main` at `3d08d6e`.
-- Phase B runtime implementation is integrated into local `main` at `80ec3dd`.
-- The OpenSpec change is archived at `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`.
-- Post-Phase-B follow-up closes the previous audit/warning rerank gap: `profile suggest` reads committed sanitized skills-audit summaries, reports evidence sources, applies evidence-driven warning-pressure penalty to broad `full` recommendations, and remains preview-only with `profile_apply_performed=false`.
-- The checker now runs a profile-suggest rerank contract smoke in addition to registry/schema/full-coverage checks.
-- User-level installed copies may still report drift until a separate install/update step is authorized; repo source remains the source of truth.
-- Closeout package `close-skills2cli-profile-routing-gaps-20260622` adds the `scene_description` contract field while preserving `scenario_description` compatibility, adds profile-level `plugin_hints` and `skill_doc_hints` to `profile suggest`, and records archive management outcome evidence.
-- Contract hardening package `harden-skills2cli-profile-routing-contract-20260622` centralizes shared registry constants/accessors, extends the profile-suggest matrix across all ordinary profile families, keeps runtime scoring separate from checker smoke expectations, and ensures the user-level `skills2cli` install artifact carries the shared contract module needed for real `profile suggest` smoke tests.
+- Baseline Stage A plan-freeze package was integrated into local `main` at `3d08d6e`.
+- Baseline Phase B runtime implementation was integrated into local `main` at `80ec3dd`.
+- The baseline OpenSpec change is archived at `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`.
+- Active follow-up change: `harden-skills2cli-profile-routing-followup` freezes additional routing-quality and safety requirements before any new runtime edit.
+- Current follow-up phase: Phase A plan-freeze only. Runtime code, `profiles.json`, helper scripts, checkers, tests, user-level installed copies, `config.toml`, and plugin cache are out of scope until Phase A is locally integrated.
+- Follow-up Phase B must implement orthogonal schema fields, first-class `profile.task_module` identity, explicit `full` eligibility gates, behavior-level no-auto-apply evidence, and full installed-artifact drift reporting.
+- `codex_skills_usage_audit` evidence remains advisory input for recall/rerank only; it does not authorize profile apply.
 - Remote publication is not authorized.
 
 <!-- CURRENT_STATUS_END -->
@@ -45,6 +44,15 @@ This plan uses three inputs:
 2. The `codex_skills_usage_audit` evidence model: strong evidence supports routing and review, but does not authorize profile apply.
 3. The current `target_profile` registry: `core-dev`, `web-saas`, `company-ops`, `market-research`, `customer-comms`, `creative-content`, `pyside6-gui`, and `full` remain compatible IDs.
 
+## 1.1 Four-principle traceability matrix
+
+| Principle | Frozen contract | OpenSpec surface | Phase B evidence target |
+| --- | --- | --- | --- |
+| Scenario-based descriptions | `scene_description` is primary and `scenario_description` remains a compatibility alias. | `Scenario-based profile routing metadata` requires positive scenario evidence for profiles, scenario profiles, and task modules. | Registry checker fails closed when scenario text plus `route_when` or `positive_examples` are missing. |
+| Layered routing | Canonical profile -> scenario profile -> `profile.task_module` -> skill/plugin hints. | `Task modules provide layered routing` and `Scenario profiles resolve to canonical target profiles`. | `load_module.ps1` reports `entry_kind`, `target_profile`, and `task_module`; `skills2cli profile suggest` reports profile and module matches. |
+| Negative-sample boundaries | Ordinary routes require negative examples and excluded-candidate evidence. | `Scenario-based profile routing metadata` and `Profile suggestion matrix covers ordinary profiles and explicit full troubleshooting`. | Suggest output reports negative-match or eligibility reasons; ordinary rows never select `full`. |
+| Recall/rerank | Recall and rerank are separate; audit evidence can boost, warning pressure can penalize, but safety gates win. | `Recall/rerank is explainable and fail-closed`. | Suggest output reports sanitized rank factors and evidence source labels without raw transcripts or private paths. |
+
 ## 2. Non-goals and safety boundaries
 
 - Do not rename existing `target_profile` IDs in Phase B; add aliases and scenario metadata instead.
@@ -54,6 +62,19 @@ This plan uses three inputs:
 - Do not make `full` a normal top-1 suggestion.
 - Do not treat profile/helper invocation as native expert evidence.
 - Do not push GitLab/GitHub in this implementation flow.
+
+## 2.1 Unified safety boundary matrix
+
+| Boundary | Allowed | Forbidden | Phase A evidence | Phase B enforcement target |
+| --- | --- | --- | --- | --- |
+| Advisory-only routing | Generate suggestions, soft-load guidance, and hard-load previews. | Apply a profile automatically. | Proposal/design/spec say no profile apply. | Output flags and fixture hashes prove no apply. |
+| Config immutability | Read fixture or configured paths for drift reporting. | Mutate `C:\Users\lenovo\.codex\config.toml`. | Non-goal and management constraints. | No-auto-apply tests snapshot config before and after. |
+| Plugin-cache immutability | Read metadata needed for reports. | Edit plugin cache or vendor `SKILL.md`. | Non-goal and management constraints. | No-auto-apply tests snapshot plugin-cache markers. |
+| Remote-publication boundary | Local commits and local `main` integration after gates. | Push GitLab/GitHub, open/merge MR, or mutate remote refs. | This plan states remote publication is not authorized. | Publication helper remains unused unless a later user message names remote action. |
+| `full` eligibility | Use `full` for explicit all-plugin troubleshooting. | Let broad ordinary tasks select `full` top-1. | Delta spec defines explicit-only gate. | Suggest matrix requires `excluded_candidates` when `explicit_full_request=false`. |
+| Task-module activation | Soft-load `profile.task_module` guidance. | Treat task modules as hard-load targets. | Delta spec defines first-class soft-load-only identity. | `set_plugin_profile.ps1` rejects scenario/task-module inputs. |
+| Expert-evidence boundary | Use skills/profile helpers as procedural context. | Treat skill/profile invocation as native subagent evidence. | Non-goal and management constraints. | Boundary checker and output flags preserve distinction. |
+| Installed artifact drift | Report drift for installed helper artifacts. | Treat user-level installed copies as source of truth. | Delta spec names required artifact surface. | Checker reports repo and installed paths for `skills2cli.py`, contract module, and `profiles.json`. |
 
 ## 3. Target model
 
@@ -81,6 +102,15 @@ Every top-level profile and every task module must define:
 - `task_modules` may be embedded under a profile and resolved by runtime as `profile.task_module`.
 - `set_plugin_profile.ps1` accepts only canonical top-level profiles; scenario or task-module input must fail closed.
 - `load_module.ps1` may accept canonical profiles, scenario profiles, or `profile.task_module`, but the output must explicitly report `entry_kind`, `target_profile`, and `task_module`.
+
+## 3.2 Phase boundary and package split
+
+| Package | Allowed write scope | Forbidden scope | Exit condition |
+| --- | --- | --- | --- |
+| Follow-up Phase A plan-freeze | `openspec/changes/harden-skills2cli-profile-routing-followup/**`, this bilingual plan, local receipts. | Runtime code, `profiles.json`, helper scripts, checkers, tests, user-level installed copies, `config.toml`, plugin cache, remote refs. | Delta spec validates, plan matrices are present, pre-commit/archive review passes, local gate and local MR review pass, then local-main helper integrates the package. |
+| Follow-up Phase B runtime hardening | Registry, runtime, helper scripts, checkers, tests, CI manifest, install-source metadata, and the same active OpenSpec change. | Profile apply, plugin-cache edits, `config.toml` edits, remote publication, unrelated worktrees. | Focused tests, representative suggestions, OpenSpec guard, local gate, local MR review pass; then archive the change and integrate into local `main`. |
+
+Phase B may use a LangGraph durable checkpoint or persistent-team lane only after Phase A is frozen and at least two independent write slices are ready with explicit ownership. The main Codex CLI session remains the leader and owns fan-in.
 
 ## 4. Top-level profile matrix
 
@@ -158,6 +188,18 @@ Representative routing tests must cover:
 - [x] Register the bilingual plan in `docs_bilingual/docs_registry.yaml`.
 - [x] Run plan-level validation and commit the plan-freeze package.
 - [x] Integrate Phase A into local `main` and clean the worktree/branch through the local-main-first helper.
+
+## 7.1 Follow-up Phase A acceptance matrix
+
+| Acceptance item | Required evidence before local commit | Owner phase | Status |
+| --- | --- | --- | --- |
+| Follow-up OpenSpec change exists | Proposal, design, tasks, management, `.openspec.yaml`, `.comet.yaml`, and bilingual companions exist under `harden-skills2cli-profile-routing-followup`. | Phase A | Required |
+| Delta spec is non-empty and strict-valid | `openspec validate harden-skills2cli-profile-routing-followup --strict` passes. | Phase A | Required |
+| Four principles are traceable | Section 1.1 maps scenario description, layered routing, negative boundaries, and recall/rerank to OpenSpec requirements and Phase B evidence. | Phase A | Required |
+| Safety contract is unified | Section 2.1 lists allowed/forbidden behavior and checker targets. | Phase A | Required |
+| Phase A and B are separated | Section 3.2 states plan-freeze-only scope and forbids runtime edits in Phase A. | Phase A | Required |
+| Audit linkage remains advisory | Current status and safety sections state audit evidence does not authorize profile apply. | Phase A | Required |
+| Local commit readiness | `check_precommit_update_archive.py`, `run_openspec_guard.py`, local gate, and local MR review pass before local `main` integration. | Phase A | Required |
 
 ## 8. Phase B tasks
 

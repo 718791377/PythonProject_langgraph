@@ -25,15 +25,13 @@ created_at: 2026-06-21
 
 <!-- CURRENT_STATUS_START -->
 
-- Stage A 方案冻结包已在本地 `main` 集成，提交为 `3d08d6e`。
-- 收口 evidence：`skills2cli`、`check_skills2cli_profile_routing` 与 `check_plugin_modules_skill` 的聚焦单测覆盖 `scene_description` / `scenario_description` 双向兼容和 profile-level hints；本地 main 集成前会重新运行 full gates。
-- Phase B runtime 实现已在本地 `main` 集成，提交为 `80ec3dd`。
-- OpenSpec change 已归档到 `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`。
-- Phase B 后续收口已补齐原 audit/warning rerank 缺口：`profile suggest` 会读取已提交的脱敏 skills-audit 摘要、报告证据来源、对 broad `full` recommendation 施加由 warning pressure 证据驱动的惩罚，并继续保持 preview-only 与 `profile_apply_performed=false`。
-- checker 现在除 registry/schema/full 覆盖检查外，还会运行 profile-suggest rerank contract smoke。
-- user-level 安装副本仍可能报告 drift；除非另有授权，repo source 仍是 source of truth。
-- 收口包 `close-skills2cli-profile-routing-gaps-20260622` 补上 `scene_description` 契约字段，同时保留 `scenario_description` 兼容；`profile suggest` 现在输出 profile-level `plugin_hints` 与 `skill_doc_hints`，并记录 archive management outcome evidence。
-- 契约硬化包 `harden-skills2cli-profile-routing-contract-20260622` 集中 shared registry 常量与 accessor，扩展覆盖全部普通 profile family 的 profile-suggest 矩阵，保持 runtime scoring 与 checker smoke expectation 相互独立，并确保 user-level `skills2cli` 安装产物携带真实 `profile suggest` smoke 所需的 shared contract module。
+- 基线 Stage A 方案冻结包已在本地 `main` 集成，提交为 `3d08d6e`。
+- 基线 Phase B runtime 实现已在本地 `main` 集成，提交为 `80ec3dd`。
+- 基线 OpenSpec change 已归档到 `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`。
+- 当前 active follow-up change：`harden-skills2cli-profile-routing-followup`，用于在任何新 runtime edit 前冻结额外 routing-quality 与 safety requirements。
+- 当前 follow-up 阶段：Phase A 仅做方案冻结。Runtime code、`profiles.json`、helper scripts、checkers、tests、user-level installed copies、`config.toml` 与 plugin cache 在 Phase A 本地集成前均不在范围内。
+- Follow-up Phase B 必须实现 orthogonal schema fields、一等 `profile.task_module` identity、显式 `full` eligibility gate、行为级 no-auto-apply evidence，以及完整 installed-artifact drift reporting。
+- `codex_skills_usage_audit` evidence 仅作为 recall/rerank advisory input；不授权 profile apply。
 - 远程发布未授权。
 
 <!-- CURRENT_STATUS_END -->
@@ -46,6 +44,15 @@ created_at: 2026-06-21
 2. `codex_skills_usage_audit` 证据模型：strong evidence 可作为 routing 与 review 输入，但不授权 profile apply。
 3. 当前 `target_profile` registry：`core-dev`、`web-saas`、`company-ops`、`market-research`、`customer-comms`、`creative-content`、`pyside6-gui` 和 `full` 继续保持兼容 ID。
 
+## 1.1 四原则可追溯矩阵
+
+| 原则 | 冻结契约 | OpenSpec surface | Phase B 证据目标 |
+| --- | --- | --- | --- |
+| 场景化描述 | `scene_description` 为主字段，`scenario_description` 保持兼容 alias。 | `Scenario-based profile routing metadata` 要求 profiles、scenario profiles 与 task modules 具备正向场景证据。 | Registry checker 在缺少场景文本加 `route_when` 或 `positive_examples` 时 fail closed。 |
+| 分层路由 | canonical profile -> scenario profile -> `profile.task_module` -> skill/plugin hints。 | `Task modules provide layered routing` 与 `Scenario profiles resolve to canonical target profiles`。 | `load_module.ps1` 报告 `entry_kind`、`target_profile`、`task_module`；`skills2cli profile suggest` 报告 profile 与 module matches。 |
+| 负样本边界 | 普通 route 必须有 negative examples 与 excluded-candidate evidence。 | `Scenario-based profile routing metadata` 与 `Profile suggestion matrix covers ordinary profiles and explicit full troubleshooting`。 | Suggest output 报告 negative-match 或 eligibility reasons；普通 rows 不选择 `full`。 |
+| 召回/重排 | Recall 与 rerank 分离；audit evidence 可 boost、warning pressure 可 penalty，但 safety gates 优先。 | `Recall/rerank is explainable and fail-closed`。 | Suggest output 输出脱敏 rank factors 与 evidence source labels，不包含 raw transcripts 或 private paths。 |
+
 ## 2. 非目标与安全边界
 
 - Phase B 不重命名现有 `target_profile` ID，只新增 alias 与场景 metadata。
@@ -55,6 +62,19 @@ created_at: 2026-06-21
 - 不让 `full` 成为普通任务 top-1 suggestion。
 - 不把 profile/helper invocation 当成 native expert evidence。
 - 本实施流程不推送 GitLab/GitHub。
+
+## 2.1 统一安全边界矩阵
+
+| 边界 | 允许 | 禁止 | Phase A 证据 | Phase B enforcement target |
+| --- | --- | --- | --- | --- |
+| Advisory-only routing | 生成 suggestions、soft-load guidance 与 hard-load previews。 | 自动 apply profile。 | Proposal/design/spec 说明 no profile apply。 | Output flags 与 fixture hashes 证明 no apply。 |
+| Config immutability | 读取 fixture 或 configured paths 以报告 drift。 | 修改 `C:\Users\lenovo\.codex\config.toml`。 | Non-goal 与 management constraints。 | No-auto-apply tests 在前后 snapshot config。 |
+| Plugin-cache immutability | 读取 reports 所需 metadata。 | 编辑 plugin cache 或 vendor `SKILL.md`。 | Non-goal 与 management constraints。 | No-auto-apply tests snapshot plugin-cache markers。 |
+| Remote-publication boundary | gates 通过后做本地 commits 与本地 `main` 集成。 | push GitLab/GitHub、开/合 MR 或修改 remote refs。 | 本方案声明远程发布未授权。 | 除非后续用户消息点名远端动作，否则不使用 publication helper。 |
+| `full` eligibility | 显式 all-plugin troubleshooting 可使用 `full`。 | 让宽泛普通任务选择 `full` top-1。 | Delta spec 定义 explicit-only gate。 | Suggest matrix 在 `explicit_full_request=false` 时要求 `excluded_candidates`。 |
+| Task-module activation | Soft-load `profile.task_module` guidance。 | 把 task modules 当成 hard-load targets。 | Delta spec 定义一等 soft-load-only identity。 | `set_plugin_profile.ps1` 拒绝 scenario/task-module inputs。 |
+| Expert-evidence boundary | 把 skills/profile helpers 用作 procedural context。 | 把 skill/profile invocation 当成 native subagent evidence。 | Non-goal 与 management constraints。 | Boundary checker 与 output flags 保持区分。 |
+| Installed artifact drift | 报告 installed helper artifacts drift。 | 把 user-level installed copies 当成 source of truth。 | Delta spec 命名 required artifact surface。 | Checker 报告 `skills2cli.py`、contract module 与 `profiles.json` 的 repo/installed paths。 |
 
 ## 3. 目标模型
 
@@ -81,6 +101,15 @@ registry 必须表达四层：
 - `task_modules` 可以嵌入 profile 下，并由 runtime 按 `profile.task_module` 解析。
 - `set_plugin_profile.ps1` 只接受 canonical top-level profile；scenario 或 task-module 输入必须 fail closed。
 - `load_module.ps1` 可以接受 canonical profile、scenario profile 或 `profile.task_module`，但输出必须显式报告 `entry_kind`、`target_profile` 和 `task_module`。
+
+## 3.2 Phase boundary and package split
+
+| Package | 允许写入范围 | 禁止范围 | 退出条件 |
+| --- | --- | --- | --- |
+| Follow-up Phase A plan-freeze | `openspec/changes/harden-skills2cli-profile-routing-followup/**`、本双语 plan、本地 receipts。 | Runtime code、`profiles.json`、helper scripts、checkers、tests、user-level installed copies、`config.toml`、plugin cache、remote refs。 | Delta spec validate 通过，plan matrices 存在，pre-commit/archive review 通过，local gate 与 local MR review 通过，然后由 local-main helper 集成。 |
+| Follow-up Phase B runtime hardening | Registry、runtime、helper scripts、checkers、tests、CI manifest、install-source metadata，以及同一个 active OpenSpec change。 | Profile apply、plugin-cache edits、`config.toml` edits、remote publication、无关 worktrees。 | Focused tests、representative suggestions、OpenSpec guard、local gate、local MR review 通过；随后 archive change 并集成本地 `main`。 |
+
+Phase B 只有在 Phase A 冻结、且至少两个独立写入切片具备明确 ownership 后，才可以使用 LangGraph durable checkpoint 或 persistent-team lane。当前 main Codex CLI session 仍是 leader，并负责 fan-in。
 
 ## 4. 顶层 profile 矩阵
 
@@ -158,6 +187,18 @@ Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-m
 - [x] 在 `docs_bilingual/docs_registry.yaml` 登记本双语方案。
 - [x] 运行 plan-level validation 并提交 plan-freeze package。
 - [x] 通过 local-main-first helper 将 Phase A 集成到本地 `main` 并清理 worktree/branch。
+
+## 7.1 Follow-up Phase A acceptance matrix
+
+| Acceptance item | 本地提交前 required evidence | Owner phase | 状态 |
+| --- | --- | --- | --- |
+| Follow-up OpenSpec change exists | `harden-skills2cli-profile-routing-followup` 下存在 proposal、design、tasks、management、`.openspec.yaml`、`.comet.yaml` 与双语 companions。 | Phase A | Required |
+| Delta spec 非空且 strict-valid | `openspec validate harden-skills2cli-profile-routing-followup --strict` 通过。 | Phase A | Required |
+| 四原则可追溯 | 第 1.1 节把场景化描述、分层路由、负样本边界、召回/重排映射到 OpenSpec requirements 与 Phase B evidence。 | Phase A | Required |
+| Safety contract 统一 | 第 2.1 节列出 allowed/forbidden behavior 与 checker targets。 | Phase A | Required |
+| Phase A/B 已分离 | 第 3.2 节说明 plan-freeze-only scope，并禁止 Phase A runtime edits。 | Phase A | Required |
+| Audit linkage 仍为 advisory | 当前状态与安全章节声明 audit evidence 不授权 profile apply。 | Phase A | Required |
+| Local commit readiness | 本地 `main` 集成前，`check_precommit_update_archive.py`、`run_openspec_guard.py`、local gate 与 local MR review 通过。 | Phase A | Required |
 
 ## 8. Phase B 任务
 
