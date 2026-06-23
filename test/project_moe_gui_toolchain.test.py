@@ -17,6 +17,7 @@ from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TOOLCHAIN_SRC = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "src"
+os.environ.setdefault("PROJECT_MOE_GUI_TOOLCHAIN_SOURCE_ROOT", str(REPO_ROOT / "tools" / "project_moe_gui_toolchain"))
 sys.path.insert(0, str(TOOLCHAIN_SRC))
 from project_moe_gui.toolchain import stable_toolchain_source_root
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
@@ -431,23 +432,7 @@ class ProjectMoeGuiToolchainTests(unittest.TestCase):
             (root / ".codex" / "agents" / "thesis-moe-mentor.toml").write_text(
                 'name = "thesis-moe-mentor"\n'
                 'description = "Strict thesis mentor."\n'
-                'developer_instructions = "Use strict thesis mentor rules."\n'
-                "\n[project]\n"
-                'scope = "repo-local"\n'
-                'state_namespace = "thesis_moe"\n'
-                'private_prompt_source = "MOE.md"\n'
-                'private_prompt_policy = "do-not-copy-full-content"\n'
-                "\n[moe]\n"
-                'kind = "project-moe-agent"\n'
-                'family = "project-specific"\n'
-                'requires_manual_enable = true\n'
-                'project_default_state = ".omx/state/thesis_moe/project-default.json"\n'
-                'session_state_dir = ".omx/state/thesis_moe/sessions"\n'
-                "\n[dispatch]\n"
-                'mode = "brief-based"\n'
-                'forbidden = ["full-history-fork-with-custom-role"]\n'
-                'fallback = ["main-session-takeover", "durable-brief"]\n'
-                "\n[extensions]\n",
+                'developer_instructions = "Use strict thesis mentor rules. Project Expert Lens metadata is proven through config, CLI, wrappers, startup hook, private prompt source, and .omx/state."\n',
                 encoding="utf-8",
             )
         extra_payload = ""
@@ -691,24 +676,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         (root / "MOE.md").write_text(f"# Private MOE prompt for {project_label}\n", encoding="utf-8")
         (root / ".codex" / "agents" / f"{agent_name}.toml").write_text(
             f'name = "{agent_name}"\n'
-            f'description = "Fixture MOE agent for {project_label}."\n'
-            'developer_instructions = "Use only project-local fixture state."\n'
-            "\n[project]\n"
-            'scope = "repo-local"\n'
-            f'state_namespace = "{namespace}"\n'
-            'private_prompt_source = "MOE.md"\n'
-            'private_prompt_policy = "do-not-copy-full-content"\n'
-            "\n[moe]\n"
-            'kind = "project-moe-agent"\n'
-            'family = "project-specific"\n'
-            "requires_manual_enable = true\n"
-            f'project_default_state = ".omx/state/{namespace}/project-default.json"\n'
-            f'session_state_dir = ".omx/state/{namespace}/sessions"\n'
-            "\n[dispatch]\n"
-            'mode = "brief-based"\n'
-            'forbidden = ["full-history-fork-with-custom-role"]\n'
-            'fallback = ["main-session-takeover", "durable-brief"]\n'
-            "\n[extensions]\n",
+            f'description = "Fixture Expert Lens agent for {project_label}."\n'
+            f'developer_instructions = "Use only project-local fixture state. Project Expert Lens metadata is proven through config, CLI, wrappers, startup hook, private prompt source, and .omx/state/{namespace}."\n',
             encoding="utf-8",
         )
         state_root = root / ".omx" / "state" / namespace
@@ -878,11 +847,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertFalse(payload["private_prompt_source"]["under_agent_dir"])
             self.assertTrue(payload["private_prompt_source"]["private_prompt_boundary_ok"])
             self.assertTrue(payload["agent_toml"]["standard_profile_ready"])
+            self.assertTrue(payload["agent_toml"]["native_schema_compatible"])
             self.assertTrue(payload["agent_toml"]["extension_fields_ok"])
-            self.assertEqual(
-                payload["agent_toml"]["required_extension_sections"],
-                ["project", "moe", "dispatch", "extensions"],
-            )
+            self.assertEqual(payload["agent_toml"]["required_extension_sections"], [])
+            self.assertEqual(payload["agent_toml"]["unsupported_top_level_keys"], [])
+            self.assertEqual(payload["agent_toml"]["legacy_custom_tables"], [])
+            self.assertEqual(payload["agent_toml"]["project_lens_metadata_source"], "config_cli_wrappers_startup_private_prompt_and_state")
             self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "list-lenses", "status"])
             self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], ["assert-on"])
             self.assertEqual(payload["cli_execution_mode"], "execute-read-contract")
@@ -1551,11 +1521,11 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertFalse(payload["startup_activation_hooks"]["hook_found"])
             self.assertFalse(payload["startup_activation_hooks"]["basic_status_hook_found"])
 
-    def test_phase1_readiness_checker_blocks_agent_toml_missing_extensions(self) -> None:
+    def test_phase1_readiness_checker_accepts_native_only_agent_toml_without_extension_sections(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            project = Path(tmp) / "phase1-agent-missing-extensions"
+            project = Path(tmp) / "phase1-agent-native-only"
             project.mkdir()
-            self.make_stateful_project(project, project_label="phase1-agent-missing-extensions", session_id="session-agent-missing")
+            self.make_stateful_project(project, project_label="phase1-agent-native-only", session_id="session-agent-native")
             self.add_phase1_wrappers_and_startup_hook(project)
             (project / ".codex" / "agents" / "thesis-moe-mentor.toml").write_text(
                 'name = "thesis-moe-mentor"\n'
@@ -1573,30 +1543,24 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "thesis-moe-mentor",
                 "--state-namespace",
                 "thesis_moe",
-                expect_success=False,
             )
 
-            blocker_codes = {item["code"] for item in payload["blockers"]}
-            self.assertIn("blocked:agent_toml_missing_extension_sections", blocker_codes)
-            self.assertFalse(payload["agent_toml"]["standard_profile_ready"])
-            self.assertEqual(
-                payload["agent_toml"]["required_extension_sections"],
-                ["project", "moe", "dispatch", "extensions"],
-            )
+            self.assertTrue(payload["agent_toml"]["standard_profile_ready"], payload)
+            self.assertTrue(payload["agent_toml"]["native_schema_compatible"], payload)
+            self.assertEqual(payload["agent_toml"]["required_extension_sections"], [])
+            self.assertEqual(payload["agent_toml"]["legacy_custom_tables"], [])
 
-    def test_phase1_readiness_checker_blocks_agent_toml_bad_boundaries(self) -> None:
+    def test_phase1_readiness_checker_blocks_agent_toml_custom_tables(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            project = Path(tmp) / "phase1-agent-bad-boundaries"
+            project = Path(tmp) / "phase1-agent-custom-tables"
             project.mkdir()
-            self.make_stateful_project(project, project_label="phase1-agent-bad-boundaries", session_id="session-agent-bad")
+            self.make_stateful_project(project, project_label="phase1-agent-custom-tables", session_id="session-agent-custom")
             self.add_phase1_wrappers_and_startup_hook(project)
             agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
             agent_path.write_text(
                 agent_path.read_text(encoding="utf-8")
-                .replace('private_prompt_policy = "do-not-copy-full-content"', 'private_prompt_policy = "copy-full-content"')
-                .replace('session_state_dir = ".omx/state/thesis_moe/sessions"', 'session_state_dir = "../sessions"')
-                .replace('forbidden = ["full-history-fork-with-custom-role"]', 'forbidden = []')
-                .replace('fallback = ["main-session-takeover", "durable-brief"]', 'fallback = ["full-history-fork"]'),
+                + '\n[project]\nscope = "repo-local"\n'
+                + '\n[dispatch]\nmode = "brief-based"\n',
                 encoding="utf-8",
             )
             self.git_commit_all(project)
@@ -1613,10 +1577,10 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             )
 
             blocker_codes = {item["code"] for item in payload["blockers"]}
-            self.assertIn("blocked:agent_project_boundary_invalid", blocker_codes)
-            self.assertIn("blocked:agent_moe_boundary_invalid", blocker_codes)
-            self.assertIn("blocked:agent_dispatch_boundary_incomplete", blocker_codes)
-            self.assertFalse(payload["agent_toml"]["extension_fields_ok"])
+            self.assertIn("blocked:agent_toml_unsupported_custom_fields", blocker_codes)
+            self.assertFalse(payload["agent_toml"]["native_schema_compatible"])
+            self.assertEqual(payload["agent_toml"]["legacy_custom_tables"], ["project", "dispatch"])
+            self.assertIn("project", payload["agent_toml"]["unsupported_top_level_keys"])
 
     def test_phase1_readiness_checker_accepts_assert_on_disabled_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1717,14 +1681,6 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             project.mkdir()
             self.make_stateful_project(project, project_label="phase1-private-prompt-state", session_id="session-private-prompt-state")
             self.add_phase1_wrappers_and_startup_hook(project)
-            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
-            agent_path.write_text(
-                agent_path.read_text(encoding="utf-8").replace(
-                    'private_prompt_source = "MOE.md"',
-                    'private_prompt_source = ".omx/state/thesis_moe/private-note.json"',
-                ),
-                encoding="utf-8",
-            )
             self.git_commit_all(project)
 
             _, payload = self.run_tool(
@@ -1735,6 +1691,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "thesis-moe-mentor",
                 "--state-namespace",
                 "thesis_moe",
+                "--private-prompt-source",
+                ".omx/state/thesis_moe/private-note.json",
                 expect_success=False,
             )
 
@@ -1750,14 +1708,6 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             project.mkdir()
             self.make_stateful_project(project, project_label="phase1-private-prompt-agent-dir", session_id="session-private-prompt-agent")
             self.add_phase1_wrappers_and_startup_hook(project)
-            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
-            agent_path.write_text(
-                agent_path.read_text(encoding="utf-8").replace(
-                    'private_prompt_source = "MOE.md"',
-                    'private_prompt_source = ".codex/agents/thesis-moe-mentor.toml"',
-                ),
-                encoding="utf-8",
-            )
             self.git_commit_all(project)
 
             _, payload = self.run_tool(
@@ -1768,6 +1718,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "thesis-moe-mentor",
                 "--state-namespace",
                 "thesis_moe",
+                "--private-prompt-source",
+                ".codex/agents/thesis-moe-mentor.toml",
                 expect_success=False,
             )
 
@@ -1786,14 +1738,6 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             managed_readme = project / "tools" / "project_moe_gui" / "README.md"
             managed_readme.parent.mkdir(parents=True)
             managed_readme.write_text("# Managed GUI artifact\n", encoding="utf-8")
-            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
-            agent_path.write_text(
-                agent_path.read_text(encoding="utf-8").replace(
-                    'private_prompt_source = "MOE.md"',
-                    'private_prompt_source = "tools/project_moe_gui/README.md"',
-                ),
-                encoding="utf-8",
-            )
             self.git_commit_all(project)
 
             _, payload = self.run_tool(
@@ -1804,6 +1748,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "thesis-moe-mentor",
                 "--state-namespace",
                 "thesis_moe",
+                "--private-prompt-source",
+                "tools/project_moe_gui/README.md",
                 expect_success=False,
             )
 

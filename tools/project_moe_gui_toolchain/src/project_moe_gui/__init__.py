@@ -13,7 +13,7 @@ CANONICAL_TOOLCHAIN_NAME = "project_expert_lens_gui"
 PRODUCT_DISPLAY_NAME = "Project Expert Lens Agent GUI"
 PRODUCT_DISPLAY_NAME_ZH = "项目专家镜头智能体控制台"
 LEGACY_PRODUCT_DISPLAY_NAME = "Project MOE Agent GUI"
-TOOLCHAIN_VERSION = "0.2.46"
+TOOLCHAIN_VERSION = "0.2.47"
 CLI_CONTRACT = "project-moe-cli-v1"
 CANONICAL_CLI_ACTION_ALIASES = {
     "list-expert-lenses": "list-lenses",

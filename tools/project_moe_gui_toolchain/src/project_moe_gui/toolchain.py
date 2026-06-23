@@ -46,8 +46,6 @@ def stable_toolchain_source_root() -> Path:
         return Path(configured).expanduser().resolve(strict=False)
     current_root = current_toolchain_source_root().resolve(strict=False)
     default_root = DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False)
-    if current_root != default_root and ".worktrees" in current_root.parts:
-        return current_root
     if DEFAULT_TOOLCHAIN_SOURCE_ROOT.exists():
         return default_root
     return current_root
@@ -148,8 +146,8 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
     "blocked:missing_agent_toml": {
         "category": "agent_toml",
         "phase": "bootstrap",
-        "action": "create_project_moe_agent_toml",
-        "description": "Create the project-local MOE agent TOML with required top-level fields and standard Project MOE extension sections.",
+        "action": "create_native_compatible_project_expert_lens_agent_toml",
+        "description": "Create the project-local Project Expert Lens agent TOML with native Codex-compatible top-level fields only.",
         "requires_target_project_write": True,
     },
     "blocked:agent_toml_missing_required_fields": {
@@ -166,39 +164,11 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
         "description": "Align the agent TOML top-level name with the Project Expert Lens GUI configuration and readiness command.",
         "requires_target_project_write": True,
     },
-    "blocked:agent_toml_missing_extension_sections": {
+    "blocked:agent_toml_unsupported_custom_fields": {
         "category": "agent_toml",
         "phase": "repair",
-        "action": "add_project_moe_standard_extension_sections",
-        "description": "Add [project], [moe], [dispatch], and [extensions] standard sections to the existing agent TOML.",
-        "requires_target_project_write": True,
-    },
-    "blocked:agent_project_boundary_invalid": {
-        "category": "agent_toml",
-        "phase": "repair",
-        "action": "repair_agent_project_boundary_fields",
-        "description": "Repair [project] scope, namespace, and private prompt policy fields to match the Project MOE boundary contract.",
-        "requires_target_project_write": True,
-    },
-    "blocked:agent_state_namespace_mismatch": {
-        "category": "agent_toml",
-        "phase": "repair",
-        "action": "align_agent_state_namespace",
-        "description": "Align the agent TOML namespace and state paths with the requested Project MOE state namespace.",
-        "requires_target_project_write": True,
-    },
-    "blocked:agent_moe_boundary_invalid": {
-        "category": "agent_toml",
-        "phase": "repair",
-        "action": "repair_agent_moe_boundary_fields",
-        "description": "Repair [moe] kind, family, manual-enable, and state-path fields to the Project MOE standard.",
-        "requires_target_project_write": True,
-    },
-    "blocked:agent_dispatch_boundary_incomplete": {
-        "category": "agent_toml",
-        "phase": "repair",
-        "action": "repair_agent_dispatch_boundary",
-        "description": "Use brief-based dispatch, forbid full-history custom-role dispatch, and configure supported fallback paths.",
+        "action": "remove_custom_project_expert_lens_tables_from_native_agent_toml",
+        "description": "Remove custom Project Expert Lens tables or keys from native Codex agent TOML; readiness is proven through config, CLI, wrappers, startup hook, private prompt source, and .omx/state instead.",
         "requires_target_project_write": True,
     },
     "blocked:invalid_agent_toml": {
@@ -530,19 +500,9 @@ PHASE1_STARTUP_HOOK_REQUIRED_TOKENS = (
     "reload",
     "phase change",
 )
-PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS = ("project", "moe", "dispatch", "extensions")
-PHASE1_AGENT_PROJECT_REQUIRED_VALUES = {
-    "scope": "repo-local",
-    "private_prompt_policy": "do-not-copy-full-content",
-}
-PHASE1_AGENT_MOE_REQUIRED_VALUES = {
-    "kind": "project-moe-agent",
-    "family": "project-specific",
-    "requires_manual_enable": True,
-}
-PHASE1_AGENT_DISPATCH_REQUIRED_MODE = "brief-based"
-PHASE1_AGENT_DISPATCH_REQUIRED_FORBIDDEN = ("full-history-fork-with-custom-role",)
-PHASE1_AGENT_DISPATCH_REQUIRED_FALLBACKS = ("main-session-takeover", "durable-brief")
+PHASE1_AGENT_REQUIRED_FIELDS = ("name", "description", "developer_instructions")
+PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS = frozenset((*PHASE1_AGENT_REQUIRED_FIELDS, "model", "model_reasoning_effort"))
+PHASE1_AGENT_LEGACY_CUSTOM_TABLES = ("project", "moe", "dispatch", "extensions")
 PRIVATE_CLI_FIELD_NAMES = {
     "developer_instructions",
     "moe_md",
@@ -774,6 +734,14 @@ def validate_identifiers(agent_name: str, namespace: str) -> list[dict[str, Any]
     return errors
 
 
+def _agent_toml_unknown_top_level_keys(data: dict[str, Any]) -> list[str]:
+    return sorted(str(key) for key in set(data) - PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS)
+
+
+def _agent_toml_legacy_custom_tables(data: dict[str, Any]) -> list[str]:
+    return [name for name in PHASE1_AGENT_LEGACY_CUSTOM_TABLES if isinstance(data.get(name), dict)]
+
+
 def check_agent_toml(root: Path, agent_name: str) -> list[dict[str, Any]]:
     errors: list[dict[str, Any]] = []
     rel = Path(".codex/agents") / f"{agent_name}.toml"
@@ -782,12 +750,24 @@ def check_agent_toml(root: Path, agent_name: str) -> list[dict[str, Any]]:
         return [err]
     assert path is not None
     if not path.exists():
-        return [blocker("blocked:missing_agent_toml", "Target project must define the MOE agent TOML before GUI install.", path=norm(rel))]
+        return [blocker("blocked:missing_agent_toml", "Target project must define the native-compatible Project Expert Lens agent TOML before GUI install.", path=norm(rel))]
     if tomllib is not None:
         try:
             data = tomllib.loads(read_text(path))
             if data.get("name") != agent_name:
                 errors.append(blocker("blocked:agent_name_mismatch", "Agent TOML top-level name must match --agent-name.", expected=agent_name, observed=data.get("name")))
+            unknown = _agent_toml_unknown_top_level_keys(data)
+            if unknown:
+                errors.append(
+                    blocker(
+                        "blocked:agent_toml_unsupported_custom_fields",
+                        "Native Codex agent TOML must not contain custom Project Expert Lens top-level keys or tables.",
+                        path=norm(rel),
+                        unsupported_top_level_keys=unknown,
+                        legacy_custom_tables=_agent_toml_legacy_custom_tables(data),
+                        allowed_top_level_keys=sorted(PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS),
+                    )
+                )
         except Exception as exc:
             errors.append(blocker("blocked:invalid_agent_toml", "Cannot parse target agent TOML.", path=norm(rel), error=str(exc)))
     return errors
@@ -796,21 +776,29 @@ def check_agent_toml(root: Path, agent_name: str) -> list[dict[str, Any]]:
 def inspect_agent_toml(root: Path, agent_name: str, namespace: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     rel = Path(".codex/agents") / f"{agent_name}.toml"
     path, err = safe_relative(root, rel, "blocked:agent_toml_path_invalid")
-    if err:
-        return {"path": norm(rel), "exists": False, "required_fields_ok": False, "extension_sections": []}, [err]
-    assert path is not None
-    details: dict[str, Any] = {
+    base_details: dict[str, Any] = {
         "path": norm(rel),
-        "exists": path.exists(),
+        "exists": False,
         "required_fields_ok": False,
+        "native_schema_compatible": False,
+        "allowed_top_level_keys": sorted(PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS),
+        "unsupported_top_level_keys": [],
+        "legacy_custom_tables": [],
         "extension_sections": [],
-        "required_extension_sections": list(PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS),
-        "extension_fields_ok": False,
+        "required_extension_sections": [],
+        "extension_fields_ok": True,
+        "project_lens_metadata_source": "config_cli_wrappers_startup_private_prompt_and_state",
         "private_prompt_source": "MOE.md",
+        "state_namespace_source": "toolchain_config_and_mode_cli",
+        "state_namespace": namespace,
         "standard_profile_ready": False,
     }
+    if err:
+        return base_details, [err]
+    assert path is not None
+    details = {**base_details, "exists": path.exists()}
     if not path.exists():
-        return details, [blocker("blocked:missing_agent_toml", "Target project must define the MOE agent TOML before Phase 1 readiness.")]
+        return details, [blocker("blocked:missing_agent_toml", "Target project must define the native-compatible Project Expert Lens agent TOML before Phase 1 readiness.")]
     if tomllib is None:
         return details, [blocker("blocked:tomllib_unavailable", "Cannot validate agent TOML without tomllib.")]
     errors: list[dict[str, Any]] = []
@@ -818,121 +806,31 @@ def inspect_agent_toml(root: Path, agent_name: str, namespace: str) -> tuple[dic
         data = tomllib.loads(read_text(path))
     except Exception as exc:
         return details, [blocker("blocked:invalid_agent_toml", "Cannot parse target agent TOML.", path=norm(rel), error=str(exc))]
-    required = ["name", "description", "developer_instructions"]
-    missing = [key for key in required if not str(data.get(key) or "").strip()]
+    missing = [key for key in PHASE1_AGENT_REQUIRED_FIELDS if not str(data.get(key) or "").strip()]
     if missing:
         errors.append(blocker("blocked:agent_toml_missing_required_fields", "Agent TOML is missing required top-level fields.", missing=missing))
     if data.get("name") != agent_name:
         errors.append(blocker("blocked:agent_name_mismatch", "Agent TOML top-level name must match --agent-name.", expected=agent_name, observed=data.get("name")))
-    project_section = data.get("project") if isinstance(data.get("project"), dict) else {}
-    moe_section = data.get("moe") if isinstance(data.get("moe"), dict) else {}
-    dispatch_section = data.get("dispatch") if isinstance(data.get("dispatch"), dict) else {}
+    unsupported = _agent_toml_unknown_top_level_keys(data)
+    legacy_custom_tables = _agent_toml_legacy_custom_tables(data)
+    if unsupported:
+        errors.append(
+            blocker(
+                "blocked:agent_toml_unsupported_custom_fields",
+                "Native Codex agent TOML must contain only supported top-level fields; Project Expert Lens metadata belongs in config, CLI, wrappers, startup hooks, private prompt source, and .omx/state.",
+                unsupported_top_level_keys=unsupported,
+                legacy_custom_tables=legacy_custom_tables,
+                allowed_top_level_keys=sorted(PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS),
+            )
+        )
     details["required_fields_ok"] = not missing
-    details["extension_sections"] = [name for name in ["project", "moe", "dispatch", "extensions"] if isinstance(data.get(name), dict)]
-    details["private_prompt_source"] = str(project_section.get("private_prompt_source") or "MOE.md")
-    missing_sections = [section for section in PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS if not isinstance(data.get(section), dict)]
-    if missing_sections:
-        errors.append(
-            blocker(
-                "blocked:agent_toml_missing_extension_sections",
-                "Agent TOML must include the standard Project MOE extension sections before Phase 1 readiness.",
-                missing=missing_sections,
-                required=list(PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS),
-            )
-        )
-    for key, expected in PHASE1_AGENT_PROJECT_REQUIRED_VALUES.items():
-        observed = project_section.get(key)
-        if observed != expected:
-            errors.append(
-                blocker(
-                    "blocked:agent_project_boundary_invalid",
-                    "Agent TOML [project] boundary fields must match the Project MOE standard.",
-                    field=f"project.{key}",
-                    expected=expected,
-                    observed=observed,
-                )
-            )
-    project_namespace = project_section.get("state_namespace")
-    if project_namespace != namespace:
-        errors.append(
-            blocker(
-                "blocked:agent_state_namespace_mismatch",
-                "Agent TOML [project].state_namespace must match --state-namespace.",
-                field="project.state_namespace",
-                expected=namespace,
-                observed=project_namespace,
-            )
-        )
-    if moe_section.get("state_namespace") not in {None, namespace}:
-        errors.append(blocker("blocked:agent_state_namespace_mismatch", "Agent TOML [moe].state_namespace must match --state-namespace when present.", field="moe.state_namespace", expected=namespace, observed=moe_section.get("state_namespace")))
-    expected_state_paths = {
-        "project_default_state": f".omx/state/{namespace}/project-default.json",
-        "session_state_dir": f".omx/state/{namespace}/sessions",
-    }
-    for key, expected in {**PHASE1_AGENT_MOE_REQUIRED_VALUES, **expected_state_paths}.items():
-        observed = moe_section.get(key)
-        if observed != expected:
-            errors.append(
-                blocker(
-                    "blocked:agent_moe_boundary_invalid",
-                    "Agent TOML [moe] fields must match the Project MOE state boundary.",
-                    field=f"moe.{key}",
-                    expected=expected,
-                    observed=observed,
-                )
-            )
-    dispatch_mode = dispatch_section.get("mode")
-    if dispatch_mode != PHASE1_AGENT_DISPATCH_REQUIRED_MODE:
-        errors.append(
-            blocker(
-                "blocked:agent_dispatch_boundary_incomplete",
-                "Agent TOML [dispatch].mode must use the compatible Project MOE dispatch mode.",
-                field="dispatch.mode",
-                expected=PHASE1_AGENT_DISPATCH_REQUIRED_MODE,
-                observed=dispatch_mode,
-            )
-        )
-    forbidden_dispatch = dispatch_section.get("forbidden")
-    missing_forbidden = [
-        item
-        for item in PHASE1_AGENT_DISPATCH_REQUIRED_FORBIDDEN
-        if not isinstance(forbidden_dispatch, list) or item not in forbidden_dispatch
-    ]
-    if missing_forbidden:
-        errors.append(
-            blocker(
-                "blocked:agent_dispatch_boundary_incomplete",
-                "Agent TOML dispatch boundary must forbid incompatible full-history custom-role dispatch.",
-                field="dispatch.forbidden",
-                missing=missing_forbidden,
-            )
-        )
-    fallback_dispatch = dispatch_section.get("fallback")
-    missing_fallbacks = [
-        item
-        for item in PHASE1_AGENT_DISPATCH_REQUIRED_FALLBACKS
-        if not isinstance(fallback_dispatch, list) or item not in fallback_dispatch
-    ]
-    if missing_fallbacks:
-        errors.append(
-            blocker(
-                "blocked:agent_dispatch_boundary_incomplete",
-                "Agent TOML dispatch boundary must define compatible fallback paths.",
-                field="dispatch.fallback",
-                missing=missing_fallbacks,
-            )
-        )
-    extension_blocker_codes = {
-        "blocked:agent_toml_missing_extension_sections",
-        "blocked:agent_project_boundary_invalid",
-        "blocked:agent_state_namespace_mismatch",
-        "blocked:agent_moe_boundary_invalid",
-        "blocked:agent_dispatch_boundary_incomplete",
-    }
-    details["extension_fields_ok"] = not any(error["code"] in extension_blocker_codes for error in errors)
-    details["standard_profile_ready"] = details["required_fields_ok"] and details["extension_fields_ok"] and data.get("name") == agent_name
+    details["unsupported_top_level_keys"] = unsupported
+    details["legacy_custom_tables"] = legacy_custom_tables
+    details["extension_sections"] = legacy_custom_tables
+    details["native_schema_compatible"] = not unsupported
+    details["extension_fields_ok"] = not unsupported
+    details["standard_profile_ready"] = details["required_fields_ok"] and details["native_schema_compatible"] and data.get("name") == agent_name
     return details, errors
-
 
 def inspect_private_prompt(root: Path, source: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     rel = Path(source or "MOE.md")
@@ -2135,6 +2033,7 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "agent_name": agent_name,
             "state_namespace": namespace,
             "mode_cli": norm(mode_cli),
+            "private_prompt_source": norm(DEFAULT_PRIVATE_PROMPT_SOURCE),
             "project_root_strategy": "launcher-parent-git-root",
             "pyside6_runtime": "shared-runtime",
             "python_runtime_strategy": "shared-gui-runtime",
@@ -2551,6 +2450,7 @@ def check_phase1_readiness(
     agent_name: str,
     namespace: str,
     mode_cli: Path,
+    private_prompt_source: Path = DEFAULT_PRIVATE_PROMPT_SOURCE,
     on_wrapper: Path = DEFAULT_ON_WRAPPER,
     off_wrapper: Path = DEFAULT_OFF_WRAPPER,
     startup_paths: list[Path] | None = None,
@@ -2592,7 +2492,8 @@ def check_phase1_readiness(
 
     agent_details, agent_errors = inspect_agent_toml(root, agent_name, namespace)
     errors.extend(agent_errors)
-    prompt_details, prompt_errors = inspect_private_prompt(root, str(agent_details.get("private_prompt_source") or "MOE.md"))
+    prompt_details, prompt_errors = inspect_private_prompt(root, str(private_prompt_source or DEFAULT_PRIVATE_PROMPT_SOURCE))
+    agent_details["private_prompt_source"] = norm(private_prompt_source or DEFAULT_PRIVATE_PROMPT_SOURCE)
     errors.extend(prompt_errors)
     mode_cli_surface, mode_surface_errors = inspect_mode_cli_surface(root, mode_cli)
     errors.extend(mode_surface_errors)
@@ -2652,6 +2553,7 @@ def check_phase1_readiness(
         "agent_name": agent_name,
         "state_namespace": namespace,
         "mode_cli": norm(mode_cli),
+        "private_prompt_source_path": norm(private_prompt_source or DEFAULT_PRIVATE_PROMPT_SOURCE),
         "project_root_evidence": evidence,
         "git_status": git_status,
         "agent_toml": agent_details,
@@ -2671,34 +2573,16 @@ def check_phase1_readiness(
 
 
 def phase1_agent_toml_template(agent_name: str, namespace: str, private_prompt_source: Path) -> str:
-    return f'''name = "{agent_name}"
-description = "Project-local MOE agent. Replace this placeholder with a short project-specific description before enabling GUI control."
-developer_instructions = """
-Project-local MOE instructions live in the project-private prompt source.
-Do not copy private prompt content into shared toolchain or user-level caches.
-"""
-
-[project]
-scope = "repo-local"
-state_namespace = "{namespace}"
-private_prompt_source = "{norm(private_prompt_source)}"
-private_prompt_policy = "do-not-copy-full-content"
-
-[moe]
-kind = "project-moe-agent"
-family = "project-specific"
-requires_manual_enable = true
-project_default_state = ".omx/state/{namespace}/project-default.json"
-session_state_dir = ".omx/state/{namespace}/sessions"
-
-[dispatch]
-mode = "brief-based"
-forbidden = ["full-history-fork-with-custom-role"]
-fallback = ["main-session-takeover", "durable-brief"]
-
-[extensions]
-'''
-
+    private_prompt = norm(private_prompt_source)
+    return (
+        f'name = "{agent_name}"\n'
+        'description = "Project-local Expert Lens agent. Replace this placeholder with a short project-specific description before enabling GUI control."\n'
+        'developer_instructions = """\n'
+        f'Project-local Expert Lens instructions live in the project-private prompt source `{private_prompt}`.\n'
+        'Do not copy private prompt content into shared toolchain or user-level caches.\n'
+        f'Project Expert Lens metadata is intentionally not stored as custom TOML tables; readiness is proven through GUI config, mode CLI, wrappers, startup hook, private prompt source, and .omx/state/{namespace}.\n'
+        '"""\n'
+    )
 
 def phase1_private_prompt_placeholder(agent_name: str, namespace: str) -> str:
     return f"""# Project MOE private prompt placeholder

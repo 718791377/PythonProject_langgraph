@@ -78,17 +78,38 @@ def build_report(root: Path, codex_home: Path, explicit_reference: Path | None =
     sources = find_historical_sources(root, explicit_reference)
     historical = detect_historical_issue(sources)
     current = build_frontmatter_compatibility_summary(root, codex_home)
+    by_layer = dict(current.get("by_layer") or {})
+    plugin_cache_warning_total = int(by_layer.get("plugin") or 0)
+    blocking_by_layer = {
+        str(layer): int(count)
+        for layer, count in by_layer.items()
+        if str(layer) != "plugin" and int(count or 0) > 0
+    }
+    blocking_invalid_total = sum(blocking_by_layer.values())
     errors: list[str] = []
+    warnings: list[str] = [] if sources else ["no_historical_source_file_found"]
 
     if not historical["detected"]:
         errors.append("historical_reference_warning_markers_missing")
-    if int(current.get("invalid_total") or 0) != 0:
+    if blocking_invalid_total != 0:
+        errors.append("current_frontmatter_blocking_invalid_total_not_zero")
+        # Kept as a compatibility error token for existing dashboards that have
+        # not yet migrated from total-invalid semantics to controlled-layer
+        # blocking semantics. Plugin-cache-only invalid entries never emit it.
         errors.append("current_frontmatter_invalid_total_not_zero")
+    if plugin_cache_warning_total:
+        warnings.append("plugin_cache_frontmatter_invalid_report_only_without_vendor_cache_authorization")
     for flag in ("raw_paths_retained", "raw_skill_bodies_retained", "mutates_config", "edits_plugin_cache", "profile_apply_performed"):
         if current.get(flag) is not False:
             errors.append(f"current_frontmatter_{flag}_not_false")
 
     resolved = not errors
+    if resolved and plugin_cache_warning_total:
+        interpretation = "historical_warning_current_controlled_layers_clean_plugin_cache_report_only"
+    elif resolved:
+        interpretation = "historical_warning_current_inventory_clean"
+    else:
+        interpretation = "current_invalid_or_unproven_frontmatter_resolution"
     return {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -102,16 +123,20 @@ def build_report(root: Path, codex_home: Path, explicit_reference: Path | None =
             "optional_local_reference": norm(OPTIONAL_REFERENCE),
         },
         "historical_issue": historical,
-        "current_frontmatter_compatibility": current,
-        "interpretation": (
-            "historical_warning_current_inventory_clean"
-            if resolved
-            else "current_invalid_or_unproven_frontmatter_resolution"
-        ),
+        "current_frontmatter_compatibility": {
+            **current,
+            "blocking_invalid_total": blocking_invalid_total,
+            "blocking_by_layer": dict(sorted(blocking_by_layer.items())),
+            "plugin_cache_warning_total": plugin_cache_warning_total,
+            "plugin_cache_policy": "report_only_without_vendor_cache_authorization",
+        },
+        "interpretation": interpretation,
         "safety": {
             "audit_only": True,
             "mutates_config": False,
             "edits_plugin_cache": False,
+            "plugin_cache_mutation_allowed": False,
+            "plugin_cache_policy": "report_only_without_vendor_cache_authorization",
             "hard_load_apply_performed": False,
             "raw_paths_retained": False,
             "raw_skill_bodies_retained": False,
@@ -119,11 +144,14 @@ def build_report(root: Path, codex_home: Path, explicit_reference: Path | None =
             "profile_apply_allowed": False,
         },
         "errors": errors,
-        "warnings": [] if sources else ["no_historical_source_file_found"],
+        "warnings": warnings,
         "counts": {
             "errors": len(errors),
+            "warnings": len(warnings),
             "historical_sources": len(sources),
             "current_frontmatter_invalid_total": int(current.get("invalid_total") or 0),
+            "current_frontmatter_blocking_invalid_total": blocking_invalid_total,
+            "plugin_cache_warning_total": plugin_cache_warning_total,
         },
     }
 

@@ -71,6 +71,22 @@ class CustomAgentTomlSchemaCheckerTests(unittest.TestCase):
         self.assertTrue(payload["ok"], payload["errors"])
         self.assertEqual(payload["counts"]["checked_files"], 2)
 
+
+    def test_model_reasoning_effort_is_native_compatible(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "repo"
+            repo_agents = root / ".codex" / "agents"
+            user_agents = Path(temp_dir) / "user-agents"
+            repo_agents.mkdir(parents=True)
+            user_agents.mkdir(parents=True)
+            (repo_agents / "reasoning.toml").write_text(
+                agent_with_model("gpt-5.4") + '\nmodel_reasoning_effort = "high"\n',
+                encoding="utf-8",
+            )
+            payload = module.run_check(root, user_agents)
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertEqual(payload["checked"][0]["unknown_top_level_keys"], [])
+
     def test_disallowed_agent_model_values_fail(self) -> None:
         disallowed_models = [
             "gpt-5.3",
@@ -91,6 +107,38 @@ class CustomAgentTomlSchemaCheckerTests(unittest.TestCase):
                     payload = module.run_check(root, user_agents)
                 self.assertFalse(payload["ok"])
                 self.assertTrue(any("unsupported top-level `model`" in item for item in payload["errors"]), payload["errors"])
+
+
+    def test_unknown_top_level_table_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "repo"
+            repo_agents = root / ".codex" / "agents"
+            user_agents = Path(temp_dir) / "user-agents"
+            repo_agents.mkdir(parents=True)
+            user_agents.mkdir(parents=True)
+            (repo_agents / "bad-project-table.toml").write_text(
+                VALID_AGENT + '\n[project]\nscope = "repo-local"\n',
+                encoding="utf-8",
+            )
+            payload = module.run_check(root, user_agents)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("unsupported top-level key" in item and "project" in item for item in payload["errors"]), payload["errors"])
+        self.assertEqual(payload["checked"][0]["unknown_top_level_keys"], ["project"])
+
+    def test_unknown_top_level_scalar_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "repo"
+            repo_agents = root / ".codex" / "agents"
+            user_agents = Path(temp_dir) / "user-agents"
+            repo_agents.mkdir(parents=True)
+            user_agents.mkdir(parents=True)
+            (repo_agents / "bad-custom-key.toml").write_text(
+                VALID_AGENT + '\nstate_namespace = "thesis_moe"\n',
+                encoding="utf-8",
+            )
+            payload = module.run_check(root, user_agents)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("unsupported top-level key" in item and "state_namespace" in item for item in payload["errors"]), payload["errors"])
 
     def test_missing_required_field_fails(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
