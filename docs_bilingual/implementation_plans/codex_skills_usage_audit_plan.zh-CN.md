@@ -1022,6 +1022,7 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 已明确记录早期 `review-pending + continue monitoring`，随后更新为 `summary-reviewed + preview-only candidate`。
 - [x] 收口 `reference_files/10.md` 中 invalid `SKILL.md` runtime repair loop：post-repair audit 报告 `invalid_total=0`。
 - [x] 增加 frontmatter-resolution checker，把 `reference_files/10.md` 历史 invalid `SKILL.md` warning 标记与当前 `invalid_total=0` 证据桥接起来。
+- [ ] 2026-06-23：按“不修改用户级 plugin cache”的用户决定调整 frontmatter-resolution checker。repo/user/system invalid frontmatter 继续阻断；bundle-managed plugin-cache invalid frontmatter 在没有单独 vendor-cache 修复授权时只作为 warning-only 报告，并保持 `edits_plugin_cache=false`。该项将在 `project_expert_lens_agent_toml_schema_compatibility_plan` 的 Stage B 中落地。
 - [x] 收口 `mcp2cli` / `skills2cli` R3/R4 user-level runtime evidence loop：install/update receipts、smoke receipts 与 rollback pointer 均已存在。
 - [x] 处理最终摘要中的噪声误报：机器预检查通过，噪声 token 不计入强证据。
 - [x] 处理最终摘要中的人工冲突或例外：当前记录为 no_manual_conflict_or_exception_notes。

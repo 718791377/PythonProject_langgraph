@@ -1566,3 +1566,8 @@ documents:
     status: final
     canonical_path: docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.zh-CN.md
+  - doc_id: project_expert_lens_agent_toml_schema_compatibility_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/project_expert_lens_agent_toml_schema_compatibility_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/project_expert_lens_agent_toml_schema_compatibility_plan.zh-CN.md
