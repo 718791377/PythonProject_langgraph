@@ -1014,6 +1014,28 @@
       ],
       "guard_steps": [],
       "description": "Generates and validates governed bilingual operations packages for the Codex durable-team and one-person-company targets."
+    },
+    {
+      "id": "embedded-codex-startup-kits",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.md",
+        "docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.zh-CN.md",
+        "docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.md",
+        "docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.zh-CN.md",
+        "docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.md",
+        "docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_embedded_codex_startup_kits.py",
+        "test/check_embedded_codex_startup_kits.test.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_embedded_codex_startup_kits"
+      ],
+      "description": "Fails closed when the embedded Codex startup-kit docs, shared ledger templates, tailoring template, project kit, registry entries, CI registration, and guard linkage drift from the frozen Stage B plan."
     }
   ]
 }

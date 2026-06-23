@@ -93,6 +93,7 @@
     "reference8_capability_install.test.py",
     "reference_recursive_capability_install.test.py",
     "check_embedded_codex_governance_alignment.test.py",
+    "check_embedded_codex_startup_kits.test.py",
     "operations_package_docs.test.py"
   ],
   "node_mjs": [

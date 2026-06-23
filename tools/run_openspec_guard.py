@@ -113,6 +113,7 @@ def main() -> int:
     document_pair_policy_script = root / "tools" / "check_document_pair_policy.py"
     implementation_plan_rules_script = root / "tools" / "check_implementation_plan_rules.py"
     embedded_codex_governance_alignment_script = root / "tools" / "check_embedded_codex_governance_alignment.py"
+    embedded_codex_startup_kits_script = root / "tools" / "check_embedded_codex_startup_kits.py"
     git_commit_language_script = root / "tools" / "check_git_commit_language.py"
     local_flow_scripted_enforcement_script = root / "tools" / "check_local_flow_scripted_enforcement.py"
     skills_governance_script = root / "tools" / "check_codex_skills_governance.py"
@@ -200,6 +201,11 @@ def main() -> int:
         raise SystemExit(
             "Missing embedded Codex governance alignment check script: "
             f"{embedded_codex_governance_alignment_script}"
+        )
+    if not embedded_codex_startup_kits_script.exists():
+        raise SystemExit(
+            "Missing embedded Codex startup kits check script: "
+            f"{embedded_codex_startup_kits_script}"
         )
     if not git_commit_language_script.exists():
         raise SystemExit(f"Missing Git commit language check script: {git_commit_language_script}")
@@ -431,6 +437,11 @@ def main() -> int:
                 "check_embedded_codex_governance_alignment",
                 [str(python_exe), str(embedded_codex_governance_alignment_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during embedded Codex governance alignment verification.",
+            ),
+            (
+                "check_embedded_codex_startup_kits",
+                [str(python_exe), str(embedded_codex_startup_kits_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during embedded Codex startup kits verification.",
             ),
             (
                 "check_git_commit_language",
@@ -913,6 +924,12 @@ def main() -> int:
         [str(python_exe), str(implementation_plan_rules_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during implementation plan rules verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(embedded_codex_startup_kits_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during embedded Codex startup kits verification.",
     )
 
     run_checked(
