@@ -16,6 +16,7 @@ IMPLEMENTATION_PLAN_PREFIX = "docs_bilingual/implementation_plans/"
 DOCS_REGISTRY_PATH = "docs_bilingual/docs_registry.yaml"
 DEFAULT_RECEIPT = ".omx/worktree-task-receipt.json"
 DEFAULT_CLAIMS_SUBDIR = ".omx/session-claims"
+CONFIRMED_PLAN_STATUSES = {"active", "final"}
 
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -191,7 +192,7 @@ def validate_governance_commit(root: Path, commit: str, main_ref: str) -> list[s
 def validate_implementation_plan_confirmation(root: Path, plan: str, commit: str, main_ref: str) -> list[str]:
     errors: list[str] = []
     if not plan:
-        return ["implementation_plan must name the confirmed active implementation-plan file."]
+        return ["implementation_plan must name the confirmed active or final implementation-plan file."]
     plan = normalize_path(plan)
     if plan.startswith("/") or ":" in plan.split("/", 1)[0]:
         return [f"implementation_plan must be repo-relative: {plan}"]
@@ -221,8 +222,8 @@ def validate_implementation_plan_confirmation(root: Path, plan: str, commit: str
     doc_id = entry.get("doc_id", "<unknown>")
     if entry.get("doc_class") != "implementation_plan":
         errors.append(f"registered implementation_plan `{doc_id}` must have doc_class=implementation_plan.")
-    if entry.get("status", "").strip().lower() != "active":
-        errors.append(f"registered implementation_plan `{doc_id}` must have status=active.")
+    if entry.get("status", "").strip().lower() not in CONFIRMED_PLAN_STATUSES:
+        errors.append(f"registered implementation_plan `{doc_id}` must have status=active or status=final.")
 
     canonical_path = normalize_path(entry.get("canonical_path", ""))
     zh_cn_path = normalize_path(entry.get("zh_cn_path", ""))
@@ -237,8 +238,8 @@ def validate_implementation_plan_confirmation(root: Path, plan: str, commit: str
         plan_meta = parse_simple_yaml(plan_text or "")
         if plan_meta.get("doc_class") != "implementation_plan":
             errors.append(f"implementation_plan front matter must declare doc_class=implementation_plan: {plan}")
-        if plan_meta.get("status", "").strip().lower() != "active":
-            errors.append(f"implementation_plan front matter must declare status=active: {plan}")
+        if plan_meta.get("status", "").strip().lower() not in CONFIRMED_PLAN_STATUSES:
+            errors.append(f"implementation_plan front matter must declare status=active or status=final: {plan}")
         if plan == canonical_path and plan_meta.get("doc_id") and plan_meta.get("doc_id") != doc_id:
             errors.append(
                 f"implementation_plan front matter doc_id `{plan_meta.get('doc_id')}` must match registry doc_id `{doc_id}`."
@@ -461,14 +462,14 @@ def evaluate(
         if valid_staged_confirmations:
             info.append("Non-document execution authorized by confirmed Stage A receipt/claim.")
             if legacy_same_range_governance:
-                info.append("Same-range docs_bilingual-first governance was detected, but formal plan-file confirmation is the active authorization gate.")
+                info.append("Same-range docs_bilingual-first governance was detected, but formal plan-file confirmation is the current authorization gate.")
         elif valid_remote_ci_forward_fix_records:
             info.append("Non-document execution authorized by remote CI forward-fix receipt/claim.")
         else:
             if legacy_governance_errors:
                 errors.extend(legacy_governance_errors)
             errors.append(
-                "Non-document execution requires a confirmed Stage A receipt/claim naming an active registered implementation-plan file already merged to local main; same-range chat or docs-only governance is not sufficient."
+                "Non-document execution requires a confirmed Stage A receipt/claim naming an active or final registered implementation-plan file already merged to local main; same-range chat or docs-only governance is not sufficient."
             )
     else:
         info.append("No non-document changed paths detected; post-/plan governance package rule is not required for this range.")

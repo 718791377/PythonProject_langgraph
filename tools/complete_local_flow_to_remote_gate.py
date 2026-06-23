@@ -377,7 +377,7 @@ def require_implementation_confirmation(path: Path, *, root: Path, main_ref: str
     )
     if validation_errors:
         raise RuntimeError(
-            "Implementation stage requires active registered implementation-plan confirmation: "
+            "Implementation stage requires active or final registered implementation-plan confirmation: "
             + "; ".join(validation_errors)
         )
 

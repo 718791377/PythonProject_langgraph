@@ -48,7 +48,7 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             "governance_package_commit\n"
             "governance_package_merged_to_local_main\n"
             "implementation_plan\n"
-            "active registered implementation-plan\n"
+            "active or final registered implementation-plan\n"
             "confirmed Stage A receipt/claim\n",
             encoding="utf-8",
         )
@@ -60,6 +60,7 @@ class LocalFlowScriptedEnforcementCheckTest(unittest.TestCase):
             "implementation_plan\n"
             "awaiting_implementation_confirmation\n"
             "Governance-confirmation stage must be docs-only\n"
+            "Implementation stage requires active or final registered implementation-plan confirmation\n"
             "--self-retire\n"
             "--acquire-retire-lock\n"
             "local_main_retire_lock.py\n"

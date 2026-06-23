@@ -25,6 +25,7 @@ GUARD_STEPS = [
     ("check_document_governance_rules", "check_document_governance_rules.py", "governance"),
     ("check_document_pair_policy", "check_document_pair_policy.py", "document_pair_policy"),
     ("check_implementation_plan_rules", "check_implementation_plan_rules.py", "implementation_plan"),
+    ("check_embedded_codex_governance_alignment", "check_embedded_codex_governance_alignment.py", "embedded_codex_governance_alignment"),
     ("check_git_commit_language", "check_git_commit_language.py", "git_commit_language"),
     ("check_local_flow_scripted_enforcement", "check_local_flow_scripted_enforcement.py", "local_flow_scripted_enforcement"),
     ("check_name_clarity_rules", "check_name_clarity_rules.py", "name_clarity_rules"),
@@ -211,18 +212,19 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["steps_passed"], len(GUARD_STEPS))
         self.assertEqual([step["step"] for step in payload["steps"]], [step_name for step_name, _script, _check in GUARD_STEPS])
         self.assertEqual(payload["steps"][3]["step"], "check_document_pair_policy")
-        self.assertEqual(payload["steps"][5]["step"], "check_git_commit_language")
-        self.assertEqual(payload["steps"][6]["step"], "check_local_flow_scripted_enforcement")
-        self.assertEqual(payload["steps"][9]["step"], "check_startup_instruction_mojibake")
-        self.assertEqual(payload["steps"][11]["step"], "check_spec_kit_authority_guard")
-        self.assertEqual(payload["steps"][12]["step"], "check_precommit_update_archive")
-        self.assertEqual(payload["steps"][13]["step"], "check_skills_audit_output_retention")
-        self.assertEqual(payload["steps"][14]["step"], "check_skills_audit_final_review_state")
-        self.assertEqual(payload["steps"][15]["step"], "check_skills_audit_final_review_precheck")
-        self.assertEqual(payload["steps"][16]["step"], "check_skills_audit_human_review_decision_record")
-        self.assertEqual(payload["steps"][17]["step"], "check_skills_audit_cadence_contract")
-        self.assertEqual(payload["steps"][18]["step"], "check_skills_audit_frontmatter_resolution")
-        self.assertEqual(payload["steps"][19]["step"], "check_skills_audit_zh_evidence_encoding")
+        self.assertEqual(payload["steps"][5]["step"], "check_embedded_codex_governance_alignment")
+        self.assertEqual(payload["steps"][6]["step"], "check_git_commit_language")
+        self.assertEqual(payload["steps"][7]["step"], "check_local_flow_scripted_enforcement")
+        self.assertEqual(payload["steps"][10]["step"], "check_startup_instruction_mojibake")
+        self.assertEqual(payload["steps"][12]["step"], "check_spec_kit_authority_guard")
+        self.assertEqual(payload["steps"][13]["step"], "check_precommit_update_archive")
+        self.assertEqual(payload["steps"][14]["step"], "check_skills_audit_output_retention")
+        self.assertEqual(payload["steps"][15]["step"], "check_skills_audit_final_review_state")
+        self.assertEqual(payload["steps"][16]["step"], "check_skills_audit_final_review_precheck")
+        self.assertEqual(payload["steps"][17]["step"], "check_skills_audit_human_review_decision_record")
+        self.assertEqual(payload["steps"][18]["step"], "check_skills_audit_cadence_contract")
+        self.assertEqual(payload["steps"][19]["step"], "check_skills_audit_frontmatter_resolution")
+        self.assertEqual(payload["steps"][20]["step"], "check_skills_audit_zh_evidence_encoding")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
         self.assertIn("check_comet_superpowers_visibility", [step["step"] for step in payload["steps"]])

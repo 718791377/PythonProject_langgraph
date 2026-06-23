@@ -67,7 +67,7 @@ REQUIRED_PLAN_EXIT_TERMS = [
     "governance_package_commit",
     "governance_package_merged_to_local_main",
     "implementation_plan",
-    "active registered implementation-plan",
+    "active or final registered implementation-plan",
     "confirmed Stage A receipt/claim",
 ]
 REQUIRED_LOCAL_FLOW_HELPER_TERMS = [
@@ -78,6 +78,7 @@ REQUIRED_LOCAL_FLOW_HELPER_TERMS = [
     "implementation_plan",
     "awaiting_implementation_confirmation",
     "Governance-confirmation stage must be docs-only",
+    "Implementation stage requires active or final registered implementation-plan confirmation",
     "--self-retire",
     "--acquire-retire-lock",
     "local_main_retire_lock.py",
