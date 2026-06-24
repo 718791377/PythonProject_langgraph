@@ -1667,3 +1667,10 @@ documents:
     status: active
     canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/monthly-review-sample.md
     zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/monthly-review-sample.zh-CN.md
+
+  - doc_id: codex_one_person_next_supplement_file_sequence_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.zh-CN.md
+
