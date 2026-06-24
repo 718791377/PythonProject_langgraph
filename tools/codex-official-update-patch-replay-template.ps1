@@ -7,6 +7,7 @@ param(
     [ValidateSet('custom', 'precheck', 'update', 'diff', 'replay', 'test', 'all')]
     [string]$Stage = 'custom',
     [switch]$RunOfficialUpdate,
+    [switch]$AllowLockedCodexUpdate,
     [switch]$RunOmxSetup,
     [switch]$RunOmxUpdate,
     [switch]$ReplayOfficialInstallPatches,
@@ -627,6 +628,425 @@ function Invoke-ExternalCommand {
     return [pscustomobject]$result
 }
 
+
+function Get-GlobalNpmRootInfo {
+    param(
+        [AllowNull()]
+        [string]$NpmPath
+    )
+
+    if ([string]::IsNullOrWhiteSpace($NpmPath)) {
+        return [pscustomobject]@{
+            root_path = ''
+            exit_code = -1
+            output = @('npm not found')
+            status = 'npm_missing'
+        }
+    }
+
+    try {
+        $result = Invoke-ExternalCommand -FilePath $NpmPath -Arguments @('root', '-g') -IgnoreExitCode
+        $npmRoot = ''
+        if ($result.exit_code -eq 0) {
+            $npmRoot = ($result.output | Select-Object -First 1).Trim()
+        }
+
+        return [pscustomobject]@{
+            root_path = $npmRoot
+            exit_code = [int]$result.exit_code
+            output = @($result.output)
+            status = if ($result.exit_code -eq 0 -and -not [string]::IsNullOrWhiteSpace($npmRoot)) { 'ok' } else { 'unavailable' }
+        }
+    } catch {
+        return [pscustomobject]@{
+            root_path = ''
+            exit_code = -1
+            output = @([string]$_.Exception.Message)
+            status = 'error'
+        }
+    }
+}
+
+function Normalize-PathForComparison {
+    param(
+        [AllowNull()]
+        [string]$Path
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return ''
+    }
+
+    $normalized = ([string]$Path).Trim().Trim('"') -replace '/', '\'
+    try {
+        $normalized = [System.IO.Path]::GetFullPath($normalized)
+    } catch {
+        # Some process command lines contain partial paths or shell syntax; keep the normalized text.
+    }
+
+    return $normalized.TrimEnd('\').ToLowerInvariant()
+}
+
+function Test-TextContainsPath {
+    param(
+        [AllowNull()]
+        [string]$Text,
+
+        [AllowNull()]
+        [string]$Path
+    )
+
+    $normalizedText = Normalize-PathForComparison -Path $Text
+    $normalizedPath = Normalize-PathForComparison -Path $Path
+    if ([string]::IsNullOrWhiteSpace($normalizedText) -or [string]::IsNullOrWhiteSpace($normalizedPath)) {
+        return $false
+    }
+
+    return $normalizedText.Contains($normalizedPath)
+}
+
+function Get-JsonPropertyValue {
+    param(
+        [AllowNull()]
+        [object]$InputObject,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$PropertyNames
+    )
+
+    if ($null -eq $InputObject) {
+        return $null
+    }
+
+    foreach ($propertyName in $PropertyNames) {
+        $property = $InputObject.PSObject.Properties[$propertyName]
+        if ($null -ne $property) {
+            return $property.Value
+        }
+    }
+
+    return $null
+}
+
+function ConvertTo-CodexUpdateProcessInventoryEntry {
+    param(
+        [AllowNull()]
+        [object]$InputObject
+    )
+
+    $pidValue = Get-JsonPropertyValue -InputObject $InputObject -PropertyNames @('pid', 'Pid', 'id', 'Id', 'ProcessId', 'process_id')
+    $processId = 0
+    if ($null -ne $pidValue) {
+        [void][int]::TryParse([string]$pidValue, [ref]$processId)
+    }
+
+    $nameValue = Get-JsonPropertyValue -InputObject $InputObject -PropertyNames @('process_name', 'ProcessName', 'name', 'Name')
+    $pathValue = Get-JsonPropertyValue -InputObject $InputObject -PropertyNames @('executable_path', 'ExecutablePath', 'path', 'Path')
+    $commandLineValue = Get-JsonPropertyValue -InputObject $InputObject -PropertyNames @('command_line', 'CommandLine', 'commandLine', 'args')
+    $lockedPathValue = Get-JsonPropertyValue -InputObject $InputObject -PropertyNames @('locked_paths', 'LockedPaths', 'open_files', 'OpenFiles', 'modules', 'Modules')
+
+    $lockedPaths = @()
+    foreach ($lockedPath in @($lockedPathValue)) {
+        if ($null -ne $lockedPath -and -not [string]::IsNullOrWhiteSpace([string]$lockedPath)) {
+            $lockedPaths += [string]$lockedPath
+        }
+    }
+
+    return [pscustomobject]@{
+        pid = $processId
+        process_name = if ($null -ne $nameValue) { [string]$nameValue } else { '' }
+        executable_path = if ($null -ne $pathValue) { [string]$pathValue } else { '' }
+        command_line = if ($null -ne $commandLineValue) { [string]$commandLineValue } else { '' }
+        locked_paths = @($lockedPaths)
+    }
+}
+
+function Get-CodexUpdateProcessInventory {
+    $fakeInventoryJson = [Environment]::GetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', 'Process')
+    if (-not [string]::IsNullOrWhiteSpace($fakeInventoryJson)) {
+        try {
+            $rawEntries = $fakeInventoryJson | ConvertFrom-Json
+            return [pscustomobject]@{
+                source = 'env:CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON'
+                processes = @($rawEntries | ForEach-Object { ConvertTo-CodexUpdateProcessInventoryEntry -InputObject $_ })
+                error = ''
+            }
+        } catch {
+            return [pscustomobject]@{
+                source = 'env:CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON'
+                processes = @()
+                error = "Failed to parse fake process inventory JSON: $([string]$_.Exception.Message)"
+            }
+        }
+    }
+
+    try {
+        $processes = @(Get-CimInstance Win32_Process -ErrorAction Stop | ForEach-Object {
+            [pscustomobject]@{
+                pid = [int]$_.ProcessId
+                process_name = [string]$_.Name
+                executable_path = if ($null -ne $_.ExecutablePath) { [string]$_.ExecutablePath } else { '' }
+                command_line = if ($null -ne $_.CommandLine) { [string]$_.CommandLine } else { '' }
+                locked_paths = @()
+            }
+        })
+        return [pscustomobject]@{
+            source = 'cim:Win32_Process'
+            processes = @($processes)
+            error = ''
+        }
+    } catch {
+        return [pscustomobject]@{
+            source = 'cim:Win32_Process'
+            processes = @()
+            error = [string]$_.Exception.Message
+        }
+    }
+}
+
+function Get-CodexPackageLockTargets {
+    param(
+        [AllowNull()]
+        [string]$GlobalNpmRoot
+    )
+
+    $openAiScopeRoot = ''
+    $codexPackageRoot = ''
+    $stagingDirectories = @()
+    if (-not [string]::IsNullOrWhiteSpace($GlobalNpmRoot)) {
+        $openAiScopeRoot = Join-Path $GlobalNpmRoot '@openai'
+        $codexPackageRoot = Join-Path $openAiScopeRoot 'codex'
+        if (Test-Path -LiteralPath $openAiScopeRoot) {
+            $stagingDirectories = @(Get-ChildItem -LiteralPath $openAiScopeRoot -Directory -Filter '.codex-*' -ErrorAction SilentlyContinue | ForEach-Object {
+                [pscustomobject]@{
+                    path = [string]$_.FullName
+                    exists = $true
+                }
+            })
+        }
+    }
+
+    return [pscustomobject]@{
+        global_npm_root = if ($GlobalNpmRoot) { $GlobalNpmRoot } else { '' }
+        openai_scope_root = $openAiScopeRoot
+        codex_package_root = $codexPackageRoot
+        staging_directories = @($stagingDirectories)
+    }
+}
+
+function Find-CodexPackageLockingProcesses {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object[]]$Processes,
+
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Targets
+    )
+
+    $targetPaths = @()
+    if (-not [string]::IsNullOrWhiteSpace([string]$Targets.codex_package_root)) {
+        $targetPaths += [string]$Targets.codex_package_root
+    }
+    foreach ($stagingDirectory in @($Targets.staging_directories)) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$stagingDirectory.path)) {
+            $targetPaths += [string]$stagingDirectory.path
+        }
+    }
+
+    if ($targetPaths.Count -eq 0) {
+        return @()
+    }
+
+    $locking = @()
+    foreach ($process in @($Processes)) {
+        $name = ([string]$process.process_name).ToLowerInvariant()
+        $isCodexProcess = $name -in @('codex', 'codex.exe')
+        $isCandidate = $isCodexProcess -or $name -in @('node', 'node.exe')
+        if (-not $isCandidate) {
+            continue
+        }
+
+        $matchedPaths = @()
+        $matchedFields = @()
+        if ($isCodexProcess) {
+            $matchedFields += 'process_name'
+            if (-not [string]::IsNullOrWhiteSpace([string]$Targets.codex_package_root)) {
+                $matchedPaths += [string]$Targets.codex_package_root
+            }
+        }
+        foreach ($targetPath in $targetPaths) {
+            if (Test-TextContainsPath -Text ([string]$process.executable_path) -Path $targetPath) {
+                $matchedPaths += $targetPath
+                $matchedFields += 'executable_path'
+            }
+            if (Test-TextContainsPath -Text ([string]$process.command_line) -Path $targetPath) {
+                $matchedPaths += $targetPath
+                $matchedFields += 'command_line'
+            }
+            foreach ($lockedPath in @($process.locked_paths)) {
+                if (Test-TextContainsPath -Text ([string]$lockedPath) -Path $targetPath) {
+                    $matchedPaths += $targetPath
+                    $matchedFields += 'locked_paths'
+                }
+            }
+        }
+
+        $matchedPaths = @($matchedPaths | Select-Object -Unique)
+        $matchedFields = @($matchedFields | Select-Object -Unique)
+        if ($matchedPaths.Count -gt 0) {
+            $locking += [pscustomobject]@{
+                pid = [int]$process.pid
+                process_name = [string]$process.process_name
+                executable_path = [string]$process.executable_path
+                matched_fields = @($matchedFields)
+                matched_paths = @($matchedPaths)
+            }
+        }
+    }
+
+    return @($locking)
+}
+
+function Get-CodexUpdateLockPreflight {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$GlobalNpmRootInfo,
+
+        [switch]$AllowLockedUpdate
+    )
+
+    $isWindows = ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT)
+    $targets = Get-CodexPackageLockTargets -GlobalNpmRoot ([string]$GlobalNpmRootInfo.root_path)
+    if (-not $isWindows) {
+        return [pscustomobject]@{
+            platform = [string][System.Environment]::OSVersion.Platform
+            checked = $false
+            blocking_enabled = $false
+            lock_risk = 'unknown'
+            matched_processes = @()
+            npm_global_root = if ($GlobalNpmRootInfo.root_path) { [string]$GlobalNpmRootInfo.root_path } else { '' }
+            openai_codex_package_root = if ($targets.codex_package_root) { [string]$targets.codex_package_root } else { '' }
+            leftover_staging_candidates = @($targets.staging_directories | ForEach-Object { [string]$_.path })
+            recommended_action = 'manual_review'
+            override_used = $AllowLockedUpdate.IsPresent
+            allowed = $true
+            process_inventory_source = ''
+            process_inventory_error = ''
+            checked_process_count = 0
+            warnings = @('Windows lock preflight is only actionable on Windows.')
+            errors = @()
+        }
+    }
+
+    $inventory = Get-CodexUpdateProcessInventory
+    $lockingProcesses = @()
+    if ([string]::IsNullOrWhiteSpace([string]$inventory.error) -and @($inventory.processes).Count -gt 0) {
+        $lockingProcesses = @(Find-CodexPackageLockingProcesses -Processes @($inventory.processes) -Targets $targets)
+    }
+
+    $errors = @()
+    $warnings = @()
+    if (-not [string]::IsNullOrWhiteSpace([string]$inventory.error)) {
+        $warnings += "Process inventory unavailable: $($inventory.error)"
+    }
+    if ([string]$GlobalNpmRootInfo.status -ne 'ok') {
+        $warnings += 'Unable to resolve `npm root -g`; Codex update lock preflight could not inspect the official @openai/codex tree.'
+    }
+    $lockRisk = 'clear'
+    if (-not [string]::IsNullOrWhiteSpace([string]$inventory.error) -or [string]$GlobalNpmRootInfo.status -ne 'ok') {
+        $lockRisk = 'unknown'
+    }
+    if ($lockingProcesses.Count -gt 0) {
+        $lockRisk = 'detected'
+    }
+
+    $blockingEnabled = -not $AllowLockedUpdate.IsPresent
+    $recommendedAction = switch ($lockRisk) {
+        'detected' { 'close_codex_sessions_then_rerun' }
+        'clear' { 'safe_to_update' }
+        default { 'manual_review' }
+    }
+
+    if ($lockRisk -eq 'detected' -and $blockingEnabled) {
+        $errors += 'Windows Codex lock preflight detected likely active Codex or Node processes that can hold @openai/codex or @openai/.codex-* files. Close those sessions and rerun, or use -AllowLockedCodexUpdate to override.'
+    } elseif ($lockRisk -eq 'unknown' -and $blockingEnabled) {
+        $errors += 'Windows Codex lock preflight could not complete safely. Review process and npm-root evidence, then rerun or use -AllowLockedCodexUpdate to override.'
+    }
+
+    $matchedProcesses = @($lockingProcesses | Select-Object -First 20 | ForEach-Object {
+        [pscustomobject]@{
+            pid = [int]$_.pid
+            name = [string]$_.process_name
+            path = [string]$_.executable_path
+            match_reason = ('matched {0} under Codex npm package/staging tree' -f ((@($_.matched_fields) | Select-Object -Unique) -join ','))
+            matched_paths = @($_.matched_paths)
+        }
+    })
+
+    return [pscustomobject]@{
+        platform = 'Win32NT'
+        checked = $true
+        blocking_enabled = $blockingEnabled
+        lock_risk = $lockRisk
+        matched_processes = @($matchedProcesses)
+        npm_global_root = if ($GlobalNpmRootInfo.root_path) { [string]$GlobalNpmRootInfo.root_path } else { '' }
+        openai_codex_package_root = if ($targets.codex_package_root) { [string]$targets.codex_package_root } else { '' }
+        leftover_staging_candidates = @($targets.staging_directories | ForEach-Object { [string]$_.path })
+        recommended_action = $recommendedAction
+        override_used = $AllowLockedUpdate.IsPresent
+        allowed = ($errors.Count -eq 0)
+        global_npm_root = $GlobalNpmRootInfo.root_path
+        global_npm_root_status = $GlobalNpmRootInfo.status
+        openai_scope_root = $targets.openai_scope_root
+        codex_package_root = $targets.codex_package_root
+        staging_directories = @($targets.staging_directories)
+        process_inventory_source = $inventory.source
+        process_inventory_error = $inventory.error
+        checked_process_count = @($inventory.processes).Count
+        locking_processes = @($lockingProcesses)
+        detected = ($lockRisk -eq 'detected')
+        allow_locked_update = $AllowLockedUpdate.IsPresent
+        warnings = @($warnings)
+        errors = @($errors)
+    }
+}
+
+function Get-OfficialUpdateCleanupWarnings {
+    param(
+        [AllowNull()]
+        [pscustomobject]$OfficialUpdateResult
+    )
+
+    if ($null -eq $OfficialUpdateResult -or [int]$OfficialUpdateResult.exit_code -ne 0) {
+        return @()
+    }
+
+    $outputText = (@($OfficialUpdateResult.output) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    if ([string]::IsNullOrWhiteSpace($outputText)) {
+        return @()
+    }
+
+    $lower = $outputText.ToLowerInvariant()
+    $isWindowsFileLockCleanupWarning = $lower.Contains('cleanup') -and $lower.Contains('eperm') -and $lower.Contains('unlink') -and $lower.Contains('codex.exe')
+    if (-not $isWindowsFileLockCleanupWarning) {
+        return @()
+    }
+
+    $evidenceLines = @(@($OfficialUpdateResult.output) | ForEach-Object { [string]$_ } | Where-Object {
+        $line = $_.ToLowerInvariant()
+        $line.Contains('cleanup') -or $line.Contains('eperm') -or $line.Contains('unlink') -or $line.Contains('codex.exe')
+    } | Select-Object -First 12)
+
+    return @(
+        [pscustomobject]@{
+            type = 'windows_file_lock_eperm'
+            severity = 'warning'
+            message = 'npm install exited 0 but reported cleanup EPERM unlink warnings for codex.exe, consistent with a Windows file lock on the previous Codex binary.'
+            evidence = @($evidenceLines)
+        }
+    )
+}
+
 function Resolve-OfficialOmxInstallRoot {
     param([string]$ExplicitRoot)
 
@@ -909,11 +1329,20 @@ function Write-ChecklistMarkdown {
     $null = $lines.Add('## 1. Pre-update')
     $null = $lines.Add('- [ ] Record global `oh-my-codex` / `@openai/codex` versions from `environment.global_npm_listing`.')
     $null = $lines.Add('- [ ] Confirm `environment.node_path`, `environment.npm_path`, and `environment.omx_path` are available.')
+    $null = $lines.Add('- [ ] Review `windows_codex_lock_preflight` before running the official update.')
+    $null = $lines.Add('- [ ] If `windows_codex_lock_preflight.leftover_staging_candidates` is not empty, quit active Codex/Node/npm shells first; cleanup is manual only.')
     $null = $lines.Add('- [ ] Review the `marker_inventory_before` section for current `OPENCLAW_` residues.')
     $null = $lines.Add('- [ ] Confirm the wrapper presence section below is healthy before starting the official update.')
+    if ($null -ne $Report.windows_codex_lock_preflight) {
+        $null = $lines.Add(('- windows_codex_lock_preflight.lock_risk: `{0}`' -f $Report.windows_codex_lock_preflight.lock_risk))
+        $null = $lines.Add(('- windows_codex_lock_preflight.recommended_action: `{0}`' -f $Report.windows_codex_lock_preflight.recommended_action))
+        $leftoverCount = @($Report.windows_codex_lock_preflight.leftover_staging_candidates).Count
+        $null = $lines.Add(('- windows_codex_lock_preflight.leftover_staging_candidates: `{0}`' -f $leftoverCount))
+    }
     $null = $lines.Add('')
     $null = $lines.Add('## 2. Update')
     $null = $lines.Add('- [ ] Run the official update path: `npm install -g @openai/codex oh-my-codex`.')
+    $null = $lines.Add('- [ ] If `official_update_cleanup_warnings` reports `windows_file_lock_eperm` with exit code 0, the update likely succeeded but npm cleanup was blocked by a Windows file lock.')
     $null = $lines.Add('- [ ] Run `omx setup` and, if needed, `omx update`.')
     $null = $lines.Add('- [ ] Do not start a new durable team during the mixed old/new window.')
     $null = $lines.Add('')
@@ -1331,6 +1760,9 @@ $globalListing = if ($npmPath) {
     [pscustomobject]@{ file_path = ''; arguments = @(); working_directory = ''; exit_code = -1; output = @('npm not found') }
 }
 
+$globalNpmRootInfo = Get-GlobalNpmRootInfo -NpmPath $npmPath
+$officialUpdateLockPreflight = Get-CodexUpdateLockPreflight -GlobalNpmRootInfo $globalNpmRootInfo -AllowLockedUpdate:$AllowLockedCodexUpdate
+
 $patchStatusBefore = @()
 if ($nodePath) {
     foreach ($patch in $patchCatalog) {
@@ -1354,18 +1786,29 @@ if ($nodePath) {
 }
 
 $officialUpdateResult = $null
+$officialUpdateCleanupWarnings = @()
+$officialUpdateFailureMessage = ''
 if ($stagePlan.run_official_update) {
     if (-not $npmPath) {
         throw 'Cannot run the official update because npm was not found.'
     }
-    if ($PSCmdlet.ShouldProcess('global npm packages', 'npm install -g @openai/codex oh-my-codex')) {
+    foreach ($warningMessage in @($officialUpdateLockPreflight.warnings)) {
+        Write-Warning $warningMessage
+    }
+    if (-not $officialUpdateLockPreflight.allowed) {
+        $officialUpdateFailureMessage = ($officialUpdateLockPreflight.errors -join ' ')
+    } elseif ($PSCmdlet.ShouldProcess('global npm packages', 'npm install -g @openai/codex oh-my-codex')) {
         Write-Step 'Running official npm update'
-        $officialUpdateResult = Invoke-ExternalCommand -FilePath $npmPath -Arguments @('install', '-g', '@openai/codex', 'oh-my-codex')
+        $officialUpdateResult = Invoke-ExternalCommand -FilePath $npmPath -Arguments @('install', '-g', '@openai/codex', 'oh-my-codex') -IgnoreExitCode
+        $officialUpdateCleanupWarnings = @(Get-OfficialUpdateCleanupWarnings -OfficialUpdateResult $officialUpdateResult)
+        if ([int]$officialUpdateResult.exit_code -ne 0) {
+            $officialUpdateFailureMessage = "Command failed (exit $([int]$officialUpdateResult.exit_code)): $npmPath install -g @openai/codex oh-my-codex"
+        }
     }
 }
 
 $omxSetupResult = $null
-if ($stagePlan.run_omx_setup) {
+if ($stagePlan.run_omx_setup -and [string]::IsNullOrWhiteSpace($officialUpdateFailureMessage)) {
     if (-not $omxPath) {
         throw 'Cannot run omx setup because omx was not found.'
     }
@@ -1376,7 +1819,7 @@ if ($stagePlan.run_omx_setup) {
 }
 
 $omxUpdateResult = $null
-if ($stagePlan.run_omx_update) {
+if ($stagePlan.run_omx_update -and [string]::IsNullOrWhiteSpace($officialUpdateFailureMessage)) {
     if (-not $omxPath) {
         throw 'Cannot run omx update because omx was not found.'
     }
@@ -1492,14 +1935,19 @@ $report = [pscustomobject]@{
         omx_path = if ($omxPath) { $omxPath } else { '' }
         powershell_path = $powerShellPath
         global_npm_listing = [pscustomobject]$globalListing
+        global_npm_root = [pscustomobject]$globalNpmRootInfo
+        codex_update_lock_preflight = [pscustomobject]$officialUpdateLockPreflight
     }
     patch_catalog = @($patchCatalog)
+    windows_codex_lock_preflight = [pscustomobject]$officialUpdateLockPreflight
     official_file_presence_before = @(Get-FilePresenceSummary -Paths $trackedOfficialFiles)
     wrapper_presence_before = @(Get-FilePresenceSummary -Paths $trackedWrapperPaths)
     marker_inventory_before = @(Get-MarkerInventory -OfficialRoot $officialOmxRootPath)
     patch_status_before = @($patchStatusBefore)
     patch_status_after_update = @($patchStatusAfterUpdate)
     official_update = $officialUpdateResult
+    official_update_failure = $officialUpdateFailureMessage
+    official_update_cleanup_warnings = @($officialUpdateCleanupWarnings)
     omx_setup = $omxSetupResult
     omx_update = $omxUpdateResult
     official_patch_replay = @($officialPatchReplayResults)
@@ -1616,4 +2064,8 @@ if ($Json) {
     Write-Step "Patch decision table CSV: $decisionTableCsvPath"
     Write-Step "Checkpoint manifest: $checkpointManifestPath"
     Write-Step "Latest checkpoint pointer: $latestCheckpointPointerPath"
+}
+
+if (-not [string]::IsNullOrWhiteSpace($officialUpdateFailureMessage)) {
+    throw $officialUpdateFailureMessage
 }

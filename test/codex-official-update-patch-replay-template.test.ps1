@@ -11,6 +11,8 @@ $OfficialRoot = Join-Path $TempRoot 'official-omx'
 $CodexHome = Join-Path $TempRoot 'codex-home'
 $SnapshotRoot = Join-Path $TempRoot 'snapshot'
 $FakeBin = Join-Path $TempRoot 'fake-bin'
+$FakeNpmRoot = Join-Path $TempRoot 'npm-root'
+$NpmInstallMarker = Join-Path $TempRoot 'npm-install.marker'
 $PatchNames = @('runtime-prompt-shutdown', 'controller-prompt-shutdown', 'controller-exec-status')
 
 function Assert-Equal {
@@ -67,6 +69,7 @@ function New-TemplateInvocation {
     [string]$Stage,
     [string[]]$PatchName = $PatchNames,
     [switch]$ApproveDiff,
+    [switch]$AllowLockedCodexUpdate,
     [string]$DiffApprovalNote = ''
   )
 
@@ -82,6 +85,9 @@ function New-TemplateInvocation {
   if ($ApproveDiff) {
     $invocation['ApproveDiff'] = $true
   }
+  if ($AllowLockedCodexUpdate) {
+    $invocation['AllowLockedCodexUpdate'] = $true
+  }
   if (-not [string]::IsNullOrWhiteSpace($DiffApprovalNote)) {
     $invocation['DiffApprovalNote'] = $DiffApprovalNote
   }
@@ -94,10 +100,11 @@ function Invoke-TemplateJson {
     [string]$Stage,
     [string[]]$PatchName = $PatchNames,
     [switch]$ApproveDiff,
+    [switch]$AllowLockedCodexUpdate,
     [string]$DiffApprovalNote = ''
   )
 
-  $invocation = New-TemplateInvocation -Stage $Stage -PatchName $PatchName -ApproveDiff:$ApproveDiff -DiffApprovalNote $DiffApprovalNote
+  $invocation = New-TemplateInvocation -Stage $Stage -PatchName $PatchName -ApproveDiff:$ApproveDiff -AllowLockedCodexUpdate:$AllowLockedCodexUpdate -DiffApprovalNote $DiffApprovalNote
   $output = @(& $TemplatePath @invocation)
   $jsonText = ($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
   if ([string]::IsNullOrWhiteSpace($jsonText)) {
@@ -112,10 +119,11 @@ function Invoke-TemplateFailureText {
     [string]$Stage,
     [string[]]$PatchName = $PatchNames,
     [switch]$ApproveDiff,
+    [switch]$AllowLockedCodexUpdate,
     [string]$DiffApprovalNote = ''
   )
 
-  $invocation = New-TemplateInvocation -Stage $Stage -PatchName $PatchName -ApproveDiff:$ApproveDiff -DiffApprovalNote $DiffApprovalNote
+  $invocation = New-TemplateInvocation -Stage $Stage -PatchName $PatchName -ApproveDiff:$ApproveDiff -AllowLockedCodexUpdate:$AllowLockedCodexUpdate -DiffApprovalNote $DiffApprovalNote
   try {
     $null = & $TemplatePath @invocation 2>&1
   } catch {
@@ -253,16 +261,35 @@ function New-FakeCommandBin {
   Ensure-Directory -Path $FakeBin
   $fakeNpm = @(
     '@echo off',
-    'if "%1"=="ls" (',
-    '  echo staged npm listing stdout',
-    '  echo staged npm listing stderr 1>&2',
-    '  exit /b 7',
-    ')',
-    'if "%1"=="root" (',
-    '  echo C:\staged\npm-root',
-    '  exit /b 0',
-    ')',
+    'if "%1"=="ls" goto ls',
+    'if "%1"=="root" goto root',
+    'if "%1"=="install" goto install',
     'echo staged npm %*',
+    'exit /b 0',
+    ':ls',
+    'echo staged npm listing stdout',
+    'echo staged npm listing stderr 1>&2',
+    'exit /b 7',
+    ':root',
+    'if not "%CODEX_TEST_NPM_ROOT%"=="" echo %CODEX_TEST_NPM_ROOT%',
+    'if "%CODEX_TEST_NPM_ROOT%"=="" echo C:\staged\npm-root',
+    'exit /b 0',
+    ':install',
+    'if not "%CODEX_TEST_NPM_INSTALL_MARKER%"=="" echo staged npm install>"%CODEX_TEST_NPM_INSTALL_MARKER%"',
+    'if "%CODEX_TEST_NPM_INSTALL_OUTPUT_MODE%"=="cleanup_eperm" goto cleanup_eperm',
+    'if "%CODEX_TEST_NPM_INSTALL_OUTPUT_MODE%"=="eperm_only" goto eperm_only',
+    'goto install_exit',
+    ':cleanup_eperm',
+    'echo npm warn cleanup Failed to remove some directories [',
+    'echo npm warn cleanup EPERM: operation not permitted, unlink "%CODEX_TEST_NPM_ROOT%\@openai\.codex-locked\node_modules\@openai\codex-win32-x64\vendor\x86_64-pc-windows-msvc\bin\codex.exe"',
+    'echo npm warn cleanup ]',
+    'goto install_exit',
+    ':eperm_only',
+    'echo npm warn EPERM: operation not permitted while probing "%CODEX_TEST_NPM_ROOT%\@openai\codex\vendor\x86_64-pc-windows-msvc\bin\codex.exe"',
+    'goto install_exit',
+    ':install_exit',
+    'if not "%CODEX_TEST_NPM_INSTALL_EXIT_CODE%"=="" exit /b %CODEX_TEST_NPM_INSTALL_EXIT_CODE%',
+    'echo staged npm install %*',
     'exit /b 0'
   ) -join [Environment]::NewLine
   Set-Content -LiteralPath (Join-Path $FakeBin 'npm.cmd') -Encoding ASCII -NoNewline -Value $fakeNpm
@@ -284,12 +311,67 @@ function New-FakeCommandBin {
   Set-Content -LiteralPath (Join-Path $FakeBin 'pwsh.cmd') -Encoding ASCII -NoNewline -Value $fakePwsh
 }
 
+function Reset-TemplateCheckpoint {
+  if (Test-Path -LiteralPath $SnapshotRoot) {
+    Remove-Item -LiteralPath $SnapshotRoot -Recurse -Force
+  }
+}
+
+function Reset-OfficialUpdateEnv {
+  foreach ($name in @(
+    'CODEX_TEST_NPM_INSTALL_EXIT_CODE',
+    'CODEX_TEST_NPM_INSTALL_OUTPUT_MODE'
+  )) {
+    [Environment]::SetEnvironmentVariable($name, $null, 'Process')
+  }
+  [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', '[]', 'Process')
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_ROOT', $FakeNpmRoot, 'Process')
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_MARKER', $NpmInstallMarker, 'Process')
+  if (Test-Path -LiteralPath $NpmInstallMarker) {
+    Remove-Item -LiteralPath $NpmInstallMarker -Force
+  }
+}
+
+function Initialize-OfficialUpdateCheckpoint {
+  Reset-TemplateCheckpoint
+  $null = Invoke-TemplateJson -Stage 'precheck'
+}
+
+function Get-TemplateReport {
+  $reportPath = Join-Path $SnapshotRoot 'report.json'
+  Assert-True (Test-Path -LiteralPath $reportPath) "Expected template report to exist at $reportPath."
+  return (Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json)
+}
+
+function Set-FakeProcessInventory {
+  param([object[]]$Processes)
+  $json = ConvertTo-Json -InputObject @($Processes) -Depth 10 -Compress
+  [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', $json, 'Process')
+}
+
+function New-FakeCodexLockProcess {
+  $fakeCodexExe = Join-Path $FakeNpmRoot '@openai\codex\vendor\x86_64-pc-windows-msvc\bin\codex.exe'
+  return [pscustomobject]@{
+    id = 1234
+    name = 'codex'
+    path = $fakeCodexExe
+    command_line = "`"$fakeCodexExe`""
+  }
+}
+
 Remove-TestTree -Path $TempRoot
 New-StagedOfficialInstallTree
 New-FakeCommandBin
+Ensure-Directory -Path (Join-Path $FakeNpmRoot '@openai')
+Ensure-Directory -Path (Join-Path $FakeNpmRoot '@openai\.codex-leftover')
 
 $previousPath = [Environment]::GetEnvironmentVariable('Path', 'Process')
 $previousUpperPath = [Environment]::GetEnvironmentVariable('PATH', 'Process')
+$previousFakeProcessInventory = [Environment]::GetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', 'Process')
+$previousFakeNpmRoot = [Environment]::GetEnvironmentVariable('CODEX_TEST_NPM_ROOT', 'Process')
+$previousFakeNpmInstallMarker = [Environment]::GetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_MARKER', 'Process')
+$previousFakeNpmInstallExitCode = [Environment]::GetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_EXIT_CODE', 'Process')
+$previousFakeNpmInstallOutputMode = [Environment]::GetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_OUTPUT_MODE', 'Process')
 try {
   $nodeCommand = Get-Command 'node.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
   if ($null -eq $nodeCommand) {
@@ -299,6 +381,7 @@ try {
   $system32 = Join-Path $env:SystemRoot 'System32'
   [Environment]::SetEnvironmentVariable('PATH', 'C:\stale-uppercase-path-entry', 'Process')
   [Environment]::SetEnvironmentVariable('Path', ($FakeBin + ';' + $nodeDirectory + ';' + $system32), 'Process')
+  Reset-OfficialUpdateEnv
 
   $replayTemplateContent = Get-Content -LiteralPath $TemplatePath -Raw
   $invokeExternalCommandBody = [regex]::Match($replayTemplateContent, 'function Invoke-ExternalCommand \{(?s:.*?)^}', [System.Text.RegularExpressions.RegexOptions]::Multiline).Value
@@ -318,6 +401,77 @@ try {
   Assert-ArrayContains -Actual $globalNpmListingOutput -Expected 'staged npm listing stderr ' -Message 'Global npm listing did not preserve raw stderr.'
   Assert-True (-not (($globalNpmListingOutput -join [Environment]::NewLine).Contains('NativeCommandError'))) 'Global npm listing stderr was polluted by PowerShell NativeCommandError formatting.'
   Assert-True (-not (($globalNpmListingOutput -join [Environment]::NewLine).Contains('FullyQualifiedErrorId'))) 'Global npm listing stderr was polluted by PowerShell error-record metadata.'
+
+  Reset-OfficialUpdateEnv
+  Initialize-OfficialUpdateCheckpoint
+  Set-FakeProcessInventory -Processes @((New-FakeCodexLockProcess))
+  $lockedUpdateError = Invoke-TemplateFailureText -Stage 'update'
+  Assert-True ($lockedUpdateError.Contains('Windows Codex lock preflight detected likely active Codex or Node processes')) 'Update stage did not fail closed when fake Codex lock inventory was present.'
+  Assert-True (-not (Test-Path -LiteralPath $NpmInstallMarker)) 'Lock-risk blocking must happen before fake npm install creates the marker.'
+  $lockedUpdateReport = Get-TemplateReport
+  Assert-Equal ([string]$lockedUpdateReport.windows_codex_lock_preflight.lock_risk) 'detected' 'Lock-risk blocking should still write a structured preflight report.'
+  Assert-Equal ([string]$lockedUpdateReport.windows_codex_lock_preflight.recommended_action) 'close_codex_sessions_then_rerun' 'Lock-risk blocking report should recommend closing Codex sessions and rerunning.'
+
+  Reset-OfficialUpdateEnv
+  Initialize-OfficialUpdateCheckpoint
+  Set-FakeProcessInventory -Processes @((New-FakeCodexLockProcess))
+  $overrideUpdate = Invoke-TemplateJson -Stage 'update' -AllowLockedCodexUpdate
+  Assert-True (Test-Path -LiteralPath $NpmInstallMarker) 'AllowLockedCodexUpdate should let fake npm install proceed.'
+  Assert-True ($overrideUpdate.windows_codex_lock_preflight.override_used -eq $true) 'Lock preflight did not record override_used=true.'
+  Assert-Equal ([string]$overrideUpdate.windows_codex_lock_preflight.lock_risk) 'detected' 'Override update should still report detected lock risk.'
+
+  Reset-OfficialUpdateEnv
+  Initialize-OfficialUpdateCheckpoint
+  [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', '{not valid json', 'Process')
+  $unknownUpdateError = Invoke-TemplateFailureText -Stage 'update'
+  Assert-True ($unknownUpdateError.Contains('Windows Codex lock preflight could not complete safely')) 'Update stage did not fail closed when lock preflight inventory was unknown.'
+  Assert-True (-not (Test-Path -LiteralPath $NpmInstallMarker)) 'Unknown lock-risk blocking must happen before fake npm install creates the marker.'
+  $unknownUpdateReport = Get-TemplateReport
+  Assert-Equal ([string]$unknownUpdateReport.windows_codex_lock_preflight.lock_risk) 'unknown' 'Unknown inventory failure should be reported as lock_risk=unknown.'
+  Assert-Equal ([string]$unknownUpdateReport.windows_codex_lock_preflight.recommended_action) 'manual_review' 'Unknown lock-risk report should recommend manual review.'
+  Assert-True ($null -eq $unknownUpdateReport.official_update) 'Unknown preflight failure should not execute official npm update by default.'
+
+  Reset-OfficialUpdateEnv
+  Initialize-OfficialUpdateCheckpoint
+  [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', '{not valid json', 'Process')
+  $unknownOverrideUpdate = Invoke-TemplateJson -Stage 'update' -AllowLockedCodexUpdate
+  Assert-True (Test-Path -LiteralPath $NpmInstallMarker) 'AllowLockedCodexUpdate should let fake npm install proceed when preflight is unknown.'
+  Assert-True ($unknownOverrideUpdate.windows_codex_lock_preflight.override_used -eq $true) 'Unknown preflight override did not record override_used=true.'
+  Assert-Equal ([string]$unknownOverrideUpdate.windows_codex_lock_preflight.lock_risk) 'unknown' 'Unknown override update should still report lock_risk=unknown.'
+  Assert-Equal ([string]$unknownOverrideUpdate.windows_codex_lock_preflight.recommended_action) 'manual_review' 'Unknown override report should keep manual_review recommendation.'
+
+  Reset-OfficialUpdateEnv
+  Initialize-OfficialUpdateCheckpoint
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_OUTPUT_MODE', 'cleanup_eperm', 'Process')
+  $warningUpdate = Invoke-TemplateJson -Stage 'update'
+  Assert-Equal ([int]$warningUpdate.official_update.exit_code) 0 'Successful fake npm install exit code was not preserved.'
+  Assert-Equal ([string]$warningUpdate.official_update_cleanup_warnings[0].type) 'windows_file_lock_eperm' 'Successful cleanup EPERM warning was not classified.'
+
+  Reset-OfficialUpdateEnv
+  Initialize-OfficialUpdateCheckpoint
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_OUTPUT_MODE', 'eperm_only', 'Process')
+  $negativeWarningUpdate = Invoke-TemplateJson -Stage 'update'
+  Assert-Equal ([int]$negativeWarningUpdate.official_update.exit_code) 0 'Negative cleanup-warning fixture should still be a successful fake npm install.'
+  Assert-Equal (@($negativeWarningUpdate.official_update_cleanup_warnings).Count) 0 'Classifier should not report a cleanup warning without cleanup+unlink+codex.exe evidence.'
+
+  Reset-OfficialUpdateEnv
+  Initialize-OfficialUpdateCheckpoint
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_OUTPUT_MODE', 'cleanup_eperm', 'Process')
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_EXIT_CODE', '23', 'Process')
+  $failedUpdateError = Invoke-TemplateFailureText -Stage 'update'
+  Assert-True ($failedUpdateError.Contains('Command failed (exit 23)')) 'Non-zero fake npm install should remain a command failure.'
+  $failedUpdateReport = Get-TemplateReport
+  Assert-Equal ([int]$failedUpdateReport.official_update.exit_code) 23 'Failed update report should preserve non-zero npm exit code.'
+  Assert-Equal (@($failedUpdateReport.official_update_cleanup_warnings).Count) 0 'Classifier must not turn non-zero npm output into a successful cleanup warning.'
+  Assert-True ($null -eq $failedUpdateReport.omx_setup) 'Non-zero npm install must not continue to omx setup.'
+  Assert-True ($null -eq $failedUpdateReport.omx_update) 'Non-zero npm install must not continue to omx update.'
+
+  Reset-OfficialUpdateEnv
+  Initialize-OfficialUpdateCheckpoint
+  $stagingUpdate = Invoke-TemplateJson -Stage 'update'
+  $stagingCandidates = @($stagingUpdate.windows_codex_lock_preflight.leftover_staging_candidates | ForEach-Object { [string]$_ })
+  Assert-ArrayContains -Actual $stagingCandidates -Expected (Join-Path $FakeNpmRoot '@openai\.codex-leftover') -Message 'Lock preflight did not report fake leftover @openai/.codex-* staging directory.'
+  Assert-True (Test-Path -LiteralPath (Join-Path $FakeNpmRoot '@openai\.codex-leftover')) 'Template must report but not delete leftover Codex staging directories.'
 
   $diff = Invoke-TemplateJson -Stage 'diff'
   Assert-Equal $diff.stage.stage 'diff' 'Diff stage report used the wrong stage.'
@@ -373,5 +527,10 @@ try {
 } finally {
   [Environment]::SetEnvironmentVariable('Path', $previousPath, 'Process')
   [Environment]::SetEnvironmentVariable('PATH', $previousUpperPath, 'Process')
+  [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', $previousFakeProcessInventory, 'Process')
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_ROOT', $previousFakeNpmRoot, 'Process')
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_MARKER', $previousFakeNpmInstallMarker, 'Process')
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_EXIT_CODE', $previousFakeNpmInstallExitCode, 'Process')
+  [Environment]::SetEnvironmentVariable('CODEX_TEST_NPM_INSTALL_OUTPUT_MODE', $previousFakeNpmInstallOutputMode, 'Process')
   Remove-TestTree -Path $TempRoot
 }
