@@ -590,6 +590,24 @@ omx update
 
 - **官方更新 + 差异检查 + 本地补丁重放**
 
+### C.9 2026-06-24 Windows npm EPERM update preflight confirmation (zh-CN companion)
+
+This companion note records the same Stage A governance decision as the English primary: Windows official updates that run `npm install -g @openai/codex oh-my-codex` must treat a live `codex.exe` package-binary lock as a preflight risk before npm mutates the global install tree.
+
+Required runtime behavior:
+
+- Before the official update, collect Windows Codex process inventory and npm global-root evidence, then emit `windows_codex_lock_preflight`.
+- Fail closed by default when an active Codex binary lock risk is detected; recommend closing Codex terminals or processes before retrying.
+- Continue under a known lock only when the operator explicitly passes `-AllowLockedCodexUpdate`.
+- After update, classify cleanup-warning lines as `windows_file_lock_eperm` only when npm exits `0` and the warning matches cleanup / `EPERM` / `unlink` / `codex.exe`.
+- Never mask non-zero npm install failures and never auto-delete `@openai/.codex-*` staging directories; report leftover candidates for manual review.
+
+Implementation and validation targets:
+
+- Runtime template: `tools/codex-official-update-patch-replay-template.ps1`
+- Regression test: `test/codex-official-update-patch-replay-template.test.ps1`
+- OpenSpec change: `prevent-codex-npm-eperm-cleanup-warning-20260624`
+
 ## 24. Expert Fan-Out 与 Stalled Subagent 处理
 
 有界多面研究必须先使用同质 analyst fan-out。`analyst` 是第一轮用于独立研究面、歧义发现和 acceptance target 澄清的角色。

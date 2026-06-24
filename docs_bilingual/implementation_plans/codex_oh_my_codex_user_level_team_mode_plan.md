@@ -2073,6 +2073,24 @@ That is the repository-standard meaning of:
 
 - **official update + diff check + local patch replay**
 
+### C.9 2026-06-24 Windows npm EPERM update preflight confirmation
+
+This Stage A governance confirmation records the official-update safety rule for Windows `npm install -g @openai/codex oh-my-codex` runs where a live `codex.exe` can keep the npm-installed binary locked and produce ambiguous `npm warn cleanup` / `EPERM` output.
+
+Required runtime behavior:
+
+- before the official update, collect a Windows Codex process inventory and known npm global-root evidence, then emit a structured `windows_codex_lock_preflight` report field
+- fail closed by default when an active Codex package binary lock risk is detected; recommend closing Codex terminals or processes and rerunning after the lock is gone
+- allow an explicit `-AllowLockedCodexUpdate` override only when the operator intentionally accepts the cleanup-warning risk
+- after the official update, capture npm cleanup-warning lines; if the install exits with code `0` and the warning matches cleanup / `EPERM` / `unlink` / `codex.exe`, classify it as `windows_file_lock_eperm`
+- never mask a non-zero npm install failure as a cleanup warning and never delete `@openai/.codex-*` staging directories automatically; report leftover candidates for manual review instead
+
+Implementation and validation targets:
+
+- runtime template: `tools/codex-official-update-patch-replay-template.ps1`
+- regression test: `test/codex-official-update-patch-replay-template.test.ps1`
+- OpenSpec change: `prevent-codex-npm-eperm-cleanup-warning-20260624`
+
 ## 24. Expert Fan-Out And Stalled Subagent Handling
 
 For bounded multi-face research, first use homogeneous analyst fan-out. `analyst` is the first-round role for independent research faces, ambiguity discovery, and acceptance-target clarification.
