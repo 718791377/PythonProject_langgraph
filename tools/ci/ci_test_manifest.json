@@ -95,6 +95,7 @@
     "check_embedded_codex_governance_alignment.test.py",
     "check_embedded_codex_startup_kits.test.py",
     "check_codex_one_person_next_supplement_sequence.test.py",
+    "check_codex_one_person_operational_runtime_pack.test.py",
     "operations_package_docs.test.py"
   ],
   "node_mjs": [

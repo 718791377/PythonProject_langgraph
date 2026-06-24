@@ -115,6 +115,7 @@ def main() -> int:
     embedded_codex_governance_alignment_script = root / "tools" / "check_embedded_codex_governance_alignment.py"
     embedded_codex_startup_kits_script = root / "tools" / "check_embedded_codex_startup_kits.py"
     codex_one_person_next_supplement_sequence_script = root / "tools" / "check_codex_one_person_next_supplement_sequence.py"
+    codex_one_person_operational_runtime_pack_script = root / "tools" / "check_codex_one_person_operational_runtime_pack.py"
     git_commit_language_script = root / "tools" / "check_git_commit_language.py"
     local_flow_scripted_enforcement_script = root / "tools" / "check_local_flow_scripted_enforcement.py"
     skills_governance_script = root / "tools" / "check_codex_skills_governance.py"
@@ -212,6 +213,11 @@ def main() -> int:
         raise SystemExit(
             "Missing Codex one-person next supplement sequence check script: "
             f"{codex_one_person_next_supplement_sequence_script}"
+        )
+    if not codex_one_person_operational_runtime_pack_script.exists():
+        raise SystemExit(
+            "Missing Codex one-person operational runtime pack check script: "
+            f"{codex_one_person_operational_runtime_pack_script}"
         )
     if not git_commit_language_script.exists():
         raise SystemExit(f"Missing Git commit language check script: {git_commit_language_script}")
@@ -453,6 +459,11 @@ def main() -> int:
                 "check_codex_one_person_next_supplement_sequence",
                 [str(python_exe), str(codex_one_person_next_supplement_sequence_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Codex one-person next supplement sequence verification.",
+            ),
+            (
+                "check_codex_one_person_operational_runtime_pack",
+                [str(python_exe), str(codex_one_person_operational_runtime_pack_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Codex one-person operational runtime pack verification.",
             ),
             (
                 "check_git_commit_language",
@@ -947,6 +958,12 @@ def main() -> int:
         [str(python_exe), str(codex_one_person_next_supplement_sequence_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Codex one-person next supplement sequence verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(codex_one_person_operational_runtime_pack_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Codex one-person operational runtime pack verification.",
     )
 
     run_checked(
