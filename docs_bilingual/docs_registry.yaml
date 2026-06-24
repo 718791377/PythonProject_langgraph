@@ -913,6 +913,120 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/embedded_codex_governance_alignment_runtime_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_governance_alignment_runtime_plan.zh-CN.md
 
+  - doc_id: embedded_codex_startup_kits_and_project_kit_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.zh-CN.md
+
+  - doc_id: project_expert_lens_agent_toml_schema_compatibility_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/project_expert_lens_agent_toml_schema_compatibility_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/project_expert_lens_agent_toml_schema_compatibility_plan.zh-CN.md
+
+  - doc_id: codex_cli_personal_production_durable_team_minimum_startup_documents
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.zh-CN.md
+
+  - doc_id: one_person_company_embedded_codex_startup_matrix
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.zh-CN.md
+
+  - doc_id: shared_governance_decision_log_entry_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/decision-log-entry-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/decision-log-entry-template.zh-CN.md
+
+  - doc_id: shared_governance_risk_register_entry_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/risk-register-entry-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/risk-register-entry-template.zh-CN.md
+
+  - doc_id: shared_governance_experiment_log_entry_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/experiment-log-entry-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/experiment-log-entry-template.zh-CN.md
+
+  - doc_id: shared_governance_learning_log_entry_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/learning-log-entry-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/learning-log-entry-template.zh-CN.md
+
+  - doc_id: shared_governance_human_review_record_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/human-review-record-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/human-review-record-template.zh-CN.md
+
+  - doc_id: shared_governance_monthly_review_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/monthly-review-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/monthly-review-template.zh-CN.md
+
+  - doc_id: tailoring_decision_record_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/tailoring_decision_record_template.md
+    zh_cn_path: docs_bilingual/templates/tailoring_decision_record_template.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_readme
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/README.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/README.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_startup_checklist
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/startup-checklist.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/startup-checklist.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_folder_structure
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/folder-structure.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/folder-structure.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_governance_gates
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/governance-gates.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/governance-gates.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_local_main_workflow
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/local-main-workflow.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/local-main-workflow.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_remote_publication_gate
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/remote-publication-gate.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/remote-publication-gate.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_monthly_review_sample
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/monthly-review-sample.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/monthly-review-sample.zh-CN.md
+
+  - doc_id: codex_one_person_next_supplement_file_sequence_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.zh-CN.md
+
   - doc_id: codex_cli_durable_team_vision
     doc_class: operations_package
     status: active
@@ -1560,117 +1674,3 @@ documents:
     status: active
     canonical_path: docs_bilingual/operations_packages/one_person_company/learning-log.md
     zh_cn_path: docs_bilingual/operations_packages/one_person_company/learning-log.zh-CN.md
-
-  - doc_id: embedded_codex_startup_kits_and_project_kit_plan
-    doc_class: implementation_plan
-    status: final
-    canonical_path: docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.md
-    zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.zh-CN.md
-  - doc_id: project_expert_lens_agent_toml_schema_compatibility_plan
-    doc_class: implementation_plan
-    status: active
-    canonical_path: docs_bilingual/implementation_plans/project_expert_lens_agent_toml_schema_compatibility_plan.md
-    zh_cn_path: docs_bilingual/implementation_plans/project_expert_lens_agent_toml_schema_compatibility_plan.zh-CN.md
-
-  - doc_id: codex_cli_personal_production_durable_team_minimum_startup_documents
-    doc_class: product_lifecycle
-    status: active
-    canonical_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.md
-    zh_cn_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.zh-CN.md
-
-  - doc_id: one_person_company_embedded_codex_startup_matrix
-    doc_class: product_lifecycle
-    status: active
-    canonical_path: docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.md
-    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.zh-CN.md
-
-  - doc_id: shared_governance_decision_log_entry_template
-    doc_class: template
-    status: active
-    canonical_path: docs_bilingual/templates/shared_governance_ledgers/decision-log-entry-template.md
-    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/decision-log-entry-template.zh-CN.md
-
-  - doc_id: shared_governance_risk_register_entry_template
-    doc_class: template
-    status: active
-    canonical_path: docs_bilingual/templates/shared_governance_ledgers/risk-register-entry-template.md
-    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/risk-register-entry-template.zh-CN.md
-
-  - doc_id: shared_governance_experiment_log_entry_template
-    doc_class: template
-    status: active
-    canonical_path: docs_bilingual/templates/shared_governance_ledgers/experiment-log-entry-template.md
-    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/experiment-log-entry-template.zh-CN.md
-
-  - doc_id: shared_governance_learning_log_entry_template
-    doc_class: template
-    status: active
-    canonical_path: docs_bilingual/templates/shared_governance_ledgers/learning-log-entry-template.md
-    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/learning-log-entry-template.zh-CN.md
-
-  - doc_id: shared_governance_human_review_record_template
-    doc_class: template
-    status: active
-    canonical_path: docs_bilingual/templates/shared_governance_ledgers/human-review-record-template.md
-    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/human-review-record-template.zh-CN.md
-
-  - doc_id: shared_governance_monthly_review_template
-    doc_class: template
-    status: active
-    canonical_path: docs_bilingual/templates/shared_governance_ledgers/monthly-review-template.md
-    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/monthly-review-template.zh-CN.md
-
-  - doc_id: tailoring_decision_record_template
-    doc_class: template
-    status: active
-    canonical_path: docs_bilingual/templates/tailoring_decision_record_template.md
-    zh_cn_path: docs_bilingual/templates/tailoring_decision_record_template.zh-CN.md
-
-  - doc_id: one_person_company_with_embedded_codex_readme
-    doc_class: product_lifecycle
-    status: active
-    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/README.md
-    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/README.zh-CN.md
-
-  - doc_id: one_person_company_with_embedded_codex_startup_checklist
-    doc_class: product_lifecycle
-    status: active
-    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/startup-checklist.md
-    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/startup-checklist.zh-CN.md
-
-  - doc_id: one_person_company_with_embedded_codex_folder_structure
-    doc_class: product_lifecycle
-    status: active
-    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/folder-structure.md
-    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/folder-structure.zh-CN.md
-
-  - doc_id: one_person_company_with_embedded_codex_governance_gates
-    doc_class: product_lifecycle
-    status: active
-    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/governance-gates.md
-    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/governance-gates.zh-CN.md
-
-  - doc_id: one_person_company_with_embedded_codex_local_main_workflow
-    doc_class: product_lifecycle
-    status: active
-    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/local-main-workflow.md
-    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/local-main-workflow.zh-CN.md
-
-  - doc_id: one_person_company_with_embedded_codex_remote_publication_gate
-    doc_class: product_lifecycle
-    status: active
-    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/remote-publication-gate.md
-    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/remote-publication-gate.zh-CN.md
-
-  - doc_id: one_person_company_with_embedded_codex_monthly_review_sample
-    doc_class: product_lifecycle
-    status: active
-    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/monthly-review-sample.md
-    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/monthly-review-sample.zh-CN.md
-
-  - doc_id: codex_one_person_next_supplement_file_sequence_plan
-    doc_class: implementation_plan
-    status: final
-    canonical_path: docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.md
-    zh_cn_path: docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.zh-CN.md
-

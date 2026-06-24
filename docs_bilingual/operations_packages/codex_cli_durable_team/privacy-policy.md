@@ -20,6 +20,8 @@ Defines how the personal production command-line team system operates the privac
 
 - Authority sources: team white paper, North Star, product lifecycle registers, PMI process-group contract, OpenSpec change, and local-first publication rules.
 - This document operationalizes only this governed command-line team package.
+- Codex owns execution truth for agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries.
+- Codex remains an embedded execution capability inside a one-person company; it is not a peer business authority and must not redefine business truth.
 - Any remote publication still requires explicit approval in the current user message.
 
 ## Lifecycle Placement

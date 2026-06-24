@@ -20,6 +20,8 @@ Defines how the solo production business operating system uses the growth-model.
 
 - Authority sources: operations white paper, North Star, Business Management synthesis, product lifecycle registers, PMI process-group contract, and tailoring rules.
 - This document operationalizes only this solo business operations package.
+- The one-person company owns business truth for customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, and business learning.
+- Embedded Codex supplies governed execution truth for agents, worktrees, durable state, validation gates, rollback, and release boundaries; it is not a peer business authority and must not redefine business truth.
 - Any external commitment, revenue, contract, privacy, or compliance impact must enter a fuller governance depth.
 
 ## Lifecycle Placement

@@ -21,6 +21,8 @@ translation_of: docs_bilingual/operations_packages/codex_cli_durable_team/access
 
 - 权威来源：团队白皮书、北极星、product lifecycle 清单、PMI 过程组合同、OpenSpec 变更和本地优先发布规则。
 - 本文档只运行化本包的受治理命令行团队运营规则。
+- Codex owns execution truth for agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries.
+- Codex is an embedded execution capability inside a one-person company; it is not a peer business authority and must not redefine business truth.
 - 任何远端发布仍需要当前用户消息显式授权。
 
 ## 生命周期落点

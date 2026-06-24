@@ -21,6 +21,8 @@ translation_of: docs_bilingual/operations_packages/one_person_company/feedback-t
 
 - 权威来源：运营白皮书、北极星、Business Management 综合、product lifecycle 清单、PMI 过程组合同和裁剪规则。
 - 本文档只运行化本包的单人业务运营规则。
+- The one-person company owns business truth for customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, and business learning.
+- Embedded Codex supplies governed execution truth for agents, worktrees, durable state, validation gates, rollback, and release boundaries; it is not a peer business authority and must not redefine business truth.
 - 任何外部承诺、收入、合同、隐私或合规影响都必须进入更完整的治理深度。
 
 ## 生命周期落点

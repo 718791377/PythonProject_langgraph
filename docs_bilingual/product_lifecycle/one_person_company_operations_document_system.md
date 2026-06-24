@@ -1,11 +1,12 @@
 ---
 doc_id: one_person_company_operations_document_system
+lang: en
 doc_class: product_lifecycle
 status: active
-package: one-person-company
-generated_by: tools/generate_operations_package.py
-lang: en
+canonical_path: docs_bilingual/product_lifecycle/one_person_company_operations_document_system.md
+zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_operations_document_system.zh-CN.md
 ---
+
 <!-- GENERATED_BY: tools/generate_operations_package.py; DO NOT EDIT BY HAND. -->
 # One-Person Company Operations Document System
 ## Purpose
@@ -91,3 +92,28 @@ Tailoring does not delete layers from the mental model. It chooses the minimum s
 | Executing | approved slice, source evidence, templates, worktree state, role ownership | controlled drafting or implementation, review, testing, documentation update, bounded expert or durable-lane handoff when eligible | drafted artifact, controlled change set, validation work, changed-path evidence |
 | Monitoring and Controlling | active work products, metrics, issues, review feedback, local gate output | quality checks, change control, variance review, risk response, diff review, gate reruns | issue log, change decisions, metric checks, local-gate evidence, rollback readiness |
 | Closing | accepted work, final evidence, archive candidates, lessons, residual risks | closeout review, archive or sync, release-note update, retrospective, next-cycle triage | final artifact, archive or closeout record, lessons learned, next-cycle input |
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- One-person company boundary: the one-person company owns business truth for customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, and business learning; embedded Codex supplies execution evidence and automation support.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

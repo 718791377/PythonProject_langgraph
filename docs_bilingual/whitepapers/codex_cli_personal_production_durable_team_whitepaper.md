@@ -1,10 +1,10 @@
 ---
 doc_id: codex_cli_personal_production_durable_team_whitepaper
 lang: en
-canonical: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md
-translation_of: null
 doc_class: whitepaper
 status: draft
+canonical_path: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md
+zh_cn_path: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md
 ---
 
 # White Paper: Codex CLI Personal Production Durable Team
@@ -194,3 +194,28 @@ Tailoring has five explicit outcomes. Use full architecture for affected scopes 
 - `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan; it turns this narrative into a measurable operating system.
 - `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` is the implementation-bridge plan; it turns this narrative and the North Star into staged targets, lanes, and release slices.
 - `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md` is the lifecycle reference; it defines how white papers, MRDs, North Star plans, PRDs, technical designs, release plans, and retrospectives relate.
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- Codex boundary: Codex owns execution truth for agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries, while consuming business intent from the one-person company.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

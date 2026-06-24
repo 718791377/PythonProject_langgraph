@@ -389,12 +389,20 @@ def authority_text(g: GeneratedDoc, zh: bool) -> str:
                 "- 权威来源：团队白皮书、北极星、product lifecycle 清单、PMI 过程组合同、"
                 "OpenSpec 变更和本地优先发布规则。\n"
                 "- 本文档只运行化本包的受治理命令行团队运营规则。\n"
+                "- Codex owns execution truth for agents, OpenSpec, worktrees, durable state, "
+                "validation gates, local-main evidence, rollback, and release boundaries.\n"
+                "- Codex is an embedded execution capability inside a one-person company; "
+                "it is not a peer business authority and must not redefine business truth.\n"
                 "- 任何远端发布仍需要当前用户消息显式授权。\n"
             )
         return (
             "- Authority sources: team white paper, North Star, product lifecycle registers, "
             "PMI process-group contract, OpenSpec change, and local-first publication rules.\n"
             "- This document operationalizes only this governed command-line team package.\n"
+            "- Codex owns execution truth for agents, OpenSpec, worktrees, durable state, "
+            "validation gates, local-main evidence, rollback, and release boundaries.\n"
+            "- Codex remains an embedded execution capability inside a one-person company; "
+            "it is not a peer business authority and must not redefine business truth.\n"
             "- Any remote publication still requires explicit approval in the current user message.\n"
         )
     if zh:
@@ -402,12 +410,20 @@ def authority_text(g: GeneratedDoc, zh: bool) -> str:
             "- 权威来源：运营白皮书、北极星、Business Management 综合、product lifecycle 清单、"
             "PMI 过程组合同和裁剪规则。\n"
             "- 本文档只运行化本包的单人业务运营规则。\n"
+            "- The one-person company owns business truth for customers, revenue, pricing, "
+            "contracts, legal posture, cashflow, support, delivery commitments, and business learning.\n"
+            "- Embedded Codex supplies governed execution truth for agents, worktrees, durable state, "
+            "validation gates, rollback, and release boundaries; it is not a peer business authority and must not redefine business truth.\n"
             "- 任何外部承诺、收入、合同、隐私或合规影响都必须进入更完整的治理深度。\n"
         )
     return (
         "- Authority sources: operations white paper, North Star, Business Management synthesis, "
         "product lifecycle registers, PMI process-group contract, and tailoring rules.\n"
         "- This document operationalizes only this solo business operations package.\n"
+        "- The one-person company owns business truth for customers, revenue, pricing, "
+        "contracts, legal posture, cashflow, support, delivery commitments, and business learning.\n"
+        "- Embedded Codex supplies governed execution truth for agents, worktrees, durable state, "
+        "validation gates, rollback, and release boundaries; it is not a peer business authority and must not redefine business truth.\n"
         "- Any external commitment, revenue, contract, privacy, or compliance impact must enter a fuller governance depth.\n"
     )
 

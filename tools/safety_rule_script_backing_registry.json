@@ -1037,5 +1037,23 @@
       ],
       "description": "Fails closed when the embedded Codex startup-kit docs, shared ledger templates, tailoring template, project kit, registry entries, CI registration, and guard linkage drift from the frozen Stage B plan."
     }
+    ,{
+      "id": "codex-one-person-next-supplement-sequence",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.md",
+        "docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_codex_one_person_next_supplement_sequence.py",
+        "test/check_codex_one_person_next_supplement_sequence.test.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_codex_one_person_next_supplement_sequence"
+      ],
+      "description": "Fails closed when the Codex durable-team and one-person-company next supplement sequence drifts from the frozen Stage B order, truth boundary, tailoring modes, process-group grammar, generator closeout, registry, CI, or guard registration."
+    }
   ]
 }
