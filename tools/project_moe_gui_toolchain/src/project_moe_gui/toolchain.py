@@ -34,6 +34,21 @@ PRODUCT_SHELL_CONTRACT = "project-moe-gui-product-widgets-v1"
 DEFAULT_MODE_CLI = Path("tools/thesis_moe_mode.py")
 DEFAULT_SHARED_RUNTIME_ROOT = Path(r"D:\PythonProject_langgraph\.shared_runtimes\pyside6")
 DEFAULT_TOOLCHAIN_SOURCE_ROOT = Path(r"D:\PythonProject_langgraph\tools\project_moe_gui_toolchain")
+DEFAULT_MODE_CLI_TIMEOUT_SECONDS = 60.0
+MODE_CLI_TIMEOUT_ENV = "PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS"
+
+
+def mode_cli_timeout_seconds(default: float = DEFAULT_MODE_CLI_TIMEOUT_SECONDS) -> float:
+    raw = os.environ.get(MODE_CLI_TIMEOUT_ENV)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        parsed = float(str(raw).strip())
+    except ValueError:
+        return default
+    if parsed <= 0:
+        return default
+    return parsed
 
 
 def current_toolchain_source_root() -> Path:
@@ -1068,7 +1083,7 @@ def run_cli(root: Path, mode_cli: Path, command: str) -> tuple[dict[str, Any] | 
             text=True,
             encoding="utf-8",
             errors="replace",
-            timeout=20,
+            timeout=mode_cli_timeout_seconds(),
             check=False,
         )
     except subprocess.TimeoutExpired:

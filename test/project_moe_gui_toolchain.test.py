@@ -3208,6 +3208,184 @@ def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], sele
             self.assertEqual(result["token"], "blocked:write_cli_lock_not_clean")
             self.assertEqual(result["errors"][0]["lock_status"], "lock_timeout")
 
+    def test_mode_cli_read_contract_timeout_is_configurable_for_loaded_hosts(self) -> None:
+        from project_moe_gui import toolchain
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            mode_cli = project / "tools" / "thesis_moe_mode.py"
+            mode_cli.parent.mkdir(parents=True)
+            mode_cli.write_text("# fixture mode cli\n", encoding="utf-8")
+            observed: dict[str, object] = {}
+
+            def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                observed["args"] = args
+                observed["timeout"] = kwargs.get("timeout")
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=0,
+                    stdout=json.dumps(
+                        {
+                            "schema_version": 1,
+                            "command": "status",
+                            "ok": True,
+                            "token": "ok",
+                            "exit_code": 0,
+                            "cli_contract": "project-moe-cli-v1",
+                        }
+                    ),
+                    stderr="",
+                )
+
+            with patch.dict(os.environ, {"PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS": "45"}), patch(
+                "project_moe_gui.toolchain.subprocess.run",
+                fake_run,
+            ):
+                payload, err = toolchain.run_cli(project, Path("tools/thesis_moe_mode.py"), "status")
+
+            self.assertIsNone(err)
+            self.assertEqual(payload["token"], "ok")
+            self.assertEqual(observed["timeout"], 45.0)
+
+    def test_mode_cli_default_timeout_has_full_suite_headroom(self) -> None:
+        from project_moe_gui import toolchain
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            mode_cli = project / "tools" / "thesis_moe_mode.py"
+            mode_cli.parent.mkdir(parents=True)
+            mode_cli.write_text("# fixture mode cli\n", encoding="utf-8")
+            observed: dict[str, object] = {}
+
+            def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                observed["timeout"] = kwargs.get("timeout")
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=0,
+                    stdout=json.dumps(
+                        {
+                            "schema_version": 1,
+                            "command": "status",
+                            "ok": True,
+                            "token": "ok",
+                            "exit_code": 0,
+                            "cli_contract": "project-moe-cli-v1",
+                        }
+                    ),
+                    stderr="",
+                )
+
+            with patch.dict(os.environ, {}, clear=False), patch("project_moe_gui.toolchain.subprocess.run", fake_run):
+                os.environ.pop("PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS", None)
+                payload, err = toolchain.run_cli(project, Path("tools/thesis_moe_mode.py"), "status")
+
+            self.assertIsNone(err)
+            self.assertEqual(payload["token"], "ok")
+            self.assertGreaterEqual(observed["timeout"], 45.0)
+
+    def test_gui_write_readback_timeout_uses_shared_environment_budget(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            config = self.gui_config(project)
+            observed_timeouts: list[object] = []
+
+            def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                observed_timeouts.append(kwargs.get("timeout"))
+                command = args[2] if len(args) > 2 else ""
+                payload = {
+                    "schema_version": 1,
+                    "command": command,
+                    "ok": True,
+                    "token": "ok",
+                    "exit_code": 0,
+                    "cli_contract": "project-moe-cli-v1",
+                    "project_default_enabled": True,
+                    "sessions": [],
+                    "effective_enabled": True,
+                    "effective_source": "project-default",
+                    "before": {},
+                    "after": {},
+                    "changed_scope": "project-default",
+                    "changed_paths": [".omx/state/thesis_moe/project-default.json"],
+                    "skipped_invalid_records": [],
+                    "lock_status": "not_locked_fixture",
+                    "audit_path": str(project / ".omx" / "state" / "thesis_moe" / "audit.log"),
+                    "no_op": False,
+                    "atomic_write": True,
+                }
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=0,
+                    stdout=json.dumps(payload),
+                    stderr="",
+                )
+
+            with patch.dict(os.environ, {"PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS": "45"}), patch(
+                "project_moe_gui.gui_shell.subprocess.run",
+                fake_run,
+            ):
+                result = gui_shell.execute_write_action_with_readback(config, "project-on")
+
+            self.assertTrue(result["ok"], result)
+            self.assertGreaterEqual(len(observed_timeouts), 4)
+            self.assertEqual(set(observed_timeouts), {45.0})
+
+    def test_gui_write_readback_default_timeout_has_full_suite_headroom(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            config = self.gui_config(project)
+            observed_timeouts: list[object] = []
+
+            def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                observed_timeouts.append(kwargs.get("timeout"))
+                command = args[2] if len(args) > 2 else ""
+                payload = {
+                    "schema_version": 1,
+                    "command": command,
+                    "ok": True,
+                    "token": "ok",
+                    "exit_code": 0,
+                    "cli_contract": "project-moe-cli-v1",
+                    "project_default_enabled": True,
+                    "sessions": [],
+                    "effective_enabled": True,
+                    "effective_source": "project-default",
+                    "before": {},
+                    "after": {},
+                    "changed_scope": "project-default",
+                    "changed_paths": [".omx/state/thesis_moe/project-default.json"],
+                    "skipped_invalid_records": [],
+                    "lock_status": "not_locked_fixture",
+                    "audit_path": str(project / ".omx" / "state" / "thesis_moe" / "audit.log"),
+                    "no_op": False,
+                    "atomic_write": True,
+                }
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=0,
+                    stdout=json.dumps(payload),
+                    stderr="",
+                )
+
+            with patch.dict(os.environ, {}, clear=False), patch(
+                "project_moe_gui.gui_shell.subprocess.run",
+                fake_run,
+            ):
+                os.environ.pop("PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS", None)
+                result = gui_shell.execute_write_action_with_readback(config, "project-on")
+
+            self.assertTrue(result["ok"], result)
+            self.assertGreaterEqual(len(observed_timeouts), 4)
+            self.assertEqual(set(observed_timeouts), {gui_shell.DEFAULT_MODE_CLI_TIMEOUT_SECONDS})
+
     def test_gui_shell_invalid_session_rows_use_stable_tokens(self) -> None:
         from project_moe_gui import gui_shell
 

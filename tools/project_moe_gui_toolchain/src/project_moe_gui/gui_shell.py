@@ -32,6 +32,8 @@ WINDOW_TITLE = PRODUCT_DISPLAY_NAME
 QML_SHELL_RELATIVE = Path("qml/ProjectMoeGui.qml")
 TARGET_QML_SHELL_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
 DEFAULT_MODE_CLI = "tools/thesis_moe_mode.py"
+DEFAULT_MODE_CLI_TIMEOUT_SECONDS = 60.0
+MODE_CLI_TIMEOUT_ENV = "PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS"
 READ_ACTIONS = {"refresh", "project-status", "list-sessions", "list-lenses", "status"}
 WRITE_ACTIONS = {"project-on", "project-off", "session-on", "session-off", "session-set-lenses", "session-clear-lenses"}
 ACTION_ALIASES = {
@@ -55,6 +57,20 @@ ACTION_COMMANDS = {
     "session-set-lenses": ["set-lenses", "--json"],
     "session-clear-lenses": ["clear-lenses", "--json"],
 }
+
+
+def mode_cli_timeout_seconds(default: float | None = None) -> float:
+    fallback = DEFAULT_MODE_CLI_TIMEOUT_SECONDS if default is None else float(default)
+    raw = os.environ.get(MODE_CLI_TIMEOUT_ENV)
+    if raw is None or not str(raw).strip():
+        return fallback
+    try:
+        parsed = float(str(raw).strip())
+    except ValueError:
+        return fallback
+    if parsed <= 0:
+        return fallback
+    return parsed
 WRITE_CLI_REQUIRED_FIELDS = (
     "schema_version",
     "command",
@@ -3354,7 +3370,7 @@ def run_cli_json(
     session_id: str | None = None,
     selected_lenses: list[str] | None = None,
     selected_categories: list[str] | None = None,
-    timeout: int = 20,
+    timeout: float | None = None,
     project_root: str | Path | None = None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     plan = build_action_plan(
@@ -3375,7 +3391,7 @@ def run_cli_json(
             text=True,
             encoding="utf-8",
             errors="replace",
-            timeout=timeout,
+            timeout=mode_cli_timeout_seconds(timeout),
             check=False,
         )
     except subprocess.TimeoutExpired:
@@ -3406,7 +3422,7 @@ def execute_write_action_with_readback(
     session_id: str | None = None,
     selected_lenses: list[str] | None = None,
     selected_categories: list[str] | None = None,
-    timeout: int = 20,
+    timeout: float | None = None,
     project_root: str | Path | None = None,
 ) -> dict[str, Any]:
     root = configured_project_root(config, project_root)

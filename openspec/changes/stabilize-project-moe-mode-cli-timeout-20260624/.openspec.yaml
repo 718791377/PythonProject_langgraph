@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-06-24
+x_archive_deferred_reason: "This stabilization slice is a local gate unblocker for the Codex npm EPERM rollout; archive is deferred until hotfix code, focused/full Project MOE tests, local gate, local MR review, and local main integration evidence are complete."
+x_archive_follow_up: "After local integration, archive this change or include it in the final stabilization archive package that records the timeout-budget evidence."
