@@ -1,3 +1,7 @@
+---
+archived-with: 2026-06-25-prevent-codex-npm-eperm-cleanup-warning-20260624
+status: final
+---
 # Codex npm EPERM Update Preflight Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

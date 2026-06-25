@@ -14,5 +14,5 @@
 - [x] Add npm cleanup EPERM warning classification without masking non-zero npm failures.
 - [x] Update generated checklist guidance for lock preflight and manual leftover cleanup.
 - [x] Extend fake npm/process-inventory PowerShell regression coverage.
-- [ ] Run focused tests, OpenSpec guard, local gate, and local MR review.
-- [ ] Integrate the Stage 2 runtime package into local `main` and stop at the remote-publication gate.
+- [x] Run focused tests, OpenSpec guard, local gate, and local MR review.
+- [x] Integrate the Stage 2 runtime package into local `main` and stop at the remote-publication gate.
