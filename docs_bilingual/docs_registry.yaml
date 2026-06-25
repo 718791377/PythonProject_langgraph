@@ -1838,3 +1838,9 @@ documents:
     canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/weekly-monthly-quarterly-operating-cadence.md
     zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/weekly-monthly-quarterly-operating-cadence.zh-CN.md
 
+
+  - doc_id: codex_one_person_operational_instance_pack_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_one_person_operational_instance_pack_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_one_person_operational_instance_pack_plan.zh-CN.md
