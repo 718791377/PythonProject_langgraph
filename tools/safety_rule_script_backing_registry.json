@@ -1072,6 +1072,24 @@
         "check_codex_one_person_operational_runtime_pack"
       ],
       "description": "Fails closed when the Codex embedded one-person-company operational runtime pack drifts from required shared ledgers, Codex execution pack, business operations pack, mixed dual-gate governance pack, process-group grammar, truth boundaries, registry, CI, guard, or safety backing."
+    },
+    {
+      "id": "codex-one-person-operational-instance-pack",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_one_person_operational_instance_pack_plan.md",
+        "docs_bilingual/implementation_plans/codex_one_person_operational_instance_pack_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_codex_one_person_operational_instance_pack.py",
+        "test/check_codex_one_person_operational_instance_pack.test.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_codex_one_person_operational_instance_pack"
+      ],
+      "description": "Fails closed when the Codex embedded one-person-company operational instance pack drifts from required entrypoint, shared-ledger, Codex execution, business operation, mixed dual-gate, process-group, truth-boundary, registry, CI, guard, or safety backing rules."
     }
   ]
 }

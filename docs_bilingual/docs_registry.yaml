@@ -1839,6 +1839,174 @@ documents:
     zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/weekly-monthly-quarterly-operating-cadence.zh-CN.md
 
 
+  - doc_id: operational_instance_entrypoint_readme
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/README.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/README.zh-CN.md
+
+  - doc_id: operational_instance_entrypoint_instance_profile
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/instance-profile.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/instance-profile.zh-CN.md
+
+  - doc_id: operational_instance_entrypoint_operating_calendar
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/operating-calendar.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/operating-calendar.zh-CN.md
+
+  - doc_id: operational_instance_entrypoint_artifact_index
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/artifact-index.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/artifact-index.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_decision_log_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/decision-log.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/decision-log.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_risk_register_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/risk-register.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/risk-register.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_evidence_register_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/evidence-register.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/evidence-register.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_tailoring_decision_log_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/tailoring-decision-log.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/tailoring-decision-log.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_human_review_records_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/human-review-records.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/human-review-records.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_monthly_review_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/monthly-review.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/monthly-review.instance.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_runtime_run_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/runtime-run-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/runtime-run-record.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_local_main_integration_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/local-main-integration-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/local-main-integration-record.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_validation_release_readiness_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/validation-release-readiness-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/validation-release-readiness-record.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_agent_evaluation_run_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/agent-evaluation-run-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/agent-evaluation-run-record.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_durable_state_recovery_drill
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/durable-state-recovery-drill.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/durable-state-recovery-drill.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_incident_rollback_case_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/incident-rollback-case-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/incident-rollback-case-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_offer_pricing_decision_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/offer-pricing-decision-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/offer-pricing-decision-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_customer_intake_delivery_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/customer-intake-delivery-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/customer-intake-delivery-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_sales_support_refund_case_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/sales-support-refund-case-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/sales-support-refund-case-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_legal_contract_review_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/legal-contract-review-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/legal-contract-review-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_cashflow_runway_review_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/cashflow-runway-review-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/cashflow-runway-review-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_experiment_roadmap_readout
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/experiment-roadmap-readout.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/experiment-roadmap-readout.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_mixed_change_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/mixed-change-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/mixed-change-record.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_business_to_codex_intake_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/business-to-codex-intake-instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/business-to-codex-intake-instance.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_codex_to_business_impact_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/codex-to-business-impact-instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/codex-to-business-impact-instance.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_module_tailoring_decision_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/module-tailoring-decision-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/module-tailoring-decision-record.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_dual_gate_release_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/dual-gate-release-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/dual-gate-release-record.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_quarterly_portfolio_review_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/quarterly-portfolio-review-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/quarterly-portfolio-review-record.zh-CN.md
+
   - doc_id: codex_one_person_operational_instance_pack_plan
     doc_class: implementation_plan
     status: active
