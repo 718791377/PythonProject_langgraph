@@ -156,27 +156,28 @@ Both stages use the local-main-first workflow. A feature worktree, focused check
 ## Current Status
 
 <!-- CURRENT_STATUS_START -->
-- Stage A freezes the operational instance-pack sequence and registers this plan.
-- Stage B is pending until this plan is merged into local `main`.
-- Remote publication is not authorized.
+- Stage A froze the operational instance-pack sequence and registered this plan on local `main` in commit `a542bde`.
+- Stage B implemented the operational instance pack, checker, tests, registry, guard, and safety backing on local `main` in commit `7239ced`.
+- Post-merge validation passed on local `main`: instance-pack checker, focused unit test, OpenSpec guard, local gate, and local MR review evidence are recorded in the completed claim.
+- Remote publication is not authorized and has not been performed.
 <!-- CURRENT_STATUS_END -->
 
 ## Task Backlog
 
 <!-- TASK_BACKLOG_START -->
-- Stage A: add this implementation plan and registry entry, validate, commit, merge local `main`, and stop before remote publication.
-- Stage B: add instance entrypoint documents.
-- Stage B: add shared ledger instance records.
-- Stage B: add Codex execution instance records.
-- Stage B: add one-person-company business instance records.
-- Stage B: add mixed dual-gate instance records.
-- Stage B: add checker, test, registry entries, CI manifest entry, OpenSpec guard step, guard JSON test entry, and safety-rule backing entry.
-- Stage B: validate, commit, merge local `main`, clean the feature carrier, and stop at the remote-publication gate.
+- Completed: Stage A added this implementation plan and registry entry, validated it, merged local `main`, and stopped before remote publication.
+- Completed: Stage B added instance entrypoint documents.
+- Completed: Stage B added shared ledger instance records.
+- Completed: Stage B added Codex execution instance records.
+- Completed: Stage B added one-person-company business instance records.
+- Completed: Stage B added mixed dual-gate instance records.
+- Completed: Stage B added checker, test, registry entries, CI manifest entry, OpenSpec guard step, guard JSON test entry, and safety-rule backing entry.
+- Completed: Stage B validated, committed, merged local `main`, cleaned the feature carrier, and stopped at the remote-publication gate.
 <!-- TASK_BACKLOG_END -->
 
 ## Evidence Index
 
 <!-- EVIDENCE_INDEX_START -->
-- Stage A evidence: plan files, docs registry entry, focused plan-rule check, pre-commit update/archive check, local commit, local-main integration receipt, rollback ref, and completed claim.
-- Stage B evidence: instance-pack checker output, focused unit-test output, dependent governance checker outputs, OpenSpec guard output, local gate, local MR review, local-main integration receipt, rollback ref, completed claim, and cleanup record.
+- Stage A evidence: plan files, docs registry entry, focused plan-rule check, pre-commit update/archive check, local commit `a542bde`, local-main integration receipt, rollback ref, and completed claim `freeze-codex-one-person-operational-instance-pack-20260625.json`.
+- Stage B evidence: operational instance files under `docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/`, checker `tools/check_codex_one_person_operational_instance_pack.py`, focused unit test `test/check_codex_one_person_operational_instance_pack.test.py`, guard/CI/safety registrations, OpenSpec guard output, local gate, local MR review, local commit `7239ced`, rollback ref `refs/backup/local-main/20260626-091013-before-implement-codex-one-person-operational-instance-pack-20260626`, completed claim `implement-codex-one-person-operational-instance-pack-20260626.json`, and cleanup record.
 <!-- EVIDENCE_INDEX_END -->
