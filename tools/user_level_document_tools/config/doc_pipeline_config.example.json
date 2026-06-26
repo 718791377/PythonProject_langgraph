@@ -25,6 +25,16 @@
     "Example only. Fill this in a consumer project or local-only config path.",
     "Do not commit binary payloads, installers, or machine-specific absolute paths.",
     "pdf2image is a Python wrapper and still requires a Poppler backend such as pdftoppm on Windows.",
-    "LibreOffice/soffice is an external system installation or PATH-provided tool; keep the executable out of this repository."
+    "LibreOffice/soffice is an external system installation or PATH-provided tool; keep the executable out of this repository.",
+    "PPTX-specific render probes live under tools/user_level_document_tools/ppt_tools.",
+    "Do not mutate system/user PATH; configure PPT render executables with explicit local paths."
+  ],
+  "ppt_render_toolchain_config": "<consumer-project>/.local/user_level_document_tools/ppt_render_toolchain_config.json",
+  "ppt_visual_qa_status_markers": [
+    "visual_qa:pass",
+    "visual_qa:degraded",
+    "visual_qa:blocked",
+    "visual_qa:manual_required",
+    "visual_qa:not_applicable"
   ]
 }

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "description": "Example-only PPT render toolchain config. Copy to a local ignored config and fill absolute paths.",
+  "python_exe": "",
+  "poppler_bin_dir": "",
+  "soffice_exe": "",
+  "magick_exe": "",
+  "ghostscript_exe": "",
+  "inkscape_exe": "",
+  "aspose_license_path": "",
+  "powerpoint_com_enabled": true,
+  "aspose_enabled": true,
+  "preferred_pdf_engines": [
+    "powerpoint",
+    "soffice",
+    "aspose"
+  ],
+  "preferred_png_engines": [
+    "pdftoppm",
+    "pdf2image",
+    "imagemagick",
+    "powerpoint",
+    "aspose"
+  ],
+  "output_root": "<consumer-project>/.local/user_level_document_tools/ppt_render",
+  "visual_qa": {
+    "require_clean_renderer": true,
+    "require_cjk_smoke_review": true,
+    "block_on_blank_pages": true,
+    "block_on_page_count_mismatch": true
+  },
+  "notes": [
+    "Do not commit machine-specific absolute paths in this template.",
+    "Do not mutate system/user PATH; pass explicit executable paths or use process-scoped environment for a single probe.",
+    "Aspose.Slides evaluation output is degraded evidence unless a valid license is configured.",
+    "pdf2image still requires Poppler on Windows."
+  ]
+}

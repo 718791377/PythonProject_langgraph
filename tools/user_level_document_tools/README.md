@@ -8,6 +8,7 @@ Tracked source contains portable scripts, examples, and tests. Consumer projects
 
 - `pdf_tools/` - Poppler discovery, access checks, PDF information, and rendering helpers.
 - `doc_pipeline/` - Word COM, Acrobat, Poppler, and contact-sheet quality-check helpers.
+- `ppt_tools/` - local-only PPTX render capability probes, PowerPoint COM checks, PPTX-to-PDF/PNG probes, and visual QA status markers.
 - `vector_tools/` - generic manifest, health, and retrieval framework plus sanitized legacy adapters.
 - `config/` - example-only configuration templates.
 
@@ -26,3 +27,13 @@ Consumer projects may reuse these scripts, but they keep their own filled
 configs, source-authority rules, outputs, vector indexes, embedding caches, and
 runtime reports. The shared repository only owns the reusable executors and
 example configuration.
+
+## PPT render toolchain cache
+
+For live runtime confirmation, third-party PPT render tools and evidence belong under the ignored local path:
+
+```text
+.local/ppt_render_tools/
+```
+
+The tracked helper scripts never mutate system/user PATH. Use explicit executable paths in a copied local config or process-scoped environment for one probe.
