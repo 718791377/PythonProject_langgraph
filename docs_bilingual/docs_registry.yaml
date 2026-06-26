@@ -2018,3 +2018,9 @@ documents:
     status: active
     canonical_path: docs_bilingual/implementation_plans/codex_skills2cli_budget_compaction_runtime_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_skills2cli_budget_compaction_runtime_plan.zh-CN.md
+
+  - doc_id: ppt_render_toolchain_local_only_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/ppt_render_toolchain_local_only_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/ppt_render_toolchain_local_only_plan.zh-CN.md
