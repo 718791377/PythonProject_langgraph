@@ -103,6 +103,21 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["counts"]["findings"], 0)
 
+    def test_ignores_local_runtime_toolchains(self) -> None:
+        root = self.make_root("spec-kit-local-runtime-excluded")
+        self.write(
+            root,
+            ".local/ppt_render_tools/libreoffice/program/python-core-3.12.13/lib/dataclasses.py",
+            "# ClassVar and InitVar to specify init=<anything>.\n",
+        )
+        self.write(root, "docs/usage.md", "Spec Kit is a safe subordinate adapter reference.\n")
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["findings"], 0)
+
     def test_prunes_excluded_directories_before_recursive_scan(self) -> None:
         root = self.make_root("spec-kit-prunes-excluded-before-scan")
         self.write(root, "docs/usage.md", "Spec Kit is a safe subordinate adapter reference.\n")
