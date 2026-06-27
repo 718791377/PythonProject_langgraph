@@ -278,16 +278,35 @@ def validate_registry(root: Path) -> dict[str, Any]:
         "compaction",
         "model-visible skills list",
     }
+    required_budget_visibility_terms = {
+        "skills2cli visibility plan",
+        "skills2cli visibility apply",
+        "skills2cli visibility restore",
+        "standalone visibility reduction",
+        "receipt-backed visibility reduction",
+    }
     if not isinstance(budget_task, dict):
         errors.append("Missing required task module `core-dev.skills-budget-triage` for budget warning triage.")
     else:
         identity = task_module_identity("core-dev", "skills-budget-triage", budget_task)
         if not identity["declared_matches_expected"]:
             errors.append("Task module `core-dev.skills-budget-triage` must declare qualified_name `core-dev.skills-budget-triage`.")
-        task_terms = set(as_list(budget_task.get("route_when"))) | set(as_list(budget_task.get("positive_examples")))
+        task_terms = set(as_list(budget_task.get("route_when"))) | set(as_list(budget_task.get("positive_examples"))) | set(as_list((budget_task.get("soft_load") or {}).get("use_for")))
         missing_terms = sorted(term for term in required_budget_terms if term not in task_terms)
         if missing_terms:
             errors.append(f"Task module `core-dev.skills-budget-triage` missing budget route terms: {', '.join(missing_terms)}.")
+        missing_visibility_terms = sorted(term for term in required_budget_visibility_terms if term not in task_terms)
+        if missing_visibility_terms:
+            errors.append(
+                "Task module `core-dev.skills-budget-triage` missing standalone visibility reduction terms: "
+                + ", ".join(missing_visibility_terms)
+                + "."
+            )
+        task_text = json.dumps(budget_task, ensure_ascii=False).lower()
+        if "do not mutate user-level config" not in task_text and "do not mutate user-level" not in task_text:
+            errors.append("Task module `core-dev.skills-budget-triage` must forbid profile suggest from mutating user-level config.")
+        if "hard-load previews" not in task_text or "do not solve standalone user-skill pressure" not in task_text:
+            errors.append("Task module `core-dev.skills-budget-triage` must state plugin hard-load is not the primary standalone-skill fix.")
     if not isinstance(budget_scenario, dict):
         errors.append("Missing required scenario profile `skills-budget-triage`.")
     else:

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Compact, sanitized Codex skill discovery helper.
 
-This repository-local MVP intentionally does not mutate Codex configuration,
-plugin cache files, or user-level wrappers. It provides low-token JSON summaries
-for skill discovery, profile suggestions, and warning audits.
+This repository-local helper keeps default discovery read-only, but also exposes
+explicit, receipt-backed visibility apply/restore commands for standalone
+user-level skills when Codex skills-context pressure must be reduced.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import json
 import math
 import os
 import re
+import shutil
 import sqlite3
 import sys
 from collections import Counter
@@ -77,6 +78,35 @@ BUDGET_INTENT_TERMS = (
 BUDGET_TRIAGE_PROFILE = "core-dev"
 BUDGET_TRIAGE_SCENARIO = "skills-budget-triage"
 BUDGET_TRIAGE_TASK_MODULE = "skills-budget-triage"
+VISIBILITY_STATE_DIR = Path("state") / "skills2cli"
+VISIBILITY_DISABLED_DIR = VISIBILITY_STATE_DIR / "visibility-disabled"
+VISIBILITY_RECEIPT_DIR = VISIBILITY_STATE_DIR / "visibility-receipts"
+DEFAULT_MAX_VISIBLE_USER_SKILLS = 80
+ALWAYS_KEEP_USER_SKILL_TERMS = (
+    "skills2cli",
+    "mcp2cli",
+    "plugin-modules",
+    "superpowers",
+    "using-superpowers",
+    "using-git-worktrees",
+    "executing-plans",
+    "finishing-a-development-branch",
+    "verification-before-completion",
+    "writing-plans",
+    "writing-skills",
+    "skill-creator",
+    "skill-installer",
+    "openai-docs",
+    "cli-anything",
+    "cli-hub-meta-skill",
+    "code-review",
+    "gh-fix-ci",
+    "gh-address-comments",
+    "headroom",
+    "doctor",
+    "help",
+    "cancel",
+)
 
 
 @dataclass(frozen=True)
@@ -406,7 +436,9 @@ def build_visibility_preview(skill_layer_pressure: dict[str, Any], standalone_pr
         "recommended_task_module": f"{BUDGET_TRIAGE_PROFILE}.{BUDGET_TRIAGE_TASK_MODULE}",
         "dominant_layer": skill_layer_pressure.get("dominant_layer"),
         "standalone_user_skill_count": user_count,
-        "candidate_actions": standalone_pressure.get("candidate_actions", []),
+        "candidate_actions": list(standalone_pressure.get("candidate_actions", [])) + ["preview_standalone_visibility_reduction", "apply_visibility_reduction_only_with_receipt"],
+        "visibility_plan_command": f"skills2cli visibility plan --profile {BUDGET_TRIAGE_PROFILE} --json",
+        "visibility_apply_command": f"skills2cli visibility apply --profile {BUDGET_TRIAGE_PROFILE} --apply --operator-confirmation --json",
         "why_profile_apply_alone_is_insufficient": (
             "Plugin profile apply can reduce plugin visibility, but standalone user-level skills remain a separate pressure source."
             if skill_layer_pressure.get("user_layer_pressure")
@@ -417,6 +449,569 @@ def build_visibility_preview(skill_layer_pressure: dict[str, Any], standalone_pr
         "edits_plugin_cache": False,
         "profile_apply_performed": False,
     }
+
+
+
+@dataclass(frozen=True)
+class UserSkillGroup:
+    top_dir: str
+    source_path: Path
+    skill_names: tuple[str, ...]
+    skill_ids: tuple[str, ...]
+    skill_count: int
+    description_hashes: tuple[str, ...]
+    frontmatter_compatible: bool
+
+
+def user_skills_root(codex_home: Path) -> Path:
+    return codex_home / "skills"
+
+
+def visibility_state_paths(codex_home: Path) -> dict[str, Path]:
+    state_root = codex_home / VISIBILITY_STATE_DIR
+    return {
+        "state_root": state_root,
+        "disabled_root": codex_home / VISIBILITY_DISABLED_DIR,
+        "receipt_root": codex_home / VISIBILITY_RECEIPT_DIR,
+    }
+
+
+def normalize_skill_key(value: str) -> str:
+    return slugify(value).lower()
+
+
+def collect_user_skill_groups(repo_root: Path, codex_home: Path) -> list[UserSkillGroup]:
+    root = user_skills_root(codex_home)
+    if not root.exists():
+        return []
+    system_root = (root / ".system").resolve()
+    grouped: dict[str, dict[str, Any]] = {}
+    for layer, base, path, _placeholder in iter_skill_files(repo_root, codex_home):
+        if layer != "user":
+            continue
+        try:
+            resolved = path.resolve()
+            resolved.relative_to(system_root)
+            continue
+        except ValueError:
+            pass
+        try:
+            rel_parent = path.parent.relative_to(root)
+        except ValueError:
+            continue
+        if not rel_parent.parts:
+            continue
+        top_dir = rel_parent.parts[0]
+        if top_dir.startswith("."):
+            continue
+        source_path = root / top_dir
+        try:
+            text = read_text_lossy(path)
+        except OSError:
+            continue
+        had_bom = text.startswith("\ufeff")
+        frontmatter, valid, error, _body = parse_frontmatter(text)
+        name = sanitize_text(frontmatter.get("name") or path.parent.name, limit=80)
+        description = sanitize_text(frontmatter.get("description") or "", limit=10000)
+        compatibility = codex_frontmatter_report(frontmatter, valid, error, had_bom=had_bom)
+        bucket = grouped.setdefault(
+            top_dir,
+            {
+                "source_path": source_path,
+                "names": [],
+                "ids": [],
+                "hashes": [],
+                "compatible": True,
+            },
+        )
+        bucket["names"].append(name)
+        bucket["ids"].append(build_skill_id("user", root, path, name))
+        bucket["hashes"].append(stable_hash(description))
+        bucket["compatible"] = bool(bucket["compatible"] and compatibility["codex_frontmatter_compatible"])
+    groups = [
+        UserSkillGroup(
+            top_dir=top_dir,
+            source_path=data["source_path"],
+            skill_names=tuple(sorted(set(data["names"]))),
+            skill_ids=tuple(sorted(set(data["ids"]))),
+            skill_count=len(data["ids"]),
+            description_hashes=tuple(sorted(set(data["hashes"]))),
+            frontmatter_compatible=bool(data["compatible"]),
+        )
+        for top_dir, data in grouped.items()
+    ]
+    return sorted(groups, key=lambda item: (normalize_skill_key(item.top_dir), item.top_dir))
+
+
+def profile_keep_terms(registry: dict[str, Any], profile: str) -> set[str]:
+    terms = {normalize_skill_key(value) for value in ALWAYS_KEEP_USER_SKILL_TERMS}
+    modules = registry.get("modules") if isinstance(registry.get("modules"), dict) else {}
+    entry = modules.get(profile) if isinstance(modules.get(profile), dict) else {}
+    raw_values: list[str] = [profile]
+    for key in ("aliases", "plugin_hints", "skill_doc_hints", "use_for", "route_when", "ranking_signals"):
+        raw_values.extend(as_string_list(entry.get(key)))
+    task_modules = entry.get("task_modules") if isinstance(entry.get("task_modules"), dict) else {}
+    for module_name, module in task_modules.items():
+        raw_values.append(str(module_name))
+        if isinstance(module, dict):
+            for key in ("plugin_hints", "skill_doc_hints", "use_for", "ranking_signals"):
+                raw_values.extend(as_string_list(module.get(key)))
+    for value in raw_values:
+        for part in re.split(r"[^A-Za-z0-9._/-]+", str(value)):
+            if part:
+                terms.add(normalize_skill_key(part))
+    return {term for term in terms if term}
+
+
+def group_matches_keep_terms(group: UserSkillGroup, keep_terms: set[str]) -> bool:
+    candidates = {normalize_skill_key(group.top_dir)}
+    candidates.update(normalize_skill_key(name) for name in group.skill_names)
+    candidates.update(normalize_skill_key(skill_id.split(":", 1)[-1]) for skill_id in group.skill_ids)
+    for candidate in candidates:
+        if candidate in keep_terms:
+            return True
+        if any(term and (candidate.startswith(term + "-") or term in candidate) for term in keep_terms if len(term) >= 8):
+            return True
+    return False
+
+
+def visibility_group_summary(group: UserSkillGroup, *, reason: str) -> dict[str, Any]:
+    return {
+        "top_dir_hash": stable_hash(group.top_dir),
+        "top_dir_slug": sanitize_text(slugify(group.top_dir), limit=80),
+        "skill_count": group.skill_count,
+        "skill_name_sample": [sanitize_text(name, limit=80) for name in group.skill_names[:3]],
+        "skill_id_sample": [sanitize_text(skill_id, limit=120) for skill_id in group.skill_ids[:3]],
+        "description_hashes": list(group.description_hashes[:3]),
+        "frontmatter_compatible": group.frontmatter_compatible,
+        "reason": reason,
+    }
+
+
+def build_visibility_reduction_plan(
+    repo_root: Path,
+    codex_home: Path,
+    *,
+    profile: str,
+    max_visible_user_skills: int,
+    extra_keep: Iterable[str] = (),
+) -> dict[str, Any]:
+    registry = load_profile_registry(repo_root, codex_home)
+    keep_terms = profile_keep_terms(registry, profile)
+    keep_terms.update(normalize_skill_key(value) for value in extra_keep if value)
+    groups = collect_user_skill_groups(repo_root, codex_home)
+    keep: list[UserSkillGroup] = []
+    hide: list[UserSkillGroup] = []
+    for group in groups:
+        if group_matches_keep_terms(group, keep_terms):
+            keep.append(group)
+        else:
+            hide.append(group)
+    # Keep extra groups deterministically up to the configured visible budget.
+    visible_skill_count = sum(group.skill_count for group in keep)
+    remainder: list[UserSkillGroup] = []
+    for group in hide:
+        if visible_skill_count + group.skill_count <= max_visible_user_skills:
+            keep.append(group)
+            visible_skill_count += group.skill_count
+        else:
+            remainder.append(group)
+    hide = remainder
+    active_user_skill_count = sum(group.skill_count for group in groups)
+    hidden_skill_count = sum(group.skill_count for group in hide)
+    kept_skill_count = sum(group.skill_count for group in keep)
+    return {
+        "schema_version": 1,
+        "mode": "plan-only",
+        "profile": profile,
+        "max_visible_user_skills": max_visible_user_skills,
+        "active_user_skill_count": active_user_skill_count,
+        "kept_user_skill_count": kept_skill_count,
+        "hidden_user_skill_count": hidden_skill_count,
+        "expected_active_user_skill_count_after_apply": kept_skill_count,
+        "groups_total": len(groups),
+        "groups_to_keep": len(keep),
+        "groups_to_hide": len(hide),
+        "keep_sample": [visibility_group_summary(group, reason="keep_allowlist_or_budget") for group in keep[:12]],
+        "hide_sample": [visibility_group_summary(group, reason="move_to_visibility_library_on_apply") for group in hide[:12]],
+        "keep_terms_hash": stable_hash("\n".join(sorted(keep_terms))),
+        "candidate_actions": [
+            "review_visibility_plan_before_apply",
+            "apply_with_operator_confirmation_to_move_non_kept_user_skills",
+            "restart_codex_ohmy_after_apply_to_recompute_model_visible_skills",
+            "restore_from_receipt_if_needed",
+        ],
+        "apply_command": (
+            f"skills2cli visibility apply --profile {profile} --max-visible-user-skills {max_visible_user_skills} "
+            "--apply --operator-confirmation --json"
+        ),
+        "restore_command_template": "skills2cli visibility restore --receipt <receipt_id_or_path> --apply --operator-confirmation --json",
+        "mutates_config": False,
+        "edits_plugin_cache": False,
+        "moves_user_skill_dirs_on_apply": bool(hide),
+        "profile_apply_performed": False,
+        "raw_paths_retained": False,
+        "raw_skill_bodies_retained": False,
+        "_groups_to_keep": keep,
+        "_groups_to_hide": hide,
+    }
+
+
+def public_visibility_plan(plan: dict[str, Any], *, mode: str | None = None) -> dict[str, Any]:
+    data = {key: value for key, value in plan.items() if not key.startswith("_")}
+    if mode is not None:
+        data["mode"] = mode
+    return data
+
+
+def visibility_receipt_id(profile: str) -> str:
+    return f"{utc_now().strftime('%Y%m%dT%H%M%SZ')}-{slugify(profile)}"
+
+
+def write_visibility_receipt(receipt_path: Path, payload: dict[str, Any]) -> None:
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def path_is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.resolve().relative_to(parent.resolve())
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def validate_visibility_top_dir(value: str) -> str:
+    top_dir = str(value or "").strip()
+    if (
+        not top_dir
+        or top_dir in {".", ".."}
+        or "/" in top_dir
+        or "\\" in top_dir
+        or Path(top_dir).is_absolute()
+        or top_dir.startswith(".")
+    ):
+        raise ValueError("invalid_top_dir")
+    return top_dir
+
+
+def resolve_visibility_receipt(codex_home: Path, receipt: str) -> Path:
+    receipt_root = visibility_state_paths(codex_home)["receipt_root"].resolve()
+    candidate = Path(receipt)
+    if candidate.exists():
+        resolved = candidate.resolve()
+    else:
+        if not receipt.endswith(".json"):
+            receipt = receipt + ".json"
+        resolved = (receipt_root / receipt).resolve()
+    if not path_is_relative_to(resolved, receipt_root):
+        raise ValueError("receipt_path_out_of_scope")
+    return resolved
+
+
+def command_visibility_plan(args: argparse.Namespace) -> int:
+    repo_root = Path(args.root).resolve()
+    codex_home = Path(args.codex_home).resolve()
+    plan = build_visibility_reduction_plan(
+        repo_root,
+        codex_home,
+        profile=args.profile,
+        max_visible_user_skills=args.max_visible_user_skills,
+        extra_keep=args.keep_skill,
+    )
+    payload = envelope("visibility plan", public_visibility_plan(plan, mode="plan-only"))
+    payload["approval_required_for_apply"] = True
+    payload["operator_confirmation_required"] = True
+    emit(payload, args.json)
+    return 0
+
+
+def command_visibility_apply(args: argparse.Namespace) -> int:
+    if not args.apply:
+        emit(
+            envelope(
+                "visibility apply",
+                {
+                    "ok": False,
+                    "error": "apply_flag_required",
+                    "mutates_config": False,
+                    "edits_plugin_cache": False,
+                    "moves_user_skill_dirs_on_apply": True,
+                },
+            ),
+            args.json,
+        )
+        return 2
+    if not args.operator_confirmation:
+        emit(
+            envelope(
+                "visibility apply",
+                {
+                    "ok": False,
+                    "error": "operator_confirmation_required",
+                    "mutates_config": False,
+                    "edits_plugin_cache": False,
+                    "moves_user_skill_dirs_on_apply": True,
+                },
+            ),
+            args.json,
+        )
+        return 2
+    repo_root = Path(args.root).resolve()
+    codex_home = Path(args.codex_home).resolve()
+    plan = build_visibility_reduction_plan(
+        repo_root,
+        codex_home,
+        profile=args.profile,
+        max_visible_user_skills=args.max_visible_user_skills,
+        extra_keep=args.keep_skill,
+    )
+    hide: list[UserSkillGroup] = list(plan.get("_groups_to_hide") or [])
+    paths = visibility_state_paths(codex_home)
+    receipt_id = visibility_receipt_id(args.profile)
+    disabled_root = paths["disabled_root"] / receipt_id / "skills"
+    receipt_path = paths["receipt_root"] / f"{receipt_id}.json"
+    moved: list[dict[str, Any]] = []
+    errors: list[str] = []
+    if not hide:
+        receipt_payload = {
+            "schema_version": 1,
+            "receipt_id": receipt_id,
+            "profile": args.profile,
+            "created_at": utc_now().isoformat(),
+            "status": "noop_no_user_skills_to_hide",
+            "items": [],
+            "plan": public_visibility_plan(plan, mode="applied-noop"),
+            "restore_command": f"skills2cli visibility restore --receipt {receipt_id} --apply --operator-confirmation --json",
+            "receipt_backing": "written_before_moves",
+        }
+        write_visibility_receipt(receipt_path, receipt_payload)
+    else:
+        disabled_root.mkdir(parents=True, exist_ok=True)
+        planned_items = [
+            {
+                "top_dir": group.top_dir,
+                "source": str(group.source_path),
+                "destination": str(disabled_root / group.top_dir),
+                "skill_count": group.skill_count,
+                "skill_names": list(group.skill_names),
+                "description_hashes": list(group.description_hashes),
+                "move_status": "planned",
+            }
+            for group in hide
+        ]
+        receipt_payload = {
+            "schema_version": 1,
+            "receipt_id": receipt_id,
+            "profile": args.profile,
+            "created_at": utc_now().isoformat(),
+            "status": "apply_started",
+            "items": planned_items,
+            "errors": [],
+            "plan": public_visibility_plan(plan, mode="apply-started"),
+            "restore_command": f"skills2cli visibility restore --receipt {receipt_id} --apply --operator-confirmation --json",
+            "restart_required": True,
+            "restart_instruction": "Restart Codex with codex-ohmy so the startup-visible skills list is recomputed.",
+            "receipt_backing": "written_before_moves",
+            "source_root": str(user_skills_root(codex_home)),
+            "disabled_root": str(disabled_root),
+        }
+        write_visibility_receipt(receipt_path, receipt_payload)
+        for group in hide:
+            source = group.source_path
+            destination = disabled_root / group.top_dir
+            if not source.exists():
+                errors.append(f"missing_source:{slugify(group.top_dir)}")
+                continue
+            if destination.exists():
+                errors.append(f"destination_exists:{slugify(group.top_dir)}")
+                continue
+            try:
+                shutil.move(str(source), str(destination))
+            except (OSError, shutil.Error) as exc:
+                errors.append(f"move_failed:{slugify(group.top_dir)}:{exc}")
+                continue
+            moved.append(
+                {
+                    "top_dir": group.top_dir,
+                    "source": str(source),
+                    "destination": str(destination),
+                    "skill_count": group.skill_count,
+                    "skill_names": list(group.skill_names),
+                    "description_hashes": list(group.description_hashes),
+                    "move_status": "moved",
+                }
+            )
+            moved_by_top_dir = {str(item.get("top_dir")): item for item in moved}
+            receipt_payload["items"] = [
+                moved_by_top_dir.get(str(item.get("top_dir")), item) for item in planned_items
+            ]
+            receipt_payload["errors"] = errors
+            receipt_payload["status"] = "partial_in_progress"
+            receipt_payload["updated_at"] = utc_now().isoformat()
+            write_visibility_receipt(receipt_path, receipt_payload)
+        receipt_payload["status"] = "applied" if not errors else "partial_with_errors"
+        moved_by_top_dir = {str(item.get("top_dir")): item for item in moved}
+        receipt_payload["items"] = [
+            moved_by_top_dir.get(str(item.get("top_dir")), item) for item in planned_items
+        ]
+        receipt_payload["errors"] = errors
+        receipt_payload["plan"] = public_visibility_plan(plan, mode="applied" if not errors else "partial")
+        receipt_payload["completed_at"] = utc_now().isoformat()
+        write_visibility_receipt(receipt_path, receipt_payload)
+    after_skills = index_skills(repo_root, codex_home)
+    payload = envelope(
+        "visibility apply",
+        {
+            "ok": not errors,
+            "receipt_id": receipt_id,
+            "receipt_path": sanitize_text(str(receipt_path), limit=240),
+            "profile": args.profile,
+            "moved_groups": len(moved),
+            "moved_skill_count": sum(int(item.get("skill_count") or 0) for item in moved),
+            "errors": [sanitize_text(error, limit=180) for error in errors],
+            "post_apply_skill_layer_counts": build_skill_layer_counts(after_skills),
+            "post_apply_skill_layer_pressure": build_skill_layer_pressure(after_skills),
+            "restore_command": f"skills2cli visibility restore --receipt {receipt_id} --apply --operator-confirmation --json",
+            "restart_required": True,
+            "restart_instruction": "Restart Codex with codex-ohmy so the startup-visible skills list is recomputed.",
+            "mutates_config": False,
+            "edits_plugin_cache": False,
+            "moves_user_skill_dirs_on_apply": True,
+            "profile_apply_performed": False,
+            "raw_paths_retained": False,
+            "raw_skill_bodies_retained": False,
+        },
+    )
+    emit(payload, args.json)
+    return 0 if not errors else 1
+
+
+def command_visibility_restore(args: argparse.Namespace) -> int:
+    if not args.apply:
+        emit(envelope("visibility restore", {"ok": False, "error": "apply_flag_required"}), args.json)
+        return 2
+    if not args.operator_confirmation:
+        emit(envelope("visibility restore", {"ok": False, "error": "operator_confirmation_required"}), args.json)
+        return 2
+    codex_home = Path(args.codex_home).resolve()
+    repo_root = Path(args.root).resolve()
+    try:
+        receipt_path = resolve_visibility_receipt(codex_home, args.receipt)
+    except ValueError as exc:
+        emit(envelope("visibility restore", {"ok": False, "error": str(exc)}), args.json)
+        return 2
+    try:
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        emit(envelope("visibility restore", {"ok": False, "error": f"receipt_unreadable:{exc}"}), args.json)
+        return 2
+    except json.JSONDecodeError as exc:
+        emit(envelope("visibility restore", {"ok": False, "error": f"receipt_invalid_json:{exc}"}), args.json)
+        return 2
+    paths = visibility_state_paths(codex_home)
+    source_root = user_skills_root(codex_home).resolve()
+    disabled_root = paths["disabled_root"].resolve()
+    restored: list[dict[str, Any]] = []
+    errors: list[str] = []
+    for item in receipt.get("items") or []:
+        if str(item.get("move_status") or "") == "planned":
+            continue
+        try:
+            top_dir = validate_visibility_top_dir(str(item.get("top_dir") or ""))
+        except ValueError:
+            errors.append("invalid_receipt_item_top_dir")
+            continue
+        source = (source_root / top_dir).resolve()
+        destination = Path(str(item.get("destination") or "")).resolve()
+        if source != Path(str(item.get("source") or "")).resolve():
+            errors.append(f"source_mismatch:{slugify(top_dir)}")
+            continue
+        if not path_is_relative_to(destination, disabled_root):
+            errors.append(f"destination_out_of_scope:{slugify(top_dir)}")
+            continue
+        if destination.name != top_dir:
+            errors.append(f"destination_name_mismatch:{slugify(top_dir)}")
+            continue
+        if not destination.exists():
+            errors.append(f"missing_hidden_destination:{slugify(top_dir)}")
+            continue
+        if source.exists():
+            errors.append(f"restore_target_exists:{slugify(top_dir)}")
+            continue
+        try:
+            source.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(destination), str(source))
+        except (OSError, shutil.Error) as exc:
+            errors.append(f"restore_failed:{slugify(top_dir)}:{exc}")
+            continue
+        restored.append({"top_dir": top_dir, "skill_count": int(item.get("skill_count") or 0)})
+    receipt["restored_at"] = utc_now().isoformat()
+    receipt["restore_status"] = "restored" if not errors else "partial_restore_with_errors"
+    receipt["restore_errors"] = errors
+    write_visibility_receipt(receipt_path, receipt)
+    after_skills = index_skills(repo_root, codex_home)
+    payload = envelope(
+        "visibility restore",
+        {
+            "ok": not errors,
+            "receipt_id": receipt.get("receipt_id"),
+            "receipt_path": sanitize_text(str(receipt_path), limit=240),
+            "restored_groups": len(restored),
+            "restored_skill_count": sum(item["skill_count"] for item in restored),
+            "errors": [sanitize_text(error, limit=180) for error in errors],
+            "post_restore_skill_layer_counts": build_skill_layer_counts(after_skills),
+            "restart_required": True,
+            "restart_instruction": "Restart Codex with codex-ohmy so the startup-visible skills list is recomputed.",
+            "mutates_config": False,
+            "edits_plugin_cache": False,
+            "moves_user_skill_dirs_on_apply": False,
+            "restores_user_skill_dirs": True,
+            "profile_apply_performed": False,
+            "raw_paths_retained": False,
+            "raw_skill_bodies_retained": False,
+        },
+    )
+    emit(payload, args.json)
+    return 0 if not errors else 1
+
+
+def command_visibility_status(args: argparse.Namespace) -> int:
+    repo_root = Path(args.root).resolve()
+    codex_home = Path(args.codex_home).resolve()
+    skills = index_skills(repo_root, codex_home)
+    paths = visibility_state_paths(codex_home)
+    receipts = []
+    if paths["receipt_root"].exists():
+        for path in sorted(paths["receipt_root"].glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True)[: args.limit]:
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            receipts.append(
+                {
+                    "receipt_id": sanitize_text(str(data.get("receipt_id") or path.stem), limit=120),
+                    "status": sanitize_text(str(data.get("status") or "unknown"), limit=80),
+                    "restore_status": sanitize_text(str(data.get("restore_status") or "not_restored"), limit=80),
+                    "item_count": len(data.get("items") or []),
+                    "skill_count": sum(int(item.get("skill_count") or 0) for item in data.get("items") or []),
+                }
+            )
+    payload = envelope(
+        "visibility status",
+        {
+            "skill_layer_counts": build_skill_layer_counts(skills),
+            "skill_layer_pressure": build_skill_layer_pressure(skills),
+            "standalone_user_skill_pressure": build_standalone_user_skill_pressure(skills),
+            "recent_receipts": receipts,
+            "receipt_count_sampled": len(receipts),
+            "mutates_config": False,
+            "edits_plugin_cache": False,
+            "profile_apply_performed": False,
+        },
+    )
+    emit(payload, args.json)
+    return 0
 
 
 def score_record(record: dict[str, Any], terms: list[str]) -> int:
@@ -1457,6 +2052,43 @@ def build_parser() -> argparse.ArgumentParser:
     warnings.add_argument("--limit", type=int, default=5)
     warnings.add_argument("--json", action="store_true")
     warnings.set_defaults(func=command_audit_warnings)
+
+    visibility = subparsers.add_parser("visibility", help="Plan/apply/restore standalone user-skill visibility reduction.")
+    visibility_sub = visibility.add_subparsers(dest="visibility_command")
+
+    def add_visibility_common(sub: argparse.ArgumentParser) -> None:
+        sub.add_argument("--root", default=str(default_repo_root()), help="Repository root containing .codex/skills.")
+        sub.add_argument("--codex-home", default=str(default_codex_home()))
+        sub.add_argument("--profile", default=BUDGET_TRIAGE_PROFILE)
+        sub.add_argument("--max-visible-user-skills", type=int, default=DEFAULT_MAX_VISIBLE_USER_SKILLS)
+        sub.add_argument("--keep-skill", action="append", default=[], help="Additional user skill name/directory to keep visible.")
+        sub.add_argument("--json", action="store_true")
+
+    visibility_plan = visibility_sub.add_parser("plan", help="Preview a reversible standalone user-skill visibility reduction plan.")
+    add_visibility_common(visibility_plan)
+    visibility_plan.set_defaults(func=command_visibility_plan)
+
+    visibility_apply = visibility_sub.add_parser("apply", help="Apply a receipt-backed standalone user-skill visibility reduction.")
+    add_visibility_common(visibility_apply)
+    visibility_apply.add_argument("--apply", action="store_true", help="Required explicit apply flag for moving user skill directories.")
+    visibility_apply.add_argument("--operator-confirmation", action="store_true", help="Required explicit confirmation for moving user skill directories.")
+    visibility_apply.set_defaults(func=command_visibility_apply)
+
+    visibility_restore = visibility_sub.add_parser("restore", help="Restore user skill directories from a visibility receipt.")
+    visibility_restore.add_argument("--receipt", required=True, help="Receipt id or receipt JSON path.")
+    visibility_restore.add_argument("--root", default=str(default_repo_root()), help="Repository root containing .codex/skills.")
+    visibility_restore.add_argument("--codex-home", default=str(default_codex_home()))
+    visibility_restore.add_argument("--apply", action="store_true", help="Required explicit apply flag for restoring user skill directories.")
+    visibility_restore.add_argument("--operator-confirmation", action="store_true", help="Required explicit confirmation for restoring user skill directories.")
+    visibility_restore.add_argument("--json", action="store_true")
+    visibility_restore.set_defaults(func=command_visibility_restore)
+
+    visibility_status = visibility_sub.add_parser("status", help="Summarize current standalone user-skill visibility state.")
+    visibility_status.add_argument("--root", default=str(default_repo_root()), help="Repository root containing .codex/skills.")
+    visibility_status.add_argument("--codex-home", default=str(default_codex_home()))
+    visibility_status.add_argument("--limit", type=int, default=5)
+    visibility_status.add_argument("--json", action="store_true")
+    visibility_status.set_defaults(func=command_visibility_status)
 
     return parser
 

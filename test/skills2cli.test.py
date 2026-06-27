@@ -36,6 +36,40 @@ class Skills2CliTest(unittest.TestCase):
         )
         return path
 
+    def write_visibility_receipt(self, codex_home: Path, receipt_id: str, items: list[dict]) -> Path:
+        receipt_root = codex_home / "state" / "skills2cli" / "visibility-receipts"
+        receipt_root.mkdir(parents=True, exist_ok=True)
+        receipt = receipt_root / f"{receipt_id}.json"
+        receipt.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "receipt_id": receipt_id,
+                    "status": "applied",
+                    "items": items,
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        return receipt
+
+    def visibility_restore_payload(self, repo: Path, codex_home: Path, receipt: str, *, check: bool = False) -> dict:
+        return self.run_cli(
+            "visibility",
+            "restore",
+            "--receipt",
+            receipt,
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--apply",
+            "--operator-confirmation",
+            "--json",
+            check=check,
+        )
+
     def run_cli(self, *args: str, check: bool = True) -> dict:
         completed = subprocess.run(
             [sys.executable, str(SCRIPT), *args],
@@ -440,6 +474,7 @@ class Skills2CliTest(unittest.TestCase):
         self.assertEqual(payload["standalone_user_skill_pressure"]["count"], 5)
         self.assertFalse(payload["visibility_preview"]["mutates_config"])
         self.assertTrue(payload["visibility_preview"]["requires_future_explicit_apply_receipt"])
+        self.assertIn("--apply", payload["visibility_preview"]["visibility_apply_command"])
 
     def test_profile_suggest_budget_warning_ignores_unrelated_audit_boost(self) -> None:
         repo, codex_home = self.make_workspace("budget-audit-override")
@@ -708,6 +743,324 @@ class Skills2CliTest(unittest.TestCase):
         session_source = next(item for item in payload["sources"] if item["source"] == "sessions_jsonl")
         self.assertEqual(session_source["budget_warning_count"], 0)
         self.assertEqual(payload["budget_warning_count"], 0)
+
+
+    def test_visibility_plan_is_preview_only_for_standalone_user_skills(self) -> None:
+        repo, codex_home = self.make_workspace("visibility-plan")
+        self.write_skill(codex_home / "skills", "skills2cli", name="skills2cli", description="Core skills2cli helper.")
+        self.write_skill(codex_home / "skills", "code-review", name="code-review", description="Core code review helper.")
+        for index in range(6):
+            self.write_skill(codex_home / "skills", f"bulk-skill-{index}", name=f"bulk-skill-{index}", description="Bulk optional user skill.")
+
+        payload = self.run_cli(
+            "visibility",
+            "plan",
+            "--profile",
+            "core-dev",
+            "--max-visible-user-skills",
+            "3",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+        )
+
+        self.assertEqual(payload["command"], "visibility plan")
+        self.assertEqual(payload["mode"], "plan-only")
+        self.assertEqual(payload["active_user_skill_count"], 8)
+        self.assertLessEqual(payload["expected_active_user_skill_count_after_apply"], 3)
+        self.assertGreater(payload["hidden_user_skill_count"], 0)
+        self.assertFalse(payload["mutates_config"])
+        self.assertFalse(payload["edits_plugin_cache"])
+        self.assertTrue(payload["moves_user_skill_dirs_on_apply"])
+        self.assertTrue((codex_home / "skills" / "bulk-skill-0" / "SKILL.md").exists())
+        serialized = json.dumps(payload, ensure_ascii=False)
+        self.assertNotIn(str(codex_home), serialized)
+
+    def test_visibility_apply_and_restore_are_receipt_backed(self) -> None:
+        repo, codex_home = self.make_workspace("visibility-apply")
+        self.write_skill(codex_home / "skills", "skills2cli", name="skills2cli", description="Core skills2cli helper.")
+        self.write_skill(codex_home / "skills", "mcp2cli", name="mcp2cli", description="Core mcp2cli helper.")
+        config_path = codex_home / "config.toml"
+        config_path.write_text("[plugins]\n", encoding="utf-8")
+        plugin_cache_skill = codex_home / "plugins" / "cache" / "plugin" / "hash" / "skills" / "plugin-skill"
+        self.write_skill(plugin_cache_skill.parent, plugin_cache_skill.name, name="plugin-skill", description="Plugin cache skill.")
+        for index in range(5):
+            self.write_skill(codex_home / "skills", f"bulk-skill-{index}", name=f"bulk-skill-{index}", description="Bulk optional user skill.")
+
+        denied = self.run_cli(
+            "visibility",
+            "apply",
+            "--profile",
+            "core-dev",
+            "--max-visible-user-skills",
+            "2",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+            check=False,
+        )
+        self.assertFalse(denied["ok"])
+        self.assertEqual(denied["error"], "apply_flag_required")
+
+        confirmation_denied = self.run_cli(
+            "visibility",
+            "apply",
+            "--profile",
+            "core-dev",
+            "--max-visible-user-skills",
+            "2",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--apply",
+            "--json",
+            check=False,
+        )
+        self.assertFalse(confirmation_denied["ok"])
+        self.assertEqual(confirmation_denied["error"], "operator_confirmation_required")
+        self.assertTrue((codex_home / "skills" / "bulk-skill-0" / "SKILL.md").exists())
+
+        applied = self.run_cli(
+            "visibility",
+            "apply",
+            "--profile",
+            "core-dev",
+            "--max-visible-user-skills",
+            "2",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--apply",
+            "--operator-confirmation",
+            "--json",
+        )
+
+        self.assertTrue(applied["ok"], applied.get("errors"))
+        self.assertGreater(applied["moved_groups"], 0)
+        self.assertGreater(applied["moved_skill_count"], 0)
+        self.assertLessEqual(applied["post_apply_skill_layer_counts"]["user"], 2)
+        self.assertTrue(applied["restart_required"])
+        self.assertFalse(applied["mutates_config"])
+        self.assertFalse(applied["edits_plugin_cache"])
+        self.assertFalse((codex_home / "skills" / "bulk-skill-0" / "SKILL.md").exists())
+        self.assertTrue((codex_home / "skills" / "skills2cli" / "SKILL.md").exists())
+        self.assertEqual(config_path.read_text(encoding="utf-8"), "[plugins]\n")
+        self.assertTrue((plugin_cache_skill / "SKILL.md").exists())
+        receipt_files = sorted((codex_home / "state" / "skills2cli" / "visibility-receipts").glob("*.json"))
+        self.assertTrue(receipt_files)
+        receipt_payload = json.loads(receipt_files[-1].read_text(encoding="utf-8"))
+        self.assertIn(receipt_payload["status"], {"applied", "partial_with_errors"})
+        self.assertEqual(receipt_payload["receipt_backing"], "written_before_moves")
+
+        receipt_id = applied["receipt_id"]
+        restore_denied = self.run_cli(
+            "visibility",
+            "restore",
+            "--receipt",
+            receipt_id,
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+            check=False,
+        )
+        self.assertFalse(restore_denied["ok"])
+        self.assertEqual(restore_denied["error"], "apply_flag_required")
+
+        restore_confirmation_denied = self.run_cli(
+            "visibility",
+            "restore",
+            "--receipt",
+            receipt_id,
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--apply",
+            "--json",
+            check=False,
+        )
+        self.assertFalse(restore_confirmation_denied["ok"])
+        self.assertEqual(restore_confirmation_denied["error"], "operator_confirmation_required")
+        self.assertFalse((codex_home / "skills" / "bulk-skill-0" / "SKILL.md").exists())
+
+        restored = self.run_cli(
+            "visibility",
+            "restore",
+            "--receipt",
+            receipt_id,
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--apply",
+            "--operator-confirmation",
+            "--json",
+        )
+
+        self.assertTrue(restored["ok"], restored.get("errors"))
+        self.assertGreater(restored["restored_groups"], 0)
+        self.assertEqual(restored["post_restore_skill_layer_counts"]["user"], 7)
+        self.assertTrue((codex_home / "skills" / "bulk-skill-0" / "SKILL.md").exists())
+        self.assertFalse(restored["mutates_config"])
+        self.assertFalse(restored["edits_plugin_cache"])
+        self.assertEqual(config_path.read_text(encoding="utf-8"), "[plugins]\n")
+        self.assertTrue((plugin_cache_skill / "SKILL.md").exists())
+
+    def test_visibility_status_summarizes_pressure_and_receipts_without_mutation(self) -> None:
+        repo, codex_home = self.make_workspace("visibility-status")
+        self.write_skill(codex_home / "skills", "skills2cli", name="skills2cli", description="Core skills2cli helper.")
+        self.write_skill(codex_home / "skills", "bulk-skill", name="bulk-skill", description="Bulk optional user skill.")
+        config_path = codex_home / "config.toml"
+        config_path.write_text("[plugins]\n", encoding="utf-8")
+        self.write_visibility_receipt(
+            codex_home,
+            "status-receipt",
+            [{"top_dir": "bulk-skill", "source": str(codex_home / "skills" / "bulk-skill"), "destination": "redacted", "skill_count": 1}],
+        )
+
+        payload = self.run_cli("visibility", "status", "--root", str(repo), "--codex-home", str(codex_home), "--json")
+
+        self.assertEqual(payload["command"], "visibility status")
+        self.assertEqual(payload["skill_layer_counts"]["user"], 2)
+        self.assertEqual(payload["standalone_user_skill_pressure"]["count"], 2)
+        self.assertGreaterEqual(payload["receipt_count_sampled"], 1)
+        self.assertEqual(payload["recent_receipts"][0]["receipt_id"], "status-receipt")
+        self.assertFalse(payload["mutates_config"])
+        self.assertFalse(payload["edits_plugin_cache"])
+        self.assertFalse(payload["profile_apply_performed"])
+        self.assertEqual(config_path.read_text(encoding="utf-8"), "[plugins]\n")
+        self.assertTrue((codex_home / "skills" / "bulk-skill" / "SKILL.md").exists())
+
+    def test_visibility_restore_rejects_receipt_path_outside_receipt_root(self) -> None:
+        repo, codex_home = self.make_workspace("visibility-restore-receipt-scope")
+        outside_receipt = codex_home / "outside-receipt.json"
+        outside_receipt.write_text(json.dumps({"schema_version": 1, "receipt_id": "outside", "items": []}), encoding="utf-8")
+
+        payload = self.run_cli(
+            "visibility",
+            "restore",
+            "--receipt",
+            str(outside_receipt),
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--apply",
+            "--operator-confirmation",
+            "--json",
+            check=False,
+        )
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["error"], "receipt_path_out_of_scope")
+
+    def test_visibility_restore_rejects_source_mismatch_without_touching_plugin_cache(self) -> None:
+        repo, codex_home = self.make_workspace("visibility-restore-source-mismatch")
+        self.write_skill(codex_home / "skills", "skills2cli", name="skills2cli", description="Core skills2cli helper.")
+        hidden_dir = codex_home / "state" / "skills2cli" / "visibility-disabled" / "bad" / "skills" / "bulk-skill"
+        self.write_skill(hidden_dir.parent, hidden_dir.name, name="bulk-skill", description="Bulk optional user skill.")
+        self.write_visibility_receipt(
+            codex_home,
+            "bad",
+            [
+                {
+                    "top_dir": "bulk-skill",
+                    "source": str(codex_home / "plugins" / "cache" / "bulk-skill"),
+                    "destination": str(hidden_dir),
+                    "skill_count": 1,
+                }
+            ],
+        )
+
+        payload = self.visibility_restore_payload(repo, codex_home, "bad")
+
+        self.assertFalse(payload["ok"])
+        self.assertIn("source_mismatch:bulk-skill", payload["errors"])
+        self.assertTrue((hidden_dir / "SKILL.md").exists())
+        self.assertFalse((codex_home / "plugins" / "cache" / "bulk-skill").exists())
+
+    def test_visibility_restore_rejects_destination_out_of_scope(self) -> None:
+        repo, codex_home = self.make_workspace("visibility-restore-destination-scope")
+        hidden_dir = codex_home / "outside-hidden" / "bulk-skill"
+        self.write_skill(hidden_dir.parent, hidden_dir.name, name="bulk-skill", description="Bulk optional user skill.")
+        self.write_visibility_receipt(
+            codex_home,
+            "destination-scope",
+            [
+                {
+                    "top_dir": "bulk-skill",
+                    "source": str(codex_home / "skills" / "bulk-skill"),
+                    "destination": str(hidden_dir),
+                    "skill_count": 1,
+                    "move_status": "moved",
+                }
+            ],
+        )
+
+        payload = self.visibility_restore_payload(repo, codex_home, "destination-scope")
+
+        self.assertFalse(payload["ok"])
+        self.assertIn("destination_out_of_scope:bulk-skill", payload["errors"])
+        self.assertTrue((hidden_dir / "SKILL.md").exists())
+        self.assertFalse((codex_home / "skills" / "bulk-skill").exists())
+
+    def test_visibility_restore_rejects_destination_name_mismatch(self) -> None:
+        repo, codex_home = self.make_workspace("visibility-restore-destination-name")
+        hidden_dir = codex_home / "state" / "skills2cli" / "visibility-disabled" / "bad" / "skills" / "wrong-name"
+        self.write_skill(hidden_dir.parent, hidden_dir.name, name="bulk-skill", description="Bulk optional user skill.")
+        self.write_visibility_receipt(
+            codex_home,
+            "destination-name",
+            [
+                {
+                    "top_dir": "bulk-skill",
+                    "source": str(codex_home / "skills" / "bulk-skill"),
+                    "destination": str(hidden_dir),
+                    "skill_count": 1,
+                    "move_status": "moved",
+                }
+            ],
+        )
+
+        payload = self.visibility_restore_payload(repo, codex_home, "destination-name")
+
+        self.assertFalse(payload["ok"])
+        self.assertIn("destination_name_mismatch:bulk-skill", payload["errors"])
+        self.assertTrue((hidden_dir / "SKILL.md").exists())
+        self.assertFalse((codex_home / "skills" / "bulk-skill").exists())
+
+    def test_visibility_restore_rejects_invalid_top_dir(self) -> None:
+        repo, codex_home = self.make_workspace("visibility-restore-invalid-top-dir")
+        hidden_dir = codex_home / "state" / "skills2cli" / "visibility-disabled" / "bad" / "skills" / "bulk-skill"
+        self.write_skill(hidden_dir.parent, hidden_dir.name, name="bulk-skill", description="Bulk optional user skill.")
+        self.write_visibility_receipt(
+            codex_home,
+            "invalid-top-dir",
+            [
+                {
+                    "top_dir": "../bulk-skill",
+                    "source": str(codex_home / "skills" / "bulk-skill"),
+                    "destination": str(hidden_dir),
+                    "skill_count": 1,
+                    "move_status": "moved",
+                }
+            ],
+        )
+
+        payload = self.visibility_restore_payload(repo, codex_home, "invalid-top-dir")
+
+        self.assertFalse(payload["ok"])
+        self.assertIn("invalid_receipt_item_top_dir", payload["errors"])
+        self.assertTrue((hidden_dir / "SKILL.md").exists())
+        self.assertFalse((codex_home / "skills" / "bulk-skill").exists())
 
 
 if __name__ == "__main__":

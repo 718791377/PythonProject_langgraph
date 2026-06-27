@@ -23,7 +23,7 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 1. 冻结本方案并合入本地 `main`。
 2. 按冻结方案实现 live runtime、checker 与测试，再合入本地 `main`。
 
-运行时保持 preview-first：可以诊断、路由、soft-load、生成可见性候选，但不得自动修改用户级 `config.toml`、plugin cache、远端 refs 或 standalone skills。
+运行时保持 preview-first：可以诊断、路由、soft-load、生成可见性候选；只有在同时提供 `--apply` 与 `--operator-confirmation` 时，才允许对 standalone user skills 执行 receipt-backed visibility apply / restore。运行时不得修改用户级 `config.toml`、plugin cache 或远端 refs。
 
 ## 当前状态
 
@@ -32,7 +32,9 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 - Phase A 方案冻结包已在 `d9b467b` 集成本地 `main`。
 - Guard 热修复 `b654410` 是本 runtime 包的当前本地 `main` 基线。
 - Phase B runtime 实施已在本包中完成：同步更新 `core-dev.skills-budget-triage` 元数据、budget-warning intent 检测、standalone user-skill pressure 报告、checker 覆盖和聚焦测试。
-- Runtime 仍保持 advisory / preview-only：不执行 profile apply，不修改 `config.toml`，不编辑 plugin cache，不发布远端。
+- Phase B 已证明诊断与路由有效，但不能单独消除上下文压缩后的警示，因为主压力源仍是 standalone user-level skills。
+- Phase C 是原始目标所需的运行时收口：新增 `skills2cli visibility plan/apply/restore/status`，将 standalone user skills 从 startup-visible loader root 可回滚地移动到 receipt-backed user-level state library，并支持按 receipt 精确恢复。
+- 运行时默认安全：`profile suggest` 与 `visibility plan/status` 只读；`visibility apply/restore` 必须同时提供 `--apply` 与 `--operator-confirmation`；不修改 `config.toml`，不编辑 plugin cache，不发布远端。
 - 最终本地 `main` 集成证据由 local-main-first helper 通过 completed claim、rollback ref 和 post-merge gate 结果记录。
 
 <!-- CURRENT_STATUS_END -->
@@ -46,6 +48,9 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 - [x] 实现 `core-dev.skills-budget-triage` 路由元数据。
 - [x] 实现 budget-warning intent 检测与 standalone skill-pressure 报告。
 - [x] 扩展 checker / test，并将 runtime 包集成本地 `main`。
+- [ ] 实现 Phase C `skills2cli visibility` 命令，用于可回滚 standalone user-skill 减压。
+- [ ] 安装更新后的 user-level `skills2cli` wrapper，并对 `core-dev` 执行 receipt-backed visibility reduction。
+- [ ] 重新启动或 fresh launch Codex，验证 startup / compaction skills-budget warning 消失或显著下降。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -63,6 +68,8 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 - Checker evidence：`python -X utf8 tools/check_skills2cli_profile_routing.py --root . --json` 通过，并报告 user-level installed artifact drift，而不是把安装副本当作当前源。
 - 聚焦测试：`python -X utf8 tools/ci/run_python_tests.py --root . --pattern skills2cli.test.py` 通过 19 项；`python -X utf8 tools/ci/run_python_tests.py --root . --pattern check_skills2cli_profile_routing.test.py` 通过 10 项。
 - Repository guard：`python -X utf8 tools/run_openspec_guard.py --root . --json` 在拉长 timeout 窗口后通过；此前 120 秒超时没有被当成成功证据。
+- Phase C preview: `python -X utf8 tools/skills2cli.py visibility plan --profile core-dev --max-visible-user-skills 80 --codex-home C:\Users\lenovo\.codex --root . --json` reports `active_user_skill_count=1009`, `hidden_user_skill_count=929`, and `expected_active_user_skill_count_after_apply=80`, and does not modify config or plugin cache. Field definitions: `active_user_skill_count` means visible standalone user-level skill groups before apply; `hidden_user_skill_count` means groups planned for receipt-backed hiding; `expected_active_user_skill_count_after_apply` means the projected visible user-skill group count after the reversible apply.
+- Phase C 聚焦测试证据：`python -X utf8 tools/ci/run_python_tests.py --root . --pattern skills2cli.test.py` 覆盖 preview-only visibility planning，以及临时 Codex home 中的 receipt-backed apply / restore。
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -78,7 +85,7 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 - 这些警示必须路由到 `core-dev` 和专用 `core-dev.skills-budget-triage` task module。
 - audit usage evidence 只能在场景路由和安全门之后提供 boost，不得覆盖明确的 budget-warning intent。
 - `full` 仍然只允许显式请求和排障场景使用，不得成为普通 warning triage 的 top-1。
-- standalone user skills 与 plugin profiles 分开治理。runtime 可以生成可见性降低的 preview candidate，但 apply 必须后续显式授权、备份且可回滚。
+- standalone user skills 与 plugin profiles 分开治理。runtime 可以生成可见性降低的 preview candidate；apply 必须显式授权、先写 receipt、可回滚，且 restore 必须限制在 `CODEX_HOME/skills/` 与 `CODEX_HOME/state/skills2cli/visibility-disabled/` 两个受管路径之间。
 - skills/profile helper 输出只是 workflow context，不是 native expert / subagent evidence。
 
 ## Runtime 实施内容
@@ -111,14 +118,17 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 - 如果 `core-dev` hard-load preview 已经是 `changed=false`，提示“重复 apply plugin profile 不是主要修复点”。
 - 输出仍必须报告 `mutates_config=false`、`profile_apply_performed=false`、`edits_plugin_cache=false`，且不包含 raw skill bodies。
 
-### Visibility preview
+### Visibility reduction
 
-新增 preview-only standalone visibility 报告：
+新增 standalone visibility 报告与 receipt-backed reduction：
 
 - 统计并摘要 user-level standalone skills。
 - 区分可能常驻的 core skills 与 profile/task-specific skills。
-- 只输出 JSON/Markdown 候选动作，不修改文件系统。
-- 后续必须有显式 apply receipt 才能改变任何 user-level skill visibility 机制。
+- `visibility plan` 与 `visibility status` 只读，不得修改文件系统。
+- `visibility apply` 只有在同时提供 `--apply` 与 `--operator-confirmation` 时，才把非保留 standalone user skill directories 从 `CODEX_HOME/skills/` 移动到 `CODEX_HOME/state/skills2cli/visibility-disabled/<receipt>/skills/`。
+- `visibility apply` 必须先写包含 planned items 的 receipt，再逐项 move，并在每次 move 后刷新 receipt，避免崩溃窗口中出现“已移动但无 rollback receipt”的状态。
+- `visibility restore` 只有在同时提供 `--apply` 与 `--operator-confirmation` 时，才按 receipt 把目录移回；restore 必须校验 receipt path、source、destination、top_dir 均在受管路径内，拒绝伪造 receipt 移动 plugin cache、`config.toml` 或任意其他目录。
+- Receipt JSON 是 rollback contract；helper 输出保持 compact 与 path-redacted。
 
 ### Checkers 与测试
 
@@ -130,6 +140,8 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 - `full` 除非显式请求，否则必须 excluded。
 - 当 user 层 skills 数量主导总量时，必须报告 standalone-skill pressure。
 - profile suggestion 命令不得修改 config 或 plugin cache。
+- `visibility apply/restore` 必须有 `--apply` 与 `--operator-confirmation` gate。
+- 伪造或越界 receipt 必须被拒绝，且不得移动 plugin cache、`config.toml` 或其他非受管路径。
 
 ## 协同与执行
 
@@ -150,6 +162,9 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 python -X utf8 tools/skills2cli.py profile suggest --query "上下文压缩后 skills context budget 超限 1111 additional skills" --json
 python -X utf8 tools/skills2cli.py profile suggest --query "Codex compaction exceeded skills context budget additional skills removed" --json
 python -X utf8 tools/skills2cli.py audit warnings --since 2026-06-25 --limit 20 --json
+python -X utf8 tools/skills2cli.py visibility plan --profile core-dev --max-visible-user-skills 80 --json
+python -X utf8 tools/skills2cli.py visibility apply --profile core-dev --max-visible-user-skills 80 --apply --operator-confirmation --json
+python -X utf8 tools/skills2cli.py visibility restore --receipt <receipt_id> --apply --operator-confirmation --json
 python -X utf8 tools/check_skills2cli_profile_routing.py --root . --json
 python -X utf8 tools/run_openspec_guard.py --root .
 powershell -NoProfile -File tools/ci/local_gate.ps1
@@ -161,7 +176,7 @@ powershell -NoProfile -File tools/ci/local_mr_review.ps1
 - budget / compaction warning query top-1 选择 `core-dev`。
 - selected output 包含 budget-triage scenario 或 task module。
 - layer counts 明确暴露 user-level standalone skills 是主要压力来源。
-- 除非后续显式 apply，否则 runtime 保持 preview / advisory-only。
+- 除非后续显式 apply，否则 runtime 保持 preview / advisory-only；显式 apply 必须写 receipt、可 restore、并保持 `config.toml` 与 plugin cache 不变。
 - Phase A 与 Phase B 两个包都在 gate 通过后进入本地 `main`。
 
 ## 非目标
@@ -169,5 +184,5 @@ powershell -NoProfile -File tools/ci/local_mr_review.ps1
 - 不推送 GitLab/GitHub，不创建/更新/合并 MR，不同步远端。
 - 不批量编辑 plugin cache。
 - 不自动修改 `config.toml`。
-- 本轮不删除、移动或禁用 user-level standalone skills。
+- 不删除 user-level standalone skills。Phase C 只允许通过 receipt-backed `visibility apply` 将 standalone user skill directories 移出 startup-visible root，并必须支持精确 restore。
 - 不声称 profile helper 是 native expert evidence。

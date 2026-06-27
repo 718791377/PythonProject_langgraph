@@ -381,7 +381,7 @@
       "default_task_modules": [
         "skills-budget-triage"
       ],
-      "scenario_description": "Codex skills context budget, post-compaction skill description removal, omitted model-visible skills, and standalone user-skill pressure triage.",
+      "scenario_description": "Codex skills context budget, post-compaction skill description removal, omitted model-visible skills, and standalone user-skill pressure triage. Use receipt-backed standalone visibility reduction when user-layer pressure dominates.",
       "route_when": [
         "skills context budget",
         "Exceeded skills context budget",
@@ -394,7 +394,13 @@
         "Codex compaction",
         "skills budget warning",
         "Chinese compacted-context phrase",
-        "Chinese skill-context-budget phrase"
+        "Chinese skill-context-budget phrase",
+        "skills2cli visibility plan",
+        "skills2cli visibility apply",
+        "skills2cli visibility restore",
+        "standalone visibility reduction",
+        "receipt-backed visibility reduction",
+        "restart Codex to recompute model-visible skills"
       ],
       "positive_examples": [
         "skills context budget",
@@ -410,7 +416,13 @@
         "Exceeded skills context budget of 2%. All skill descriptions were removed and 1111 additional skills were not included in the model-visible skills list.",
         "Codex compaction exceeded skills context budget additional skills removed",
         "Chinese compacted-context phrase",
-        "Chinese skill-context-budget phrase"
+        "Chinese skill-context-budget phrase",
+        "skills2cli visibility plan",
+        "skills2cli visibility apply",
+        "skills2cli visibility restore",
+        "standalone visibility reduction",
+        "receipt-backed visibility reduction",
+        "restart Codex to recompute model-visible skills"
       ],
       "negative_examples": [
         "normal market model dataset research",
@@ -422,12 +434,14 @@
       "ranking_signals": [
         "budget warning intent wins before audit boost",
         "model-visible warning is not Hugging Face model research",
-        "standalone user-skill pressure is reported preview-only"
+        "standalone user-skill pressure is reported preview-only",
+        "repeat plugin profile apply is not the primary fix when user-layer pressure dominates",
+        "receipt-backed visibility reduction requires explicit apply and restore receipt"
       ],
       "plugin_hints": [
         "Skills2CLI"
       ],
-      "scene_description": "Codex skills context budget, post-compaction skill description removal, omitted model-visible skills, and standalone user-skill pressure triage.",
+      "scene_description": "Codex skills context budget, post-compaction skill description removal, omitted model-visible skills, and standalone user-skill pressure triage. Use skills2cli visibility plan/apply/restore for reversible standalone user-skill reduction.",
       "routing_scope": "task-or-scenario",
       "activation_scope": "soft-load",
       "governance_scope": "advisory-only",
@@ -1028,7 +1042,7 @@
         },
         "skills-budget-triage": {
           "description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage.",
-          "scenario_description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage.",
+          "scenario_description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage. Use receipt-backed standalone visibility reduction when user-layer pressure dominates.",
           "route_when": [
             "skills context budget",
             "Exceeded skills context budget",
@@ -1041,7 +1055,13 @@
             "Codex compaction",
             "skills budget warning",
             "Chinese compacted-context phrase",
-            "Chinese skill-context-budget phrase"
+            "Chinese skill-context-budget phrase",
+            "skills2cli visibility plan",
+            "skills2cli visibility apply",
+            "skills2cli visibility restore",
+            "standalone visibility reduction",
+            "receipt-backed visibility reduction",
+            "restart Codex to recompute model-visible skills"
           ],
           "positive_examples": [
             "skills context budget",
@@ -1057,7 +1077,13 @@
             "Exceeded skills context budget of 2%. All skill descriptions were removed and additional skills were not included.",
             "Codex compaction exceeded skills context budget additional skills removed",
             "Chinese compacted-context phrase",
-            "Chinese skill-context-budget phrase"
+            "Chinese skill-context-budget phrase",
+            "skills2cli visibility plan",
+            "skills2cli visibility apply",
+            "skills2cli visibility restore",
+            "standalone visibility reduction",
+            "receipt-backed visibility reduction",
+            "restart Codex to recompute model-visible skills"
           ],
           "negative_examples": [
             "whole-profile hard-load apply without warning evidence",
@@ -1074,12 +1100,14 @@
             "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md",
             "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
           ],
-          "routing_explanation": "Use this task module for Codex skills context budget and post-compaction model-visible skill warnings; diagnose user/plugin/repo layer pressure before any profile apply.",
+          "routing_explanation": "Use this task module for Codex skills context budget and post-compaction model-visible skill warnings; diagnose user/plugin/repo layer pressure, then use skills2cli visibility plan/apply/restore for receipt-backed standalone user-skill reduction when the user layer dominates.",
           "ranking_signals": [
             "exact budget warning phrase match",
             "context compaction phrase match",
             "model-visible skill omission phrase match",
-            "user-layer skill pressure reported separately from plugin profile apply"
+            "user-layer skill pressure reported separately from plugin profile apply",
+            "repeat plugin profile apply is not the primary fix when user-layer pressure dominates",
+            "receipt-backed visibility reduction requires explicit apply and restore receipt"
           ],
           "soft_load": {
             "use_for": [
@@ -1094,7 +1122,12 @@
               "Codex compaction",
               "skills budget warning",
               "Chinese compacted-context phrase",
-              "Chinese skill-context-budget phrase"
+              "Chinese skill-context-budget phrase",
+              "skills2cli visibility plan",
+              "skills2cli visibility apply",
+              "skills2cli visibility restore",
+              "standalone visibility reduction",
+              "receipt-backed visibility reduction"
             ],
             "skill_doc_hints": [
               "tools/skills2cli.py",
@@ -1104,10 +1137,12 @@
             "notes": [
               "Task modules are soft-load guidance only.",
               "Do not mutate user-level config, plugin cache, or standalone skills from profile suggest.",
-              "Hard-load previews resolve to the canonical top-level target_profile."
+              "Hard-load previews resolve to the canonical top-level target_profile.",
+              "When standalone user-skill pressure dominates, use skills2cli visibility plan first; apply requires --apply and --operator-confirmation and writes a restore receipt.",
+              "Hard-load previews resolve to the canonical top-level target_profile and do not solve standalone user-skill pressure by themselves."
             ]
           },
-          "scene_description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage.",
+          "scene_description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage. Use skills2cli visibility plan/apply/restore for reversible standalone user-skill reduction.",
           "qualified_name": "core-dev.skills-budget-triage",
           "routing_scope": "task-or-scenario",
           "activation_scope": "soft-load",

@@ -28,6 +28,20 @@ Use this skill when the operator wants a task-scoped plugin capability module in
    ```
    The script backs up `config.toml`, edits only `[plugins."..."] enabled = ...`, and prints restart/resume instructions.
 
+## Skills budget and standalone user-skill pressure
+
+Plugin profiles only edit plugin enablement in `config.toml`. They do not hide or disable standalone user skills under `CODEX_HOME/skills`.
+
+When `skills2cli profile suggest` reports `standalone_user_skill_pressure.user_layer_pressure=true`, do not keep reapplying `core-dev` as the primary fix. Instead:
+
+```powershell
+skills2cli visibility plan --profile core-dev --json
+skills2cli visibility apply --profile core-dev --apply --operator-confirmation --json
+skills2cli visibility restore --receipt <receipt_id> --apply --operator-confirmation --json
+```
+
+`visibility plan/status` are read-only. `visibility apply/restore` require both `--apply` and `--operator-confirmation`, write a rollback receipt, move only standalone user-skill directories, and do not edit plugin cache or `config.toml`.
+
 ## Safety rules
 
 - Do not delete plugin cache files.

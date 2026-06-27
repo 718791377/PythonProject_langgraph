@@ -23,7 +23,7 @@ The fix is local-main-first and split into two local integration packages:
 1. Freeze this plan and integrate it into local `main`.
 2. Implement the live runtime, checkers, and tests, then integrate that package into local `main`.
 
-The runtime remains preview-first. It may diagnose, route, soft-load, and generate visibility candidates, but it must not automatically mutate user-level `config.toml`, plugin cache files, remote refs, or standalone skills.
+The runtime remains preview-first. It may diagnose, route, soft-load, and generate visibility candidates. It may only apply or restore standalone user-skill visibility when both `--apply` and `--operator-confirmation` are present. It must not mutate user-level `config.toml`, plugin cache files, or remote refs.
 
 ## Current status
 
@@ -32,7 +32,9 @@ The runtime remains preview-first. It may diagnose, route, soft-load, and genera
 - Phase A plan-freeze package was integrated into local `main` at `d9b467b`.
 - Guard hotfix `b654410` is the current local `main` baseline for this runtime package.
 - Phase B runtime implementation is complete in this package: `core-dev.skills-budget-triage` metadata, budget-warning intent detection, standalone user-skill pressure reporting, checker coverage, and focused tests are updated together.
-- The runtime remains advisory and preview-only: no profile apply, no `config.toml` mutation, no plugin-cache edit, and no remote publication.
+- Phase B proved diagnosis and routing, but did not by itself eliminate the post-compaction warning because the dominant pressure source is still standalone user-level skills.
+- Phase C is now required for the original goal: add `skills2cli visibility plan/apply/restore/status` so standalone user skills can be moved out of the startup-visible loader root into a receipt-backed user-level state library, then restored exactly from the receipt.
+- The runtime remains safe by default: `profile suggest` and `visibility plan/status` are read-only; `visibility apply/restore` require both `--apply` and `--operator-confirmation`; no `config.toml` mutation, no plugin-cache edit, and no remote publication.
 - Final local-main integration evidence is recorded by the local-main-first helper through the completed claim, rollback ref, and post-merge gate result.
 
 <!-- CURRENT_STATUS_END -->
@@ -46,6 +48,9 @@ The runtime remains preview-first. It may diagnose, route, soft-load, and genera
 - [x] Implement `core-dev.skills-budget-triage` routing metadata.
 - [x] Implement budget-warning intent detection and standalone skill-pressure reporting.
 - [x] Extend checkers/tests and integrate the runtime package into local `main`.
+- [ ] Implement Phase C `skills2cli visibility` commands for reversible standalone user-skill reduction.
+- [ ] Install the updated user-level `skills2cli` wrapper and apply a receipt-backed `core-dev` visibility reduction.
+- [ ] Restart or fresh-launch Codex to verify the startup/compaction skills-budget warning is gone or materially reduced.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -61,8 +66,10 @@ The runtime remains preview-first. It may diagnose, route, soft-load, and genera
 - Runtime smoke: `python -X utf8 tools/skills2cli.py profile suggest --query "<Chinese compacted-context phrase> skills context budget <Chinese over-limit phrase> 1111 additional skills" --json` selects `core-dev.skills-budget-triage` and remains preview-only.
 - Warning audit evidence: `python -X utf8 tools/skills2cli.py audit warnings --since 2026-06-25 --limit 20 --json` reports budget-warning pressure and current frontmatter compatibility without raw skill bodies or raw log paths.
 - Checker evidence: `python -X utf8 tools/check_skills2cli_profile_routing.py --root . --json` passes and reports installed user-level artifact drift instead of treating installed copies as current.
-- Focused tests: `python -X utf8 tools/ci/run_python_tests.py --root . --pattern skills2cli.test.py` passes 19 tests; `python -X utf8 tools/ci/run_python_tests.py --root . --pattern check_skills2cli_profile_routing.test.py` passes 10 tests.
+- Focused tests: `python -X utf8 tools/ci/run_python_tests.py --root . --pattern skills2cli.test.py` passes 27 tests; `python -X utf8 tools/ci/run_python_tests.py --root . --pattern check_skills2cli_profile_routing.test.py` passes 10 tests.
 - Repository guard: `python -X utf8 tools/run_openspec_guard.py --root . --json` passes after using a long enough timeout window; the earlier 120-second timeout was not treated as success evidence.
+- Phase C preview: `python -X utf8 tools/skills2cli.py visibility plan --profile core-dev --max-visible-user-skills 80 --codex-home C:\Users\lenovo\.codex --root . --json` reports `active_user_skill_count=1009`, `hidden_user_skill_count=929`, and `expected_active_user_skill_count_after_apply=80` without mutating config or plugin cache; here `active_user_skill_count` means currently visible standalone user-level skill groups before apply, `hidden_user_skill_count` means groups planned for receipt-backed hiding, and `expected_active_user_skill_count_after_apply` means the projected visible user-skill group count after applying the reversible plan.
+- Phase C focused test evidence: `python -X utf8 tools/ci/run_python_tests.py --root . --pattern skills2cli.test.py` covers preview-only visibility planning plus receipt-backed apply/restore in a temporary Codex home.
 
 <!-- EVIDENCE_INDEX_END -->
 
@@ -78,7 +85,7 @@ The runtime remains preview-first. It may diagnose, route, soft-load, and genera
 - These warnings must route to `core-dev` and a dedicated `core-dev.skills-budget-triage` task module.
 - Audit usage evidence may boost candidates only after scenario routing and safety gates. It must not override explicit budget-warning intent.
 - `full` remains explicit-only and troubleshooting-only. It must not become top-1 for ordinary warning triage.
-- Standalone user skills are managed separately from plugin profiles. The runtime may generate a preview candidate for visibility reduction, but apply requires a later explicit, backed-up, reversible action.
+- Standalone user skills are managed separately from plugin profiles. The runtime may generate a preview candidate for visibility reduction. Apply requires an explicit, receipt-first, reversible action, and restore must stay inside the managed `CODEX_HOME/skills/` and `CODEX_HOME/state/skills2cli/visibility-disabled/` path boundary.
 - Skills/profile helper output is workflow context only. It is not native expert/subagent evidence.
 
 ## Runtime implementation
@@ -111,14 +118,18 @@ Extend profile suggestion and audit output so that:
 - If `core-dev` hard-load preview is already `changed=false`, the message explains that repeating plugin-profile apply is not the primary fix.
 - Output still reports `mutates_config=false`, `profile_apply_performed=false`, `edits_plugin_cache=false`, and no raw skill bodies.
 
-### Visibility preview
+### Visibility reduction
 
-Add preview-only standalone visibility reporting:
+Add standalone visibility reporting and receipt-backed reduction:
 
 - Count and summarize user-level standalone skills.
 - Classify likely always-on core skills versus profile/task-specific skills.
-- Emit candidate actions in JSON/Markdown without modifying the file system.
-- Require a future explicit apply receipt before changing any user-level skill visibility mechanism.
+- `visibility plan` and `visibility status` are read-only and must not modify the file system.
+- `visibility apply` moves non-kept standalone user skill directories from `CODEX_HOME/skills/` into `CODEX_HOME/state/skills2cli/visibility-disabled/<receipt>/skills/` only when both `--apply` and `--operator-confirmation` are present.
+- `visibility apply` writes a receipt with planned items before the first move, then refreshes the receipt after each successful move, so a crash window still leaves rollback evidence for moved directories.
+- `visibility restore` moves directories back from the recorded receipt only when both `--apply` and `--operator-confirmation` are present.
+- `visibility restore` validates the receipt path, source, destination, and top-level skill directory against the managed path boundary before moving anything; forged receipts must not move plugin cache, `config.toml`, or arbitrary paths.
+- Receipt JSON is the rollback contract; helper output remains compact and path-redacted.
 
 ### Checkers and tests
 
@@ -130,6 +141,8 @@ Extend checker coverage so that:
 - `full` is excluded unless explicitly requested.
 - User-layer skill pressure is reported when the user layer dominates total skills.
 - No profile suggestion command mutates config or plugin cache.
+- `visibility apply/restore` require both the explicit apply flag and operator confirmation.
+- Forged or out-of-scope receipts are rejected without moving plugin cache, `config.toml`, or other unmanaged paths.
 
 ## Collaboration and execution
 
@@ -150,6 +163,9 @@ Run at minimum:
 python -X utf8 tools/skills2cli.py profile suggest --query "Codex compaction exceeded skills context budget additional skills removed" --json
 python -X utf8 tools/skills2cli.py profile suggest --query "Codex compaction exceeded skills context budget additional skills removed" --json
 python -X utf8 tools/skills2cli.py audit warnings --since 2026-06-25 --limit 20 --json
+python -X utf8 tools/skills2cli.py visibility plan --profile core-dev --max-visible-user-skills 80 --json
+python -X utf8 tools/skills2cli.py visibility apply --profile core-dev --max-visible-user-skills 80 --apply --operator-confirmation --json
+python -X utf8 tools/skills2cli.py visibility restore --receipt <receipt_id> --apply --operator-confirmation --json
 python -X utf8 tools/check_skills2cli_profile_routing.py --root . --json
 python -X utf8 tools/run_openspec_guard.py --root .
 powershell -NoProfile -File tools/ci/local_gate.ps1
@@ -161,7 +177,7 @@ Acceptance criteria:
 - Budget/compaction warning queries select `core-dev` top-1.
 - Selected output includes a budget-triage scenario or task module.
 - Layer counts expose user-level standalone skills as the dominant pressure source.
-- Runtime remains preview/advisory-only unless a later explicit apply command is used.
+- Runtime remains preview/advisory-only unless a later explicit apply command is used; explicit apply must be receipt-backed, restorable, and leave `config.toml` plus plugin cache untouched.
 - Local `main` receives both Phase A and Phase B packages after gates pass.
 
 ## Non-goals
@@ -169,5 +185,5 @@ Acceptance criteria:
 - No GitLab/GitHub push, MR, merge, or sync.
 - No plugin-cache bulk edit.
 - No automatic `config.toml` mutation.
-- No deletion, moving, or disabling of user-level standalone skills during this implementation.
+- No deletion of user-level standalone skills. Phase C may move standalone user skill directories out of the startup-visible root only through receipt-backed `visibility apply`, and must support exact restore.
 - No claim that profile helpers are native expert evidence.

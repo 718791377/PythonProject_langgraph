@@ -387,6 +387,9 @@ skills2cli search <query> --json
 skills2cli show <skill_id> --json
 skills2cli audit warnings --since 7d --json
 skills2cli profile suggest --query "task summary" --json
+skills2cli visibility plan --profile core-dev --json
+skills2cli visibility apply --profile core-dev --apply --operator-confirmation --json
+skills2cli visibility restore --receipt <receipt_id> --apply --operator-confirmation --json
 ```
 
 ## Safety
@@ -394,6 +397,8 @@ skills2cli profile suggest --query "task summary" --json
 - Default output is compact and redacted.
 - Full skill bodies are not included by default.
 - `profile suggest` is preview-only and must not mutate Codex config.
+- `visibility plan` is preview-only; `visibility apply/restore` require both `--apply` and `--operator-confirmation` and create a rollback receipt.
+- Visibility apply moves only standalone user skill directories into a user-level state library; it must not edit plugin cache or `config.toml`.
 - Skill/profile output is workflow context, not native Codex subagent evidence.
 - Use upstream `mcp2cli` for MCP/OpenAPI/GraphQL runtime discovery and calls.
 """
