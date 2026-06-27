@@ -61,6 +61,22 @@ BUDGET_WARNING_RE = re.compile(r"Exceeded skills context budget of 2%", re.IGNOR
 SKIPPED_LOADING_RE = re.compile(r"Skipped loading\s+\d+\s+skill|Skipped loading|invalid SKILL\.md|missing YAML frontmatter", re.IGNORECASE)
 OMITTED_ADDITIONAL_RE = re.compile(r"(\d+)\s+additional skills were not included", re.IGNORECASE)
 ALL_DESCRIPTIONS_REMOVED_RE = re.compile(r"All skill descriptions were removed", re.IGNORECASE)
+BUDGET_INTENT_TERMS = (
+    "Exceeded skills context budget",
+    "skills context budget",
+    "All skill descriptions were removed",
+    "additional skills were not included",
+    "model-visible skills list",
+    "skill descriptions removed",
+    "context compacted",
+    "compaction",
+    "上下文压缩",
+    "技能上下文预算",
+    "skills预算",
+)
+BUDGET_TRIAGE_PROFILE = "core-dev"
+BUDGET_TRIAGE_SCENARIO = "skills-budget-triage"
+BUDGET_TRIAGE_TASK_MODULE = "skills-budget-triage"
 
 
 @dataclass(frozen=True)
@@ -309,6 +325,100 @@ def command_index(args: argparse.Namespace) -> int:
     return 0
 
 
+def build_skill_layer_counts(skills: list[dict[str, Any]]) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for item in skills:
+        counts[str(item.get("source_layer") or "unknown")] += 1
+    for layer in ("repo", "system", "user", "plugin"):
+        counts.setdefault(layer, 0)
+    return dict(sorted(counts.items()))
+
+
+def build_skill_layer_pressure(skills: list[dict[str, Any]]) -> dict[str, Any]:
+    by_layer = build_skill_layer_counts(skills)
+    total = sum(int(value) for value in by_layer.values())
+    dominant_layer = max(by_layer, key=lambda layer: (int(by_layer[layer]), layer)) if by_layer else "unknown"
+    user_count = int(by_layer.get("user") or 0)
+    plugin_count = int(by_layer.get("plugin") or 0)
+    repo_count = int(by_layer.get("repo") or 0)
+    user_layer_pressure = bool(total and user_count >= max(plugin_count, repo_count) and user_count / max(total, 1) >= 0.35)
+    if user_layer_pressure:
+        pressure_reason = "standalone_user_skills_dominate_visible_skill_surface"
+    elif plugin_count > user_count:
+        pressure_reason = "plugin_skills_are_larger_than_standalone_user_skills"
+    elif total:
+        pressure_reason = "skill_surface_pressure_detected_without_user_layer_dominance"
+    else:
+        pressure_reason = "no_skills_indexed"
+    return {
+        "available": True,
+        "total": total,
+        "by_layer": by_layer,
+        "dominant_layer": dominant_layer,
+        "user_layer_pressure": user_layer_pressure,
+        "standalone_user_skill_count": user_count,
+        "plugin_skill_count": plugin_count,
+        "repo_skill_count": repo_count,
+        "pressure_reason": pressure_reason,
+        "raw_skill_bodies_retained": False,
+        "raw_paths_retained": False,
+    }
+
+
+def build_standalone_user_skill_pressure(skills: list[dict[str, Any]], *, limit: int = 8) -> dict[str, Any]:
+    user_skills = [item for item in skills if str(item.get("source_layer") or "") == "user"]
+    incompatible = [item for item in user_skills if not item.get("codex_frontmatter_compatible")]
+    sampled = [
+        {
+            "skill_id": sanitize_text(str(item.get("skill_id") or ""), limit=120),
+            "name": sanitize_text(str(item.get("name") or ""), limit=80),
+            "description_hash": str(item.get("description_hash") or ""),
+            "frontmatter_compatible": bool(item.get("codex_frontmatter_compatible")),
+        }
+        for item in user_skills[:limit]
+    ]
+    return {
+        "available": True,
+        "count": len(user_skills),
+        "incompatible_count": len(incompatible),
+        "sampled_skill_metadata": sampled,
+        "sample_limit": limit,
+        "candidate_actions": [
+            "keep_core_dev_profile_loaded_for_developer_work",
+            "use_task_module_soft_load_for_current_task_before_hard_load_apply",
+            "audit_standalone_user_skills_before_any_visibility_apply",
+            "do_not_repeat_plugin_profile_apply_as_the_primary_fix_when_user_layer_dominates",
+        ],
+        "apply_required_for_visibility_changes": True,
+        "profile_apply_performed": False,
+        "mutates_config": False,
+        "edits_plugin_cache": False,
+        "raw_skill_bodies_retained": False,
+        "raw_paths_retained": False,
+    }
+
+
+def build_visibility_preview(skill_layer_pressure: dict[str, Any], standalone_pressure: dict[str, Any]) -> dict[str, Any]:
+    user_count = int(standalone_pressure.get("count") or 0)
+    return {
+        "mode": "preview-only",
+        "recommended_target_profile": BUDGET_TRIAGE_PROFILE,
+        "recommended_task_module": f"{BUDGET_TRIAGE_PROFILE}.{BUDGET_TRIAGE_TASK_MODULE}",
+        "dominant_layer": skill_layer_pressure.get("dominant_layer"),
+        "standalone_user_skill_count": user_count,
+        "candidate_actions": standalone_pressure.get("candidate_actions", []),
+        "why_profile_apply_alone_is_insufficient": (
+            "Plugin profile apply can reduce plugin visibility, but standalone user-level skills remain a separate pressure source."
+            if skill_layer_pressure.get("user_layer_pressure")
+            else "Profile apply remains preview-only and should be based on audited current skill layers."
+        ),
+        "requires_future_explicit_apply_receipt": True,
+        "mutates_config": False,
+        "edits_plugin_cache": False,
+        "profile_apply_performed": False,
+    }
+
+
 def score_record(record: dict[str, Any], terms: list[str]) -> int:
     haystack = " ".join(
         str(record.get(key, "")) for key in ("skill_id", "name", "source_layer", "description_summary")
@@ -413,6 +523,9 @@ QUERY_SYNONYMS = {
     "\u79d1\u7814": "science research",
     "\u6392\u969c": "troubleshoot troubleshooting",
     "\u5168\u90e8\u63d2\u4ef6": "all plugins full profile",
+    "\u4e0a\u4e0b\u6587\u538b\u7f29": "context compacted compaction",
+    "\u6280\u80fd\u4e0a\u4e0b\u6587\u9884\u7b97": "skills context budget",
+    "\u6280\u80fd\u9884\u7b97": "skills context budget",
 }
 
 def load_profile_registry(repo_root: Path, codex_home: Path | None = None) -> dict[str, Any]:
@@ -598,6 +711,37 @@ def normalize_query(value: str) -> str:
     return " ".join([base, *additions]).strip()
 
 
+def detect_budget_warning_intent(raw_query: str, normalized_query: str | None = None) -> dict[str, Any]:
+    raw = str(raw_query or "")
+    normalized = normalized_query or normalize_query(raw)
+    haystack = f"{raw}\n{normalized}".lower()
+    matched_terms: list[str] = []
+    for term in BUDGET_INTENT_TERMS:
+        candidate = term.lower()
+        if candidate and candidate in haystack and term not in matched_terms:
+            matched_terms.append(term)
+    regex_matches = {
+        "budget_warning": bool(BUDGET_WARNING_RE.search(raw) or BUDGET_WARNING_RE.search(normalized)),
+        "all_descriptions_removed": bool(ALL_DESCRIPTIONS_REMOVED_RE.search(raw) or ALL_DESCRIPTIONS_REMOVED_RE.search(normalized)),
+        "omitted_additional_skills": bool(OMITTED_ADDITIONAL_RE.search(raw) or OMITTED_ADDITIONAL_RE.search(normalized)),
+    }
+    compacted = "compaction" in haystack or "context compacted" in haystack or "上下文压缩" in haystack
+    budget_terms = "skills context budget" in haystack or "skill descriptions removed" in haystack or "additional skills" in haystack
+    detected = bool(matched_terms or any(regex_matches.values()) or (compacted and budget_terms))
+    blocked = ["web-saas", "company-ops", "market-research", "customer-comms", "creative-content", "pyside6-gui", "full"] if detected else []
+    return {
+        "detected": detected,
+        "matched_terms": matched_terms,
+        "regex_matches": regex_matches,
+        "target_profile": BUDGET_TRIAGE_PROFILE if detected else None,
+        "scenario_profile": BUDGET_TRIAGE_SCENARIO if detected else None,
+        "task_module": BUDGET_TRIAGE_TASK_MODULE if detected else None,
+        "audit_override_blocked": detected,
+        "blocked_unrelated_profiles": blocked,
+        "policy": "budget_warning_intent_routes_before_audit_boost_and_blocks_unrelated_profile_override",
+    }
+
+
 def match_terms(haystack: str, terms: Iterable[Any]) -> list[str]:
     haystack_lower = haystack.lower()
     hits: list[str] = []
@@ -738,6 +882,7 @@ def score_profile_candidate(
     scenario: dict[str, Any] | None,
     audit_context: dict[str, Any] | None = None,
     explicit_full: bool | None = None,
+    budget_intent: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     profile_hits = match_terms(query_text, profile_candidate_terms(profile_id, entry))
     scenario_hits = match_terms(query_text, scenario_candidate_terms(str(scenario_id), scenario)) if scenario_id and scenario else []
@@ -772,7 +917,23 @@ def score_profile_candidate(
         score += 2
     if full_explicit_required:
         score += 20 if explicit_full else -60
+    budget_detected = bool((budget_intent or {}).get("detected"))
+    budget_target_match = bool(
+        budget_detected
+        and profile_id == BUDGET_TRIAGE_PROFILE
+        and (scenario_id in {None, BUDGET_TRIAGE_SCENARIO})
+    )
+    budget_unrelated = bool(budget_detected and not budget_target_match)
+    if budget_target_match:
+        score += 85 if scenario_id == BUDGET_TRIAGE_SCENARIO else 55
+    elif budget_unrelated:
+        score -= 45
     audit_boost = audit_profile_boost(profile_id, audit_context)
+    if budget_unrelated:
+        audit_boost = dict(audit_boost)
+        audit_boost["suppressed_by_budget_warning_intent"] = True
+        audit_boost["original_boost"] = int(audit_boost.get("boost") or 0)
+        audit_boost["boost"] = 0
     score += int(audit_boost.get("boost") or 0)
     pressure_penalty = warning_pressure_penalty(profile_id, explicit_full, audit_context)
     score += int(pressure_penalty.get("penalty") or 0)
@@ -802,6 +963,9 @@ def score_profile_candidate(
             "audit_boost": int(audit_boost.get("boost") or 0),
             "warning_pressure_penalty": int(pressure_penalty.get("penalty") or 0),
             "full_selection_reason": full_selection_reason,
+            "budget_warning_intent": budget_detected,
+            "budget_warning_target_match": budget_target_match,
+            "budget_warning_unrelated_profile_blocked": budget_unrelated,
         },
         "why_full_selected": full_selection_reason if profile_id == "full" and explicit_full else None,
         "load_policy": load_policy,
@@ -818,8 +982,9 @@ def build_profile_recommendations(
     registry: dict[str, Any],
     raw_query: str,
     audit_context: dict[str, Any] | None = None,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool, dict[str, Any]]:
     query_text = normalize_query(raw_query)
+    budget_intent = detect_budget_warning_intent(raw_query, query_text)
     modules = registry.get("modules") or {}
     scenarios = registry.get("scenario_profiles") or {}
     explicit_full = is_explicit_full_request(query_text, registry)
@@ -834,14 +999,14 @@ def build_profile_recommendations(
             continue
         key = (target, scenario_id)
         seen_keys.add(key)
-        candidates.append(score_profile_candidate(query_text, target, entry, str(scenario_id), scenario, audit_context, explicit_full))
+        candidates.append(score_profile_candidate(query_text, target, entry, str(scenario_id), scenario, audit_context, explicit_full, budget_intent))
     for profile_id, entry in modules.items():
         if not isinstance(entry, dict):
             continue
         key = (str(profile_id), None)
         if key in seen_keys:
             continue
-        candidates.append(score_profile_candidate(query_text, str(profile_id), entry, None, None, audit_context, explicit_full))
+        candidates.append(score_profile_candidate(query_text, str(profile_id), entry, None, None, audit_context, explicit_full, budget_intent))
     excluded: list[dict[str, Any]] = []
     retained: list[dict[str, Any]] = []
     for item in candidates:
@@ -881,6 +1046,7 @@ def build_profile_recommendations(
                 (registry.get("scenario_profiles") or {}).get("repo-dev") if isinstance(registry.get("scenario_profiles"), dict) else None,
                 audit_context,
                 explicit_full,
+                budget_intent,
             )
         )
         retained[-1]["score"] = max(1, int(retained[-1]["score"]))
@@ -888,7 +1054,7 @@ def build_profile_recommendations(
         retained[-1]["matched_terms"] = retained[-1].get("matched_terms") or []
         retained[-1]["fallback_reason"] = "no_positive_profile_match_default_to_core_dev_preview"
     retained.sort(key=lambda item: (-int(item["score"]), 1 if item["profile"] == "full" else 0, str(item.get("scenario_profile") or item["profile"])))
-    return retained[:5], excluded[:10], explicit_full
+    return retained[:5], excluded[:10], explicit_full, budget_intent
 
 
 def command_profile_suggest(args: argparse.Namespace) -> int:
@@ -899,10 +1065,26 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
     registry = load_profile_registry(repo_root, codex_home)
     modules = registry.get("modules") if isinstance(registry.get("modules"), dict) else {}
     audit_context = load_audit_ranking_context(repo_root, modules.keys())
-    recommendations, excluded, explicit_full = build_profile_recommendations(registry, query, audit_context)
+    recommendations, excluded, explicit_full, budget_intent = build_profile_recommendations(registry, query, audit_context)
     selected = recommendations[0]
     selected_modules = selected.get("task_modules") or []
     target_profile = str(selected.get("target_profile") or selected.get("profile"))
+    skills = index_skills(repo_root, codex_home) if budget_intent.get("detected") else []
+    skill_layer_pressure = (
+        build_skill_layer_pressure(skills)
+        if budget_intent.get("detected")
+        else {"available": False, "reason": "budget_warning_intent_not_detected"}
+    )
+    standalone_user_skill_pressure = (
+        build_standalone_user_skill_pressure(skills)
+        if budget_intent.get("detected")
+        else {"available": False, "reason": "budget_warning_intent_not_detected"}
+    )
+    visibility_preview = (
+        build_visibility_preview(skill_layer_pressure, standalone_user_skill_pressure)
+        if budget_intent.get("detected")
+        else {"available": False, "mode": "not_applicable_without_budget_warning_intent"}
+    )
     soft_load_commands = [
         f".\\tools\\skill_sources\\plugin-modules\\scripts\\load_module.ps1 {item['qualified_name']} -Json"
         for item in selected_modules[:3]
@@ -927,6 +1109,16 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
             "query": query,
             "task_summary": query,
             "explicit_full_request": explicit_full,
+            "budget_warning_intent": budget_intent,
+            "skill_layer_counts": skill_layer_pressure.get("by_layer", {}),
+            "skill_layer_pressure": skill_layer_pressure,
+            "standalone_user_skill_pressure": standalone_user_skill_pressure,
+            "visibility_preview": visibility_preview,
+            "budget_warning_resolution_note": (
+                "Route to core-dev.skills-budget-triage; inspect standalone user-skill pressure before repeating plugin profile apply."
+                if budget_intent.get("detected")
+                else None
+            ),
             "eligibility_policy": "full profile is explicit-only; ordinary tasks receive focused non-full profiles and full is reported only in excluded_candidates.",
             "selected_profile": {
                 "profile": selected["profile"],
@@ -964,6 +1156,9 @@ def command_profile_suggest(args: argparse.Namespace) -> int:
                 "audit_profile_apply_allowed": bool(audit_context.get("profile_apply_allowed")),
                 "warning_pressure_available": bool((audit_context.get("warning_pressure") or {}).get("available")),
                 "warning_pressure": audit_context.get("warning_pressure"),
+                "budget_warning_intent": budget_intent,
+                "skill_layer_pressure_available": bool(skill_layer_pressure.get("available")),
+                "standalone_user_skill_pressure_available": bool(standalone_user_skill_pressure.get("available")),
                 "warning_pressure_penalty_applied_to_full": bool(
                     not explicit_full
                     and (audit_context.get("warning_pressure") or {}).get("available")

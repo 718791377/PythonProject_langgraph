@@ -56,7 +56,13 @@ class Skills2CliProfileRoutingCheckTest(unittest.TestCase):
         self.assertIn("creative-content-brand-assets", names)
         self.assertIn("pyside6-gui-packaging", names)
         self.assertIn("explicit-full-zh", names)
+        self.assertIn("core-dev-skills-budget-warning", names)
         self.assertTrue(all(item["ok"] for item in matrix))
+        budget = next(item for item in matrix if item["name"] == "core-dev-skills-budget-warning")
+        self.assertEqual(budget["selected_profile"], "core-dev")
+        self.assertEqual(budget["scenario_profile"], "skills-budget-triage")
+        self.assertIn("skills-budget-triage", budget["task_modules"])
+        self.assertTrue(budget["budget_warning_intent"]["detected"])
         explicit_zh = next(item for item in matrix if item["name"] == "explicit-full-zh")
         self.assertEqual(explicit_zh["selected_profile"], "full")
         ordinary = [item for item in matrix if not item["name"].startswith("explicit-full")]
@@ -156,6 +162,30 @@ class Skills2CliProfileRoutingCheckTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         parsed = json.loads(result.stdout)
         self.assertTrue(any("core-dev" in error and "scene_description" in error for error in parsed["errors"]))
+
+    def test_fails_when_budget_triage_task_module_missing(self) -> None:
+        root = self.make_root("missing-budget-task")
+        profiles_path = self.copy_registry(root)
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        del payload["modules"]["core-dev"]["task_modules"]["skills-budget-triage"]
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("core-dev.skills-budget-triage" in error for error in parsed["errors"]))
+
+    def test_fails_when_budget_scenario_targets_non_core_dev(self) -> None:
+        root = self.make_root("wrong-budget-target")
+        profiles_path = self.copy_registry(root)
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        payload["scenario_profiles"]["skills-budget-triage"]["target_profile"] = "web-saas"
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("skills-budget-triage" in error and "core-dev" in error for error in parsed["errors"]))
 
 
 if __name__ == "__main__":

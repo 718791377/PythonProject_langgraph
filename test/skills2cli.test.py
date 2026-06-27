@@ -283,6 +283,13 @@ class Skills2CliTest(unittest.TestCase):
                 False,
             ),
             (
+                "Codex compaction exceeded skills context budget additional skills removed",
+                "core-dev",
+                "skills-budget-triage",
+                {"skills-budget-triage"},
+                False,
+            ),
+            (
                 "Expo mobile build and Sentry observability",
                 "web-saas",
                 "web-product",
@@ -379,6 +386,106 @@ class Skills2CliTest(unittest.TestCase):
         self.assertEqual(selected["scenario_profile"], "customer-messaging")
         self.assertIn("messaging", {item["task_module"] for item in payload["task_modules"]})
         self.assertFalse(payload["routing_evidence"]["native_subagent_evidence"])
+
+    def test_profile_suggest_routes_skills_budget_warning_to_core_dev_budget_triage(self) -> None:
+        payload = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "Exceeded skills context budget of 2%. All skill descriptions were removed and 1111 additional skills were not included in the model-visible skills list.",
+            "--json",
+        )
+
+        self.assert_advisory_only_profile_suggest(payload)
+        self.assertTrue(payload["budget_warning_intent"]["detected"])
+        self.assertEqual(payload["selected_profile"]["target_profile"], "core-dev")
+        self.assertEqual(payload["selected_profile"]["scenario_profile"], "skills-budget-triage")
+        self.assertIn("skills-budget-triage", {item["task_module"] for item in payload["task_modules"]})
+        self.assertIn("core-dev.skills-budget-triage", {item["qualified_name"] for item in payload["task_modules"]})
+        self.assertTrue(payload["selected_profile"]["rank_factors"]["budget_warning_intent"])
+        self.assertNotEqual(payload["selected_profile"]["target_profile"], "market-research")
+        self.assertNotEqual(payload["selected_profile"]["target_profile"], "web-saas")
+        self.assertFalse(payload["mutates_config"])
+        self.assertFalse(payload["edits_plugin_cache"])
+        self.assertFalse(payload["profile_apply_performed"])
+
+    def test_profile_suggest_budget_warning_reports_user_layer_pressure(self) -> None:
+        repo, codex_home = self.make_workspace("budget-layer-pressure")
+        registry_source = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        registry_target = repo / "tools" / "skill_sources" / "plugin-modules" / "references"
+        registry_target.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(registry_source, registry_target / "profiles.json")
+        for index in range(5):
+            self.write_skill(codex_home / "skills", f"user-skill-{index}", name=f"user-skill-{index}", description="User standalone skill.")
+        self.write_skill(codex_home / "plugins" / "cache", "plugin/pkg/hash/skills/plugin-skill", name="plugin-skill", description="Plugin skill.")
+        self.write_skill(repo / ".codex" / "skills", "repo-skill", name="repo-skill", description="Repo skill.")
+
+        payload = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "Exceeded skills context budget of 2%. All skill descriptions were removed and 1111 additional skills were not included in the model-visible skills list.",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+        )
+
+        self.assertTrue(payload["budget_warning_intent"]["detected"])
+        self.assertEqual(payload["skill_layer_pressure"]["dominant_layer"], "user")
+        self.assertGreater(payload["skill_layer_pressure"]["by_layer"]["user"], payload["skill_layer_pressure"]["by_layer"]["plugin"])
+        self.assertTrue(payload["skill_layer_pressure"]["user_layer_pressure"])
+        self.assertIn("standalone", payload["skill_layer_pressure"]["pressure_reason"])
+        self.assertEqual(payload["standalone_user_skill_pressure"]["count"], 5)
+        self.assertFalse(payload["visibility_preview"]["mutates_config"])
+        self.assertTrue(payload["visibility_preview"]["requires_future_explicit_apply_receipt"])
+
+    def test_profile_suggest_budget_warning_ignores_unrelated_audit_boost(self) -> None:
+        repo, codex_home = self.make_workspace("budget-audit-override")
+        registry_source = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+        registry_target = repo / "tools" / "skill_sources" / "plugin-modules" / "references"
+        registry_target.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(registry_source, registry_target / "profiles.json")
+        memory = repo / "docs_bilingual" / "memory"
+        memory.mkdir(parents=True, exist_ok=True)
+        (memory / "skills_usage_audit_30d_summary_2099-01-01-0000.md").write_text(
+            "\n".join(
+                [
+                    "- Profile apply allowed: `False`",
+                    "- Summary review state: `summary-reviewed`",
+                    "- 30-day budget warning count: `9`",
+                    "- All-descriptions-removed count: `9`",
+                    "- Maximum omitted additional skills: `1111`",
+                    "- Highest severity: `high`",
+                    "- Severity recommended action: `avoid_full_profile_and_prefer_smaller_default_or_task_profile_during_audit`",
+                    "",
+                    "| profile | score | evidence reason | unused | review | bucket |",
+                    "| --- | ---: | --- | ---: | --- | --- |",
+                    "| web-saas | 9000 | mapped_tool_calls_present_manual_review_required | None | manual_review_required | candidate_for_project_or_default_profile_review |",
+                    "| core-dev | 1 | no_mapped_tool_call_medium_evidence | None | manual_review_required | candidate_for_project_or_default_profile_review |",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.run_cli(
+            "profile",
+            "suggest",
+            "--query",
+            "Exceeded skills context budget of 2%. All skill descriptions were removed and 1111 additional skills were not included in the model-visible skills list.",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+        )
+
+        self.assertEqual(payload["selected_profile"]["target_profile"], "core-dev")
+        self.assertNotEqual(payload["selected_profile"]["target_profile"], "web-saas")
+        self.assertTrue(payload["ranking_inputs"]["budget_warning_intent"]["audit_override_blocked"])
+        self.assertIn("web-saas", payload["ranking_inputs"]["budget_warning_intent"]["blocked_unrelated_profiles"])
 
     def test_profile_suggest_consumes_sanitized_audit_summary_for_rerank(self) -> None:
         repo, codex_home = self.make_workspace("audit-rerank")

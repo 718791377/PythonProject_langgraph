@@ -375,6 +375,63 @@
       "activation_scope": "hard-load-preview",
       "governance_scope": "advisory-only",
       "evidence_scope": "scenario-negative-audit"
+    },
+    "skills-budget-triage": {
+      "target_profile": "core-dev",
+      "default_task_modules": [
+        "skills-budget-triage"
+      ],
+      "scenario_description": "Codex skills context budget, post-compaction skill description removal, omitted model-visible skills, and standalone user-skill pressure triage.",
+      "route_when": [
+        "skills context budget",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "skill descriptions removed",
+        "context compacted",
+        "compaction",
+        "Codex compaction",
+        "skills budget warning",
+        "Chinese compacted-context phrase",
+        "Chinese skill-context-budget phrase"
+      ],
+      "positive_examples": [
+        "skills context budget",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "skill descriptions removed",
+        "context compacted",
+        "compaction",
+        "Codex compaction",
+        "skills budget warning",
+        "Exceeded skills context budget of 2%. All skill descriptions were removed and 1111 additional skills were not included in the model-visible skills list.",
+        "Codex compaction exceeded skills context budget additional skills removed",
+        "Chinese compacted-context phrase",
+        "Chinese skill-context-budget phrase"
+      ],
+      "negative_examples": [
+        "normal market model dataset research",
+        "normal web deployment",
+        "ordinary customer messaging",
+        "full profile broad discovery without budget warning"
+      ],
+      "load_policy": "soft-load",
+      "ranking_signals": [
+        "budget warning intent wins before audit boost",
+        "model-visible warning is not Hugging Face model research",
+        "standalone user-skill pressure is reported preview-only"
+      ],
+      "plugin_hints": [
+        "Skills2CLI"
+      ],
+      "scene_description": "Codex skills context budget, post-compaction skill description removal, omitted model-visible skills, and standalone user-skill pressure triage.",
+      "routing_scope": "task-or-scenario",
+      "activation_scope": "soft-load",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     }
   },
   "allow_full_only_plugins": {},
@@ -398,7 +455,19 @@
         "temporal",
         "workflow",
         "browser",
-        "documents"
+        "documents",
+        "skills context budget",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "skill descriptions removed",
+        "context compacted",
+        "compaction",
+        "Codex compaction",
+        "skills budget warning",
+        "Chinese compacted-context phrase",
+        "Chinese skill-context-budget phrase"
       ],
       "negative_examples": [
         "customer messaging campaign",
@@ -436,7 +505,9 @@
       "ranking_signals": [
         "boost exact plugin names",
         "boost recent strong audit evidence",
-        "penalize warning-heavy broad profiles"
+        "penalize warning-heavy broad profiles",
+        "boost explicit skills-budget warning intent before audit evidence",
+        "inspect standalone user-skill pressure before profile apply"
       ],
       "plugins": [
         "Browser",
@@ -954,6 +1025,94 @@
           "activation_scope": "soft-load",
           "governance_scope": "advisory-only",
           "evidence_scope": "scenario-negative-audit"
+        },
+        "skills-budget-triage": {
+          "description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage.",
+          "scenario_description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage.",
+          "route_when": [
+            "skills context budget",
+            "Exceeded skills context budget",
+            "All skill descriptions were removed",
+            "additional skills were not included",
+            "model-visible skills list",
+            "skill descriptions removed",
+            "context compacted",
+            "compaction",
+            "Codex compaction",
+            "skills budget warning",
+            "Chinese compacted-context phrase",
+            "Chinese skill-context-budget phrase"
+          ],
+          "positive_examples": [
+            "skills context budget",
+            "Exceeded skills context budget",
+            "All skill descriptions were removed",
+            "additional skills were not included",
+            "model-visible skills list",
+            "skill descriptions removed",
+            "context compacted",
+            "compaction",
+            "Codex compaction",
+            "skills budget warning",
+            "Exceeded skills context budget of 2%. All skill descriptions were removed and additional skills were not included.",
+            "Codex compaction exceeded skills context budget additional skills removed",
+            "Chinese compacted-context phrase",
+            "Chinese skill-context-budget phrase"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply without warning evidence",
+            "web deployment without skills budget warning",
+            "market research model dataset inspection without Codex warning"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Skills2CLI"
+          ],
+          "skill_doc_hints": [
+            "tools/skills2cli.py",
+            "tools/skill_sources/plugin-modules/references/profiles.json",
+            "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md",
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+          ],
+          "routing_explanation": "Use this task module for Codex skills context budget and post-compaction model-visible skill warnings; diagnose user/plugin/repo layer pressure before any profile apply.",
+          "ranking_signals": [
+            "exact budget warning phrase match",
+            "context compaction phrase match",
+            "model-visible skill omission phrase match",
+            "user-layer skill pressure reported separately from plugin profile apply"
+          ],
+          "soft_load": {
+            "use_for": [
+              "skills context budget",
+              "Exceeded skills context budget",
+              "All skill descriptions were removed",
+              "additional skills were not included",
+              "model-visible skills list",
+              "skill descriptions removed",
+              "context compacted",
+              "compaction",
+              "Codex compaction",
+              "skills budget warning",
+              "Chinese compacted-context phrase",
+              "Chinese skill-context-budget phrase"
+            ],
+            "skill_doc_hints": [
+              "tools/skills2cli.py",
+              "tools/skill_sources/plugin-modules/references/profiles.json",
+              "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Do not mutate user-level config, plugin cache, or standalone skills from profile suggest.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage.",
+          "qualified_name": "core-dev.skills-budget-triage",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
         }
       },
       "scene_description": "Daily developer profile for repository work, code review, security checks, OpenAI/ChatGPT Apps development, workflow orchestration, browser verification, and document artifacts.",
@@ -984,7 +1143,13 @@
       "negative_examples": [
         "offline PySide6 GUI only",
         "Gmail inbox triage only",
-        "market research only"
+        "market research only",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
       ],
       "load_policy": "default-candidate",
       "plugin_hints": [
@@ -1595,7 +1760,13 @@
       "negative_examples": [
         "source-code security scan",
         "mobile app build",
-        "scientific citation review"
+        "scientific citation review",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
       ],
       "load_policy": "default-candidate",
       "plugin_hints": [
@@ -2150,7 +2321,13 @@
       "negative_examples": [
         "send customer WhatsApp",
         "deploy web app",
-        "desktop GUI build"
+        "desktop GUI build",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
       ],
       "load_policy": "default-candidate",
       "plugin_hints": [
@@ -2431,7 +2608,13 @@
           ],
           "negative_examples": [
             "whole-profile hard-load apply",
-            "unrelated broad plugin troubleshooting"
+            "unrelated broad plugin troubleshooting",
+            "skills context budget warning",
+            "Exceeded skills context budget",
+            "All skill descriptions were removed",
+            "additional skills were not included",
+            "model-visible skills list",
+            "context compacted skills warning"
           ],
           "load_policy": "soft-load",
           "plugin_hints": [
@@ -2611,7 +2794,13 @@
       "negative_examples": [
         "CI repair",
         "BioRender figure",
-        "desktop GUI"
+        "desktop GUI",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
       ],
       "load_policy": "default-candidate",
       "plugin_hints": [
@@ -2945,7 +3134,13 @@
       "negative_examples": [
         "database backend",
         "CI security review",
-        "meeting transcript"
+        "meeting transcript",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
       ],
       "load_policy": "default-candidate",
       "plugin_hints": [
@@ -3377,7 +3572,13 @@
       "negative_examples": [
         "web SaaS deploy",
         "cloud plugin hard-load",
-        "customer messaging"
+        "customer messaging",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
       ],
       "load_policy": "repo-local-only",
       "plugin_hints": [],

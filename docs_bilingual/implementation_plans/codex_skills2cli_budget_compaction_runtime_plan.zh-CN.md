@@ -29,9 +29,11 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 
 <!-- CURRENT_STATUS_START -->
 
-- Phase A 方案冻结包正在本地 worktree `docs/skills2cli-budget-compaction-plan` 中准备。
-- Phase B runtime 实施尚未开始。
-- 远端发布未授权。
+- Phase A 方案冻结包已在 `d9b467b` 集成本地 `main`。
+- Guard 热修复 `b654410` 是本 runtime 包的当前本地 `main` 基线。
+- Phase B runtime 实施已在本包中完成：同步更新 `core-dev.skills-budget-triage` 元数据、budget-warning intent 检测、standalone user-skill pressure 报告、checker 覆盖和聚焦测试。
+- Runtime 仍保持 advisory / preview-only：不执行 profile apply，不修改 `config.toml`，不编辑 plugin cache，不发布远端。
+- 最终本地 `main` 集成证据由 local-main-first helper 通过 completed claim、rollback ref 和 post-merge gate 结果记录。
 
 <!-- CURRENT_STATUS_END -->
 
@@ -41,9 +43,9 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 
 - [x] 诊断当前 budget-warning 路由和 skills 分层数量。
 - [x] 将本实施方案冻结为 Phase A 本地集成包。
-- [ ] 实现 `core-dev.skills-budget-triage` 路由元数据。
-- [ ] 实现 budget-warning intent 检测与 standalone skill-pressure 报告。
-- [ ] 扩展 checker / test，并将 runtime 包集成本地 `main`。
+- [x] 实现 `core-dev.skills-budget-triage` 路由元数据。
+- [x] 实现 budget-warning intent 检测与 standalone skill-pressure 报告。
+- [x] 扩展 checker / test，并将 runtime 包集成本地 `main`。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -52,9 +54,15 @@ Exceeded skills context budget of 2%. All skill descriptions were removed and 11
 <!-- EVIDENCE_INDEX_START -->
 
 - 基线命令：`python -X utf8 tools/skills2cli.py profile suggest --query "上下文压缩后 skills context budget 超限 1111 additional skills" --json`。
-- 基线发现：`web-saas` 当前在 budget-warning query 中排在 `core-dev` 前。
+- 基线发现：修复前 `web-saas` 在 budget-warning query 中排在 `core-dev` 前。
 - 基线命令：`python -X utf8 tools/skills2cli.py index --json`。
 - 基线发现：skills 分层数量为 `user=1009`、`plugin=364`、`repo=29`、`system=5`。
+- Runtime smoke：`python -X utf8 tools/skills2cli.py profile suggest --query "Exceeded skills context budget of 2%. All skill descriptions were removed and 1111 additional skills were not included in the model-visible skills list." --json` 选择 `core-dev`，并返回 scenario profile `skills-budget-triage`、task module `core-dev.skills-budget-triage` 和 `user_layer_pressure=true`。
+- Runtime smoke：`python -X utf8 tools/skills2cli.py profile suggest --query "上下文压缩后 skills context budget 超限 1111 additional skills" --json` 选择 `core-dev.skills-budget-triage`，且保持 preview-only。
+- Warning audit evidence：`python -X utf8 tools/skills2cli.py audit warnings --since 2026-06-25 --limit 20 --json` 报告 budget-warning pressure 和当前 frontmatter compatibility，不保留 raw skill bodies 或 raw log paths。
+- Checker evidence：`python -X utf8 tools/check_skills2cli_profile_routing.py --root . --json` 通过，并报告 user-level installed artifact drift，而不是把安装副本当作当前源。
+- 聚焦测试：`python -X utf8 tools/ci/run_python_tests.py --root . --pattern skills2cli.test.py` 通过 19 项；`python -X utf8 tools/ci/run_python_tests.py --root . --pattern check_skills2cli_profile_routing.test.py` 通过 10 项。
+- Repository guard：`python -X utf8 tools/run_openspec_guard.py --root . --json` 在拉长 timeout 窗口后通过；此前 120 秒超时没有被当成成功证据。
 
 <!-- EVIDENCE_INDEX_END -->
 

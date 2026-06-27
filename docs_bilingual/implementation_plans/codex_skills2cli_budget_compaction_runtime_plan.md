@@ -29,9 +29,11 @@ The runtime remains preview-first. It may diagnose, route, soft-load, and genera
 
 <!-- CURRENT_STATUS_START -->
 
-- Phase A plan-freeze package is being prepared in local worktree `docs/skills2cli-budget-compaction-plan`.
-- Phase B runtime implementation has not started yet.
-- Remote publication is not authorized.
+- Phase A plan-freeze package was integrated into local `main` at `d9b467b`.
+- Guard hotfix `b654410` is the current local `main` baseline for this runtime package.
+- Phase B runtime implementation is complete in this package: `core-dev.skills-budget-triage` metadata, budget-warning intent detection, standalone user-skill pressure reporting, checker coverage, and focused tests are updated together.
+- The runtime remains advisory and preview-only: no profile apply, no `config.toml` mutation, no plugin-cache edit, and no remote publication.
+- Final local-main integration evidence is recorded by the local-main-first helper through the completed claim, rollback ref, and post-merge gate result.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -41,9 +43,9 @@ The runtime remains preview-first. It may diagnose, route, soft-load, and genera
 
 - [x] Diagnose current budget-warning routing and skill-layer counts.
 - [x] Freeze this implementation plan as the Phase A local integration package.
-- [ ] Implement `core-dev.skills-budget-triage` routing metadata.
-- [ ] Implement budget-warning intent detection and standalone skill-pressure reporting.
-- [ ] Extend checkers/tests and integrate the runtime package into local `main`.
+- [x] Implement `core-dev.skills-budget-triage` routing metadata.
+- [x] Implement budget-warning intent detection and standalone skill-pressure reporting.
+- [x] Extend checkers/tests and integrate the runtime package into local `main`.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -52,9 +54,15 @@ The runtime remains preview-first. It may diagnose, route, soft-load, and genera
 <!-- EVIDENCE_INDEX_START -->
 
 - Baseline command: `python -X utf8 tools/skills2cli.py profile suggest --query "Codex compaction exceeded skills context budget additional skills removed" --json`.
-- Baseline finding: `web-saas` currently ranks above `core-dev` for the budget-warning query.
+- Baseline finding: `web-saas` ranked above `core-dev` for the budget-warning query before this runtime package.
 - Baseline command: `python -X utf8 tools/skills2cli.py index --json`.
-- Baseline finding: skills layer counts are `user=1009`, `plugin=364`, `repo=29`, and `system=5`.
+- Baseline finding: skills layer counts were `user=1009`, `plugin=364`, `repo=29`, and `system=5`.
+- Runtime smoke: `python -X utf8 tools/skills2cli.py profile suggest --query "Exceeded skills context budget of 2%. All skill descriptions were removed and 1111 additional skills were not included in the model-visible skills list." --json` selects `core-dev` with scenario profile `skills-budget-triage`, task module `core-dev.skills-budget-triage`, and `user_layer_pressure=true`.
+- Runtime smoke: `python -X utf8 tools/skills2cli.py profile suggest --query "<Chinese compacted-context phrase> skills context budget <Chinese over-limit phrase> 1111 additional skills" --json` selects `core-dev.skills-budget-triage` and remains preview-only.
+- Warning audit evidence: `python -X utf8 tools/skills2cli.py audit warnings --since 2026-06-25 --limit 20 --json` reports budget-warning pressure and current frontmatter compatibility without raw skill bodies or raw log paths.
+- Checker evidence: `python -X utf8 tools/check_skills2cli_profile_routing.py --root . --json` passes and reports installed user-level artifact drift instead of treating installed copies as current.
+- Focused tests: `python -X utf8 tools/ci/run_python_tests.py --root . --pattern skills2cli.test.py` passes 19 tests; `python -X utf8 tools/ci/run_python_tests.py --root . --pattern check_skills2cli_profile_routing.test.py` passes 10 tests.
+- Repository guard: `python -X utf8 tools/run_openspec_guard.py --root . --json` passes after using a long enough timeout window; the earlier 120-second timeout was not treated as success evidence.
 
 <!-- EVIDENCE_INDEX_END -->
 

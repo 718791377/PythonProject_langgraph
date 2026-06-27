@@ -49,6 +49,15 @@ PROFILE_SUGGEST_SMOKE_MATRIX = (
         "explicit_full": False,
     },
     {
+        "name": "core-dev-skills-budget-warning",
+        "query": "Exceeded skills context budget of 2%. All skill descriptions were removed and 1111 additional skills were not included in the model-visible skills list.",
+        "target_profile": "core-dev",
+        "scenario_profile": "skills-budget-triage",
+        "task_modules": {"skills-budget-triage"},
+        "explicit_full": False,
+        "budget_warning_intent": True,
+    },
+    {
         "name": "web-saas-mobile-observability",
         "query": "Expo mobile build and Sentry observability",
         "target_profile": "web-saas",
@@ -259,6 +268,34 @@ def validate_registry(root: Path) -> dict[str, Any]:
     if not any(term in full_terms for term in ("all plugins", "full profile", "troubleshoot all plugins")):
         errors.append("Profile `full` must be described as troubleshooting-only broad discovery.")
 
+    budget_task = (modules.get("core-dev") or {}).get("task_modules", {}).get("skills-budget-triage")
+    budget_scenario = scenarios.get("skills-budget-triage")
+    required_budget_terms = {
+        "skills context budget",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "compaction",
+        "model-visible skills list",
+    }
+    if not isinstance(budget_task, dict):
+        errors.append("Missing required task module `core-dev.skills-budget-triage` for budget warning triage.")
+    else:
+        identity = task_module_identity("core-dev", "skills-budget-triage", budget_task)
+        if not identity["declared_matches_expected"]:
+            errors.append("Task module `core-dev.skills-budget-triage` must declare qualified_name `core-dev.skills-budget-triage`.")
+        task_terms = set(as_list(budget_task.get("route_when"))) | set(as_list(budget_task.get("positive_examples")))
+        missing_terms = sorted(term for term in required_budget_terms if term not in task_terms)
+        if missing_terms:
+            errors.append(f"Task module `core-dev.skills-budget-triage` missing budget route terms: {', '.join(missing_terms)}.")
+    if not isinstance(budget_scenario, dict):
+        errors.append("Missing required scenario profile `skills-budget-triage`.")
+    else:
+        if budget_scenario.get("target_profile") != "core-dev":
+            errors.append("Scenario profile `skills-budget-triage` must target `core-dev`.")
+        if "skills-budget-triage" not in as_list(budget_scenario.get("default_task_modules")):
+            errors.append("Scenario profile `skills-budget-triage` must default to task module `skills-budget-triage`.")
+
     profile_suggest_contract: dict[str, Any] = {
         "checked": False,
         "ok": False,
@@ -320,6 +357,8 @@ def validate_registry(root: Path) -> dict[str, Any]:
                         "scenario_profile": selected.get("scenario_profile"),
                         "task_modules": sorted(task_modules),
                         "explicit_full_request": suggestion.get("explicit_full_request"),
+                        "budget_warning_intent": suggestion.get("budget_warning_intent"),
+                        "skill_layer_pressure": suggestion.get("skill_layer_pressure"),
                         "excluded_candidates": suggestion.get("excluded_candidates", []),
                     }
                 )
@@ -333,6 +372,20 @@ def validate_registry(root: Path) -> dict[str, Any]:
                 )
                 if case.get("scenario_profile"):
                     ok = ok and selected.get("scenario_profile") == case.get("scenario_profile")
+                if case.get("budget_warning_intent"):
+                    budget_intent = suggestion.get("budget_warning_intent") if isinstance(suggestion, dict) else {}
+                    layer_pressure = suggestion.get("skill_layer_pressure") if isinstance(suggestion, dict) else {}
+                    ok = (
+                        ok
+                        and isinstance(budget_intent, dict)
+                        and budget_intent.get("detected") is True
+                        and budget_intent.get("target_profile") == "core-dev"
+                        and selected.get("target_profile") == "core-dev"
+                        and selected.get("scenario_profile") == "skills-budget-triage"
+                        and "skills-budget-triage" in task_modules
+                        and isinstance(layer_pressure, dict)
+                        and layer_pressure.get("available") is True
+                    )
                 if not case.get("explicit_full"):
                     ok = ok and selected.get("target_profile") != "full"
                     ok = ok and any(
