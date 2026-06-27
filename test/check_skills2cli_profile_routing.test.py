@@ -187,6 +187,66 @@ class Skills2CliProfileRoutingCheckTest(unittest.TestCase):
         parsed = json.loads(result.stdout)
         self.assertTrue(any("skills-budget-triage" in error and "core-dev" in error for error in parsed["errors"]))
 
+    def test_fails_when_known_plugin_missing_config_id_mapping(self) -> None:
+        root = self.make_root("missing-plugin-config-id")
+        profiles_path = self.copy_registry(root)
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        del payload["plugin_config_ids"]["GitHub"]
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("GitHub" in error and "plugin_config_ids" in error for error in parsed["errors"]))
+
+    def test_fails_when_managed_extra_config_id_missing(self) -> None:
+        root = self.make_root("missing-managed-extra")
+        profiles_path = self.copy_registry(root)
+        payload = json.loads(profiles_path.read_text(encoding="utf-8"))
+        payload["managed_extra_plugin_config_ids"] = [
+            item for item in payload.get("managed_extra_plugin_config_ids", []) if item != "superpowers@openai-curated"
+        ]
+        profiles_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertTrue(any("managed_extra_plugin_config_ids" in error and "superpowers@openai-curated" in error for error in parsed["errors"]))
+
+    def test_set_plugin_profile_core_dev_uses_real_config_ids_without_display_names(self) -> None:
+        root = self.make_root("set-plugin-profile-preview")
+        codex_home = root / "codex-home"
+        config_path = codex_home / "config.toml"
+        script = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "scripts" / "set_plugin_profile.ps1"
+        result = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-File",
+                str(script),
+                "core-dev",
+                "-CodexHome",
+                str(codex_home),
+                "-ConfigPath",
+                str(config_path),
+                "-Json",
+            ],
+            cwd=REPO_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        targets = {item["plugin"]: item["enabled"] for item in payload["target_plugins"]}
+
+        for plugin in ["browser@openai-bundled", "chrome@openai-bundled", "github@openai-curated"]:
+            self.assertIs(targets.get(plugin), True)
+        for plugin in ["vercel@openai-curated", "figma@openai-curated", "superpowers@openai-curated", "computer-use@openai-bundled"]:
+            self.assertIs(targets.get(plugin), False)
+        self.assertFalse(any("@" not in plugin for plugin in targets), sorted(plugin for plugin in targets if "@" not in plugin))
+
 
 if __name__ == "__main__":
     unittest.main()

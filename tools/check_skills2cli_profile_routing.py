@@ -6,6 +6,7 @@ import filecmp
 import subprocess
 import sys
 import json
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -163,6 +164,188 @@ def build_installed_artifact_report(root: Path) -> list[dict[str, Any]]:
     return report
 
 
+def validate_plugin_config_id_registry(registry: dict[str, Any], known_plugins: list[str]) -> dict[str, Any]:
+    """Validate real Codex plugin config-id coverage for hard-load profiles."""
+
+    errors: list[str] = []
+    plugin_config_ids = registry.get("plugin_config_ids") if isinstance(registry.get("plugin_config_ids"), dict) else {}
+    managed_extra = as_list(registry.get("managed_extra_plugin_config_ids"))
+    mapped_config_ids: dict[str, str] = {}
+    per_plugin: dict[str, list[str]] = {}
+
+    if not isinstance(registry.get("plugin_config_ids"), dict):
+        errors.append("profiles.json must define plugin_config_ids mapping for real Codex plugin config section IDs.")
+    for plugin in known_plugins:
+        raw_ids = as_list(plugin_config_ids.get(plugin)) if isinstance(plugin_config_ids, dict) else []
+        ids = [item.strip() for item in raw_ids if item.strip()]
+        per_plugin[plugin] = ids
+        if not ids:
+            errors.append(f"Known plugin `{plugin}` missing plugin_config_ids mapping for real Codex config IDs.")
+            continue
+        if len(ids) != len(set(ids)):
+            errors.append(f"Known plugin `{plugin}` has duplicate plugin_config_ids entries.")
+        for config_id in ids:
+            if config_id == plugin:
+                errors.append(f"Known plugin `{plugin}` plugin_config_ids must contain real config IDs, not the display name itself.")
+            if "@" not in config_id:
+                errors.append(f"Known plugin `{plugin}` config ID `{config_id}` must include provider suffix such as @openai-curated.")
+            previous = mapped_config_ids.get(config_id)
+            if previous and previous != plugin:
+                errors.append(f"Plugin config ID `{config_id}` is mapped by both `{previous}` and `{plugin}`.")
+            mapped_config_ids[config_id] = plugin
+
+    if not managed_extra:
+        errors.append("profiles.json must define managed_extra_plugin_config_ids for non-display plugin bundles that hard-load should disable when outside the selected profile.")
+    if len(managed_extra) != len(set(managed_extra)):
+        errors.append("managed_extra_plugin_config_ids contains duplicate entries.")
+    for config_id in managed_extra:
+        if "@" not in config_id:
+            errors.append(f"managed_extra_plugin_config_ids entry `{config_id}` must include provider suffix such as @openai-bundled.")
+        if config_id in mapped_config_ids:
+            errors.append(f"managed_extra_plugin_config_ids entry `{config_id}` duplicates known plugin `{mapped_config_ids[config_id]}` mapping.")
+
+    required_core_dev_enabled = {
+        "browser@openai-bundled",
+        "chrome@openai-bundled",
+        "github@openai-curated",
+        "coderabbit@openai-curated",
+        "codex-security@openai-curated",
+        "openai-developers@openai-curated",
+        "chatgpt-apps@openai-curated",
+        "temporal@openai-curated",
+        "documents@openai-primary-runtime",
+        "spreadsheets@openai-primary-runtime",
+        "presentations@openai-primary-runtime",
+    }
+    core_entry = (registry.get("modules") or {}).get("core-dev") if isinstance(registry.get("modules"), dict) else {}
+    core_enabled_plugins = as_list((core_entry.get("hard_load") or {}).get("enable_plugins")) if isinstance(core_entry, dict) else []
+    core_enabled_config_ids: set[str] = set()
+    for plugin in core_enabled_plugins:
+        core_enabled_config_ids.update(per_plugin.get(plugin, []))
+    missing_core = sorted(required_core_dev_enabled.difference(core_enabled_config_ids))
+    if missing_core:
+        errors.append("core-dev hard-load real config-id coverage missing enabled IDs: " + ", ".join(missing_core) + ".")
+
+    required_disabled_examples = {
+        "vercel@openai-curated",
+        "figma@openai-curated",
+        "canva@openai-curated",
+        "hugging-face@openai-curated",
+        "cloudflare@openai-curated",
+    }
+    all_known_config_ids = set(mapped_config_ids)
+    missing_disabled_examples = sorted(required_disabled_examples.difference(all_known_config_ids))
+    if missing_disabled_examples:
+        errors.append("Known plugin config-id mapping missing disabled example IDs: " + ", ".join(missing_disabled_examples) + ".")
+    required_extra_disabled = {"superpowers@openai-curated", "computer-use@openai-bundled", "pdf@openai-primary-runtime"}
+    missing_extra = sorted(required_extra_disabled.difference(set(managed_extra)))
+    if missing_extra:
+        errors.append("managed_extra_plugin_config_ids missing hard-load disabled example IDs: " + ", ".join(missing_extra) + ".")
+
+    return {
+        "ok": not errors,
+        "errors": errors,
+        "known_plugins_with_config_ids": len([plugin for plugin in known_plugins if per_plugin.get(plugin)]),
+        "unique_config_ids": len(mapped_config_ids),
+        "managed_extra_plugin_config_ids": managed_extra,
+        "core_dev_enabled_config_ids": sorted(core_enabled_config_ids),
+    }
+
+
+def validate_set_plugin_profile_target_map(root: Path) -> dict[str, Any]:
+    """Black-box check that hard-load preview exposes real config IDs, not only display names."""
+
+    script = root / "tools" / "skill_sources" / "plugin-modules" / "scripts" / "set_plugin_profile.ps1"
+    contract: dict[str, Any] = {
+        "checked": False,
+        "ok": False,
+        "script": str(script),
+        "enabled_examples": [],
+        "disabled_examples": [],
+        "missing_enabled_examples": [],
+        "missing_disabled_examples": [],
+        "error": None,
+    }
+    if not script.exists():
+        contract["error"] = "script_missing"
+        return contract
+    enabled_examples = {
+        "github@openai-curated",
+        "openai-developers@openai-curated",
+        "documents@openai-primary-runtime",
+        "spreadsheets@openai-primary-runtime",
+        "presentations@openai-primary-runtime",
+        "codex-security@openai-curated",
+        "coderabbit@openai-curated",
+        "chatgpt-apps@openai-curated",
+        "temporal@openai-curated",
+        "browser@openai-bundled",
+        "chrome@openai-bundled",
+    }
+    disabled_examples = {
+        "vercel@openai-curated",
+        "figma@openai-curated",
+        "canva@openai-curated",
+        "hugging-face@openai-curated",
+        "cloudflare@openai-curated",
+        "superpowers@openai-curated",
+        "computer-use@openai-bundled",
+        "pdf@openai-primary-runtime",
+    }
+    try:
+        with tempfile.TemporaryDirectory(prefix="skills2cli-profile-") as temp_dir:
+            temp_config = Path(temp_dir) / "config.toml"
+            completed = subprocess.run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-File",
+                    str(script),
+                    "core-dev",
+                    "-ConfigPath",
+                    str(temp_config),
+                    "-Json",
+                ],
+                cwd=root,
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=30,
+            )
+        contract["checked"] = True
+        if completed.returncode != 0:
+            contract["error"] = f"set_plugin_profile_failed:{completed.returncode}:{completed.stderr.strip()[:200]}"
+            return contract
+        payload = json.loads(completed.stdout)
+        target_states = {
+            str(item.get("plugin")): bool(item.get("enabled"))
+            for item in payload.get("target_plugins", [])
+            if isinstance(item, dict) and item.get("plugin")
+        }
+        display_name_targets = sorted(item for item in target_states if "@" not in item)
+        missing_enabled = sorted(item for item in enabled_examples if target_states.get(item) is not True)
+        missing_disabled = sorted(item for item in disabled_examples if target_states.get(item) is not False)
+        contract.update(
+            {
+                "ok": not missing_enabled and not missing_disabled and not display_name_targets and payload.get("apply") is False,
+                "enabled_examples": sorted(enabled_examples),
+                "disabled_examples": sorted(disabled_examples),
+                "missing_enabled_examples": missing_enabled,
+                "missing_disabled_examples": missing_disabled,
+                "display_name_targets": display_name_targets,
+                "target_plugin_count": len(target_states),
+                "apply": payload.get("apply"),
+                "changed": payload.get("changed"),
+                "safety": payload.get("safety"),
+            }
+        )
+    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
+        contract["checked"] = True
+        contract["error"] = f"{exc.__class__.__name__}"
+    return contract
+
+
 def validate_registry(root: Path) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -180,6 +363,14 @@ def validate_registry(root: Path) -> dict[str, Any]:
     modules = registry.get("modules") if isinstance(registry.get("modules"), dict) else {}
     scenarios = registry.get("scenario_profiles") if isinstance(registry.get("scenario_profiles"), dict) else {}
     known_plugins = [str(item) for item in as_list(registry.get("known_plugins")) if str(item).strip()]
+    plugin_config_id_contract = validate_plugin_config_id_registry(registry, known_plugins) if registry else {"ok": False, "errors": ["profiles.json unavailable"]}
+    for error in plugin_config_id_contract.get("errors", []):
+        errors.append(error)
+    hard_load_target_map_contract = validate_set_plugin_profile_target_map(root)
+    if hard_load_target_map_contract.get("checked") and not hard_load_target_map_contract.get("ok"):
+        errors.append("set_plugin_profile.ps1 core-dev hard-load preview must include real enabled and disabled Codex plugin config IDs.")
+    elif not hard_load_target_map_contract.get("checked"):
+        warnings.append("set_plugin_profile.ps1 target-map preview not checked because script is missing from this root.")
 
     missing = REQUIRED_PROFILES.difference(modules.keys())
     for profile in sorted(missing):
@@ -487,6 +678,8 @@ def validate_registry(root: Path) -> dict[str, Any]:
         "installed_copy_drift_reported": drift_reported,
         "installed_artifact_drift_report": installed_artifacts,
         "orthogonal_scope_fields": list(ORTHOGONAL_SCOPE_FIELDS),
+        "profile_config_id_contract": plugin_config_id_contract,
+        "hard_load_target_map_contract": hard_load_target_map_contract,
         "profile_suggest_rerank_contract": profile_suggest_contract,
         "errors": errors,
         "warnings": warnings,

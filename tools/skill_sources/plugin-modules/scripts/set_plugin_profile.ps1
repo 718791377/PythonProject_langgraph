@@ -19,6 +19,40 @@ if (-not (Test-Path -LiteralPath $profilesPath)) {
 }
 
 $profiles = Get-Content -LiteralPath $profilesPath -Raw -Encoding UTF8 | ConvertFrom-Json
+
+function Add-UniqueString {
+  param([System.Collections.Generic.List[string]]$Items, [string]$Value)
+  if ([string]::IsNullOrWhiteSpace($Value)) { return }
+  if (-not $Items.Contains($Value)) { $Items.Add($Value) | Out-Null }
+}
+
+function ConvertTo-StringArray {
+  param($Value)
+  if ($null -eq $Value) { return @() }
+  if ($Value -is [string]) { return @([string]$Value) }
+  return @($Value | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+}
+
+function Get-PluginConfigIds {
+  param($Profiles, [string]$Plugin)
+  $ids = New-Object System.Collections.Generic.List[string]
+  $aliasesRoot = $Profiles.plugin_config_ids
+  if ($null -ne $aliasesRoot) {
+    $property = @($aliasesRoot.PSObject.Properties | Where-Object { $_.Name -eq $Plugin } | Select-Object -First 1)
+    if ($property) {
+      foreach ($id in ConvertTo-StringArray $property[0].Value) { Add-UniqueString -Items $ids -Value $id }
+    }
+  }
+  if ($ids.Count -eq 0) {
+    Add-UniqueString -Items $ids -Value $Plugin
+  }
+  return @($ids)
+}
+
+function Get-ManagedExtraPluginConfigIds {
+  param($Profiles)
+  return @(ConvertTo-StringArray $Profiles.managed_extra_plugin_config_ids)
+}
 $codexHomePath = [System.IO.Path]::GetFullPath($CodexHome)
 if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
   $ConfigPath = Join-Path $codexHomePath 'config.toml'
@@ -60,10 +94,19 @@ function Get-TargetMap {
     $enable = @($enable)
   }
   $map = [ordered]@{}
-  foreach ($plugin in @($enable)) { $map[[string]$plugin] = $true }
+  foreach ($plugin in @($enable)) {
+    foreach ($configId in Get-PluginConfigIds -Profiles $Profiles -Plugin ([string]$plugin)) {
+      $map[[string]$configId] = $true
+    }
+  }
   if ([bool]$entry.hard_load.disable_other_known_plugins) {
     foreach ($plugin in @($Profiles.known_plugins)) {
-      if (-not $map.Contains([string]$plugin)) { $map[[string]$plugin] = $false }
+      foreach ($configId in Get-PluginConfigIds -Profiles $Profiles -Plugin ([string]$plugin)) {
+        if (-not $map.Contains([string]$configId)) { $map[[string]$configId] = $false }
+      }
+    }
+    foreach ($configId in Get-ManagedExtraPluginConfigIds -Profiles $Profiles) {
+      if (-not $map.Contains([string]$configId)) { $map[[string]$configId] = $false }
     }
   }
   return [ordered]@{ entry = $entry; target_map = $map }

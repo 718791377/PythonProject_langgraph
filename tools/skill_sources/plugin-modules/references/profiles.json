@@ -41,6 +41,127 @@
     "Vercel",
     "Zotero"
   ],
+  "plugin_config_ids": {
+    "BioRender": [
+      "biorender@openai-curated"
+    ],
+    "Browser": [
+      "browser@openai-bundled",
+      "chrome@openai-bundled"
+    ],
+    "Canva": [
+      "canva@openai-curated"
+    ],
+    "CB Insights": [
+      "cb-insights@openai-curated"
+    ],
+    "ChatGPT Apps": [
+      "chatgpt-apps@openai-curated"
+    ],
+    "Cloudflare": [
+      "cloudflare@openai-curated"
+    ],
+    "Cloudinary": [
+      "cloudinary@openai-curated"
+    ],
+    "CodeRabbit": [
+      "coderabbit@openai-curated"
+    ],
+    "Codex Security": [
+      "codex-security@openai-curated"
+    ],
+    "Documents": [
+      "documents@openai-primary-runtime"
+    ],
+    "Dow Jones Factiva": [
+      "dow-jones-factiva@openai-curated"
+    ],
+    "Expo": [
+      "expo@openai-curated"
+    ],
+    "Figma": [
+      "figma@openai-curated"
+    ],
+    "Fireflies": [
+      "fireflies@openai-curated"
+    ],
+    "GitHub": [
+      "github@openai-curated"
+    ],
+    "Gmail": [
+      "gmail@openai-curated"
+    ],
+    "Google Calendar": [
+      "google-calendar@openai-curated"
+    ],
+    "Google Drive": [
+      "google-drive@openai-curated"
+    ],
+    "HubSpot": [
+      "hubspot@openai-curated"
+    ],
+    "Hugging Face": [
+      "hugging-face@openai-curated"
+    ],
+    "HyperFrames by HeyGen": [
+      "hyperframes@openai-curated"
+    ],
+    "Linear": [
+      "linear@openai-curated"
+    ],
+    "Notion": [
+      "notion@openai-curated"
+    ],
+    "OpenAI Developers": [
+      "openai-developers@openai-curated"
+    ],
+    "PitchBook": [
+      "pitchbook@openai-curated"
+    ],
+    "Presentations": [
+      "presentations@openai-primary-runtime"
+    ],
+    "Readwise": [
+      "readwise@openai-curated"
+    ],
+    "Remotion": [
+      "remotion@openai-curated"
+    ],
+    "Sentry": [
+      "sentry@openai-curated"
+    ],
+    "Slack": [
+      "slack@openai-curated"
+    ],
+    "Spreadsheets": [
+      "spreadsheets@openai-primary-runtime"
+    ],
+    "Stripe": [
+      "stripe@openai-curated"
+    ],
+    "Supabase": [
+      "supabase@openai-curated"
+    ],
+    "Temporal": [
+      "temporal@openai-curated"
+    ],
+    "Twilio Developer Kit": [
+      "twilio-developer-kit@openai-curated"
+    ],
+    "Vercel": [
+      "vercel@openai-curated"
+    ],
+    "Zotero": [
+      "zotero@openai-curated"
+    ]
+  },
+  "managed_extra_plugin_config_ids": [
+    "computer-use@openai-bundled",
+    "pdf@openai-primary-runtime",
+    "sites@openai-bundled",
+    "superpowers@openai-curated",
+    "template-creator@openai-primary-runtime"
+  ],
   "safety": {
     "soft_load_mutates_config": false,
     "hard_load_requires_apply": true,
