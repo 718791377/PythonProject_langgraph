@@ -10,6 +10,7 @@ These helpers are reusable source files only. Consumer projects keep filled conf
 - `ppt_render_capability_probe.py` - emits JSON capability rows that distinguish `installed`, `enabled`, `selected`, and `ready`.
 - `powerpoint_com_probe.ps1` - checks interactive PowerPoint COM creation, export, cleanup, and process-leak evidence.
 - `ppt_render_probe.py` - renders a PPTX through `auto`, `powerpoint`, `soffice`, or `aspose` engines when locally configured.
+- `pptx_evidence.py` - inspects PPTX/OOXML packages and writes reusable provenance manifest, render-export log, COM transcript, and visual-signature schema evidence.
 - `write_visual_qa_status_marker.py` - classifies render evidence into `visual_qa:*` status markers.
 
 ## Local-only runtime rule
@@ -24,4 +25,6 @@ If PowerPoint COM is blocked by a non-interactive desktop or an error such as `0
 python tools/user_level_document_tools/ppt_tools/ppt_render_capability_probe.py --config <local-config> --json
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/user_level_document_tools/ppt_tools/powerpoint_com_probe.ps1 -OutputDir <local-output>
 python tools/user_level_document_tools/ppt_tools/ppt_render_probe.py --input <deck.pptx> --output-dir <local-output> --format pdf,png --engine auto --json
+python tools/user_level_document_tools/ppt_tools/pptx_evidence.py --input <deck.pptx> --json
+python tools/user_level_document_tools/ppt_tools/pptx_evidence.py --result-pptx <result.pptx> --template-pptx <template.pptx> --manifest-out <local-output>/template_provenance_manifest.json --render-log-out <local-output>/render_export_log.txt --json
 ```

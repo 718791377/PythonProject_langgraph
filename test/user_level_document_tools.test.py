@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from collections.abc import Callable
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
@@ -33,6 +34,7 @@ class UserLevelDocumentToolsTests(unittest.TestCase):
             TOOLS_ROOT / "ppt_tools" / "ppt_render_capability_probe.py",
             TOOLS_ROOT / "ppt_tools" / "powerpoint_com_probe.ps1",
             TOOLS_ROOT / "ppt_tools" / "ppt_render_probe.py",
+            TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py",
             TOOLS_ROOT / "ppt_tools" / "write_visual_qa_status_marker.py",
         ]
         self.assertEqual([], [str(p.relative_to(ROOT)) for p in required if not p.exists()])
@@ -412,6 +414,466 @@ if ($errors.Count -gt 0) {{ $errors | ForEach-Object {{ Write-Output $_.Message 
             self.assertEqual("visual_qa:degraded", payload["status"])
             self.assertTrue(payload["acceptance_blocked"])
             self.assertIn("aspose_evaluation_watermark", payload["reasons"])
+
+    def test_pptx_evidence_help_exposes_input_and_json_options(self) -> None:
+        script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+        result = subprocess.run(
+            [sys.executable, str(script), "--help"],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        self.assertEqual(0, result.returncode, result.stdout)
+        for needle in ("--input", "--result-pptx", "--manifest-out", "--render-log-out", "--json"):
+            self.assertIn(needle, result.stdout)
+
+    def test_pptx_evidence_inspect_reports_core_parts_slide_media_and_embedding_counts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            pptx = Path(tmp) / "sample deck.pptx"
+            write_minimal_pptx(pptx, slide_count=3)
+            with zipfile.ZipFile(pptx, "a", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("ppt/media/image1.png", b"png")
+                zf.writestr("ppt/embeddings/oleObject1.bin", b"ole")
+            sys.path.insert(0, str(TOOLS_ROOT / "ppt_tools"))
+            try:
+                import pptx_evidence  # type: ignore
+                payload = pptx_evidence.inspect_pptx(pptx)
+            finally:
+                try:
+                    sys.path.remove(str(TOOLS_ROOT / "ppt_tools"))
+                except ValueError:
+                    pass
+            self.assertEqual("ok", payload["status"])
+            self.assertEqual(3, payload["slide_count"])
+            self.assertTrue(payload["core_parts"]["[Content_Types].xml"])
+            self.assertTrue(payload["core_parts"]["_rels/.rels"])
+            self.assertTrue(payload["core_parts"]["ppt/presentation.xml"])
+            self.assertEqual(["ppt/media/image1.png"], payload["media_parts"])
+            self.assertEqual(["ppt/embeddings/oleObject1.bin"], payload["embedded_object_parts"])
+            self.assertIn("ppt/slides/slide3.xml", payload["slide_parts"])
+            self.assertIn("ppt/slides/slide1.xml", payload["ooxml_hashes"]["raw"])
+
+    def test_pptx_evidence_cli_outputs_json_without_renderer_dependency(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            pptx = Path(tmp) / "sample deck.pptx"
+            write_minimal_pptx(pptx, slide_count=2)
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            env = os.environ.copy()
+            env["PATH"] = str(Path(tmp) / "empty-path")
+            result = subprocess.run(
+                [sys.executable, str(script), "--input", str(pptx), "--json"],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=env,
+            )
+            self.assertEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("ok", payload["status"])
+            self.assertEqual(2, payload["slide_count"])
+            self.assertEqual(str(pptx.resolve()), payload["path"])
+
+    def test_pptx_evidence_cli_returns_nonzero_json_for_missing_input(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "missing.pptx"
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [sys.executable, str(script), "--input", str(missing), "--json"],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("missing", payload["status"])
+            self.assertIn("input_missing", payload["reasons"])
+
+    def test_pptx_evidence_manifest_and_render_log_are_written_for_template_match(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            template = tmp_path / "template.pptx"
+            result_pptx = tmp_path / "result.pptx"
+            write_minimal_pptx(template, slide_count=1)
+            write_minimal_pptx(result_pptx, slide_count=1)
+            artifact = tmp_path / "result.pdf"
+            artifact.write_bytes(MINIMAL_PDF)
+            manifest = tmp_path / "template_provenance_manifest.json"
+            render_log = tmp_path / "render_export_log.txt"
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--result-pptx",
+                    str(result_pptx),
+                    "--template-pptx",
+                    str(template),
+                    "--manifest-out",
+                    str(manifest),
+                    "--render-log-out",
+                    str(render_log),
+                    "--artifact",
+                    str(artifact),
+                    "--json",
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("PASS: strict template use", payload["overall_status"])
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            self.assertEqual("PASS: strict template use", data["overall_status"])
+            self.assertEqual("template_exact", data["per_slide_chain"][0]["source_classification"])
+            self.assertEqual([], data["legacy_source_residue"])
+            self.assertIn(str(artifact.resolve()), render_log.read_text(encoding="utf-8"))
+
+    def test_pptx_evidence_fails_when_result_slide_xml_matches_source_residue(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            template = tmp_path / "template.pptx"
+            source = tmp_path / "source.pptx"
+            result_pptx = tmp_path / "result.pptx"
+            write_minimal_pptx(template, slide_count=1)
+            write_minimal_pptx(source, slide_count=0)
+            with zipfile.ZipFile(source, "a", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("ppt/slides/slide1.xml", "<p:sld>legacy source slide body</p:sld>")
+            write_minimal_pptx(result_pptx, slide_count=0)
+            with zipfile.ZipFile(source) as zf:
+                legacy_slide = zf.read("ppt/slides/slide1.xml")
+            with zipfile.ZipFile(result_pptx, "a", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("ppt/slides/slide1.xml", legacy_slide)
+            manifest = tmp_path / "template_provenance_manifest.json"
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--result-pptx",
+                    str(result_pptx),
+                    "--template-pptx",
+                    str(template),
+                    "--source-pptx",
+                    str(source),
+                    "--manifest-out",
+                    str(manifest),
+                    "--json",
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("FAIL: strict template use not proven / template not used", payload["overall_status"])
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            self.assertEqual("source_legacy_residue", data["per_slide_chain"][0]["slide_source_classification"])
+            self.assertIn("ppt/slides/slide1.xml", data["legacy_source_residue"])
+
+    def test_pptx_evidence_marks_template_layout_with_changed_slide_as_derived_delta(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            template = tmp_path / "template.pptx"
+            source = tmp_path / "source.pptx"
+            result_pptx = tmp_path / "result.pptx"
+            write_chained_pptx(template, slide_text="Template placeholder")
+            write_chained_pptx(source, slide_text="Legacy source content")
+            write_chained_pptx(result_pptx, slide_text="Generated result content")
+            manifest = tmp_path / "template_provenance_manifest.json"
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--result-pptx",
+                    str(result_pptx),
+                    "--template-pptx",
+                    str(template),
+                    "--source-pptx",
+                    str(source),
+                    "--manifest-out",
+                    str(manifest),
+                    "--json",
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("PARTIAL: template structure proven but visual review needed", payload["overall_status"])
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            self.assertEqual("unknown", data["per_slide_chain"][0]["slide_source_classification"])
+            self.assertEqual("template_derived_delta", data["per_slide_chain"][0]["source_classification"])
+            self.assertEqual([], data["legacy_source_residue"])
+
+    def test_pptx_evidence_detects_source_residue_when_slide_is_renumbered(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            template = tmp_path / "template.pptx"
+            source = tmp_path / "source.pptx"
+            result_pptx = tmp_path / "result.pptx"
+            write_minimal_pptx(template, slide_count=3)
+            write_minimal_pptx(source, slide_count=1)
+            write_minimal_pptx(result_pptx, slide_count=0)
+            with zipfile.ZipFile(source) as zf:
+                legacy_slide = zf.read("ppt/slides/slide1.xml")
+            with zipfile.ZipFile(result_pptx, "a", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("ppt/slides/slide1.xml", "<p:sld>generated result slide one</p:sld>")
+                zf.writestr("ppt/slides/slide2.xml", "<p:sld>generated result slide two</p:sld>")
+                zf.writestr("ppt/slides/slide3.xml", legacy_slide)
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--result-pptx",
+                    str(result_pptx),
+                    "--template-pptx",
+                    str(template),
+                    "--source-pptx",
+                    str(source),
+                    "--json",
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            rows = {row["slide"]: row for row in payload["per_slide_chain"]}
+            self.assertEqual("source_legacy_residue", rows["ppt/slides/slide3.xml"]["slide_source_classification"])
+            self.assertEqual(["ppt/slides/slide3.xml"], payload["legacy_source_residue"])
+            self.assertEqual("ppt/slides/slide1.xml", rows["ppt/slides/slide3.xml"]["slide_source_match_part"])
+
+    def test_pptx_evidence_blocks_zip_parts_that_exceed_safety_limits(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            pptx = Path(tmp) / "oversized.pptx"
+            write_minimal_pptx(pptx, slide_count=1)
+            with zipfile.ZipFile(pptx, "a", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("ppt/slides/slide2.xml", b"x" * (11 * 1024 * 1024))
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [sys.executable, str(script), "--input", str(pptx), "--json"],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("blocked", payload["status"])
+            self.assertIn("zip_safety_error:zip_part_too_large", payload["reasons"][0])
+
+    def test_pptx_evidence_rejects_unsafe_xml_doctype_entities(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            pptx = Path(tmp) / "unsafe-xml.pptx"
+            write_minimal_pptx(pptx, slide_count=1)
+            with zipfile.ZipFile(pptx, "a", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr(
+                    "ppt/slides/slide2.xml",
+                    b"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE p:sld [<!ENTITY boom "expanded">]>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">&boom;</p:sld>""",
+                )
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [sys.executable, str(script), "--input", str(pptx), "--json"],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("blocked", payload["status"])
+            self.assertIn("unsafe_xml_doctype_or_entity", payload["reasons"][0])
+
+    def test_pptx_evidence_rejects_utf16_unsafe_xml_doctype_entities(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            pptx = Path(tmp) / "unsafe-utf16-xml.pptx"
+            write_minimal_pptx(pptx, slide_count=1)
+            unsafe_xml = """<?xml version="1.0" encoding="UTF-16"?>
+<!DOCTYPE p:sld [<!ENTITY boom "expanded">]>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">&boom;</p:sld>""".encode("utf-16")
+            with zipfile.ZipFile(pptx, "a", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("ppt/slides/slide2.xml", unsafe_xml)
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [sys.executable, str(script), "--input", str(pptx), "--json"],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("blocked", payload["status"])
+            self.assertIn("unsafe_xml_doctype_or_entity", payload["reasons"][0])
+
+    def test_pptx_evidence_rejects_duplicate_zip_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            template = tmp_path / "template.pptx"
+            result_pptx = tmp_path / "result.pptx"
+            write_chained_pptx(template, slide_text="Template placeholder")
+            write_chained_pptx(result_pptx, slide_text="Generated result content")
+            with zipfile.ZipFile(result_pptx, "a", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("ppt/slides/_rels/slide1.xml.rels", RELS_XML("slideLayout", "../slideLayouts/slideLayout1.xml"))
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--result-pptx",
+                    str(result_pptx),
+                    "--template-pptx",
+                    str(template),
+                    "--json",
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("FAIL: strict template use not proven / template not used", payload["overall_status"])
+            self.assertIn("duplicate_zip_entry:ppt/slides/_rels/slide1.xml.rels", payload["result_pptx_inspection"]["reasons"][0])
+
+    def test_pptx_evidence_rejects_relationship_targets_that_escape_package_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            template = tmp_path / "template.pptx"
+            result_pptx = tmp_path / "result.pptx"
+            write_chained_pptx(template, slide_text="Template placeholder")
+            write_chained_pptx(result_pptx, slide_text="Generated result content", rel_transform=lambda xml: xml.replace(
+                'Target="../slideLayouts/slideLayout1.xml"',
+                'Target="../../../../ppt/slideLayouts/slideLayout1.xml"',
+            ))
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--result-pptx",
+                    str(result_pptx),
+                    "--template-pptx",
+                    str(template),
+                    "--json",
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("FAIL: strict template use not proven / template not used", payload["overall_status"])
+            self.assertIn("relationship_target_traversal", payload["per_slide_chain"][0]["error"])
+
+    def test_pptx_evidence_rejects_external_structural_relationships(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            template = tmp_path / "template.pptx"
+            result_pptx = tmp_path / "result.pptx"
+            write_chained_pptx(template, slide_text="Template placeholder")
+            write_chained_pptx(result_pptx, slide_text="Generated result content", rel_transform=lambda xml: xml.replace(
+                'Target="../slideLayouts/slideLayout1.xml"',
+                'Target="https://example.invalid/slideLayout1.xml" TargetMode="External"',
+            ))
+            script = TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--result-pptx",
+                    str(result_pptx),
+                    "--template-pptx",
+                    str(template),
+                    "--json",
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.assertNotEqual(0, result.returncode, result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual("FAIL: strict template use not proven / template not used", payload["overall_status"])
+            self.assertIn("external_structural_relationship_target", payload["per_slide_chain"][0]["error"])
+
+    def test_pptx_evidence_blocks_zip_archives_that_exceed_total_safety_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            pptx = Path(tmp) / "aggregate-too-large.pptx"
+            write_minimal_pptx(pptx, slide_count=1)
+            pptx_tools_dir = TOOLS_ROOT / "ppt_tools"
+            sys.path.insert(0, str(pptx_tools_dir))
+            try:
+                import pptx_evidence  # type: ignore
+                original = pptx_evidence.MAX_PPTX_BYTES
+                pptx_evidence.MAX_PPTX_BYTES = 1024
+                try:
+                    payload = pptx_evidence.inspect_pptx(pptx)
+                finally:
+                    pptx_evidence.MAX_PPTX_BYTES = original
+            finally:
+                try:
+                    sys.path.remove(str(pptx_tools_dir))
+                except ValueError:
+                    pass
+            self.assertEqual("blocked", payload["status"])
+            self.assertIn("zip_total_uncompressed_too_large", payload["reasons"][0])
+
+    def test_pptx_evidence_writes_com_generation_transcript(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            transcript = Path(tmp) / "com_generation_transcript.json"
+            sys.path.insert(0, str(TOOLS_ROOT / "ppt_tools"))
+            try:
+                import pptx_evidence  # type: ignore
+                pptx_evidence.write_com_generation_transcript(
+                    transcript,
+                    events=[{"event": "open_template", "status": "ok"}],
+                    template="template.pptx",
+                    result="result.pptx",
+                )
+            finally:
+                try:
+                    sys.path.remove(str(TOOLS_ROOT / "ppt_tools"))
+                except ValueError:
+                    pass
+            payload = json.loads(transcript.read_text(encoding="utf-8"))
+            self.assertEqual("template.pptx", payload["metadata"]["template"])
+            self.assertEqual("result.pptx", payload["metadata"]["result"])
+            self.assertEqual([{"event": "open_template", "status": "ok"}], payload["events"])
+
+    def test_pptx_evidence_visual_signature_report_statuses(self) -> None:
+        sys.path.insert(0, str(TOOLS_ROOT / "ppt_tools"))
+        try:
+            import pptx_evidence  # type: ignore
+            passed = pptx_evidence.build_visual_signature_report(
+                template_screenshots=["template-1.png"],
+                result_screenshots=["result-1.png"],
+                roi_results=[{"roi": "title", "status": "pass"}],
+                manual_review={"status": "accepted"},
+            )
+            partial = pptx_evidence.build_visual_signature_report(
+                roi_results=[{"roi": "logo", "status": "review"}],
+                manual_review={"status": "pending"},
+            )
+            failed = pptx_evidence.build_visual_signature_report(
+                roi_results=[{"roi": "theme", "status": "fail"}],
+                manual_review={"status": "accepted"},
+            )
+        finally:
+            try:
+                sys.path.remove(str(TOOLS_ROOT / "ppt_tools"))
+            except ValueError:
+                pass
+        empty = pptx_evidence.build_visual_signature_report(manual_review={"status": "accepted"})
+        manual_only = pptx_evidence.build_visual_signature_report(manual_review={"status": "accepted", "mode": "manual_only"})
+        self.assertEqual("PASS: strict template use", passed["overall_status"])
+        self.assertEqual("PARTIAL: template structure proven but visual review needed", empty["overall_status"])
+        self.assertEqual("PASS: strict template use", manual_only["overall_status"])
+        self.assertEqual(["template-1.png"], passed["template_screenshots"])
+        self.assertEqual(["result-1.png"], passed["result_screenshots"])
+        self.assertEqual("PARTIAL: template structure proven but visual review needed", partial["overall_status"])
+        self.assertEqual("FAIL: strict template use not proven / template not used", failed["overall_status"])
 
     def test_ppt_visual_qa_status_classifier_requires_manual_review_for_cjk_smoke_uncertain(self) -> None:
         script = TOOLS_ROOT / "ppt_tools" / "write_visual_qa_status_marker.py"
@@ -843,6 +1305,78 @@ def write_minimal_pptx(path: Path, slide_count: int = 1) -> None:
         for i in range(1, slide_count + 1):
             zf.writestr(f"ppt/slides/slide{i}.xml", f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree/></p:cSld></p:sld>""")
+
+
+def RELS_XML(rel_type: str, target: str) -> str:
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/{rel_type}" Target="{target}"/>
+</Relationships>"""
+
+
+def write_chained_pptx(path: Path, *, slide_text: str, rel_transform: Callable[[str], str] | None = None) -> None:
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "[Content_Types].xml",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+</Types>""",
+        )
+        zf.writestr(
+            "_rels/.rels",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+</Relationships>""",
+        )
+        zf.writestr(
+            "ppt/presentation.xml",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <p:sldIdLst><p:sldId id="256" r:id="rId1"/></p:sldIdLst>
+</p:presentation>""",
+        )
+        zf.writestr(
+            "ppt/slides/slide1.xml",
+            f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:sp><p:txBody><p:p><p:r><p:t>{slide_text}</p:t></p:r></p:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>""",
+        )
+        slide_rels_xml = RELS_XML("slideLayout", "../slideLayouts/slideLayout1.xml")
+        if rel_transform is not None:
+            slide_rels_xml = rel_transform(slide_rels_xml)
+        zf.writestr("ppt/slides/_rels/slide1.xml.rels", slide_rels_xml)
+        zf.writestr(
+            "ppt/slideLayouts/slideLayout1.xml",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" name="Reusable layout"><p:cSld name="Reusable layout"/></p:sldLayout>""",
+        )
+        zf.writestr(
+            "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>
+</Relationships>""",
+        )
+        zf.writestr(
+            "ppt/slideMasters/slideMaster1.xml",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" name="Reusable master"><p:cSld name="Reusable master"/></p:sldMaster>""",
+        )
+        zf.writestr(
+            "ppt/slideMasters/_rels/slideMaster1.xml.rels",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>
+</Relationships>""",
+        )
+        zf.writestr(
+            "ppt/theme/theme1.xml",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Reusable theme"><a:themeElements/></a:theme>""",
+        )
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -8,7 +8,7 @@ Tracked source contains portable scripts, examples, and tests. Consumer projects
 
 - `pdf_tools/` - Poppler discovery, access checks, PDF information, and rendering helpers.
 - `doc_pipeline/` - Word COM, Acrobat, Poppler, and contact-sheet quality-check helpers.
-- `ppt_tools/` - local-only PPTX render capability probes, PowerPoint COM checks, PPTX-to-PDF/PNG probes, and visual QA status markers.
+- `ppt_tools/` - local-only PPTX render capability probes, PowerPoint COM checks, PPTX-to-PDF/PNG probes, reusable PPTX/OOXML provenance evidence, and visual QA status markers.
 - `vector_tools/` - generic manifest, health, and retrieval framework plus sanitized legacy adapters.
 - `config/` - example-only configuration templates.
 
