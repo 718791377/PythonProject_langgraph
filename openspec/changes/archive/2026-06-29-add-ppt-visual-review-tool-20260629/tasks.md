@@ -5,5 +5,5 @@
 - [x] Add offline static viewer assets and README usage guidance.
 - [x] Add OpenSpec delta artifacts for the review sidecar boundary.
 - [x] Run targeted tests and OpenSpec validation before commit.
-- [ ] Run OpenSpec guard, local gate, and local MR review after commit.
-- [ ] Commit and integrate into local `main`, stopping before remote publication.
+- [x] Run OpenSpec guard, local gate, and local MR review after commit.
+- [x] Commit and integrate into local `main`, stopping before remote publication.
