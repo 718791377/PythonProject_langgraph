@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -17,6 +18,8 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS_ROOT = ROOT / "tools" / "user_level_document_tools"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 class UserLevelDocumentToolsTests(unittest.TestCase):
     def test_required_surfaces_exist(self) -> None:
@@ -36,6 +39,11 @@ class UserLevelDocumentToolsTests(unittest.TestCase):
             TOOLS_ROOT / "ppt_tools" / "ppt_render_probe.py",
             TOOLS_ROOT / "ppt_tools" / "pptx_evidence.py",
             TOOLS_ROOT / "ppt_tools" / "write_visual_qa_status_marker.py",
+            TOOLS_ROOT / "viewers" / "ppt_review" / "ppt_review_tool.py",
+            TOOLS_ROOT / "viewers" / "ppt_review" / "static" / "ppt_review_viewer.html",
+            TOOLS_ROOT / "viewers" / "ppt_review" / "static" / "app.js",
+            TOOLS_ROOT / "viewers" / "ppt_review" / "static" / "styles.css",
+            TOOLS_ROOT / "viewers" / "ppt_review" / "README.md",
         ]
         self.assertEqual([], [str(p.relative_to(ROOT)) for p in required if not p.exists()])
 
@@ -279,6 +287,332 @@ if ($errors.Count -gt 0) {{ $errors | ForEach-Object {{ Write-Output $_.Message 
             self.assertFalse(payload["png_renderer_ready"])
             self.assertEqual([], payload["artifacts"])
             self.assertIn("no_pptx_to_pdf_renderer_ready", payload["errors"])
+
+    def test_ppt_review_tool_help_exposes_review_options(self) -> None:
+        script = TOOLS_ROOT / "viewers" / "ppt_review" / "ppt_review_tool.py"
+        result = subprocess.run(
+            [sys.executable, str(script), "--help"],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        self.assertEqual(0, result.returncode, result.stdout)
+        for needle in ("--input", "--output-dir", "--slides-dir", "--comments-json", "--open", "--allow-source-output"):
+            self.assertIn(needle, result.stdout)
+
+    def test_ppt_review_tool_builds_manifest_from_slide_pngs(self) -> None:
+        from tools.user_level_document_tools.viewers.ppt_review import ppt_review_tool
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            deck = tmp_path / "sample.pptx"
+            write_minimal_pptx(deck, slide_count=2)
+            slides_dir = tmp_path / "slides"
+            slides_dir.mkdir()
+            write_png(slides_dir / "slide_001.png")
+            write_png(slides_dir / "slide_002.png")
+            out_dir = tmp_path / "review"
+
+            manifest = ppt_review_tool.build_review_session(
+                input_pptx=deck,
+                output_dir=out_dir,
+                slides_dir=slides_dir,
+                comments=[],
+                launch_browser=False,
+            )
+
+            self.assertEqual("ppt_review_session", manifest["schema"])
+            self.assertEqual(1, manifest["schema_version"])
+            self.assertEqual("ready", manifest["status"])
+            self.assertEqual(2, len(manifest["slides"]))
+            self.assertEqual(2, manifest["input"]["slide_count"])
+            self.assertEqual("slide_001.png", Path(manifest["slides"][0]["image"]).name)
+            self.assertTrue((out_dir / "session_manifest.json").exists())
+            self.assertTrue((out_dir / "comments.json").exists())
+            self.assertTrue((out_dir / "review_report.json").exists())
+            self.assertTrue((out_dir / "review_report.html").exists())
+            self.assertTrue((out_dir / "viewer_static" / "ppt_review_viewer.html").exists())
+            self.assertTrue((out_dir / "viewer_static" / "app.js").exists())
+            self.assertTrue((out_dir / "viewer_static" / "styles.css").exists())
+            self.assertEqual("session_manifest.json", manifest["outputs"]["manifest"])
+            self.assertEqual("comments.json", manifest["outputs"]["comments"])
+            self.assertEqual("review_report.json", manifest["outputs"]["json_report"])
+            self.assertEqual("review_report.html", manifest["outputs"]["html_report"])
+            self.assertEqual("viewer_static/ppt_review_viewer.html", manifest["outputs"]["static_viewer"])
+
+    def test_ppt_review_tool_extracts_slide_numbers_from_trailing_slide_suffix(self) -> None:
+        from tools.user_level_document_tools.viewers.ppt_review import ppt_review_tool
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            slides_dir = tmp_path / "slides"
+            slides_dir.mkdir()
+            write_png(slides_dir / "2026_deck_v2_slide1.png")
+            write_png(slides_dir / "deck_v2_page-2.png")
+            out_dir = tmp_path / "review"
+
+            manifest = ppt_review_tool.build_review_session(
+                input_pptx=None,
+                output_dir=out_dir,
+                slides_dir=slides_dir,
+                comments=[
+                    {"slide": 1, "comment": "Check title.", "roi": {"x": 0.1, "y": 0.1, "w": 0.2, "h": 0.2}},
+                    {"slide": 2, "comment": "Check image.", "roi": {"x": 0.3, "y": 0.3, "w": 0.2, "h": 0.2}},
+                ],
+                launch_browser=False,
+            )
+
+            self.assertEqual([1, 2], [slide["slide_number"] for slide in manifest["slides"]])
+            self.assertEqual(["slide_001.png", "slide_002.png"], [Path(slide["image"]).name for slide in manifest["slides"]])
+
+    def test_ppt_review_tool_normalizes_comments_and_rejects_bad_roi(self) -> None:
+        from tools.user_level_document_tools.viewers.ppt_review import ppt_review_tool
+
+        normalized = ppt_review_tool.normalize_comments([
+            {
+                "slide": "1",
+                "severity": "high",
+                "category": "layout",
+                "comment": "Title overflows.",
+                "suggested_fix": "Shorten the title.",
+                "roi": {"x": "0.1", "y": 0.2, "w": 0.3, "h": 0.4},
+            }
+        ])
+        self.assertEqual(1, normalized[0]["slide"])
+        self.assertEqual({"x": 0.1, "y": 0.2, "w": 0.3, "h": 0.4}, normalized[0]["roi"])
+        self.assertEqual("open", normalized[0]["status"])
+
+        with self.assertRaises(ValueError):
+            ppt_review_tool.normalize_comments([
+                {"slide": 1, "comment": "bad", "roi": {"x": -0.1, "y": 0, "w": 0.2, "h": 0.2}}
+            ])
+
+    def test_ppt_review_tool_accepts_static_viewer_export_schema(self) -> None:
+        from tools.user_level_document_tools.viewers.ppt_review import ppt_review_tool
+
+        normalized = ppt_review_tool.normalize_comments({
+            "schema": "ppt_slide_png_review.v1",
+            "slides": [
+                {
+                    "index": 1,
+                    "name": "slide_001.png",
+                    "findings": [
+                        {
+                            "id": "finding-1",
+                            "severity": "major",
+                            "category": "overflow",
+                            "comment": "Text exceeds the page edge.",
+                            "suggested_fix": "Reduce font size.",
+                            "rect": {"x": 0.1, "y": 0.2, "width": 0.3, "height": 0.4},
+                        }
+                    ],
+                }
+            ],
+        })
+        self.assertEqual(1, normalized[0]["slide"])
+        self.assertEqual("high", normalized[0]["severity"])
+        self.assertEqual({"x": 0.1, "y": 0.2, "w": 0.3, "h": 0.4}, normalized[0]["roi"])
+
+    def test_ppt_review_tool_static_viewer_severity_options_match_backend(self) -> None:
+        from tools.user_level_document_tools.viewers.ppt_review import ppt_review_tool
+
+        html = (TOOLS_ROOT / "viewers" / "ppt_review" / "static" / "ppt_review_viewer.html").read_text(encoding="utf-8")
+        severity_select = re.search(r'<select id="severity"[^>]*>(.*?)</select>', html, flags=re.S)
+        self.assertIsNotNone(severity_select)
+        option_values = set(re.findall(r'<option value="([^"]+)">', severity_select.group(1)))
+        self.assertEqual(ppt_review_tool.VALID_SEVERITIES, option_values)
+
+    def test_ppt_review_tool_static_viewer_import_validates_roi_fail_closed(self) -> None:
+        script = (TOOLS_ROOT / "viewers" / "ppt_review" / "static" / "app.js").read_text(encoding="utf-8")
+        self.assertIn("function validateImportedRect", script)
+        self.assertIn("finding rectangle must stay within normalized slide bounds", script)
+        self.assertIn("Import failed:", script)
+        validator = re.search(r"function validateImportedRect\(rect\) \{(.*?)\n  \}", script, flags=re.S)
+        self.assertIsNotNone(validator)
+        validator_body = validator.group(1)
+        self.assertIn("value < 0 || value > 1", validator_body)
+        self.assertIn("candidate.x + candidate.width > 1", validator_body)
+        self.assertIn("throw new Error", validator_body)
+        self.assertNotIn("clamp(", validator_body)
+        self.assertNotIn("normalizeRect(", validator_body)
+        import_body = re.search(r"function importReviewJson\(file\) \{(.*?)\n  \}", script, flags=re.S)
+        self.assertIsNotNone(import_body)
+        self.assertIn("const importedBySlide = new Map()", import_body.group(1))
+        first_mutation = import_body.group(1).find("slide.findings =")
+        first_render = import_body.group(1).find("render();")
+        self.assertGreater(first_mutation, import_body.group(1).find("for (const slide of state.slides)"))
+        self.assertLess(first_mutation, first_render)
+
+    def test_ppt_review_tool_rejects_output_inside_shared_tool_source_by_default(self) -> None:
+        from tools.user_level_document_tools.viewers.ppt_review import ppt_review_tool
+
+        with tempfile.TemporaryDirectory() as tmp:
+            slides_dir = Path(tmp) / "slides"
+            slides_dir.mkdir()
+            write_png(slides_dir / "slide_001.png")
+            with self.assertRaisesRegex(ValueError, "tracked shared tool source"):
+                ppt_review_tool.build_review_session(
+                    input_pptx=None,
+                    output_dir=TOOLS_ROOT / "viewers" / "ppt_review" / ".tmp-review-output",
+                    slides_dir=slides_dir,
+                    comments=[],
+                    launch_browser=False,
+                )
+
+    def test_ppt_review_tool_writes_offline_html_without_external_cdn(self) -> None:
+        from tools.user_level_document_tools.viewers.ppt_review import ppt_review_tool
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            slides_dir = tmp_path / "slides"
+            slides_dir.mkdir()
+            write_png(slides_dir / "slide_001.png")
+            out_dir = tmp_path / "review"
+            manifest = ppt_review_tool.build_review_session(
+                input_pptx=None,
+                output_dir=out_dir,
+                slides_dir=slides_dir,
+                comments=[
+                    {
+                        "slide": 1,
+                        "severity": "medium",
+                        "category": "content",
+                        "comment": "Replace photo.",
+                        "suggested_fix": "Use template-style image.",
+                        "roi": {"x": 0.25, "y": 0.25, "w": 0.5, "h": 0.25},
+                    }
+                ],
+                launch_browser=False,
+            )
+
+            html = (out_dir / "review_report.html").read_text(encoding="utf-8")
+            self.assertIn("Replace photo.", html)
+            self.assertIn("ppt-review-data", html)
+            self.assertNotIn("https://", html)
+            self.assertNotIn("http://", html)
+            self.assertEqual(1, len(manifest["comments"]))
+
+    def test_ppt_review_tool_cli_builds_session_with_comments_json(self) -> None:
+        script = TOOLS_ROOT / "viewers" / "ppt_review" / "ppt_review_tool.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            slides_dir = tmp_path / "slides"
+            slides_dir.mkdir()
+            write_png(slides_dir / "slide_001.png")
+            comments_path = tmp_path / "comments.json"
+            comments_path.write_text(json.dumps({
+                "schema": "ppt_slide_png_review.v1",
+                "comments": [
+                    {
+                        "slide": 1,
+                        "severity": "low",
+                        "category": "typography",
+                        "comment": "Align subtitle.",
+                        "roi": {"x": 0.2, "y": 0.2, "w": 0.3, "h": 0.2},
+                    }
+                ],
+            }), encoding="utf-8")
+            out_dir = tmp_path / "review"
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--slides-dir",
+                    str(slides_dir),
+                    "--output-dir",
+                    str(out_dir),
+                    "--comments-json",
+                    str(comments_path),
+                    "--json",
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+
+            self.assertEqual(0, result.returncode, result.stdout)
+            manifest = json.loads(result.stdout)
+            self.assertEqual("ppt_review_session", manifest["schema"])
+            self.assertEqual(1, len(manifest["comments"]))
+            self.assertTrue((out_dir / "comments.json").exists())
+            self.assertTrue((out_dir / "review_report.json").exists())
+            self.assertTrue((out_dir / "viewer_static" / "ppt_review_viewer.html").exists())
+            self.assertTrue((out_dir / "viewer_static" / "app.js").exists())
+            self.assertTrue((out_dir / "viewer_static" / "styles.css").exists())
+            report = json.loads((out_dir / "review_report.json").read_text(encoding="utf-8"))
+            self.assertEqual("ppt_review_report", report["schema"])
+
+    def test_ppt_review_tool_cli_reports_structured_errors(self) -> None:
+        script = TOOLS_ROOT / "viewers" / "ppt_review" / "ppt_review_tool.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--slides-dir",
+                    str(Path(tmp) / "missing"),
+                    "--output-dir",
+                    str(Path(tmp) / "review"),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+            self.assertEqual(2, result.returncode)
+            error = json.loads(result.stderr)
+            self.assertEqual("error", error["status"])
+            self.assertEqual("FileNotFoundError", error["error_type"])
+
+            slides_dir = Path(tmp) / "slides"
+            slides_dir.mkdir()
+            write_png(slides_dir / "slide_001.png")
+            malformed = Path(tmp) / "malformed.json"
+            malformed.write_text("{not valid json", encoding="utf-8")
+            malformed_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--slides-dir",
+                    str(slides_dir),
+                    "--output-dir",
+                    str(Path(tmp) / "review-malformed"),
+                    "--comments-json",
+                    str(malformed),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+            self.assertEqual(2, malformed_result.returncode)
+            malformed_error = json.loads(malformed_result.stderr)
+            self.assertEqual("error", malformed_error["status"])
+            self.assertEqual("JSONDecodeError", malformed_error["error_type"])
+
+            empty_object = Path(tmp) / "empty-object.json"
+            empty_object.write_text("{}", encoding="utf-8")
+            empty_object_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--slides-dir",
+                    str(slides_dir),
+                    "--output-dir",
+                    str(Path(tmp) / "review-empty-object"),
+                    "--comments-json",
+                    str(empty_object),
+                ],
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+
+            self.assertEqual(2, empty_object_result.returncode)
+            empty_object_error = json.loads(empty_object_result.stderr)
+            self.assertEqual("error", empty_object_error["status"])
+            self.assertEqual("ValueError", empty_object_error["error_type"])
 
     def test_ppt_render_probe_records_all_powerpoint_slide_png_evidence_for_multi_slide_deck(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1275,6 +1609,17 @@ def write_minimal_docx(path: Path) -> None:
   </w:body>
 </w:document>""",
         )
+
+
+def write_png(path: Path) -> None:
+    path.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR"
+        b"\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+        b"\x00\x00\x00\nIDATx\x9cc\xf8\x0f\x00\x01\x01\x01\x00\x1b\xb6\xeeV"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
 
 
 def write_minimal_pptx(path: Path, slide_count: int = 1) -> None:
