@@ -1,6 +1,12 @@
 version: 1
 documents:
 
+  - doc_id: ppt_visual_review_tool_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/ppt_visual_review_tool_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/ppt_visual_review_tool_plan.zh-CN.md
+
   - doc_id: project_moe_gui_dirty_target_launch_and_wrappers_plan
     doc_class: implementation_plan
     status: active
