@@ -900,9 +900,11 @@ if ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_enabled -
   Assert-True (([string]$profileShimProbe.pathext).StartsWith('.EXE', [System.StringComparison]::OrdinalIgnoreCase)) 'Managed startup profile did not keep .EXE prioritized for taskkill.exe cleanup-output shimming.'
 }
 
-$resolvedInstallHelper = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value $ProfilePath) + "; Get-Command 'omx-langgraph-install.ps1' -ErrorAction Stop | Select-Object -First 1 -Property Name,Source,CommandType | ConvertTo-Json -Depth 4 }")
-Assert-Equal $resolvedInstallHelper.Name 'omx-langgraph-install.ps1' 'Managed startup profile block did not expose omx-langgraph-install.ps1 on PATH.'
-Assert-Equal $resolvedInstallHelper.Source (Join-Path $CodexHome 'bin\omx-langgraph-install.ps1') 'Managed startup profile block resolved the wrong omx-langgraph-install.ps1 path.'
+$resolvedInstallHelper = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value $ProfilePath) + "; `$separator = [string][System.IO.Path]::PathSeparator; `$segments = @(([string]`$env:Path).Split(`$separator) | Where-Object { -not [string]::IsNullOrWhiteSpace(`$_) }); `$expected = " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\omx-langgraph-install.ps1')) + "; [ordered]@{ path = [string]`$env:Path; segments = `$segments; expected_exists = Test-Path -LiteralPath `$expected; expected_path = `$expected } | ConvertTo-Json -Depth 4 }")
+$resolvedInstallHelperSegments = @($resolvedInstallHelper.segments | ForEach-Object { [System.IO.Path]::GetFullPath([string]$_) })
+Assert-ArrayContains -Actual $resolvedInstallHelperSegments -Expected (Join-Path $CodexHome 'bin') 'Managed startup profile block did not expose the user-level bin directory on PATH.'
+Assert-True ($resolvedInstallHelper.expected_exists -eq $true) 'Managed startup profile block did not leave omx-langgraph-install.ps1 available from the user-level bin directory.'
+Assert-Equal ([System.IO.Path]::GetFullPath([string]$resolvedInstallHelper.expected_path)) (Join-Path $CodexHome 'bin\omx-langgraph-install.ps1') 'Managed startup profile block expected the wrong omx-langgraph-install.ps1 path.'
 $playbookContent = Get-Content -LiteralPath (Join-Path $CodexHome 'docs\team-mode-playbook.md') -Raw
 Assert-True ($playbookContent.Contains('team-mode-quick-reference.md')) 'Generated playbook does not link to the quick-reference companion.'
 Assert-True ($playbookContent.Contains('completed-subagent retention is `close`')) 'Generated playbook does not describe the default completed-subagent retention policy.'
@@ -3285,7 +3287,7 @@ Assert-ArrayHasOrderedSubsequence -Actual $wrappedManualArgs -Expected @('--mode
 Assert-Equal $wrappedManual.omx_team_worker_launch_mode 'tmux' 'Wrapped manual launch should preserve an explicit OMX_TEAM_WORKER_LAUNCH_MODE=tmux for downstream preflight instead of silently coercing it to prompt.'
 Assert-True ('tmux' -notin $wrappedManualArgs) 'Wrapped manual launch should keep launch mode in the environment, not inject tmux into CLI args.'
 Assert-True ('--disable' -notin $wrappedManualArgs) 'Manual routing should keep multi_agent available.'
-$wrappedManualPathSegments = @(([string]$wrappedManual.path).Split(';') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+$wrappedManualPathSegments = @(([string]$wrappedManual.path).Split([string][System.IO.Path]::PathSeparator) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 Assert-True ($wrappedManualPathSegments.Count -gt 0) 'Wrapped manual launch did not expose the child PATH.'
 Assert-Equal ([System.IO.Path]::GetFullPath($wrappedManualPathSegments[0])) (Join-Path $CodexHome 'bin\win-shims') 'Wrapped manual launch did not prepend win-shims to child PATH.'
 Assert-Equal ([System.IO.Path]::GetFullPath([string]$wrappedManual.cleanup_shim_directory)) (Join-Path $CodexHome 'bin\win-shims') 'Wrapped manual launch did not expose the cleanup shim directory bridge to child login shells.'
@@ -3304,7 +3306,7 @@ Assert-True ($manualModelInstructionsContent.Contains('Do not proactively route 
 $rawManual = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value $ExplicitNativeBypassPs1Path) + " 'raw-task' }")
 $rawManualArgs = @($rawManual.args | ForEach-Object { [string]$_ })
 Assert-ArrayContains -Actual $rawManualArgs -Expected 'raw-task' -Message 'Native bypass launch did not forward the user argument.'
-$rawManualPathSegments = @(([string]$rawManual.path).Split(';') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+$rawManualPathSegments = @(([string]$rawManual.path).Split([string][System.IO.Path]::PathSeparator) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 if ($rawManualPathSegments.Count -gt 0) {
   Assert-True ([System.IO.Path]::GetFullPath($rawManualPathSegments[0]) -ne (Join-Path $CodexHome 'bin\win-shims')) 'Native bypass launch unexpectedly prepended win-shims to child PATH.'
 }

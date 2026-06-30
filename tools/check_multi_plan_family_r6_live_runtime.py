@@ -166,16 +166,10 @@ def parse_migration_source(raw: str) -> tuple[str, tuple[str, str]]:
 def effective_receipt_dir(root: Path, requested: Path | None) -> Path:
     if requested is not None:
         return requested
-    local = root / r6_receipts.DEFAULT_RECEIPT_DIR
-    if local.exists() and any(local.glob("*.json")):
-        return local
-    # Linked worktrees in this repository live under <primary>/.worktrees/<branch>.
-    if root.parent.name == ".worktrees":
-        primary = root.parent.parent
-        primary_receipts = primary / r6_receipts.DEFAULT_RECEIPT_DIR
-        if primary_receipts.exists() and any(primary_receipts.glob("*.json")):
-            return primary_receipts
-    return local
+    # Share the same fallback policy as check_r6_live_runtime_receipts.py so
+    # clean GitLab checkouts can verify R6 coverage from tracked fixture receipts
+    # while developer worktrees still prefer private ignored .omx live evidence.
+    return r6_receipts.effective_receipt_dir(root, None)
 
 
 def top_prelude(text: str, max_lines: int = 80) -> str:

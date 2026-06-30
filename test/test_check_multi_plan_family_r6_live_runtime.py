@@ -143,6 +143,22 @@ class MultiPlanFamilyR6LiveRuntimeTests(unittest.TestCase):
         )
         self.assertTrue(any(error.startswith("stale_status:user_level_cli_anything_wxwork_cli_governance_plan:") for error in payload["errors"]))
 
+
+    def test_clean_checkout_family_coverage_uses_tracked_fixture_without_omx_receipts(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: shutil.rmtree(tmp, ignore_errors=True))
+        shutil.copytree(ROOT / "docs_bilingual", tmp / "docs_bilingual")
+        shutil.copytree(ROOT / "tools", tmp / "tools")
+        shutil.rmtree(tmp / ".omx", ignore_errors=True)
+        payload = self.run_cli("--require-coverage", root=tmp)
+        self.assertTrue(payload["ok"], payload["errors"])
+        self.assertEqual(
+            payload["coverage_summary"]["receipt_dir"],
+            "tools/r6_live_runtime_receipts/coverage-fixture",
+        )
+        self.assertGreaterEqual(payload["counts"]["direct_r6_lane"], 14)
+        self.assertEqual(payload["coverage_summary"]["counts"]["accepted_lanes"], 14)
+
     def test_rejects_missing_direct_r6_coverage(self) -> None:
         tmp = Path(tempfile.mkdtemp())
         self.addCleanup(lambda: shutil.rmtree(tmp, ignore_errors=True))
