@@ -670,7 +670,12 @@ Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\omx-langg
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\win-shims\taskkill.cmd')) 'Backup snapshot manifest did not include the Windows taskkill CMD shim path.'
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\win-shims\taskkill.ps1')) 'Backup snapshot manifest did not include the Windows taskkill PowerShell shim path.'
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\win-shims\taskkill-shim-source.cs')) 'Backup snapshot manifest did not include the Windows taskkill C# shim source path.'
-Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\win-shims\taskkill.exe')) 'Backup snapshot manifest did not include the Windows taskkill EXE shim path.'
+if ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_requested -eq $true) {
+  Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\win-shims\taskkill.exe')) 'Backup snapshot manifest did not include the Windows taskkill EXE shim path.'
+}
+else {
+  Assert-True ($backupManifestPaths -notcontains (Join-Path $CodexHome 'bin\win-shims\taskkill.exe')) 'Backup snapshot manifest included the Windows taskkill EXE shim path even though EXE shim generation was not requested.'
+}
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'python\langgraph_durable_orchestrator\cli.py')) 'Backup snapshot manifest did not include the LangGraph CLI template path.'
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'state\native-subagent-limits.json')) 'Backup snapshot manifest did not include the native subagent limits state path.'
 Assert-True ($backupManifestPaths -contains (Join-Path $CodexHome 'bin\omx-team-auto.ps1')) 'Backup snapshot manifest did not include the automatic team helper path.'
