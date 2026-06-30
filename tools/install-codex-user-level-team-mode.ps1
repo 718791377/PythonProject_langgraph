@@ -14440,6 +14440,11 @@ try {
     `$locationPushed = `$true
   }
 
+  `$nativeOmxPreflight = Get-CodexUserLevelNativeOmxOperationalPreflight
+  if (-not [bool]`$nativeOmxPreflight.operational_ready) {
+    throw ('native_omx_preflight_failed:{0}' -f (@(`$nativeOmxPreflight.blockers) -join ','))
+  }
+
   `$resolvedTeamName = Resolve-CodexUserLevelTeamName -RequestedTeamName `$TeamName -RepoRoot `$RepoRoot
   `$commandArgs = @()
 
