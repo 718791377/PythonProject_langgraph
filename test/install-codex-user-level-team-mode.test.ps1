@@ -3292,6 +3292,7 @@ Assert-ArrayContains -Actual @($durableStateCommandLangGraph.backend_specific.la
 
 Get-ChildItem -LiteralPath (Join-Path $FakeRepoRoot '.omx\state\team') -Recurse -Force -File -ErrorAction SilentlyContinue |
   Remove-Item -Force
+Ensure-Directory -Path (Join-Path $FakeRepoRoot '.omx\state\team\status-empty-unmanaged-native-team')
 $durableStateUnmanaged = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
   '-RepoRoot', $FakeRepoRoot,
   '-Json'
