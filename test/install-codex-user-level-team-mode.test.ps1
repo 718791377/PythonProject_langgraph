@@ -197,6 +197,27 @@ function Quote-PowerShellLiteral {
   return "'" + $Value.Replace("'", "''") + "'"
 }
 
+function Get-TestPowerShellExecutable {
+  $currentProcessPath = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
+  if ($currentProcessPath -and (Test-Path -LiteralPath $currentProcessPath)) {
+    return $currentProcessPath
+  }
+
+  $pwshCommand = Get-Command pwsh -ErrorAction SilentlyContinue
+  if ($pwshCommand) {
+    return $pwshCommand.Source
+  }
+
+  $powershellCommand = Get-Command powershell.exe -ErrorAction SilentlyContinue
+  if ($powershellCommand) {
+    return $powershellCommand.Source
+  }
+
+  throw 'No compatible PowerShell executable found for test subprocess invocation.'
+}
+
+$TestPowerShellExecutable = Get-TestPowerShellExecutable
+
 function Get-PowerShellInvocationText {
   param(
     [Parameter(Mandatory)]
@@ -225,7 +246,7 @@ function Invoke-PowerShellScriptJson {
   )
 
   $commandText = Get-PowerShellInvocationText -FilePath $FilePath -Arguments $Arguments
-  $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -Command $commandText
+  $output = & $TestPowerShellExecutable -NoProfile -ExecutionPolicy Bypass -Command $commandText
   if ($LASTEXITCODE -ne 0) {
     throw "PowerShell script failed: $FilePath (exit code $LASTEXITCODE)"
   }
@@ -241,7 +262,7 @@ function Invoke-PowerShellScriptExpectFailure {
   )
 
   $commandText = Get-PowerShellInvocationText -FilePath $FilePath -Arguments $Arguments
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command $commandText | Out-Null
+  & $TestPowerShellExecutable -NoProfile -ExecutionPolicy Bypass -Command $commandText | Out-Null
   return $LASTEXITCODE
 }
 
@@ -252,7 +273,7 @@ function Invoke-PowerShellCommandRaw {
   )
 
   $wrappedCommandText = "& { $CommandText; if (Test-Path -LiteralPath variable:LASTEXITCODE) { exit [int]`$LASTEXITCODE } }"
-  $output = @(powershell.exe -NoProfile -ExecutionPolicy Bypass -Command $wrappedCommandText 2>&1 | ForEach-Object { [string]$_ })
+  $output = @(& $TestPowerShellExecutable -NoProfile -ExecutionPolicy Bypass -Command $wrappedCommandText 2>&1 | ForEach-Object { [string]$_ })
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
     output = @($output)
@@ -265,7 +286,7 @@ function Invoke-PowerShellCommandJson {
     [string]$CommandText
   )
 
-  $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -Command $CommandText
+  $output = & $TestPowerShellExecutable -NoProfile -ExecutionPolicy Bypass -Command $CommandText
   if ($LASTEXITCODE -ne 0) {
     throw "PowerShell command failed (exit code $LASTEXITCODE): $CommandText"
   }
@@ -2280,7 +2301,7 @@ $previousExplicitTmuxPath = [Environment]::GetEnvironmentVariable('Path', 'Proce
 try {
   [Environment]::SetEnvironmentVariable('OMX_TEAM_WORKER_LAUNCH_MODE', 'tmux', 'Process')
   [Environment]::SetEnvironmentVariable('TMUX', $null, 'Process')
-  [Environment]::SetEnvironmentVariable('Path', (Split-Path -Parent (Get-Command 'powershell.exe' -ErrorAction Stop).Source), 'Process')
+  [Environment]::SetEnvironmentVariable('Path', (Split-Path -Parent $TestPowerShellExecutable), 'Process')
   $autoExplicitTmuxBlocked = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
     '-Task', 'parallel feature work with explicit tmux request',
     '-Phase', 'execute-parallel',

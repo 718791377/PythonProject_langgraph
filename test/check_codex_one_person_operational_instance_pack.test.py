@@ -108,7 +108,8 @@ class CodexOnePersonOperationalInstancePackTest(unittest.TestCase):
 
     def test_fails_when_translation_of_drifts(self) -> None:
         root = self.make_root()
-        self.replace_once(root, ENTRY_ZH, f"translation_of: {str(ENTRY).replace(chr(92), "/")}", "translation_of: docs_bilingual/project_kits/wrong.md")
+        expected_translation = f"translation_of: {ENTRY.as_posix()}"
+        self.replace_once(root, ENTRY_ZH, expected_translation, "translation_of: docs_bilingual/project_kits/wrong.md")
         self.assert_checker_fails_with(root, "translation_of")
 
     def test_fails_when_shared_ledger_field_missing(self) -> None:

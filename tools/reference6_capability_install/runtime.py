@@ -750,8 +750,9 @@ def copy_runtime_artifacts(paths: dict[str, Path], manifest: dict[str, Any]) -> 
     paths["smoke_cmd"].parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(Path(__file__), paths["runtime_copy"])
     write_json(paths["manifest_copy"], manifest)
+    runtime_copy_cmd = str(paths["runtime_copy"]).replace("/", "\\")
     write_text(paths["smoke_ps1"], f"$ErrorActionPreference = 'Stop'\n& python '{paths['runtime_copy']}' smoke @args\nexit $LASTEXITCODE\n")
-    write_text(paths["smoke_cmd"], f"@echo off\r\npython \"{str(paths['runtime_copy']).replace('/', '\\\\')}\" smoke %*\r\nexit /b %ERRORLEVEL%\r\n")
+    write_text(paths["smoke_cmd"], f"@echo off\r\npython \"{runtime_copy_cmd}\" smoke %*\r\nexit /b %ERRORLEVEL%\r\n")
 
 
 def create_backup(paths: dict[str, Path]) -> Path:
