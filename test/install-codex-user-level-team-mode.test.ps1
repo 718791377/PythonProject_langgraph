@@ -82,6 +82,7 @@ function Assert-True {
 function Assert-ArrayContains {
   param(
     [Parameter(Mandatory)]
+    [AllowEmptyCollection()]
     [string[]]$Actual,
     [Parameter(Mandatory)]
     [string]$Expected,
