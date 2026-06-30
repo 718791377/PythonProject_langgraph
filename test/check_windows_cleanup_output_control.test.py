@@ -96,6 +96,20 @@ class WindowsCleanupOutputControlCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("taskkill_exe_compat_switch" in error for error in payload["errors"]))
 
+    def test_requires_taskkill_exe_default_to_be_windows_only(self) -> None:
+        root = self.make_root("windows-cleanup-missing-taskkill-platform-gate")
+        source = INSTALLER_PATH.read_text(encoding="utf-8").replace(
+            "$taskkillExeShimRequested = [bool]$InstallTaskkillExeShim -or ($isWindowsPlatform -and -not [bool]$SkipTaskkillExeShim)",
+            "$taskkillExeShimRequested = -not [bool]$SkipTaskkillExeShim",
+        )
+        self.write_installer_copy(root, source)
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("taskkill_exe_default_requested" in error for error in payload["errors"]))
+
     def test_fails_when_taskkill_exe_runtime_presence_check_is_removed(self) -> None:
         root = self.make_root("windows-cleanup-missing-taskkill-exe-runtime-check")
         source = INSTALLER_PATH.read_text(encoding="utf-8").replace(

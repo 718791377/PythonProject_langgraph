@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import filecmp
+import shutil
 import subprocess
 import sys
 import json
@@ -292,12 +293,17 @@ def validate_set_plugin_profile_target_map(root: Path) -> dict[str, Any]:
         "computer-use@openai-bundled",
         "pdf@openai-primary-runtime",
     }
+    powershell = shutil.which("powershell") or shutil.which("pwsh")
+    if not powershell:
+        contract["checked"] = False
+        contract["error"] = "powershell_not_found"
+        return contract
     try:
         with tempfile.TemporaryDirectory(prefix="skills2cli-profile-") as temp_dir:
             temp_config = Path(temp_dir) / "config.toml"
             completed = subprocess.run(
                 [
-                    "powershell",
+                    powershell,
                     "-NoProfile",
                     "-File",
                     str(script),

@@ -214,13 +214,16 @@ class Skills2CliProfileRoutingCheckTest(unittest.TestCase):
         self.assertTrue(any("managed_extra_plugin_config_ids" in error and "superpowers@openai-curated" in error for error in parsed["errors"]))
 
     def test_set_plugin_profile_core_dev_uses_real_config_ids_without_display_names(self) -> None:
+        powershell = shutil.which("powershell") or shutil.which("pwsh")
+        if powershell is None:
+            self.skipTest("PowerShell is not available")
         root = self.make_root("set-plugin-profile-preview")
         codex_home = root / "codex-home"
         config_path = codex_home / "config.toml"
         script = REPO_ROOT / "tools" / "skill_sources" / "plugin-modules" / "scripts" / "set_plugin_profile.ps1"
         result = subprocess.run(
             [
-                "powershell",
+                powershell,
                 "-NoProfile",
                 "-File",
                 str(script),

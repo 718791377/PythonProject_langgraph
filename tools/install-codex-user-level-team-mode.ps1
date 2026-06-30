@@ -926,6 +926,16 @@ function Try-CompileWindowsTaskkillExeShim {
     [string]$OutputPath
   )
 
+  if ([System.Environment]::OSVersion.Platform -ne [System.PlatformID]::Win32NT) {
+    return [ordered]@{
+      attempted = $true
+      compiled = $false
+      output_path = $OutputPath
+      compiler_path = ''
+      reason = 'taskkill.exe shim compilation is Windows-only'
+    }
+  }
+
   $csc = Get-Command 'csc.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
   $compilerPath = ''
   if ($null -ne $csc) {
@@ -15311,7 +15321,8 @@ $teamPlaybookPath = Join-Path $docsDirectory 'team-mode-playbook.md'
 $teamQuickReferencePath = Join-Path $docsDirectory 'team-mode-quick-reference.md'
 $composeManifestSchemaPath = Join-Path $teamsDirectory 'compose-manifest.schema.json'
 $managedProfileBlock = Get-ManagedProfileBlockContent -LauncherPath $launcherPath -NativeCommandPath $resolvedNativeCodexCommandPath
-$taskkillExeShimRequested = -not [bool]$SkipTaskkillExeShim
+$isWindowsPlatform = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
+$taskkillExeShimRequested = [bool]$InstallTaskkillExeShim -or ($isWindowsPlatform -and -not [bool]$SkipTaskkillExeShim)
 
 Ensure-Directory -Path $targetCodexHome
 Ensure-Directory -Path $binDirectory
@@ -15477,7 +15488,7 @@ try {
     compiled = $false
     output_path = (Join-Path $winShimsDirectory 'taskkill.exe')
     compiler_path = ''
-    reason = if ($taskkillExeShimRequested) { '' } else { 'taskkill.exe shim disabled by SkipTaskkillExeShim' }
+    reason = if ($taskkillExeShimRequested) { '' } elseif ($SkipTaskkillExeShim) { 'taskkill.exe shim disabled by SkipTaskkillExeShim' } else { 'taskkill.exe shim disabled on non-Windows platform' }
   }
   if ($taskkillExeShimRequested) {
     $taskkillExeShimCompile = Try-CompileWindowsTaskkillExeShim -SourcePath (Join-Path $winShimsDirectory 'taskkill-shim-source.cs') -OutputPath (Join-Path $winShimsDirectory 'taskkill.exe')

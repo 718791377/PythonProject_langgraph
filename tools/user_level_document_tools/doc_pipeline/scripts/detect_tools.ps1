@@ -54,6 +54,12 @@ function Test-PathList {
     return $null
 }
 
+function Join-OptionalPath {
+    param([string]$Base, [string]$Child)
+    if ([string]::IsNullOrWhiteSpace($Base)) { return $null }
+    return (Join-Path $Base $Child)
+}
+
 function Invoke-VersionProbe {
     param([string]$Exe, [string[]]$VersionArgs)
     if ([string]::IsNullOrWhiteSpace($Exe)) { return $null }
@@ -134,10 +140,10 @@ $acrobatCmd = Get-CommandInfo -Name 'Acrobat.exe'
 $acrobatPaths = @()
 if ($config -and $config.acrobat_exe) { $acrobatPaths += [string]$config.acrobat_exe }
 $acrobatPaths += @(
-    (Join-Path $programFiles 'Adobe\Acrobat DC\Acrobat\Acrobat.exe'),
-    (Join-Path $programFiles 'Adobe\Acrobat\Acrobat.exe'),
-    (Join-Path $programFilesX86 'Adobe\Acrobat DC\Acrobat\Acrobat.exe'),
-    (Join-Path $programFilesX86 'Adobe\Acrobat\Acrobat.exe')
+    (Join-OptionalPath $programFiles 'Adobe\Acrobat DC\Acrobat\Acrobat.exe'),
+    (Join-OptionalPath $programFiles 'Adobe\Acrobat\Acrobat.exe'),
+    (Join-OptionalPath $programFilesX86 'Adobe\Acrobat DC\Acrobat\Acrobat.exe'),
+    (Join-OptionalPath $programFilesX86 'Adobe\Acrobat\Acrobat.exe')
 )
 $acrobatPath = if ($acrobatCmd) { $acrobatCmd.source } else { Test-PathList -Paths $acrobatPaths }
 $tools += [ordered]@{
@@ -265,8 +271,8 @@ if ($null -eq $sofficeCmd) { $sofficeCmd = Get-CommandInfo -Name 'soffice' }
 if ($null -eq $sofficeCmd) { $sofficeCmd = Get-CommandInfo -Name 'libreoffice' }
 $sofficePaths = @(
     $SofficeExe,
-    (Join-Path $programFiles 'LibreOffice\program\soffice.exe'),
-    (Join-Path $programFilesX86 'LibreOffice\program\soffice.exe')
+    (Join-OptionalPath $programFiles 'LibreOffice\program\soffice.exe'),
+    (Join-OptionalPath $programFilesX86 'LibreOffice\program\soffice.exe')
 )
 $sofficePath = if ($sofficeCmd) { $sofficeCmd.source } else { Test-PathList -Paths $sofficePaths }
 $sofficeVersion = if ($sofficePath) { Invoke-VersionProbe -Exe $sofficePath -VersionArgs @('--version') } else { $null }

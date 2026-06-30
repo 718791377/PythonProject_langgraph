@@ -31,6 +31,12 @@ function Test-PathList {
     return $null
 }
 
+function Join-OptionalPath {
+    param([string]$Base, [string]$Child)
+    if ([string]::IsNullOrWhiteSpace($Base)) { return $null }
+    return (Join-Path $Base $Child)
+}
+
 function Resolve-Soffice {
     param([string]$Configured)
     if (-not [string]::IsNullOrWhiteSpace($Configured)) {
@@ -43,8 +49,8 @@ function Resolve-Soffice {
         if ($cmd) { return $cmd.Source }
     }
     return Test-PathList -Paths @(
-        (Join-Path ${env:ProgramFiles} 'LibreOffice\program\soffice.exe'),
-        (Join-Path ${env:ProgramFiles(x86)} 'LibreOffice\program\soffice.exe')
+        (Join-OptionalPath ${env:ProgramFiles} 'LibreOffice\program\soffice.exe'),
+        (Join-OptionalPath ${env:ProgramFiles(x86)} 'LibreOffice\program\soffice.exe')
     )
 }
 

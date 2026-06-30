@@ -49,6 +49,7 @@ $ResolvedPythonPath = if (Test-Path -LiteralPath $RepoVenvPythonPath) {
 } else {
   [System.IO.Path]::GetFullPath((Get-Command 'python' -ErrorAction Stop).Source)
 }
+$IsWindowsPlatform = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
 
 function Assert-Equal {
   param(
@@ -467,8 +468,8 @@ Assert-Equal $manifest.current_state.langgraph 'off' 'Default langgraph switch s
 Assert-Equal $manifest.current_state.durable_orchestration_backend 'native_omx' 'Default durable orchestration backend is wrong.'
 Assert-Equal ([int]$manifest.native_subagent_limits.max_threads) 6 'Default max_threads is wrong.'
 Assert-Equal ([int]$manifest.native_subagent_limits.max_depth) 1 'Default max_depth is wrong.'
-Assert-True ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_requested -eq $true) 'Installer did not request taskkill.exe cleanup-output shimming by default.'
-Assert-True ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_compile.attempted -eq $true) 'Default install did not attempt taskkill.exe shim compilation.'
+Assert-True ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_requested -eq $IsWindowsPlatform) 'Installer default taskkill.exe cleanup-output shimming request did not match platform support.'
+Assert-True ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_compile.attempted -eq $IsWindowsPlatform) 'Default taskkill.exe shim compilation attempt did not match platform support.'
 if ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_enabled -eq $true) {
   Assert-True (Test-Path -LiteralPath (Join-Path $CodexHome 'bin\win-shims\taskkill.exe')) 'Default EXE shim install reported enabled but did not create taskkill.exe.'
 }
@@ -802,8 +803,8 @@ Assert-Equal $startupBinding.cleanup_output_control.taskkill_cmd_path (Join-Path
 Assert-Equal $startupBinding.cleanup_output_control.taskkill_ps1_path (Join-Path $CodexHome 'bin\win-shims\taskkill.ps1') 'Installer reported the wrong taskkill PowerShell shim path.'
 Assert-Equal $startupBinding.cleanup_output_control.taskkill_shim_source_path (Join-Path $CodexHome 'bin\win-shims\taskkill-shim-source.cs') 'Installer reported the wrong taskkill C# shim source path.'
 Assert-Equal $startupBinding.cleanup_output_control.taskkill_exe_shim_path (Join-Path $CodexHome 'bin\win-shims\taskkill.exe') 'Installer reported the wrong taskkill EXE shim path.'
-Assert-True ($startupBinding.cleanup_output_control.taskkill_exe_shim_requested -eq $true) 'Installer did not request the taskkill EXE shim by default.'
-Assert-True ($startupBinding.cleanup_output_control.taskkill_exe_shim_compile.attempted -eq $true) 'Installer did not attempt taskkill EXE compilation by default.'
+Assert-True ($startupBinding.cleanup_output_control.taskkill_exe_shim_requested -eq $IsWindowsPlatform) 'Installer default taskkill EXE shim request did not match platform support.'
+Assert-True ($startupBinding.cleanup_output_control.taskkill_exe_shim_compile.attempted -eq $IsWindowsPlatform) 'Installer default taskkill EXE compilation attempt did not match platform support.'
 Assert-True ($startupBinding.cleanup_output_control.scoped_to_wrapped_launch -eq $true) 'Installer did not report cleanup-output control as scoped to wrapped launches.'
 Assert-Equal $startupBinding.non_profile_launchers.wrapped_ps1_path $ExplicitWrappedCodexPs1Path 'Installer reported the wrong explicit wrapped codex PowerShell launcher path.'
 Assert-Equal $startupBinding.non_profile_launchers.wrapped_cmd_path $ExplicitWrappedCodexCmdPath 'Installer reported the wrong explicit wrapped codex cmd launcher path.'
@@ -3302,23 +3303,25 @@ if ($rawManualPathSegments.Count -gt 0) {
   Assert-True ([System.IO.Path]::GetFullPath($rawManualPathSegments[0]) -ne (Join-Path $CodexHome 'bin\win-shims')) 'Native bypass launch unexpectedly prepended win-shims to child PATH.'
 }
 
-$ExeShimHome = Join-Path $TempRoot 'exe-shim-home'
-$ExeShimProfilePath = Join-Path $TempRoot 'exe-shim-profile\Microsoft.PowerShell_profile.ps1'
-Ensure-Directory -Path (Split-Path -Parent $ExeShimProfilePath)
-$exeShimInstallArgs = @(
-  '-CodexHome', $ExeShimHome,
-  '-PowerShellProfilePath', $ExeShimProfilePath,
-  '-NativeCodexCommandPath', $FakeNativeCodexPath,
-  '-OmxCommandPath', $FakeOmxPath,
-  '-PythonCommandPath', $ResolvedPythonPath,
-  '-InstallTaskkillExeShim'
-)
-$exeShimInstall = Invoke-PowerShellScriptJson -FilePath $InstallerPath -Arguments $exeShimInstallArgs
-Assert-True ($exeShimInstall.startup_binding.cleanup_output_control.taskkill_exe_shim_enabled -eq $true) 'Explicit EXE shim install did not report taskkill_exe_shim_enabled=true.'
-Assert-True ($exeShimInstall.startup_binding.cleanup_output_control.taskkill_exe_shim_compile.attempted -eq $true) 'Explicit EXE shim install did not attempt compilation.'
-Assert-True (Test-Path -LiteralPath (Join-Path $ExeShimHome 'bin\win-shims\taskkill.exe')) 'Explicit EXE shim install did not create taskkill.exe.'
-$exeShimWrapped = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value (Join-Path $ExeShimHome 'bin\_codex-user-level-team-mode-launcher.ps1')) + " 'exe-shim-task' }")
-Assert-True (([string]$exeShimWrapped.pathext).StartsWith('.EXE', [System.StringComparison]::OrdinalIgnoreCase)) 'Explicit EXE shim launch did not prioritize .EXE in PATHEXT.'
+if ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT) {
+  $ExeShimHome = Join-Path $TempRoot 'exe-shim-home'
+  $ExeShimProfilePath = Join-Path $TempRoot 'exe-shim-profile\Microsoft.PowerShell_profile.ps1'
+  Ensure-Directory -Path (Split-Path -Parent $ExeShimProfilePath)
+  $exeShimInstallArgs = @(
+    '-CodexHome', $ExeShimHome,
+    '-PowerShellProfilePath', $ExeShimProfilePath,
+    '-NativeCodexCommandPath', $FakeNativeCodexPath,
+    '-OmxCommandPath', $FakeOmxPath,
+    '-PythonCommandPath', $ResolvedPythonPath,
+    '-InstallTaskkillExeShim'
+  )
+  $exeShimInstall = Invoke-PowerShellScriptJson -FilePath $InstallerPath -Arguments $exeShimInstallArgs
+  Assert-True ($exeShimInstall.startup_binding.cleanup_output_control.taskkill_exe_shim_enabled -eq $true) 'Explicit EXE shim install did not report taskkill_exe_shim_enabled=true.'
+  Assert-True ($exeShimInstall.startup_binding.cleanup_output_control.taskkill_exe_shim_compile.attempted -eq $true) 'Explicit EXE shim install did not attempt compilation.'
+  Assert-True (Test-Path -LiteralPath (Join-Path $ExeShimHome 'bin\win-shims\taskkill.exe')) 'Explicit EXE shim install did not create taskkill.exe.'
+  $exeShimWrapped = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value (Join-Path $ExeShimHome 'bin\_codex-user-level-team-mode-launcher.ps1')) + " 'exe-shim-task' }")
+  Assert-True (([string]$exeShimWrapped.pathext).StartsWith('.EXE', [System.StringComparison]::OrdinalIgnoreCase)) 'Explicit EXE shim launch did not prioritize .EXE in PATHEXT.'
+}
 
 
 $installerSource = Get-Content -LiteralPath $InstallerPath -Raw

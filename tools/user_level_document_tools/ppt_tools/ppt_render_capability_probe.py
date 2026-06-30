@@ -104,7 +104,15 @@ def run_version(path: str, args: list[str], timeout: int = 10) -> tuple[bool, st
     if not path:
         return False, ""
     try:
-        proc = subprocess.run([path, *args], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=timeout)
+        proc = subprocess.run(
+            [path, *args],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+        )
         text = "\n".join((proc.stdout or "").splitlines()[:5])
         return proc.returncode == 0 or bool(text), text
     except Exception as exc:  # noqa: BLE001
@@ -314,7 +322,7 @@ def main(argv: list[str] | None = None) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if args.json or not args.output:
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        print(json.dumps(payload, ensure_ascii=True, indent=2))
     return code
 
 

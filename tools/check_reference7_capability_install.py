@@ -228,6 +228,8 @@ def check_user_level(
     require_installed: bool,
     require_smoke_tested: bool,
     require_live_executed: bool,
+    general_root: Path | None,
+    general2_root: Path | None,
     errors: list[str],
 ) -> dict[str, Any] | None:
     if not (require_installed or require_smoke_tested or require_live_executed):
@@ -235,6 +237,10 @@ def check_user_level(
     cmd = [sys.executable, str(root / RUNTIME), "check", "--json"]
     if codex_home:
         cmd.extend(["--codex-home", str(codex_home)])
+    if general_root:
+        cmd.extend(["--general-root", str(general_root)])
+    if general2_root:
+        cmd.extend(["--general2-root", str(general2_root)])
     if require_installed:
         cmd.append("--require-installed")
     if require_smoke_tested:
@@ -311,7 +317,16 @@ def evaluate(
     manifest = check_manifest(root, errors)
     registry = check_registry_guard_ci(root, errors)
     runtime_plan = check_runtime_plan(root, errors)
-    user_level = check_user_level(root, codex_home, require_user_level_installed, require_smoke_tested, require_live_executed, errors)
+    user_level = check_user_level(
+        root,
+        codex_home,
+        require_user_level_installed,
+        require_smoke_tested,
+        require_live_executed,
+        general_root,
+        general2_root,
+        errors,
+    )
     templates = None
     if require_template_sync or general_root or general2_root:
         templates = check_template_roots(general_root, general2_root, errors)
