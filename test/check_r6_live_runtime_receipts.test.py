@@ -186,6 +186,22 @@ class R6LiveRuntimeReceiptTests(unittest.TestCase):
         self.assertEqual(payload["coverage_summary"]["counts"]["accepted_lanes"], 14)
         self.assertEqual(payload["coverage_summary"]["missing_lanes"], [])
 
+    def test_clean_checkout_coverage_uses_tracked_fixture_without_omx_receipts(self) -> None:
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda p=tmp: __import__("shutil").rmtree(p, ignore_errors=True))
+        fixture = tmp / "tools" / "r6_live_runtime_receipts" / "coverage-fixture"
+        fixture.mkdir(parents=True)
+        for lane, profile in module.LANE_PROFILES.items():
+            mode = "live-executed" if profile.side_effect == "none" else "blocked"
+            (fixture / f"{lane}.json").write_text(
+                json.dumps(module.fixture_for_lane(lane, live_mode=mode), ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        payload = self.run_cli("--root", str(tmp), "--require-coverage")
+        self.assertTrue(payload["coverage_summary"]["coverage_ok"], payload["errors"])
+        self.assertEqual(payload["coverage_summary"]["receipt_dir"], "tools/r6_live_runtime_receipts/coverage-fixture")
+        self.assertEqual(payload["coverage_summary"]["counts"]["accepted_lanes"], 14)
+
     def test_directory_coverage_fails_when_default_safe_lane_is_only_blocked(self) -> None:
         tmp = Path(tempfile.mkdtemp())
         self.addCleanup(lambda p=tmp: __import__("shutil").rmtree(p, ignore_errors=True))

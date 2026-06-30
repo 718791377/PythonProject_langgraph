@@ -890,8 +890,9 @@ Assert-True ($profileContent.Contains('$codexUserLevelBinDirectory')) 'Managed s
 Assert-True ($profileContent.Contains('CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY')) 'Managed startup profile block did not bridge the wrapped cleanup shim directory into login shells.'
 Assert-True ($profileContent.Contains('function global:codex-native')) 'Managed startup profile block did not add codex-native.'
 
-$profileShimProbe = Invoke-PowerShellCommandJson -CommandText ("& { `$env:CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY = " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\win-shims')) + "; `$env:Path = 'C:\Windows\system32;C:\Windows'; `$env:PATHEXT = '.EXE;.CMD;.COM'; & " + (Quote-PowerShellLiteral -Value $ProfilePath) + "; [ordered]@{ path = [string]`$env:Path; pathext = [string]`$env:PATHEXT; taskkill_exe = (Get-Command 'taskkill.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source) } | ConvertTo-Json -Depth 4 }")
-$profileShimPathSegments = @(([string]$profileShimProbe.path).Split(';') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+$pathSeparator = [string][System.IO.Path]::PathSeparator
+$profileShimProbe = Invoke-PowerShellCommandJson -CommandText ("& { `$pathSeparator = [string][System.IO.Path]::PathSeparator; `$env:CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY = " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\win-shims')) + "; `$env:Path = (@('C:\Windows\system32', 'C:\Windows') -join `$pathSeparator); `$env:PATHEXT = '.EXE;.CMD;.COM'; & " + (Quote-PowerShellLiteral -Value $ProfilePath) + "; [ordered]@{ path = [string]`$env:Path; pathext = [string]`$env:PATHEXT; taskkill_exe = (Get-Command 'taskkill.exe' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source) } | ConvertTo-Json -Depth 4 }")
+$profileShimPathSegments = @(([string]$profileShimProbe.path).Split($pathSeparator) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 Assert-True ($profileShimPathSegments.Count -gt 0) 'Managed startup profile probe did not expose PATH entries.'
 Assert-Equal ([System.IO.Path]::GetFullPath($profileShimPathSegments[0])) (Join-Path $CodexHome 'bin\win-shims') 'Managed startup profile did not restore win-shims after a login-shell PATH reset.'
 if ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_enabled -eq $true) {
@@ -899,7 +900,7 @@ if ($manifest.startup_binding.cleanup_output_control.taskkill_exe_shim_enabled -
   Assert-True (([string]$profileShimProbe.pathext).StartsWith('.EXE', [System.StringComparison]::OrdinalIgnoreCase)) 'Managed startup profile did not keep .EXE prioritized for taskkill.exe cleanup-output shimming.'
 }
 
-$resolvedInstallHelper = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value $ProfilePath) + "; Get-Command 'omx-langgraph-install.ps1' | Select-Object Name,Source,CommandType | ConvertTo-Json -Depth 4 }")
+$resolvedInstallHelper = Invoke-PowerShellCommandJson -CommandText ("& { & " + (Quote-PowerShellLiteral -Value $ProfilePath) + "; Get-Command 'omx-langgraph-install.ps1' -ErrorAction Stop | Select-Object -First 1 -Property Name,Source,CommandType | ConvertTo-Json -Depth 4 }")
 Assert-Equal $resolvedInstallHelper.Name 'omx-langgraph-install.ps1' 'Managed startup profile block did not expose omx-langgraph-install.ps1 on PATH.'
 Assert-Equal $resolvedInstallHelper.Source (Join-Path $CodexHome 'bin\omx-langgraph-install.ps1') 'Managed startup profile block resolved the wrong omx-langgraph-install.ps1 path.'
 $playbookContent = Get-Content -LiteralPath (Join-Path $CodexHome 'docs\team-mode-playbook.md') -Raw

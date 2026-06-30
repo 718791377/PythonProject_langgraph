@@ -1189,13 +1189,15 @@ function Add-CodexUserLevelPathEntry {
     return
   }
 
+  `$pathSeparator = [string][System.IO.Path]::PathSeparator
+  `$pathSeparatorPattern = [regex]::Escape(`$pathSeparator)
   `$pathEntries = @()
   if (-not [string]::IsNullOrWhiteSpace([string]`$env:Path)) {
-    `$pathEntries = @([string]`$env:Path -split ';' | Where-Object {
+    `$pathEntries = @([string]`$env:Path -split `$pathSeparatorPattern | Where-Object {
       -not [string]::IsNullOrWhiteSpace([string]`$_) -and [string]`$_ -ne `$PathEntry
     })
   }
-  `$env:Path = (@(`$PathEntry) + `$pathEntries) -join ';'
+  `$env:Path = (@(`$PathEntry) + `$pathEntries) -join `$pathSeparator
 }
 
 `$codexUserLevelBinDirectory = '$escapedLauncherDirectory'

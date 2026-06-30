@@ -1,0 +1,95 @@
+{
+  "action": "r6.worktree.receipt",
+  "authority_decision": {
+    "decision": "r6-live-runtime",
+    "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit"
+  },
+  "authorization_receipt": {
+    "action": "r6.worktree.receipt",
+    "expiry": "2026-06-30T17:45:51.038546+00:00",
+    "operator_confirmation": true,
+    "scope": [
+      "r6.worktree.receipt"
+    ],
+    "session": "main-session",
+    "status": "pass",
+    "target": "repo-local:r6-runtime"
+  },
+  "blocked_reason": "",
+  "cleanup_evidence": {
+    "cleaned": true,
+    "status": "pass"
+  },
+  "command_transcript": "redacted R6 live-runtime transcript",
+  "coverage_fixture": true,
+  "coverage_fixture_policy": "clean-checkout deterministic coverage fixture; live runtime evidence remains in ignored .omx receipts when present.",
+  "execution_receipt": {
+    "action_performed": true,
+    "authorization": {
+      "status": "pass"
+    },
+    "claim_lifecycle": {
+      "status": "pass"
+    },
+    "cleanup": {
+      "status": "pass"
+    },
+    "raw_transcript_omitted": true,
+    "redaction_status": "pass",
+    "remote_publication_mutated": false,
+    "rollback": {
+      "status": "pass"
+    },
+    "status": "pass",
+    "timeout_release": {
+      "released": true,
+      "status": "pass",
+      "timeout_seconds": 30
+    },
+    "worktree_receipt": {
+      "status": "pass"
+    }
+  },
+  "external_side_effects": "none",
+  "lane": "worktree-receipt-claim-lifecycle",
+  "live_attempted": true,
+  "live_executed": true,
+  "live_mode": "live-executed",
+  "owner_lane": "worktree-receipt-claim-lifecycle",
+  "owner_lease": {
+    "expires_at": "2026-06-30T17:45:51.038546+00:00",
+    "owner": "main-session",
+    "status": "pass"
+  },
+  "plan_id": "worktree_receipt_claim_lifecycle_plan",
+  "receipt_type": "r6-live-runtime",
+  "redaction_status": "pass",
+  "remote_publication_mutated": false,
+  "rollback_pointer": "rollback-ref:r6-live-runtime-fixture",
+  "rollback_ready": true,
+  "runtime_stage": "R6",
+  "schema_version": 1,
+  "target": "repo-local:r6-runtime",
+  "target_action_allowlist": {
+    "actions": [
+      "r6.worktree.receipt"
+    ],
+    "targets": [
+      "repo-local:r6-runtime"
+    ]
+  },
+  "target_env_hash": "44136fa355b3678a",
+  "target_env_keys": [],
+  "template_distribution": "repo-local-only",
+  "timeout_release": {
+    "released": true,
+    "status": "pass",
+    "timeout_seconds": 30
+  },
+  "tool_name": "r6-worktree-receipt",
+  "transcript_redaction": {
+    "raw_transcript_omitted": true,
+    "redacted_transcript_hash": "54e6289e14c7b0e7",
+    "status": "pass"
+  }
+}

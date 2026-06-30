@@ -34,6 +34,7 @@ from user_level_receipt_governance import (
 
 CHECK_NAME = "r6_live_runtime_receipts"
 DEFAULT_RECEIPT_DIR = Path(".omx/r6-live-runtime/receipts")
+DEFAULT_COVERAGE_FIXTURE_DIR = Path("tools/r6_live_runtime_receipts/coverage-fixture")
 
 LIVE_MODES = {"blocked", "dry-run", "live-ready", "live-executed"}
 SIDE_EFFECTS = {
@@ -903,6 +904,9 @@ def effective_receipt_dir(root: Path, requested: Path | None) -> Path:
         primary_receipts = primary / DEFAULT_RECEIPT_DIR
         if primary_receipts.exists() and any(primary_receipts.glob("*.json")):
             return primary_receipts
+    fixture = root / DEFAULT_COVERAGE_FIXTURE_DIR
+    if fixture.exists() and any(fixture.glob("*.json")):
+        return DEFAULT_COVERAGE_FIXTURE_DIR
     return DEFAULT_RECEIPT_DIR
 
 
