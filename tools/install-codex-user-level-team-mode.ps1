@@ -2676,11 +2676,7 @@ function Get-CodexUserLevelNativeOmxOperationalPreflight {
       $blockers += 'blocked:runtime_backend_unavailable'
     }
   } else {
-    if ($normalizedLaunchMode -eq 'prompt') {
-      $runtimeBackend = 'unknown'
-      $workerLaunchMode = 'prompt'
-      $blockers += 'blocked:windows_backend_not_implemented'
-    } else {
+    if ([string]::IsNullOrWhiteSpace($normalizedLaunchMode) -or $normalizedLaunchMode -eq 'tmux' -or $normalizedLaunchMode -eq 'interactive') {
       $runtimeBackend = 'unix_tmux'
       $workerLaunchMode = 'interactive'
       if (-not (Test-CodexUserLevelTmuxAvailable)) {
@@ -2689,6 +2685,14 @@ function Get-CodexUserLevelNativeOmxOperationalPreflight {
       if ([string]::IsNullOrWhiteSpace([string]$env:TMUX)) {
         $blockers += 'blocked:not_in_tmux_session'
       }
+    } elseif ($normalizedLaunchMode -eq 'prompt') {
+      $runtimeBackend = 'unknown'
+      $workerLaunchMode = 'prompt'
+      $blockers += 'blocked:windows_backend_not_implemented'
+    } else {
+      $runtimeBackend = 'unknown'
+      $workerLaunchMode = ''
+      $blockers += 'blocked:runtime_backend_unavailable'
     }
   }
 

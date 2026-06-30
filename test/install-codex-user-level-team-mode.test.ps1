@@ -281,6 +281,25 @@ function Invoke-PowerShellCommandRaw {
   }
 }
 
+
+function Assert-NativeOmxPreflightBlockedRaw {
+  param(
+    [Parameter(Mandatory)]
+    $Raw,
+    [Parameter(Mandatory)]
+    [string[]]$ExpectedBlockers,
+    [Parameter(Mandatory)]
+    [string]$MessagePrefix
+  )
+
+  Assert-True ($Raw.exit_code -ne 0) "$MessagePrefix should fail when native OMX preflight is not operational."
+  $joinedOutput = @($Raw.output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+  Assert-True ($joinedOutput.Contains('native_omx_preflight_failed:')) "$MessagePrefix did not expose the native OMX preflight failure."
+  foreach ($expectedBlocker in @($ExpectedBlockers)) {
+    Assert-True ($joinedOutput.Contains($expectedBlocker)) "$MessagePrefix did not expose expected blocker $expectedBlocker."
+  }
+}
+
 function Invoke-PowerShellCommandJson {
   param(
     [Parameter(Mandatory)]
@@ -1330,140 +1349,167 @@ $updatedNativeSubagentLimits = Invoke-PowerShellScriptJson -FilePath (Join-Path 
 Assert-Equal ([int]$updatedNativeSubagentLimits.max_threads) 4 'Native subagent limits script did not update max_threads.'
 Assert-Equal ([int]$updatedNativeSubagentLimits.max_depth) 2 'Native subagent limits script did not update max_depth.'
 
-$devLaunch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-dev.ps1') -Arguments @(
-  '-Task', 'ship feature'
-)
-$devLaunchArgs = @($devLaunch.args | ForEach-Object { [string]$_ })
-Assert-ArrayContains -Actual $devLaunchArgs -Expected 'team' -Message 'Dev wrapper did not route through omx team.'
-Assert-ArrayContains -Actual $devLaunchArgs -Expected '2:team-executor' -Message 'Dev wrapper did not use the conservative default role.'
-Assert-ArrayContains -Actual $devLaunchArgs -Expected 'ship feature' -Message 'Dev wrapper did not forward the task.'
-Assert-Equal $devLaunch.omx_team_worker_launch_mode 'prompt' 'Dev wrapper did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt for native Windows team launch.'
-Assert-Equal $devLaunch.codex_home $CodexHome 'Dev wrapper did not provide CODEX_HOME to the Windows prompt worker process.'
+if ($IsWindowsPlatform) {
+  $devLaunch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-dev.ps1') -Arguments @(
+    '-Task', 'ship feature'
+  )
+  $devLaunchArgs = @($devLaunch.args | ForEach-Object { [string]$_ })
+  Assert-ArrayContains -Actual $devLaunchArgs -Expected 'team' -Message 'Dev wrapper did not route through omx team.'
+  Assert-ArrayContains -Actual $devLaunchArgs -Expected '2:team-executor' -Message 'Dev wrapper did not use the conservative default role.'
+  Assert-ArrayContains -Actual $devLaunchArgs -Expected 'ship feature' -Message 'Dev wrapper did not forward the task.'
+  Assert-Equal $devLaunch.omx_team_worker_launch_mode 'prompt' 'Dev wrapper did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt for native Windows team launch.'
+  Assert-Equal $devLaunch.codex_home $CodexHome 'Dev wrapper did not provide CODEX_HOME to the Windows prompt worker process.'
 
-$debugLaunch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-debug.ps1') -Arguments @(
-  '-Task', 'stabilize regression'
-)
-$debugLaunchArgs = @($debugLaunch.args | ForEach-Object { [string]$_ })
-Assert-ArrayContains -Actual $debugLaunchArgs -Expected '2:debugger' -Message 'Debug wrapper did not use the debugger preset.'
-Assert-ArrayContains -Actual $debugLaunchArgs -Expected 'stabilize regression' -Message 'Debug wrapper did not forward the task.'
-Assert-Equal $debugLaunch.omx_team_worker_launch_mode 'prompt' 'Debug wrapper did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt for native Windows team launch.'
-Assert-Equal $debugLaunch.codex_home $CodexHome 'Debug wrapper did not provide CODEX_HOME to the Windows prompt worker process.'
+  $debugLaunch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-debug.ps1') -Arguments @(
+    '-Task', 'stabilize regression'
+  )
+  $debugLaunchArgs = @($debugLaunch.args | ForEach-Object { [string]$_ })
+  Assert-ArrayContains -Actual $debugLaunchArgs -Expected '2:debugger' -Message 'Debug wrapper did not use the debugger preset.'
+  Assert-ArrayContains -Actual $debugLaunchArgs -Expected 'stabilize regression' -Message 'Debug wrapper did not forward the task.'
+  Assert-Equal $debugLaunch.omx_team_worker_launch_mode 'prompt' 'Debug wrapper did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt for native Windows team launch.'
+  Assert-Equal $debugLaunch.codex_home $CodexHome 'Debug wrapper did not provide CODEX_HOME to the Windows prompt worker process.'
 
-$olderTeamPath = Join-Path $FakeRepoRoot '.omx\state\team\older-team'
-$newerTeamPath = Join-Path $FakeRepoRoot '.omx\state\team\newer-team'
-Ensure-Directory -Path $olderTeamPath
-Start-Sleep -Milliseconds 1100
-Ensure-Directory -Path $newerTeamPath
+  $olderTeamPath = Join-Path $FakeRepoRoot '.omx\state\team\older-team'
+  $newerTeamPath = Join-Path $FakeRepoRoot '.omx\state\team\newer-team'
+  Ensure-Directory -Path $olderTeamPath
+  Start-Sleep -Milliseconds 1100
+  Ensure-Directory -Path $newerTeamPath
 
-$opsStatus = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-ops.ps1') -Arguments @(
-  '-Action', 'status',
-  '-RepoRoot', $FakeRepoRoot,
-  '-Json'
-)
-$opsStatusArgs = @($opsStatus.args | ForEach-Object { [string]$_ })
-Assert-ArrayContains -Actual $opsStatusArgs -Expected 'status' -Message 'Ops wrapper did not call team status.'
-Assert-ArrayContains -Actual $opsStatusArgs -Expected 'newer-team' -Message 'Ops wrapper did not discover the latest team directory.'
-Assert-ArrayContains -Actual $opsStatusArgs -Expected '--json' -Message 'Ops wrapper did not forward the JSON flag for team status.'
-Assert-Equal $opsStatus.omx_team_worker_launch_mode 'prompt' 'Ops status wrapper did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt on native Windows.'
-Assert-Equal $opsStatus.codex_home $CodexHome 'Ops status wrapper did not provide CODEX_HOME to the Windows prompt worker process.'
+  $opsStatus = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-ops.ps1') -Arguments @(
+    '-Action', 'status',
+    '-RepoRoot', $FakeRepoRoot,
+    '-Json'
+  )
+  $opsStatusArgs = @($opsStatus.args | ForEach-Object { [string]$_ })
+  Assert-ArrayContains -Actual $opsStatusArgs -Expected 'status' -Message 'Ops wrapper did not call team status.'
+  Assert-ArrayContains -Actual $opsStatusArgs -Expected 'newer-team' -Message 'Ops wrapper did not discover the latest team directory.'
+  Assert-ArrayContains -Actual $opsStatusArgs -Expected '--json' -Message 'Ops wrapper did not forward the JSON flag for team status.'
+  Assert-Equal $opsStatus.omx_team_worker_launch_mode 'prompt' 'Ops status wrapper did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt on native Windows.'
+  Assert-Equal $opsStatus.codex_home $CodexHome 'Ops status wrapper did not provide CODEX_HOME to the Windows prompt worker process.'
 
-$opsListTasks = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-ops.ps1') -Arguments @(
-  '-Action', 'list-tasks',
-  '-TeamName', 'manual-team'
-)
-$opsListTaskArgs = @($opsListTasks.args | ForEach-Object { [string]$_ })
-Assert-ArrayContains -Actual $opsListTaskArgs -Expected 'api' -Message 'Ops wrapper did not route read-only inspection through team api.'
-Assert-ArrayContains -Actual $opsListTaskArgs -Expected 'list-tasks' -Message 'Ops wrapper did not select the list-tasks operation.'
-Assert-ArrayContains -Actual $opsListTaskArgs -Expected '--json' -Message 'Ops wrapper did not request JSON output for list-tasks.'
-$opsListTaskInput = @($opsListTaskArgs | Where-Object { $_ -like '*manual-team*' } | Select-Object -First 1)[0]
-Assert-True ($opsListTaskInput.Contains('"team_name":"manual-team"')) 'Ops wrapper did not encode the team API input payload correctly.'
-Assert-Equal $opsListTasks.omx_team_worker_launch_mode 'prompt' 'Ops API wrapper did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt on native Windows.'
-Assert-Equal $opsListTasks.codex_home $CodexHome 'Ops API wrapper did not provide CODEX_HOME to the Windows prompt worker process.'
+  $opsListTasks = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-ops.ps1') -Arguments @(
+    '-Action', 'list-tasks',
+    '-TeamName', 'manual-team'
+  )
+  $opsListTaskArgs = @($opsListTasks.args | ForEach-Object { [string]$_ })
+  Assert-ArrayContains -Actual $opsListTaskArgs -Expected 'api' -Message 'Ops wrapper did not route read-only inspection through team api.'
+  Assert-ArrayContains -Actual $opsListTaskArgs -Expected 'list-tasks' -Message 'Ops wrapper did not select the list-tasks operation.'
+  Assert-ArrayContains -Actual $opsListTaskArgs -Expected '--json' -Message 'Ops wrapper did not request JSON output for list-tasks.'
+  $opsListTaskInput = @($opsListTaskArgs | Where-Object { $_ -like '*manual-team*' } | Select-Object -First 1)[0]
+  Assert-True ($opsListTaskInput.Contains('"team_name":"manual-team"')) 'Ops wrapper did not encode the team API input payload correctly.'
+  Assert-Equal $opsListTasks.omx_team_worker_launch_mode 'prompt' 'Ops API wrapper did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt on native Windows.'
+  Assert-Equal $opsListTasks.codex_home $CodexHome 'Ops API wrapper did not provide CODEX_HOME to the Windows prompt worker process.'
 
-$opsShutdownFailureRaw = Invoke-PowerShellCommandRaw -CommandText ("& { `$env:FAKE_OMX_SHUTDOWN_FAILURE='1'; & " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\omx-team-ops.ps1')) + " -Action shutdown -TeamName manual-team -RepoRoot " + (Quote-PowerShellLiteral -Value $FakeRepoRoot) + " }")
-Assert-True ($opsShutdownFailureRaw.exit_code -ne 0) 'Ops shutdown failure fixture should return a non-zero exit code.'
-$opsShutdownFailure = ($opsShutdownFailureRaw.output -join [Environment]::NewLine) | ConvertFrom-Json
-$opsShutdownFailureArgs = @($opsShutdownFailure.args | ForEach-Object { [string]$_ })
-Assert-ArrayHasOrderedSubsequence -Actual $opsShutdownFailureArgs -Expected @('team','shutdown','manual-team') -Message 'Ops shutdown did not route through direct team shutdown.'
-Assert-Equal $opsShutdownFailure.omx_team_worker_launch_mode 'prompt' 'Ops shutdown failure path did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt on native Windows.'
-Assert-Equal $opsShutdownFailure.codex_home $CodexHome 'Ops shutdown failure path did not provide CODEX_HOME to the Windows prompt worker process.'
-Assert-True ([string]$opsShutdownFailure.error -like 'shutdown_prompt_teardown_failed:*still_alive_after_sigkill*') 'Ops shutdown failure did not preserve prompt teardown failure details.'
-Assert-ArrayContains -Actual @($opsShutdownFailure.controller_pids | ForEach-Object { [string]$_ }) -Expected '3288' -Message 'Ops shutdown failure did not preserve controller PID evidence.'
-Assert-ArrayContains -Actual @($opsShutdownFailure.child_pids | ForEach-Object { [string]$_ }) -Expected '50101' -Message 'Ops shutdown failure did not preserve child PID evidence.'
-Assert-True ($opsShutdownFailure.taskkill_attempted -eq $true -and $opsShutdownFailure.sigterm_attempted -eq $true -and $opsShutdownFailure.sigkill_attempted -eq $true) 'Ops shutdown failure did not preserve kill-attempt evidence.'
-Assert-True (-not [string]::IsNullOrWhiteSpace([string]$opsShutdownFailure.error)) 'Ops shutdown failure should not be indistinguishable from success.'
+  $opsShutdownFailureRaw = Invoke-PowerShellCommandRaw -CommandText ("& { `$env:FAKE_OMX_SHUTDOWN_FAILURE='1'; & " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\omx-team-ops.ps1')) + " -Action shutdown -TeamName manual-team -RepoRoot " + (Quote-PowerShellLiteral -Value $FakeRepoRoot) + " }")
+  Assert-True ($opsShutdownFailureRaw.exit_code -ne 0) 'Ops shutdown failure fixture should return a non-zero exit code.'
+  $opsShutdownFailure = ($opsShutdownFailureRaw.output -join [Environment]::NewLine) | ConvertFrom-Json
+  $opsShutdownFailureArgs = @($opsShutdownFailure.args | ForEach-Object { [string]$_ })
+  Assert-ArrayHasOrderedSubsequence -Actual $opsShutdownFailureArgs -Expected @('team','shutdown','manual-team') -Message 'Ops shutdown did not route through direct team shutdown.'
+  Assert-Equal $opsShutdownFailure.omx_team_worker_launch_mode 'prompt' 'Ops shutdown failure path did not force OMX_TEAM_WORKER_LAUNCH_MODE=prompt on native Windows.'
+  Assert-Equal $opsShutdownFailure.codex_home $CodexHome 'Ops shutdown failure path did not provide CODEX_HOME to the Windows prompt worker process.'
+  Assert-True ([string]$opsShutdownFailure.error -like 'shutdown_prompt_teardown_failed:*still_alive_after_sigkill*') 'Ops shutdown failure did not preserve prompt teardown failure details.'
+  Assert-ArrayContains -Actual @($opsShutdownFailure.controller_pids | ForEach-Object { [string]$_ }) -Expected '3288' -Message 'Ops shutdown failure did not preserve controller PID evidence.'
+  Assert-ArrayContains -Actual @($opsShutdownFailure.child_pids | ForEach-Object { [string]$_ }) -Expected '50101' -Message 'Ops shutdown failure did not preserve child PID evidence.'
+  Assert-True ($opsShutdownFailure.taskkill_attempted -eq $true -and $opsShutdownFailure.sigterm_attempted -eq $true -and $opsShutdownFailure.sigkill_attempted -eq $true) 'Ops shutdown failure did not preserve kill-attempt evidence.'
+  Assert-True (-not [string]::IsNullOrWhiteSpace([string]$opsShutdownFailure.error)) 'Ops shutdown failure should not be indistinguishable from success.'
+} else {
+  $previousNativeWrapperTmux = [Environment]::GetEnvironmentVariable('TMUX', 'Process')
+  $hadPreviousNativeWrapperTmux = $null -ne $previousNativeWrapperTmux
+  try {
+    [Environment]::SetEnvironmentVariable('TMUX', $null, 'Process')
+    $devLaunchBlocked = Invoke-PowerShellCommandRaw -CommandText ("& " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\omx-team-dev.ps1')) + " -Task " + (Quote-PowerShellLiteral -Value 'ship feature'))
+    Assert-NativeOmxPreflightBlockedRaw -Raw $devLaunchBlocked -ExpectedBlockers @('blocked:not_in_tmux_session') -MessagePrefix 'Dev wrapper on non-Windows without tmux session'
 
-$safeSend = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-send-message.ps1') -Arguments @(
-  '-TeamName', 'manual-team',
-  '-FromWorker', 'worker-1',
-  '-ToWorker', 'leader-fixed',
-  '-Body', 'ACK',
-  '-Json'
-)
-$safeSendArgs = @($safeSend.args | ForEach-Object { [string]$_ })
-Assert-ArrayContains -Actual $safeSendArgs -Expected 'send-message' -Message 'Safe send-message wrapper did not select the send-message operation.'
-$safeSendInput = @($safeSendArgs | Where-Object { $_ -like '*manual-team*' } | Select-Object -First 1)[0]
-Assert-True ($safeSendInput.Contains('"from_worker":"worker-1"') -and $safeSendInput.Contains('"to_worker":"leader-fixed"')) 'Safe send-message wrapper did not encode the payload correctly.'
+    $debugLaunchBlocked = Invoke-PowerShellCommandRaw -CommandText ("& " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\omx-team-debug.ps1')) + " -Task " + (Quote-PowerShellLiteral -Value 'stabilize regression'))
+    Assert-NativeOmxPreflightBlockedRaw -Raw $debugLaunchBlocked -ExpectedBlockers @('blocked:not_in_tmux_session') -MessagePrefix 'Debug wrapper on non-Windows without tmux session'
 
-$safeMailboxList = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-mailbox-list.ps1') -Arguments @(
-  '-TeamName', 'manual-team',
-  '-Worker', 'worker-1',
-  '-Json'
-)
-$safeMailboxListArgs = @($safeMailboxList.args | ForEach-Object { [string]$_ })
-Assert-ArrayContains -Actual $safeMailboxListArgs -Expected 'mailbox-list' -Message 'Safe mailbox-list wrapper did not select the mailbox-list operation.'
+    $opsStatusBlocked = Invoke-PowerShellCommandRaw -CommandText ("& " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\omx-team-ops.ps1')) + " -Action status -RepoRoot " + (Quote-PowerShellLiteral -Value $FakeRepoRoot) + " -Json")
+    Assert-NativeOmxPreflightBlockedRaw -Raw $opsStatusBlocked -ExpectedBlockers @('blocked:not_in_tmux_session') -MessagePrefix 'Ops wrapper on non-Windows without tmux session'
+  } finally {
+    if ($hadPreviousNativeWrapperTmux) {
+      [Environment]::SetEnvironmentVariable('TMUX', $previousNativeWrapperTmux, 'Process')
+    } else {
+      [Environment]::SetEnvironmentVariable('TMUX', $null, 'Process')
+    }
+  }
+}
 
-$safeTransition = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-transition-task-status.ps1') -Arguments @(
-  '-TeamName', 'manual-team',
-  '-TaskId', '1',
-  '-From', 'in_progress',
-  '-To', 'completed',
-  '-ClaimToken', 'token-1',
-  '-Result', 'done',
-  '-Json'
-)
-$safeTransitionArgs = @($safeTransition.args | ForEach-Object { [string]$_ })
-Assert-ArrayContains -Actual $safeTransitionArgs -Expected 'transition-task-status' -Message 'Safe transition-task-status wrapper did not select the transition operation.'
-$safeTransitionInput = @($safeTransitionArgs | Where-Object { $_ -like '*token-1*' } | Select-Object -First 1)[0]
-Assert-True ($safeTransitionInput.Contains('"claim_token":"token-1"') -and $safeTransitionInput.Contains('"to":"completed"')) 'Safe transition-task-status wrapper did not encode the payload correctly.'
+if ($IsWindowsPlatform) {
+  $safeSend = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-send-message.ps1') -Arguments @(
+    '-TeamName', 'manual-team',
+    '-FromWorker', 'worker-1',
+    '-ToWorker', 'leader-fixed',
+    '-Body', 'ACK',
+    '-Json'
+  )
+  $safeSendArgs = @($safeSend.args | ForEach-Object { [string]$_ })
+  Assert-ArrayContains -Actual $safeSendArgs -Expected 'send-message' -Message 'Safe send-message wrapper did not select the send-message operation.'
+  $safeSendInput = @($safeSendArgs | Where-Object { $_ -like '*manual-team*' } | Select-Object -First 1)[0]
+  Assert-True ($safeSendInput.Contains('"from_worker":"worker-1"') -and $safeSendInput.Contains('"to_worker":"leader-fixed"')) 'Safe send-message wrapper did not encode the payload correctly.'
 
-$safeProgress = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-report-progress.ps1') -Arguments @(
-  '-TeamName', 'manual-team',
-  '-Worker', 'worker-1',
-  '-TaskId', '1',
-  '-Body', 'working',
-  '-RepoRoot', $FakeRepoRoot,
-  '-Json'
-)
-Assert-Equal $safeProgress.operation 'report-progress' 'High-level progress wrapper reported the wrong operation.'
-Assert-Equal $safeProgress.status.state 'working' 'High-level progress wrapper did not write a working status payload.'
-Assert-Equal $safeProgress.notify.input.team_name 'manual-team' 'High-level progress wrapper did not route the notify payload through the safe send wrapper.'
+  $safeMailboxList = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-mailbox-list.ps1') -Arguments @(
+    '-TeamName', 'manual-team',
+    '-Worker', 'worker-1',
+    '-Json'
+  )
+  $safeMailboxListArgs = @($safeMailboxList.args | ForEach-Object { [string]$_ })
+  Assert-ArrayContains -Actual $safeMailboxListArgs -Expected 'mailbox-list' -Message 'Safe mailbox-list wrapper did not select the mailbox-list operation.'
 
-$safeComplete = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-complete-task.ps1') -Arguments @(
-  '-TeamName', 'manual-team',
-  '-TaskId', '1',
-  '-Worker', 'worker-1',
-  '-ClaimToken', 'token-1',
-  '-Result', 'done',
-  '-RepoRoot', $FakeRepoRoot,
-  '-Json'
-)
-Assert-Equal $safeComplete.operation 'complete-task' 'High-level complete wrapper reported the wrong operation.'
-Assert-Equal $safeComplete.transition.input.to 'completed' 'High-level complete wrapper did not transition the task to completed.'
-Assert-Equal $safeComplete.notify.input.to_worker 'leader-fixed' 'High-level complete wrapper did not notify the leader.'
+  $safeTransition = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-transition-task-status.ps1') -Arguments @(
+    '-TeamName', 'manual-team',
+    '-TaskId', '1',
+    '-From', 'in_progress',
+    '-To', 'completed',
+    '-ClaimToken', 'token-1',
+    '-Result', 'done',
+    '-Json'
+  )
+  $safeTransitionArgs = @($safeTransition.args | ForEach-Object { [string]$_ })
+  Assert-ArrayContains -Actual $safeTransitionArgs -Expected 'transition-task-status' -Message 'Safe transition-task-status wrapper did not select the transition operation.'
+  $safeTransitionInput = @($safeTransitionArgs | Where-Object { $_ -like '*token-1*' } | Select-Object -First 1)[0]
+  Assert-True ($safeTransitionInput.Contains('"claim_token":"token-1"') -and $safeTransitionInput.Contains('"to":"completed"')) 'Safe transition-task-status wrapper did not encode the payload correctly.'
 
-$safeFail = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-fail-task.ps1') -Arguments @(
-  '-TeamName', 'manual-team',
-  '-TaskId', '1',
-  '-Worker', 'worker-1',
-  '-ClaimToken', 'token-1',
-  '-Error', 'broken',
-  '-RepoRoot', $FakeRepoRoot,
-  '-Json'
-)
-Assert-Equal $safeFail.operation 'fail-task' 'High-level fail wrapper reported the wrong operation.'
-Assert-Equal $safeFail.transition.input.to 'failed' 'High-level fail wrapper did not transition the task to failed.'
-Assert-Equal $safeFail.notify.input.body 'Failed task 1: broken' 'High-level fail wrapper did not build the expected default failure message.'
+  $safeProgress = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-report-progress.ps1') -Arguments @(
+    '-TeamName', 'manual-team',
+    '-Worker', 'worker-1',
+    '-TaskId', '1',
+    '-Body', 'working',
+    '-RepoRoot', $FakeRepoRoot,
+    '-Json'
+  )
+  Assert-Equal $safeProgress.operation 'report-progress' 'High-level progress wrapper reported the wrong operation.'
+  Assert-Equal $safeProgress.status.state 'working' 'High-level progress wrapper did not write a working status payload.'
+  Assert-Equal $safeProgress.notify.input.team_name 'manual-team' 'High-level progress wrapper did not route the notify payload through the safe send wrapper.'
+
+  $safeComplete = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-complete-task.ps1') -Arguments @(
+    '-TeamName', 'manual-team',
+    '-TaskId', '1',
+    '-Worker', 'worker-1',
+    '-ClaimToken', 'token-1',
+    '-Result', 'done',
+    '-RepoRoot', $FakeRepoRoot,
+    '-Json'
+  )
+  Assert-Equal $safeComplete.operation 'complete-task' 'High-level complete wrapper reported the wrong operation.'
+  Assert-Equal $safeComplete.transition.input.to 'completed' 'High-level complete wrapper did not transition the task to completed.'
+  Assert-Equal $safeComplete.notify.input.to_worker 'leader-fixed' 'High-level complete wrapper did not notify the leader.'
+
+  $safeFail = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-fail-task.ps1') -Arguments @(
+    '-TeamName', 'manual-team',
+    '-TaskId', '1',
+    '-Worker', 'worker-1',
+    '-ClaimToken', 'token-1',
+    '-Error', 'broken',
+    '-RepoRoot', $FakeRepoRoot,
+    '-Json'
+  )
+  Assert-Equal $safeFail.operation 'fail-task' 'High-level fail wrapper reported the wrong operation.'
+  Assert-Equal $safeFail.transition.input.to 'failed' 'High-level fail wrapper did not transition the task to failed.'
+  Assert-Equal $safeFail.notify.input.body 'Failed task 1: broken' 'High-level fail wrapper did not build the expected default failure message.'
+} else {
+  $safeSendBlocked = Invoke-PowerShellCommandRaw -CommandText ("& " + (Quote-PowerShellLiteral -Value (Join-Path $CodexHome 'bin\omx-team-send-message.ps1')) + " -TeamName manual-team -FromWorker worker-1 -ToWorker leader-fixed -Body ACK -Json")
+  Assert-NativeOmxPreflightBlockedRaw -Raw $safeSendBlocked -ExpectedBlockers @('blocked:not_in_tmux_session') -MessagePrefix 'Safe API wrapper on non-Windows without tmux session'
+}
 
 $hybridPlan = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-hybrid.ps1') -Arguments @(
   '-Task', 'implement rollout',
@@ -2342,79 +2388,97 @@ Assert-ArrayContains -Actual @($autoExplicitTmuxBlocked.result.blockers | ForEac
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $ExplicitTmuxBlockedAutoRepoRoot '.omx\state\team\codex-auto-managed-team.json'))) 'Automatic team helper created a tracked team record despite explicit tmux preflight failure.'
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $ExplicitTmuxBlockedAutoRepoRoot '.omx\state\selectors\active.json'))) 'Automatic team helper wrote an active selector despite explicit tmux preflight failure.'
 
-$autoLaunch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
-  '-Task', 'parallel feature work',
-  '-Phase', 'execute-parallel',
-  '-ParallelSlices', '2',
-  '-RepoRoot', $AutoRepoRoot,
-  '-Apply',
-  '-Json'
-)
-Assert-Equal $autoLaunch.result.applied_decision 'launch' 'Automatic team helper did not launch the initial tracked team.'
-Assert-Equal $autoLaunch.result.backend 'native_omx' 'Automatic team helper should launch native_omx for worker-centric execution by default when both capabilities are enabled.'
-Assert-Equal $autoLaunch.plan.runtime_backend 'windows_prompt_process_controller' 'Automatic team helper did not report the Windows prompt/process controller runtime backend.'
-Assert-True ($autoLaunch.plan.preflight_passed -eq $true) 'Automatic team helper should report preflight_passed=true for native Windows no-tmux launch.'
-Assert-True ($autoLaunch.plan.operational_ready -eq $true) 'Automatic team helper should report operational_ready=true for native Windows no-tmux launch.'
-Assert-Equal @($autoLaunch.plan.blockers).Count 0 'Automatic team helper should not report blockers for native Windows no-tmux launch.'
-$autoLaunchPayload = ($autoLaunch.result.launch_output -join [Environment]::NewLine) | ConvertFrom-Json
-Assert-Equal $autoLaunchPayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX launch did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
-Assert-Equal $autoLaunchPayload.codex_home $CodexHome 'Automatic native OMX launch did not provide CODEX_HOME to the worker controller process.'
 $trackedRecordPath = Join-Path $AutoRepoRoot '.omx\state\team\codex-auto-managed-team.json'
-Assert-True (Test-Path -LiteralPath $trackedRecordPath) 'Automatic team helper did not create the tracked native_omx team record.'
-$trackedRecord = Get-Content -LiteralPath $trackedRecordPath -Raw | ConvertFrom-Json
-Assert-Equal $trackedRecord.worker_role 'team-executor' 'Tracked native_omx team record stored the wrong worker role.'
-Assert-Equal ([int]$trackedRecord.worker_count) 2 'Tracked native_omx team record stored the wrong worker count.'
+if ($IsWindowsPlatform) {
+  $autoLaunch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
+    '-Task', 'parallel feature work',
+    '-Phase', 'execute-parallel',
+    '-ParallelSlices', '2',
+    '-RepoRoot', $AutoRepoRoot,
+    '-Apply',
+    '-Json'
+  )
+  Assert-Equal $autoLaunch.result.applied_decision 'launch' 'Automatic team helper did not launch the initial tracked team.'
+  Assert-Equal $autoLaunch.result.backend 'native_omx' 'Automatic team helper should launch native_omx for worker-centric execution by default when both capabilities are enabled.'
+  Assert-Equal $autoLaunch.plan.runtime_backend 'windows_prompt_process_controller' 'Automatic team helper did not report the Windows prompt/process controller runtime backend.'
+  Assert-True ($autoLaunch.plan.preflight_passed -eq $true) 'Automatic team helper should report preflight_passed=true for native Windows no-tmux launch.'
+  Assert-True ($autoLaunch.plan.operational_ready -eq $true) 'Automatic team helper should report operational_ready=true for native Windows no-tmux launch.'
+  Assert-Equal @($autoLaunch.plan.blockers).Count 0 'Automatic team helper should not report blockers for native Windows no-tmux launch.'
+  $autoLaunchPayload = ($autoLaunch.result.launch_output -join [Environment]::NewLine) | ConvertFrom-Json
+  Assert-Equal $autoLaunchPayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX launch did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
+  Assert-Equal $autoLaunchPayload.codex_home $CodexHome 'Automatic native OMX launch did not provide CODEX_HOME to the worker controller process.'
+  Assert-True (Test-Path -LiteralPath $trackedRecordPath) 'Automatic team helper did not create the tracked native_omx team record.'
+  $trackedRecord = Get-Content -LiteralPath $trackedRecordPath -Raw | ConvertFrom-Json
+  Assert-Equal $trackedRecord.worker_role 'team-executor' 'Tracked native_omx team record stored the wrong worker role.'
+  Assert-Equal ([int]$trackedRecord.worker_count) 2 'Tracked native_omx team record stored the wrong worker count.'
 
-$durableStateTrackedNative = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
-  '-RepoRoot', $AutoRepoRoot,
-  '-Json'
-)
-Assert-Equal $durableStateTrackedNative.state_class 'tracked_native_team' 'Durable-state status did not classify tracked native durable-team state correctly.'
-Assert-Equal $durableStateTrackedNative.backend_family 'native_omx' 'Durable-state status did not report native_omx for tracked team state.'
-Assert-Equal $durableStateTrackedNative.tracked_identity $trackedRecord.team_name 'Durable-state status did not report the tracked native team identity.'
-Assert-Equal $durableStateTrackedNative.worker_shape.worker_role 'team-executor' 'Durable-state status did not report the tracked native worker role.'
-Assert-Equal ([int]$durableStateTrackedNative.worker_shape.worker_count) 2 'Durable-state status did not report the tracked native worker count.'
-Assert-Equal $durableStateTrackedNative.inspect_pointer.script 'omx-team-ops.ps1' 'Durable-state status did not point native inspection to omx-team-ops.ps1.'
-Assert-Equal $durableStateTrackedNative.selected_backend 'langgraph' 'Durable-state status should preserve the user-level selected backend even when repo state is native_omx.'
-Assert-Equal $durableStateTrackedNative.capability_readiness.native_omx.runtime_backend 'windows_prompt_process_controller' 'Durable-state status did not expose native_omx runtime backend evidence.'
-Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.operational_ready -eq $true) 'Durable-state status did not expose native_omx operational readiness.'
-Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.user_level_selected -eq $false) 'Durable-state status should distinguish native_omx as not selected by the user-level backend switch.'
-Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.repo_state_selected -eq $true) 'Durable-state status should distinguish native_omx as selected by tracked repo-local state.'
-Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.ready -eq $true) 'Durable-state status should report tracked native_omx state ready when helpers are installed and oh_my_codex is enabled.'
-Assert-True ($durableStateTrackedNative.capability_readiness.langgraph.user_level_selected -eq $true) 'Durable-state status should preserve the user-level LangGraph selection alongside tracked native state.'
-Assert-True ($durableStateTrackedNative.capability_readiness.langgraph.ready -eq $false) 'Durable-state status should keep LangGraph not ready when the shared runtime is missing.'
+  $durableStateTrackedNative = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\codex-durable-state-status.ps1') -Arguments @(
+    '-RepoRoot', $AutoRepoRoot,
+    '-Json'
+  )
+  Assert-Equal $durableStateTrackedNative.state_class 'tracked_native_team' 'Durable-state status did not classify tracked native durable-team state correctly.'
+  Assert-Equal $durableStateTrackedNative.backend_family 'native_omx' 'Durable-state status did not report native_omx for tracked team state.'
+  Assert-Equal $durableStateTrackedNative.tracked_identity $trackedRecord.team_name 'Durable-state status did not report the tracked native team identity.'
+  Assert-Equal $durableStateTrackedNative.worker_shape.worker_role 'team-executor' 'Durable-state status did not report the tracked native worker role.'
+  Assert-Equal ([int]$durableStateTrackedNative.worker_shape.worker_count) 2 'Durable-state status did not report the tracked native worker count.'
+  Assert-Equal $durableStateTrackedNative.inspect_pointer.script 'omx-team-ops.ps1' 'Durable-state status did not point native inspection to omx-team-ops.ps1.'
+  Assert-Equal $durableStateTrackedNative.selected_backend 'langgraph' 'Durable-state status should preserve the user-level selected backend even when repo state is native_omx.'
+  Assert-Equal $durableStateTrackedNative.capability_readiness.native_omx.runtime_backend 'windows_prompt_process_controller' 'Durable-state status did not expose native_omx runtime backend evidence.'
+  Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.operational_ready -eq $true) 'Durable-state status did not expose native_omx operational readiness.'
+  Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.user_level_selected -eq $false) 'Durable-state status should distinguish native_omx as not selected by the user-level backend switch.'
+  Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.repo_state_selected -eq $true) 'Durable-state status should distinguish native_omx as selected by tracked repo-local state.'
+  Assert-True ($durableStateTrackedNative.capability_readiness.native_omx.ready -eq $true) 'Durable-state status should report tracked native_omx state ready when helpers are installed and oh_my_codex is enabled.'
+  Assert-True ($durableStateTrackedNative.capability_readiness.langgraph.user_level_selected -eq $true) 'Durable-state status should preserve the user-level LangGraph selection alongside tracked native state.'
+  Assert-True ($durableStateTrackedNative.capability_readiness.langgraph.ready -eq $false) 'Durable-state status should keep LangGraph not ready when the shared runtime is missing.'
 
-$autoReuse = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
-  '-Task', 'follow-up implementation slice',
-  '-Phase', 'execute-parallel',
-  '-ParallelSlices', '2',
-  '-RepoRoot', $AutoRepoRoot,
-  '-Apply',
-  '-Json'
-)
-Assert-Equal $autoReuse.result.applied_decision 'reuse' 'Automatic team helper did not reuse the tracked native_omx team.'
-Assert-Equal $autoReuse.result.team_name $trackedRecord.team_name 'Automatic team helper reused the wrong native_omx team.'
-$autoReusePayload = ($autoReuse.result.dispatch_output -join [Environment]::NewLine) | ConvertFrom-Json
-Assert-Equal $autoReusePayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX reuse did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
-Assert-Equal $autoReusePayload.codex_home $CodexHome 'Automatic native OMX reuse did not provide CODEX_HOME to the worker controller process.'
+  $autoReuse = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
+    '-Task', 'follow-up implementation slice',
+    '-Phase', 'execute-parallel',
+    '-ParallelSlices', '2',
+    '-RepoRoot', $AutoRepoRoot,
+    '-Apply',
+    '-Json'
+  )
+  Assert-Equal $autoReuse.result.applied_decision 'reuse' 'Automatic team helper did not reuse the tracked native_omx team.'
+  Assert-Equal $autoReuse.result.team_name $trackedRecord.team_name 'Automatic team helper reused the wrong native_omx team.'
+  $autoReusePayload = ($autoReuse.result.dispatch_output -join [Environment]::NewLine) | ConvertFrom-Json
+  Assert-Equal $autoReusePayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX reuse did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
+  Assert-Equal $autoReusePayload.codex_home $CodexHome 'Automatic native OMX reuse did not provide CODEX_HOME to the worker controller process.'
 
-$autoSwitch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
-  '-Task', 'stabilize regression cluster',
-  '-Phase', 'stabilize',
-  '-BlockingIssues', '2',
-  '-RepoRoot', $AutoRepoRoot,
-  '-Apply',
-  '-Json'
-)
-Assert-Equal $autoSwitch.result.applied_decision 'switch' 'Automatic team helper should switch the tracked native_omx team shape during stabilization.'
-$autoSwitchShutdownPayload = ($autoSwitch.result.shutdown_output -join [Environment]::NewLine) | ConvertFrom-Json
-Assert-Equal $autoSwitchShutdownPayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX switch shutdown did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
-Assert-Equal $autoSwitchShutdownPayload.codex_home $CodexHome 'Automatic native OMX switch shutdown did not provide CODEX_HOME to the worker controller process.'
-$autoSwitchLaunchPayload = ($autoSwitch.result.launch_output -join [Environment]::NewLine) | ConvertFrom-Json
-Assert-Equal $autoSwitchLaunchPayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX switch launch did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
-Assert-Equal $autoSwitchLaunchPayload.codex_home $CodexHome 'Automatic native OMX switch launch did not provide CODEX_HOME to the worker controller process.'
-$trackedRecord = Get-Content -LiteralPath $trackedRecordPath -Raw | ConvertFrom-Json
-Assert-Equal $trackedRecord.worker_role 'debugger' 'Tracked native_omx team record did not switch to the debugger role during stabilization.'
+  $autoSwitch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
+    '-Task', 'stabilize regression cluster',
+    '-Phase', 'stabilize',
+    '-BlockingIssues', '2',
+    '-RepoRoot', $AutoRepoRoot,
+    '-Apply',
+    '-Json'
+  )
+  Assert-Equal $autoSwitch.result.applied_decision 'switch' 'Automatic team helper should switch the tracked native_omx team shape during stabilization.'
+  $autoSwitchShutdownPayload = ($autoSwitch.result.shutdown_output -join [Environment]::NewLine) | ConvertFrom-Json
+  Assert-Equal $autoSwitchShutdownPayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX switch shutdown did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
+  Assert-Equal $autoSwitchShutdownPayload.codex_home $CodexHome 'Automatic native OMX switch shutdown did not provide CODEX_HOME to the worker controller process.'
+  $autoSwitchLaunchPayload = ($autoSwitch.result.launch_output -join [Environment]::NewLine) | ConvertFrom-Json
+  Assert-Equal $autoSwitchLaunchPayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX switch launch did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
+  Assert-Equal $autoSwitchLaunchPayload.codex_home $CodexHome 'Automatic native OMX switch launch did not provide CODEX_HOME to the worker controller process.'
+  $trackedRecord = Get-Content -LiteralPath $trackedRecordPath -Raw | ConvertFrom-Json
+  Assert-Equal $trackedRecord.worker_role 'debugger' 'Tracked native_omx team record did not switch to the debugger role during stabilization.'
+} else {
+  $autoLaunch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
+    '-Task', 'parallel feature work',
+    '-Phase', 'execute-parallel',
+    '-ParallelSlices', '2',
+    '-RepoRoot', $AutoRepoRoot,
+    '-Apply',
+    '-Json'
+  )
+  Assert-Equal $autoLaunch.plan.runtime_backend 'unix_tmux' 'Automatic team helper should report unix_tmux on non-Windows default native OMX preflight.'
+  Assert-True ($autoLaunch.plan.preflight_passed -eq $false) 'Automatic team helper should fail preflight on non-Windows without a tmux session.'
+  Assert-True ($autoLaunch.plan.operational_ready -eq $false) 'Automatic team helper should report operational_ready=false on non-Windows without a tmux session.'
+  Assert-Equal $autoLaunch.result.applied_decision 'blocked' 'Automatic team helper should return a blocked result on non-Windows without tmux.'
+  Assert-True ($autoLaunch.result.applied -eq $false) 'Automatic team helper should not mutate tracked native state when non-Windows tmux preflight fails.'
+  Assert-ArrayContains -Actual @($autoLaunch.result.blockers | ForEach-Object { [string]$_ }) -Expected 'blocked:not_in_tmux_session' -Message 'Automatic team helper did not expose the not-in-tmux-session blocker on non-Windows.'
+  Assert-True (-not (Test-Path -LiteralPath $trackedRecordPath)) 'Automatic team helper created a tracked native_omx team record despite failed non-Windows tmux preflight.'
+}
 
 $autoPlanGraphLaunch = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
   '-Task', 'checkpointed workflow execution',
@@ -2436,29 +2500,35 @@ $langGraphThreadId = [string]$langGraphTrackedRecord.thread_id
 $langGraphThreadFileKey = $langGraphThreadId.Replace(':', '__')
 $langGraphThreadPath = Join-Path $UnmanagedAutoRepoRoot ('.omx\state\langgraph\threads\' + $langGraphThreadFileKey + '.json')
 Assert-True (Test-Path -LiteralPath $langGraphThreadPath) 'Automatic LangGraph launch did not create the thread record.'
-$trackedRecord = Get-Content -LiteralPath $trackedRecordPath -Raw | ConvertFrom-Json
-Assert-Equal $trackedRecord.worker_role 'debugger' 'Tracked native_omx team record changed unexpectedly after the separate LangGraph launch.'
+if ($IsWindowsPlatform) {
+  $trackedRecord = Get-Content -LiteralPath $trackedRecordPath -Raw | ConvertFrom-Json
+  Assert-Equal $trackedRecord.worker_role 'debugger' 'Tracked native_omx team record changed unexpectedly after the separate LangGraph launch.'
+} else {
+  Assert-True (-not (Test-Path -LiteralPath $trackedRecordPath)) 'LangGraph launch unexpectedly created a tracked native_omx team record on non-Windows.'
+}
 
-$autoShutdownPlan = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
-  '-Task', 'final acceptance',
-  '-Phase', 'verify-accept',
-  '-RepoRoot', $AutoRepoRoot,
-  '-Json'
-)
-Assert-Equal $autoShutdownPlan.decision 'shutdown' 'Automatic team helper should plan a shutdown in verify-accept when a tracked team exists.'
+if ($IsWindowsPlatform) {
+  $autoShutdownPlan = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
+    '-Task', 'final acceptance',
+    '-Phase', 'verify-accept',
+    '-RepoRoot', $AutoRepoRoot,
+    '-Json'
+  )
+  Assert-Equal $autoShutdownPlan.decision 'shutdown' 'Automatic team helper should plan a shutdown in verify-accept when a tracked team exists.'
 
-$autoShutdown = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
-  '-Task', 'final acceptance',
-  '-Phase', 'verify-accept',
-  '-RepoRoot', $AutoRepoRoot,
-  '-Apply',
-  '-Json'
-)
-Assert-Equal $autoShutdown.result.applied_decision 'shutdown' 'Automatic team helper did not shut down the tracked team in verify-accept.'
-$autoShutdownPayload = ($autoShutdown.result.shutdown_output -join [Environment]::NewLine) | ConvertFrom-Json
-Assert-Equal $autoShutdownPayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX shutdown did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
-Assert-Equal $autoShutdownPayload.codex_home $CodexHome 'Automatic native OMX shutdown did not provide CODEX_HOME to the worker controller process.'
-Assert-True (-not (Test-Path -LiteralPath $trackedRecordPath)) 'Automatic team helper did not remove the tracked team record after shutdown.'
+  $autoShutdown = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-team-auto.ps1') -Arguments @(
+    '-Task', 'final acceptance',
+    '-Phase', 'verify-accept',
+    '-RepoRoot', $AutoRepoRoot,
+    '-Apply',
+    '-Json'
+  )
+  Assert-Equal $autoShutdown.result.applied_decision 'shutdown' 'Automatic team helper did not shut down the tracked team in verify-accept.'
+  $autoShutdownPayload = ($autoShutdown.result.shutdown_output -join [Environment]::NewLine) | ConvertFrom-Json
+  Assert-Equal $autoShutdownPayload.omx_team_worker_launch_mode 'prompt' 'Automatic native OMX shutdown did not pass OMX_TEAM_WORKER_LAUNCH_MODE=prompt to omx.'
+  Assert-Equal $autoShutdownPayload.codex_home $CodexHome 'Automatic native OMX shutdown did not provide CODEX_HOME to the worker controller process.'
+  Assert-True (-not (Test-Path -LiteralPath $trackedRecordPath)) 'Automatic team helper did not remove the tracked team record after shutdown.'
+}
 
 $langGraphDirectRun = Invoke-PowerShellScriptJson -FilePath (Join-Path $CodexHome 'bin\omx-langgraph-run.ps1') -Arguments @(
   '-Task', 'langgraph direct task',
