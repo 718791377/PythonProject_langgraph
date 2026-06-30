@@ -7,7 +7,7 @@ status: active
 doc_class: implementation_plan
 change: implement-skills2cli-hidden-progressive-disclosure
 created_at: 2026-06-30
-plan_readiness: frozen-for-runtime-implementation
+plan_readiness: implemented-local-runtime
 implementation_lane: local-main-first
 ---
 
@@ -27,7 +27,7 @@ implementation_lane: local-main-first
 
 <!-- CURRENT_STATUS_START -->
 
-- This plan is the frozen local implementation brief for `implement-skills2cli-hidden-progressive-disclosure`.
+- This plan has completed local runtime implementation for `implement-skills2cli-hidden-progressive-disclosure` and its OpenSpec change is archived locally.
 - User-selected defaults:
   - hidden skill loading boundary: read-only soft-load;
   - dynamic visibility adjustment: high-confidence automatic selection, but only after a user manually triggers the command;
@@ -35,7 +35,7 @@ implementation_lane: local-main-first
 - Baseline hidden library observed on 2026-06-30: 989 hidden `SKILL.md` files under `C:\Users\lenovo\.codex\state\skills2cli\visibility-disabled`.
 - `grill-me` exists in the hidden library as `mattpocock-skills-skills-productivity-grill-me-skill-md`.
 - `stop-slop` is not an installed skill name; it is treated as an alias for `ai-slop-cleaner`.
-- Remote publication is not authorized.
+- Runtime implementation and archive are local-only; remote publication is not authorized.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -135,10 +135,10 @@ Apply rules:
 - [x] Freeze the bilingual implementation plan.
 - [x] Create the OpenSpec proposal/design/tasks/management/spec package.
 - [x] Register the bilingual plan in docs registry.
-- [ ] Validate Phase A and integrate into local main.
-- [ ] Implement hidden progressive disclosure runtime.
-- [ ] Add usage events and manual recommendation apply runtime.
-- [ ] Validate Phase B, archive OpenSpec, and integrate into local main.
+- [x] Validate Phase A and integrate into local main.
+- [x] Implement hidden progressive disclosure runtime.
+- [x] Add usage events and manual recommendation apply runtime.
+- [x] Validate Phase B, archive OpenSpec, and integrate into local main.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -172,7 +172,7 @@ Phase B runtime slice:
 
 <!-- EVIDENCE_INDEX_START -->
 
-- `openspec/changes/implement-skills2cli-hidden-progressive-disclosure/` - active OpenSpec change for this plan.
+- `openspec/changes/archive/2026-06-30-implement-skills2cli-hidden-progressive-disclosure/` - archived OpenSpec change for this plan.
 - `tools/skills2cli.py` - runtime implementation target.
 - `test/skills2cli.test.py` - focused test target for hidden commands and recommendation behavior.
 - `docs_bilingual/docs_registry.yaml` - bilingual plan registration.

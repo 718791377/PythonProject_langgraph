@@ -368,7 +368,7 @@ def backup(paths: dict[str, Path]) -> Path:
 def skills2cli_skill() -> str:
     return f"""---
 name: skills2cli
-description: Discover installed Codex skills through compact JSON without injecting full SKILL.md bodies. Use for skill index, search, show, warning audit, and preview-only profile suggestions.
+description: Discover installed and hidden Codex skills through compact JSON, soft-load one hidden SKILL.md on demand, audit warnings, and preview profile or visibility recommendations.
 ---
 
 # skills2cli
@@ -385,9 +385,14 @@ not an MCP/OpenAPI/GraphQL endpoint.
 skills2cli index --json
 skills2cli search <query> --json
 skills2cli show <skill_id> --json
+skills2cli hidden search <query> --json
+skills2cli hidden show <hidden_skill_id> --json
+skills2cli hidden load <hidden_skill_id> --json
 skills2cli audit warnings --since 7d --json
 skills2cli profile suggest --query "task summary" --json
 skills2cli visibility plan --profile core-dev --json
+skills2cli visibility recommend --days 30 --json
+skills2cli visibility apply-recommendations --receipt <recommendation_id> --apply --operator-confirmation --json
 skills2cli visibility apply --profile core-dev --apply --operator-confirmation --json
 skills2cli visibility restore --receipt <receipt_id> --apply --operator-confirmation --json
 ```
@@ -396,7 +401,10 @@ skills2cli visibility restore --receipt <receipt_id> --apply --operator-confirma
 
 - Default output is compact and redacted.
 - Full skill bodies are not included by default.
+- `hidden search/show/suggest` are compact and read-only.
+- `hidden load` returns exactly one hidden skill body or chunk, records sanitized usage evidence, and does not restore it globally.
 - `profile suggest` is preview-only and must not mutate Codex config.
+- `visibility recommend` is preview-only; `apply-recommendations` is manual-only, once per local day, limited to three moves, and rollback-receipt backed.
 - `visibility plan` is preview-only; `visibility apply/restore` require both `--apply` and `--operator-confirmation` and create a rollback receipt.
 - Visibility apply moves only standalone user skill directories into a user-level state library; it must not edit plugin cache or `config.toml`.
 - Skill/profile output is workflow context, not native Codex subagent evidence.

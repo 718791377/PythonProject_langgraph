@@ -20,15 +20,15 @@
 
 ## Verify
 
-- [ ] Variance review completed.
-- [ ] Risk/change impact reviewed.
-- [ ] Control decision: continue to archive when runtime validation passes.
+- [x] Variance review completed: Phase B followed the frozen plan with one implementation detail clarified, namely alias evidence is retained only when the invoked id is an exact alias or search query alias.
+- [x] Risk/change impact reviewed: hidden soft-load remains read-only, usage events are sanitized, recommendation apply is manual-only, daily-limited, and receipt-backed.
+- [x] Control decision: continue to archive when runtime validation passes.
 
 ## Archive
 
-- [ ] Stable spec promoted.
-- [ ] Lessons/receipt recorded.
-- [ ] Archive evidence recorded.
+- [x] Stable spec promoted into `openspec/specs/codex-user-level-plugin-modules-profile-helper/spec.md` and `.zh-CN.md`.
+- [x] Lessons/receipt recorded: hidden library soft-load is procedural context, not expert evidence; visibility changes remain manual and receipt-backed.
+- [x] Archive evidence recorded: focused tests, OpenSpec validation, guard, local gate, local MR review, and local-main integration evidence are carried by this branch and helper receipts.
 
 ## Monitoring
 

@@ -939,6 +939,189 @@ class Skills2CliTest(unittest.TestCase):
         self.assertEqual(config_path.read_text(encoding="utf-8"), "[plugins]\n")
         self.assertTrue((codex_home / "skills" / "bulk-skill" / "SKILL.md").exists())
 
+    def test_hidden_index_search_show_and_load_are_soft_load_only(self) -> None:
+        repo, codex_home = self.make_workspace("hidden-soft-load")
+        self.write_skill(codex_home / "skills", "visible-review", name="visible-review", description="Visible review helper.")
+        hidden_root = codex_home / "state" / "skills2cli" / "visibility-disabled" / "receipt-a" / "skills"
+        hidden_path = self.write_skill(
+            hidden_root,
+            "mattpocock-skills-skills-productivity-grill-me-skill-md",
+            name="grill-me",
+            description="Grill me with tough product feedback.",
+            body="HIDDEN GRILL BODY",
+        )
+
+        indexed = self.run_cli("hidden", "index", "--root", str(repo), "--codex-home", str(codex_home), "--json")
+        self.assertEqual(indexed["command"], "hidden index")
+        self.assertEqual(indexed["total_hidden"], 1)
+        self.assertEqual(indexed["skills"][0]["visibility_state"], "hidden")
+        self.assertFalse(indexed["global_restore_performed"])
+        self.assertFalse(indexed["mutates_config"])
+
+        search = self.run_cli("hidden", "search", "grill-me", "--root", str(repo), "--codex-home", str(codex_home), "--json")
+        self.assertEqual(search["alias_resolution"]["matched_alias"], "grill-me")
+        hidden_result = next(item for item in search["results"] if item["visibility_state"] == "hidden")
+        self.assertEqual(hidden_result["hidden_skill_id"], "mattpocock-skills-skills-productivity-grill-me-skill-md")
+        self.assertEqual(hidden_result["matched_alias"], "grill-me")
+        self.assertTrue((codex_home / "skills" / "visible-review" / "SKILL.md").exists())
+        self.assertTrue(hidden_path.exists())
+
+        shown = self.run_cli(
+            "hidden",
+            "show",
+            "mattpocock-skills-skills-productivity-grill-me-skill-md",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+        )
+        self.assertTrue(shown["ok"])
+        self.assertFalse(shown["full_body_included"])
+        self.assertNotIn("body", shown["skill"])
+
+        loaded = self.run_cli(
+            "hidden",
+            "load",
+            "mattpocock-skills-skills-productivity-grill-me-skill-md",
+            "--query",
+            r"please grill-me from C:\Users\lenovo\secret with api_key=sk-test-secret-value",
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+        )
+        serialized = json.dumps(loaded, ensure_ascii=False)
+        self.assertTrue(loaded["ok"])
+        self.assertTrue(loaded["usage_event_recorded"])
+        self.assertIn("HIDDEN GRILL BODY", loaded["skill"]["body"])
+        self.assertEqual(loaded["visibility_state_after_load"], "hidden")
+        self.assertTrue(hidden_path.exists())
+        self.assertFalse((codex_home / "skills" / "mattpocock-skills-skills-productivity-grill-me-skill-md").exists())
+        self.assertNotIn(r"C:\Users\lenovo", serialized)
+        self.assertNotIn("sk-test-secret-value", serialized)
+        event_path = codex_home / "state" / "skills2cli" / "usage-events.jsonl"
+        events = [json.loads(line) for line in event_path.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(len(events), 1)
+        event = events[0]
+        self.assertEqual(event["event_type"], "hidden_load")
+        self.assertEqual(event["hidden_skill_id"], "mattpocock-skills-skills-productivity-grill-me-skill-md")
+        self.assertEqual(event["matched_alias"], None)
+        self.assertIn("query_hash", event)
+        self.assertFalse(event["raw_paths_retained"])
+        self.assertNotIn(r"C:\Users\lenovo", json.dumps(event, ensure_ascii=False))
+
+    def test_hidden_search_resolves_stop_slop_alias_to_ai_slop_cleaner(self) -> None:
+        repo, codex_home = self.make_workspace("hidden-stop-slop")
+        hidden_root = codex_home / "state" / "skills2cli" / "visibility-disabled" / "receipt-b" / "skills"
+        self.write_skill(hidden_root, "ai-slop-cleaner", name="ai-slop-cleaner", description="Remove AI slop from prose.")
+
+        for alias in ("stop-slop", "deslop", "anti-slop"):
+            with self.subTest(alias=alias):
+                payload = self.run_cli("hidden", "search", alias, "--root", str(repo), "--codex-home", str(codex_home), "--json")
+                self.assertEqual(payload["alias_resolution"]["matched_alias"], alias)
+                self.assertEqual(payload["alias_resolution"]["alias_target"], "ai-slop-cleaner")
+                self.assertEqual(payload["results"][0]["hidden_skill_id"], "ai-slop-cleaner")
+                self.assertEqual(payload["results"][0]["matched_alias"], alias)
+
+    def test_visibility_recommend_and_apply_recommendations_are_manual_daily_limited_and_receipt_backed(self) -> None:
+        repo, codex_home = self.make_workspace("visibility-recommend")
+        self.write_skill(codex_home / "skills", "skills2cli", name="skills2cli", description="Core skills2cli helper.")
+        self.write_skill(codex_home / "skills", "optional-visible", name="optional-visible", description="Optional visible helper.")
+        hidden_root = codex_home / "state" / "skills2cli" / "visibility-disabled" / "receipt-c" / "skills"
+        self.write_skill(hidden_root, "hot-hidden", name="hot-hidden", description="Hot hidden helper.")
+        self.write_skill(hidden_root, "warm-hidden", name="warm-hidden", description="Warm hidden helper.")
+        usage_path = codex_home / "state" / "skills2cli" / "usage-events.jsonl"
+        usage_path.parent.mkdir(parents=True, exist_ok=True)
+        now = datetime.now(timezone.utc).isoformat()
+        rows = []
+        for _ in range(10):
+            rows.append({"schema_version": 1, "timestamp": now, "event_type": "hidden_load", "hidden_skill_id": "hot-hidden", "frontmatter_name": "hot-hidden", "raw_paths_retained": False})
+        rows.append({"schema_version": 1, "timestamp": now, "event_type": "hidden_load", "hidden_skill_id": "warm-hidden", "frontmatter_name": "warm-hidden", "raw_paths_retained": False})
+        usage_path.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n", encoding="utf-8")
+
+        recommendation = self.run_cli("visibility", "recommend", "--days", "30", "--root", str(repo), "--codex-home", str(codex_home), "--json")
+        serialized = json.dumps(recommendation, ensure_ascii=False)
+        self.assertEqual(recommendation["command"], "visibility recommend")
+        self.assertEqual(recommendation["bucket_counts"]["promote"], 1)
+        self.assertEqual(recommendation["bucket_counts"]["keep-soft-load"], 1)
+        self.assertGreaterEqual(recommendation["bucket_counts"]["demote"], 1)
+        self.assertFalse(recommendation["mutates_config"])
+        self.assertNotIn(str(codex_home), serialized)
+        receipt_id = recommendation["recommendation_id"]
+
+        denied = self.run_cli(
+            "visibility",
+            "apply-recommendations",
+            "--receipt",
+            receipt_id,
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--json",
+            check=False,
+        )
+        self.assertFalse(denied["ok"])
+        self.assertEqual(denied["error"], "apply_flag_required")
+
+        confirmation_denied = self.run_cli(
+            "visibility",
+            "apply-recommendations",
+            "--receipt",
+            receipt_id,
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--apply",
+            "--json",
+            check=False,
+        )
+        self.assertFalse(confirmation_denied["ok"])
+        self.assertEqual(confirmation_denied["error"], "operator_confirmation_required")
+
+        applied = self.run_cli(
+            "visibility",
+            "apply-recommendations",
+            "--receipt",
+            receipt_id,
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--apply",
+            "--operator-confirmation",
+            "--json",
+        )
+        self.assertTrue(applied["ok"], applied.get("errors"))
+        self.assertLessEqual(applied["applied_move_count"], 3)
+        self.assertGreaterEqual(applied["applied_move_count"], 1)
+        self.assertFalse(applied["mutates_config"])
+        receipts = sorted((codex_home / "state" / "skills2cli" / "visibility-recommendation-applies").glob("*.json"))
+        self.assertTrue(receipts)
+        receipt_payload = json.loads(receipts[-1].read_text(encoding="utf-8"))
+        self.assertEqual(receipt_payload["receipt_backing"], "written_before_moves")
+        self.assertIn(receipt_payload["status"], {"applied", "partial_with_errors"})
+
+        second = self.run_cli(
+            "visibility",
+            "apply-recommendations",
+            "--receipt",
+            receipt_id,
+            "--root",
+            str(repo),
+            "--codex-home",
+            str(codex_home),
+            "--apply",
+            "--operator-confirmation",
+            "--json",
+            check=False,
+        )
+        self.assertFalse(second["ok"])
+        self.assertEqual(second["error"], "daily_apply_limit_reached")
+
     def test_visibility_restore_rejects_receipt_path_outside_receipt_root(self) -> None:
         repo, codex_home = self.make_workspace("visibility-restore-receipt-scope")
         outside_receipt = codex_home / "outside-receipt.json"

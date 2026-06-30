@@ -7,7 +7,7 @@ status: active
 doc_class: implementation_plan
 change: implement-skills2cli-hidden-progressive-disclosure
 created_at: 2026-06-30
-plan_readiness: frozen-for-runtime-implementation
+plan_readiness: implemented-local-runtime
 implementation_lane: local-main-first
 ---
 
@@ -27,7 +27,7 @@ implementation_lane: local-main-first
 
 <!-- CURRENT_STATUS_START -->
 
-- 本方案是 `implement-skills2cli-hidden-progressive-disclosure` 的冻结本地实施 brief。
+- 本方案已完成 `implement-skills2cli-hidden-progressive-disclosure` 的本地 runtime 实施，其 OpenSpec change 已在本地归档。
 - 用户已锁定默认策略：
   - hidden skill 加载边界：只读 soft-load；
   - 动态可见性调整：高置信自动选择，但只能在用户手动触发命令后执行；
@@ -35,7 +35,7 @@ implementation_lane: local-main-first
 - 2026-06-30 观察到的隐藏库基线：`C:\Users\lenovo\.codex\state\skills2cli\visibility-disabled` 下有 989 个隐藏 `SKILL.md`。
 - `grill-me` 存在于隐藏库，目录名为 `mattpocock-skills-skills-productivity-grill-me-skill-md`。
 - `stop-slop` 不是当前已安装 skill 名称；先作为 alias 指向 `ai-slop-cleaner`。
-- 未授权远端发布。
+- Runtime 实施和归档均为本地范围；未授权远端发布。
 
 <!-- CURRENT_STATUS_END -->
 
@@ -134,10 +134,10 @@ Apply 规则：
 - [x] 冻结双语 implementation plan。
 - [x] 创建 OpenSpec proposal/design/tasks/management/spec 包。
 - [x] 在 docs registry 中登记双语方案。
-- [ ] 验证 Phase A 并合入本地 main。
-- [ ] 实现 hidden progressive disclosure runtime。
-- [ ] 增加 usage events 与人工 recommendation apply runtime。
-- [ ] 验证 Phase B、归档 OpenSpec 并合入本地 main。
+- [x] 验证 Phase A 并合入本地 main。
+- [x] 实现 hidden progressive disclosure runtime。
+- [x] 增加 usage events 与人工 recommendation apply runtime。
+- [x] 验证 Phase B、归档 OpenSpec 并合入本地 main。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -171,7 +171,7 @@ Phase B runtime 切片：
 
 <!-- EVIDENCE_INDEX_START -->
 
-- `openspec/changes/implement-skills2cli-hidden-progressive-disclosure/` - 本方案的 active OpenSpec change。
+- `openspec/changes/archive/2026-06-30-implement-skills2cli-hidden-progressive-disclosure/` - 本方案的 archived OpenSpec change。
 - `tools/skills2cli.py` - runtime 实现目标。
 - `test/skills2cli.test.py` - hidden 命令与 recommendation 行为的聚焦测试目标。
 - `docs_bilingual/docs_registry.yaml` - 双语方案登记。

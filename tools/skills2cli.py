@@ -81,6 +81,17 @@ BUDGET_TRIAGE_TASK_MODULE = "skills-budget-triage"
 VISIBILITY_STATE_DIR = Path("state") / "skills2cli"
 VISIBILITY_DISABLED_DIR = VISIBILITY_STATE_DIR / "visibility-disabled"
 VISIBILITY_RECEIPT_DIR = VISIBILITY_STATE_DIR / "visibility-receipts"
+USAGE_EVENTS_FILE = VISIBILITY_STATE_DIR / "usage-events.jsonl"
+VISIBILITY_RECOMMENDATION_DIR = VISIBILITY_STATE_DIR / "visibility-recommendations"
+VISIBILITY_RECOMMENDATION_APPLY_DIR = VISIBILITY_STATE_DIR / "visibility-recommendation-applies"
+HIDDEN_LOAD_DEFAULT_CHUNK_BYTES = SHOW_BODY_LIMIT
+MAX_RECOMMENDATION_APPLY_MOVES = 3
+HIDDEN_ALIAS_TARGETS = {
+    "grill-me": "mattpocock-skills-skills-productivity-grill-me-skill-md",
+    "stop-slop": "ai-slop-cleaner",
+    "deslop": "ai-slop-cleaner",
+    "anti-slop": "ai-slop-cleaner",
+}
 DEFAULT_MAX_VISIBLE_USER_SKILLS = 80
 ALWAYS_KEEP_USER_SKILL_TERMS = (
     "skills2cli",
@@ -152,6 +163,25 @@ def sanitize_text(value: str, *, limit: int | None = None) -> str:
     text = UUID_RE.sub("[REDACTED_ID]", text)
     text = TOKEN_COUNTER_RE.sub("[REDACTED_TOKEN_COUNT]", text)
     text = re.sub(r"\s+", " ", text).strip()
+    if limit is not None and len(text) > limit:
+        return text[: max(0, limit - len("...[truncated]"))].rstrip() + "...[truncated]"
+    return text
+
+
+def sanitize_body_text(value: str, *, limit: int | None = None) -> str:
+    """Redact sensitive values while preserving SKILL.md line structure."""
+
+    text = str(value)
+    text = UNC_PATH_RE.sub("[REDACTED_PATH]", text)
+    text = WINDOWS_PATH_RE.sub("[REDACTED_PATH]", text)
+    text = POSIX_PRIVATE_PATH_RE.sub("[REDACTED_PATH]", text)
+    text = TOKEN_RE.sub(lambda match: match.group(0).split(match.group(1))[0] + "[REDACTED_SECRET]", text)
+    text = STANDALONE_SECRET_RE.sub("[REDACTED_SECRET]", text)
+    text = RUNTIME_ID_ASSIGNMENT_RE.sub(lambda match: f"{match.group(1)}=[REDACTED_ID]", text)
+    text = CALL_ID_RE.sub("[REDACTED_ID]", text)
+    text = RESPONSE_ID_RE.sub("[REDACTED_ID]", text)
+    text = UUID_RE.sub("[REDACTED_ID]", text)
+    text = TOKEN_COUNTER_RE.sub("[REDACTED_TOKEN_COUNT]", text)
     if limit is not None and len(text) > limit:
         return text[: max(0, limit - len("...[truncated]"))].rstrip() + "...[truncated]"
     return text
@@ -328,6 +358,15 @@ def build_frontmatter_compatibility_summary(repo_root: Path, codex_home: Path) -
     }
 
 
+def safety_flags() -> dict[str, bool]:
+    return {
+        "mutates_config": False,
+        "edits_plugin_cache": False,
+        "profile_apply_performed": False,
+        "global_restore_performed": False,
+    }
+
+
 def envelope(command: str, payload: dict[str, Any]) -> dict[str, Any]:
     result = {
         "schema_version": SCHEMA_VERSION,
@@ -338,12 +377,18 @@ def envelope(command: str, payload: dict[str, Any]) -> dict[str, Any]:
             "full_skill_bodies_included_by_default": False,
             "mutates_config": False,
             "edits_plugin_cache": False,
+            "profile_apply_performed": False,
+            "global_restore_performed": False,
             "codex_frontmatter_name_limit": CODEX_SKILL_NAME_LIMIT,
             "codex_frontmatter_description_limit": CODEX_SKILL_DESCRIPTION_LIMIT,
         },
     }
     result.update(payload)
     return result
+
+
+def sha256_hex(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8", errors="replace")).hexdigest()
 
 
 def command_index(args: argparse.Namespace) -> int:
@@ -473,11 +518,19 @@ def visibility_state_paths(codex_home: Path) -> dict[str, Path]:
         "state_root": state_root,
         "disabled_root": codex_home / VISIBILITY_DISABLED_DIR,
         "receipt_root": codex_home / VISIBILITY_RECEIPT_DIR,
+        "usage_events": codex_home / USAGE_EVENTS_FILE,
+        "recommendation_root": codex_home / VISIBILITY_RECOMMENDATION_DIR,
+        "recommendation_apply_root": codex_home / VISIBILITY_RECOMMENDATION_APPLY_DIR,
     }
 
 
 def normalize_skill_key(value: str) -> str:
     return slugify(value).lower()
+
+
+def normalize_optional_skill_key(value: Any) -> str:
+    raw = str(value or "").strip()
+    return normalize_skill_key(raw) if raw else ""
 
 
 def collect_user_skill_groups(repo_root: Path, codex_home: Path) -> list[UserSkillGroup]:
@@ -707,6 +760,385 @@ def resolve_visibility_receipt(codex_home: Path, receipt: str) -> Path:
     if not path_is_relative_to(resolved, receipt_root):
         raise ValueError("receipt_path_out_of_scope")
     return resolved
+
+
+@dataclass(frozen=True)
+class HiddenSkillRecord:
+    hidden_skill_id: str
+    frontmatter_name: str
+    name: str
+    source_layer: str
+    visibility_state: str
+    path_hint: str
+    description_summary: str
+    description_hash: str
+    body_hash: str
+    body_bytes: int
+    available: bool
+    frontmatter_valid: bool
+    frontmatter_error: str | None
+    codex_frontmatter_compatible: bool
+    codex_frontmatter_errors: list[str]
+    name_length: int
+    description_length: int
+    source_top_dir: str
+    matched_alias: str | None = None
+    full_body_included: bool = False
+
+
+def hidden_source_dir_and_top(disabled_root: Path, skill_path: Path) -> tuple[Path, str]:
+    try:
+        rel = skill_path.parent.relative_to(disabled_root)
+        parts = rel.parts
+    except ValueError:
+        parts = ()
+    if "skills" in parts:
+        idx = parts.index("skills")
+        if idx + 1 < len(parts):
+            source_dir = disabled_root.joinpath(*parts[: idx + 2])
+            return source_dir, source_dir.name
+    return skill_path.parent, skill_path.parent.name
+
+
+def hidden_path_hint(disabled_root: Path, skill_path: Path) -> str:
+    try:
+        rel = skill_path.parent.relative_to(disabled_root).as_posix()
+    except ValueError:
+        rel = skill_path.parent.name
+    rel = slugify(rel)
+    return f"[HIDDEN_SKILLS]/{rel}/SKILL.md" if rel else "[HIDDEN_SKILLS]/SKILL.md"
+
+
+def build_hidden_id(disabled_root: Path, skill_path: Path, parsed_name: str | None) -> str:
+    source_dir, top_dir = hidden_source_dir_and_top(disabled_root, skill_path)
+    base = slugify(top_dir or parsed_name or skill_path.parent.name)
+    if skill_path.parent != source_dir:
+        try:
+            suffix = skill_path.parent.relative_to(source_dir).as_posix()
+        except ValueError:
+            suffix = skill_path.parent.name
+        if suffix:
+            base = f"{base}-{slugify(suffix)}"
+    return base
+
+
+def iter_hidden_skill_files(codex_home: Path) -> Iterable[Path]:
+    disabled_root = visibility_state_paths(codex_home)["disabled_root"]
+    if not disabled_root.exists():
+        return
+    try:
+        candidates = sorted(disabled_root.rglob("SKILL.md"))
+    except OSError:
+        return
+    for path in candidates:
+        if path.is_file():
+            yield path
+
+
+def hidden_record_from_path(codex_home: Path, path: Path, used_ids: dict[str, int] | None = None) -> dict[str, Any]:
+    disabled_root = visibility_state_paths(codex_home)["disabled_root"]
+    text = read_text_lossy(path)
+    had_bom = text.startswith("\ufeff")
+    frontmatter, valid, error, _body = parse_frontmatter(text)
+    name = sanitize_text(frontmatter.get("name") or path.parent.name, limit=80)
+    description = sanitize_text(frontmatter.get("description") or "", limit=10000)
+    source_dir, top_dir = hidden_source_dir_and_top(disabled_root, path)
+    hidden_id = build_hidden_id(disabled_root, path, name)
+    if used_ids is not None:
+        if hidden_id in used_ids:
+            used_ids[hidden_id] += 1
+            hidden_id = f"{hidden_id}-{used_ids[hidden_id]}"
+        else:
+            used_ids[hidden_id] = 1
+    compatibility = codex_frontmatter_report(frontmatter, valid, error, had_bom=had_bom)
+    record = asdict(
+        HiddenSkillRecord(
+            hidden_skill_id=hidden_id,
+            frontmatter_name=name,
+            name=name,
+            source_layer="hidden-user",
+            visibility_state="hidden",
+            path_hint=hidden_path_hint(disabled_root, path),
+            description_summary=sanitize_text(description or "No valid skill description available.", limit=SUMMARY_LIMIT),
+            description_hash=stable_hash(description),
+            body_hash=sha256_hex(text),
+            body_bytes=len(text.encode("utf-8", errors="replace")),
+            available=valid,
+            frontmatter_valid=valid,
+            frontmatter_error=error,
+            codex_frontmatter_compatible=bool(compatibility["codex_frontmatter_compatible"]),
+            codex_frontmatter_errors=list(compatibility["codex_frontmatter_errors"]),
+            name_length=int(compatibility["name_length"]),
+            description_length=int(compatibility["description_length"]),
+            source_top_dir=sanitize_text(top_dir, limit=120),
+        )
+    )
+    record["_skill_path"] = path
+    record["_source_dir"] = source_dir
+    return record
+
+
+def index_hidden_skills(codex_home: Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    used_ids: dict[str, int] = {}
+    for path in iter_hidden_skill_files(codex_home) or []:
+        try:
+            records.append(hidden_record_from_path(codex_home, path, used_ids))
+        except OSError:
+            continue
+    records.sort(key=lambda item: (str(item.get("frontmatter_name") or "").lower(), str(item.get("hidden_skill_id") or "")))
+    return records
+
+
+def public_hidden_record(record: dict[str, Any]) -> dict[str, Any]:
+    public = {key: value for key, value in record.items() if not key.startswith("_")}
+    public.setdefault("skill_id", public.get("hidden_skill_id"))
+    public.setdefault("visibility_state", "hidden")
+    return public
+
+
+def visible_records_for_hidden_search(repo_root: Path, codex_home: Path) -> list[dict[str, Any]]:
+    visible = []
+    for record in index_skills(repo_root, codex_home):
+        item = dict(record)
+        item["visibility_state"] = "visible"
+        item["hidden_skill_id"] = None
+        item["matched_alias"] = None
+        visible.append(item)
+    return visible
+
+
+def hidden_alias_for_query(query: str) -> tuple[str | None, str | None]:
+    normalized = normalize_skill_key(query)
+    for alias, target in HIDDEN_ALIAS_TARGETS.items():
+        alias_key = normalize_skill_key(alias)
+        if alias_key and alias_key in normalized:
+            return alias, target
+    return None, None
+
+
+def score_hidden_candidate(record: dict[str, Any], terms: list[str], alias: str | None, alias_target: str | None) -> int:
+    haystack = " ".join(
+        str(record.get(key, ""))
+        for key in ("hidden_skill_id", "skill_id", "name", "frontmatter_name", "source_layer", "description_summary", "source_top_dir")
+    ).lower()
+    score = sum(1 for term in terms if term and term in haystack)
+    if alias and alias_target:
+        target = normalize_skill_key(alias_target)
+        candidates = {
+            normalize_optional_skill_key(record.get("hidden_skill_id")),
+            normalize_optional_skill_key(record.get("skill_id")),
+            normalize_optional_skill_key(record.get("name")),
+            normalize_optional_skill_key(record.get("frontmatter_name")),
+            normalize_optional_skill_key(record.get("source_top_dir")),
+        }
+        if target in candidates or any(target and (target in candidate or candidate in target) for candidate in candidates if candidate):
+            score += 50
+    return score
+
+
+def build_hidden_search_results(repo_root: Path, codex_home: Path, query: str, *, limit: int) -> tuple[list[dict[str, Any]], int, dict[str, Any]]:
+    alias, alias_target = hidden_alias_for_query(query)
+    normalized_query = normalize_query(query)
+    expanded_query = " ".join(part for part in (normalized_query, alias_target or "") if part)
+    terms = [term.lower() for term in re.split(r"\s+", expanded_query.strip()) if term]
+    results: list[dict[str, Any]] = []
+    for record in visible_records_for_hidden_search(repo_root, codex_home):
+        score = score_hidden_candidate(record, terms, alias, alias_target)
+        if score:
+            item = dict(record)
+            item["score"] = score
+            item["confidence"] = round(min(0.99, 0.25 + score / 70.0), 2)
+            item["matched_alias"] = alias if score >= 50 and alias else None
+            results.append(item)
+    for hidden in index_hidden_skills(codex_home):
+        score = score_hidden_candidate(hidden, terms, alias, alias_target)
+        if score:
+            item = public_hidden_record(hidden)
+            item["score"] = score
+            item["confidence"] = round(min(0.99, 0.25 + score / 70.0), 2)
+            item["matched_alias"] = alias if score >= 50 and alias else None
+            results.append(item)
+    results.sort(
+        key=lambda item: (
+            -int(item.get("score") or 0),
+            str(item.get("visibility_state") or ""),
+            str(item.get("name") or "").lower(),
+            str(item.get("skill_id") or item.get("hidden_skill_id") or ""),
+        )
+    )
+    total_matches = len(results)
+    return results[:limit], total_matches, {
+        "matched_alias": alias,
+        "alias_target": alias_target,
+        "alias_policy": "deterministic_known_task_aliases" if alias else "no_alias_match",
+    }
+
+
+def find_hidden_skill(codex_home: Path, hidden_skill_id: str) -> tuple[dict[str, Any], Path] | None:
+    wanted = normalize_skill_key(hidden_skill_id)
+    exact_aliases = {normalize_skill_key(alias) for alias in HIDDEN_ALIAS_TARGETS}
+    alias, alias_target = hidden_alias_for_query(hidden_skill_id) if wanted in exact_aliases else (None, None)
+    if alias_target:
+        wanted = normalize_skill_key(alias_target)
+    for record in index_hidden_skills(codex_home):
+        candidates = {
+            normalize_optional_skill_key(record.get("hidden_skill_id")),
+            normalize_optional_skill_key(record.get("frontmatter_name")),
+            normalize_optional_skill_key(record.get("name")),
+            normalize_optional_skill_key(record.get("source_top_dir")),
+        }
+        if wanted in candidates or (alias_target and any(wanted and (wanted in candidate or candidate in wanted) for candidate in candidates if candidate)):
+            if alias:
+                record = dict(record)
+                record["matched_alias"] = alias
+            return record, Path(record["_skill_path"])
+    return None
+
+
+def command_hidden_index(args: argparse.Namespace) -> int:
+    codex_home = Path(args.codex_home).resolve()
+    hidden = [public_hidden_record(record) for record in index_hidden_skills(codex_home)]
+    payload = envelope(
+        "hidden index",
+        {
+            "ok": True,
+            "total_hidden": len(hidden),
+            "skills": hidden[: args.limit],
+            "limit": args.limit,
+            "hidden_library_root_hint": "[CODEX_HOME]/state/skills2cli/visibility-disabled",
+            **safety_flags(),
+            "raw_skill_bodies_retained": False,
+        },
+    )
+    emit(payload, args.json)
+    return 0
+
+
+def command_hidden_search(args: argparse.Namespace) -> int:
+    repo_root = Path(args.root).resolve()
+    codex_home = Path(args.codex_home).resolve()
+    results, total_matches, alias_info = build_hidden_search_results(repo_root, codex_home, args.query, limit=args.limit)
+    payload = envelope(
+        "hidden search",
+        {
+            "ok": True,
+            "query": sanitize_text(args.query, limit=120),
+            "total_matches": total_matches,
+            "results": results,
+            "alias_resolution": alias_info,
+            "search_scope": "current_visible_plus_hidden_library",
+            **safety_flags(),
+            "raw_skill_bodies_retained": False,
+        },
+    )
+    emit(payload, args.json)
+    return 0
+
+
+def command_hidden_suggest(args: argparse.Namespace) -> int:
+    repo_root = Path(args.root).resolve()
+    codex_home = Path(args.codex_home).resolve()
+    results, total_matches, alias_info = build_hidden_search_results(repo_root, codex_home, args.query, limit=args.limit)
+    payload = envelope(
+        "hidden suggest",
+        {
+            "ok": True,
+            "query": sanitize_text(args.query, limit=120),
+            "total_matches": total_matches,
+            "suggestions": results,
+            "selected": results[0] if results else None,
+            "alias_resolution": alias_info,
+            "load_command_template": "skills2cli hidden load <hidden_skill_id> --json",
+            "default_boundary": "read_only_soft_load",
+            **safety_flags(),
+            "raw_skill_bodies_retained": False,
+        },
+    )
+    emit(payload, args.json)
+    return 0
+
+
+def command_hidden_show(args: argparse.Namespace) -> int:
+    codex_home = Path(args.codex_home).resolve()
+    found = find_hidden_skill(codex_home, args.hidden_skill_id)
+    if found is None:
+        emit(
+            envelope("hidden show", {"ok": False, "error": "hidden_skill_not_found", "hidden_skill_id": sanitize_text(args.hidden_skill_id, limit=120), **safety_flags()}),
+            args.json,
+        )
+        return 2
+    record, _path = found
+    payload = envelope(
+        "hidden show",
+        {"ok": True, "skill": public_hidden_record(record), "full_body_included": False, **safety_flags(), "raw_skill_bodies_retained": False},
+    )
+    emit(payload, args.json)
+    return 0
+
+
+def append_usage_event(codex_home: Path, event: dict[str, Any]) -> Path:
+    path = visibility_state_paths(codex_home)["usage_events"]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
+    return path
+
+
+def command_hidden_load(args: argparse.Namespace) -> int:
+    codex_home = Path(args.codex_home).resolve()
+    found = find_hidden_skill(codex_home, args.hidden_skill_id)
+    if found is None:
+        emit(
+            envelope("hidden load", {"ok": False, "error": "hidden_skill_not_found", "hidden_skill_id": sanitize_text(args.hidden_skill_id, limit=120), **safety_flags()}),
+            args.json,
+        )
+        return 2
+    record, path = found
+    raw_body = read_text_lossy(path)
+    body = sanitize_body_text(raw_body, limit=None)
+    chunk_size = max(1000, int(args.chunk_size or HIDDEN_LOAD_DEFAULT_CHUNK_BYTES))
+    chunk_index = max(0, int(args.chunk_index or 0))
+    start = chunk_index * chunk_size
+    chunk = body[start : start + chunk_size]
+    has_more = start + chunk_size < len(body)
+    event = {
+        "schema_version": 1,
+        "event_id": f"hidden-load-{utc_now().strftime('%Y%m%dT%H%M%S%fZ')}-{stable_hash(str(record.get('hidden_skill_id') or 'hidden'))}",
+        "timestamp": utc_now().isoformat(),
+        "event_type": "hidden_load",
+        "hidden_skill_id": sanitize_text(str(record.get("hidden_skill_id") or ""), limit=160),
+        "frontmatter_name": sanitize_text(str(record.get("frontmatter_name") or record.get("name") or ""), limit=120),
+        "query_hash": stable_hash(args.query) if args.query else None,
+        "matched_alias": record.get("matched_alias"),
+        "confidence": float(args.confidence),
+        "batch_id": sanitize_text(str(args.batch_id), limit=120) if args.batch_id else None,
+        "body_sha256": sha256_hex(chunk),
+        "body_bytes": len(chunk.encode("utf-8", errors="replace")),
+        "raw_paths_retained": False,
+    }
+    append_usage_event(codex_home, event)
+    skill = public_hidden_record(record)
+    skill.update({"full_body_included": True, "full_body_redacted": True, "body": chunk, "chunk_index": chunk_index, "chunk_size": chunk_size, "has_more": has_more})
+    if has_more:
+        skill["next_chunk_command"] = f"skills2cli hidden load {record.get('hidden_skill_id')} --chunk-index {chunk_index + 1} --chunk-size {chunk_size} --json"
+    payload = envelope(
+        "hidden load",
+        {
+            "ok": True,
+            "skill": skill,
+            "usage_event_recorded": True,
+            "usage_event_path_hint": "[CODEX_HOME]/state/skills2cli/usage-events.jsonl",
+            "usage_event": event,
+            "visibility_state_after_load": "hidden",
+            "soft_load_boundary": "read_only_no_global_restore",
+            **safety_flags(),
+            "raw_paths_retained": False,
+            "raw_skill_bodies_retained": False,
+        },
+    )
+    emit(payload, args.json)
+    return 0
 
 
 def command_visibility_plan(args: argparse.Namespace) -> int:
@@ -1014,6 +1446,336 @@ def command_visibility_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def parse_usage_events(codex_home: Path, since: datetime) -> list[dict[str, Any]]:
+    path = visibility_state_paths(codex_home)["usage_events"]
+    if not path.exists():
+        return []
+    events: list[dict[str, Any]] = []
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        ts = parse_event_timestamp(payload)
+        if ts is not None and ts < since:
+            continue
+        if str(payload.get("event_type") or "") == "hidden_load":
+            events.append(payload)
+    return events
+
+
+def recommendation_id(days: int) -> str:
+    return f"{utc_now().strftime('%Y%m%dT%H%M%SZ')}-visibility-recommend-{int(days)}d"
+
+
+def resolve_recommendation_receipt(codex_home: Path, receipt: str) -> Path:
+    root = visibility_state_paths(codex_home)["recommendation_root"].resolve()
+    candidate = Path(receipt)
+    if candidate.exists():
+        resolved = candidate.resolve()
+    else:
+        if not receipt.endswith(".json"):
+            receipt = receipt + ".json"
+        resolved = (root / receipt).resolve()
+    if not path_is_relative_to(resolved, root):
+        raise ValueError("recommendation_receipt_path_out_of_scope")
+    return resolved
+
+
+def sanitized_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in candidate.items() if not str(key).startswith("_") and key not in {"source", "destination", "top_dir"}}
+
+
+def build_visibility_recommendation(repo_root: Path, codex_home: Path, *, days: int) -> dict[str, Any]:
+    now = utc_now()
+    since = now - timedelta(days=max(1, int(days)))
+    events = parse_usage_events(codex_home, since)
+    counts: Counter[str] = Counter(str(event.get("hidden_skill_id") or "") for event in events if event.get("hidden_skill_id"))
+    weekly: dict[str, Counter[int]] = {}
+    for event in events:
+        sid = str(event.get("hidden_skill_id") or "")
+        ts = parse_event_timestamp(event) or now
+        week_index = max(0, int((now - ts).days // 7))
+        weekly.setdefault(sid, Counter())[week_index] += 1
+    hidden_by_id = {str(record.get("hidden_skill_id")): record for record in index_hidden_skills(codex_home)}
+    promote: list[dict[str, Any]] = []
+    keep_soft: list[dict[str, Any]] = []
+    for sid, count in sorted(counts.items()):
+        record = hidden_by_id.get(sid)
+        if not record:
+            continue
+        week_counts = weekly.get(sid, Counter())
+        consecutive_weeks = bool(week_counts.get(0, 0) >= 3 and week_counts.get(1, 0) >= 3)
+        source_dir = Path(record["_source_dir"])
+        candidate = {
+            "action": "promote",
+            "hidden_skill_id": sid,
+            "frontmatter_name": sanitize_text(str(record.get("frontmatter_name") or ""), limit=120),
+            "visibility_state": "hidden",
+            "load_count": int(count),
+            "recent_week_count": int(week_counts.get(0, 0)),
+            "previous_week_count": int(week_counts.get(1, 0)),
+            "consecutive_week_threshold_met": consecutive_weeks,
+            "confidence": 0.95 if count >= 10 or consecutive_weeks else 0.72,
+            "reason": "high_frequency_hidden_load" if count >= 10 else ("two_consecutive_weeks_hidden_load" if consecutive_weeks else "recent_hidden_load_below_promote_threshold"),
+            "source_top_dir": sanitize_text(source_dir.name, limit=120),
+            "source": str(source_dir),
+            "destination": str(user_skills_root(codex_home) / source_dir.name),
+        }
+        if count >= 10 or consecutive_weeks:
+            promote.append(candidate)
+        elif count >= 1:
+            candidate["action"] = "keep-soft-load"
+            keep_soft.append(candidate)
+    registry = load_profile_registry(repo_root, codex_home)
+    keep_terms = profile_keep_terms(registry, BUDGET_TRIAGE_PROFILE)
+    demote: list[dict[str, Any]] = []
+    for group in collect_user_skill_groups(repo_root, codex_home):
+        if group_matches_keep_terms(group, keep_terms):
+            continue
+        demote.append(
+            {
+                "action": "demote",
+                "top_dir": group.top_dir,
+                "top_dir_slug": sanitize_text(slugify(group.top_dir), limit=120),
+                "skill_count": group.skill_count,
+                "skill_name_sample": [sanitize_text(name, limit=80) for name in group.skill_names[:3]],
+                "skill_id_sample": [sanitize_text(skill_id, limit=120) for skill_id in group.skill_ids[:3]],
+                "description_hashes": list(group.description_hashes[:3]),
+                "visibility_state": "visible",
+                "load_count": 0,
+                "confidence": 0.82,
+                "reason": "zero_strong_usage_evidence_and_not_core_protected",
+                "source": str(group.source_path),
+                "destination": str(visibility_state_paths(codex_home)["disabled_root"] / "recommendation-demote-preview" / "skills" / group.top_dir),
+            }
+        )
+    promote.sort(key=lambda item: (-int(item.get("load_count") or 0), str(item.get("hidden_skill_id") or "")))
+    keep_soft.sort(key=lambda item: (-int(item.get("load_count") or 0), str(item.get("hidden_skill_id") or "")))
+    demote.sort(key=lambda item: (str(item.get("top_dir_slug") or ""), int(item.get("skill_count") or 0)))
+    rid = recommendation_id(days)
+    receipt = {
+        "schema_version": 1,
+        "recommendation_id": rid,
+        "created_at": now.isoformat(),
+        "days": int(days),
+        "since": since.isoformat(),
+        "status": "recommendation-generated",
+        "manual_apply_only": True,
+        "daily_apply_limit": 1,
+        "max_moves_per_apply": MAX_RECOMMENDATION_APPLY_MOVES,
+        "promote_candidates": promote,
+        "keep_soft_load_candidates": keep_soft,
+        "demote_candidates": demote,
+        "raw_paths_retained_in_output": False,
+        **safety_flags(),
+    }
+    write_visibility_receipt(visibility_state_paths(codex_home)["recommendation_root"] / f"{rid}.json", receipt)
+    return receipt
+
+
+def command_visibility_recommend(args: argparse.Namespace) -> int:
+    repo_root = Path(args.root).resolve()
+    codex_home = Path(args.codex_home).resolve()
+    recommendation = build_visibility_recommendation(repo_root, codex_home, days=args.days)
+    payload = envelope(
+        "visibility recommend",
+        {
+            "ok": True,
+            "recommendation_id": recommendation["recommendation_id"],
+            "status": recommendation["status"],
+            "days": recommendation["days"],
+            "since": recommendation["since"],
+            "promote_candidates": [sanitized_candidate(item) for item in recommendation["promote_candidates"][: args.limit]],
+            "keep_soft_load_candidates": [sanitized_candidate(item) for item in recommendation["keep_soft_load_candidates"][: args.limit]],
+            "demote_candidates": [sanitized_candidate(item) for item in recommendation["demote_candidates"][: args.limit]],
+            "bucket_counts": {
+                "promote": len(recommendation["promote_candidates"]),
+                "keep-soft-load": len(recommendation["keep_soft_load_candidates"]),
+                "demote": len(recommendation["demote_candidates"]),
+            },
+            "receipt_path_hint": "[CODEX_HOME]/state/skills2cli/visibility-recommendations/<recommendation_id>.json",
+            "apply_command": f"skills2cli visibility apply-recommendations --receipt {recommendation['recommendation_id']} --apply --operator-confirmation --json",
+            "manual_apply_only": True,
+            "dynamic_adjustment_policy": "high_confidence_candidates_selected_but_apply_is_manual_only",
+            **safety_flags(),
+            "raw_paths_retained": False,
+            "raw_skill_bodies_retained": False,
+        },
+    )
+    emit(payload, args.json)
+    return 0
+
+
+def local_day_string() -> str:
+    return datetime.now().astimezone().date().isoformat()
+
+
+def already_applied_recommendations_today(codex_home: Path, local_day: str) -> bool:
+    root = visibility_state_paths(codex_home)["recommendation_apply_root"]
+    if not root.exists():
+        return False
+    for path in root.glob("*.json"):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if str(data.get("local_day") or "") == local_day and str(data.get("status") or "") in {"apply_started", "partial_in_progress", "partial_with_errors", "applied"}:
+            return True
+    return False
+
+
+def apply_recommendation_move(item: dict[str, Any], *, apply_id: str, codex_home: Path) -> dict[str, Any]:
+    action = str(item.get("action") or "")
+    if action not in {"promote", "demote"}:
+        raise ValueError(f"unsupported_action:{action}")
+    if action == "promote":
+        source_root = visibility_state_paths(codex_home)["disabled_root"].resolve()
+        source = Path(str(item.get("source") or "")).resolve()
+        destination_root = user_skills_root(codex_home).resolve()
+        destination = destination_root / source.name
+        if not path_is_relative_to(source, source_root):
+            raise ValueError("promote_source_out_of_scope")
+        if not path_is_relative_to(destination, destination_root):
+            raise ValueError("promote_destination_out_of_scope")
+    else:
+        source_root = user_skills_root(codex_home).resolve()
+        destination_root = (visibility_state_paths(codex_home)["disabled_root"] / apply_id / "skills").resolve()
+        top_dir = validate_visibility_top_dir(str(item.get("top_dir") or Path(str(item.get("source") or "")).name))
+        source = (source_root / top_dir).resolve()
+        destination = (destination_root / top_dir).resolve()
+        if not path_is_relative_to(source, source_root):
+            raise ValueError("demote_source_out_of_scope")
+        if not path_is_relative_to(destination, destination_root):
+            raise ValueError("demote_destination_out_of_scope")
+    if not source.exists():
+        raise ValueError(f"missing_source:{slugify(source.name)}")
+    if destination.exists():
+        raise ValueError(f"destination_exists:{slugify(destination.name)}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(source), str(destination))
+    return {
+        "action": action,
+        "top_dir": source.name,
+        "source": str(source),
+        "destination": str(destination),
+        "move_status": "moved",
+        "skill_count": int(item.get("skill_count") or 1),
+        "hidden_skill_id": sanitize_text(str(item.get("hidden_skill_id") or ""), limit=160) if item.get("hidden_skill_id") else None,
+    }
+
+
+def command_visibility_apply_recommendations(args: argparse.Namespace) -> int:
+    if not args.apply:
+        emit(envelope("visibility apply-recommendations", {"ok": False, "error": "apply_flag_required", **safety_flags(), "moves_user_skill_dirs_on_apply": True}), args.json)
+        return 2
+    if not args.operator_confirmation:
+        emit(envelope("visibility apply-recommendations", {"ok": False, "error": "operator_confirmation_required", **safety_flags(), "moves_user_skill_dirs_on_apply": True}), args.json)
+        return 2
+    codex_home = Path(args.codex_home).resolve()
+    repo_root = Path(args.root).resolve()
+    try:
+        recommendation_path = resolve_recommendation_receipt(codex_home, args.receipt)
+    except ValueError as exc:
+        emit(envelope("visibility apply-recommendations", {"ok": False, "error": str(exc), **safety_flags()}), args.json)
+        return 2
+    try:
+        recommendation = json.loads(recommendation_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        emit(envelope("visibility apply-recommendations", {"ok": False, "error": f"recommendation_unreadable:{exc.__class__.__name__}", **safety_flags()}), args.json)
+        return 2
+    except json.JSONDecodeError:
+        emit(envelope("visibility apply-recommendations", {"ok": False, "error": "recommendation_invalid_json", **safety_flags()}), args.json)
+        return 2
+    today = local_day_string()
+    if already_applied_recommendations_today(codex_home, today):
+        emit(
+            envelope(
+                "visibility apply-recommendations",
+                {"ok": False, "error": "daily_apply_limit_reached", "local_day": today, "moved_groups": 0, "applied_move_count": 0, **safety_flags(), "moves_user_skill_dirs_on_apply": True},
+            ),
+            args.json,
+        )
+        return 2
+    apply_id = f"{utc_now().strftime('%Y%m%dT%H%M%SZ')}-apply-{sanitize_text(str(recommendation.get('recommendation_id') or recommendation_path.stem), limit=80)}"
+    candidates = list(recommendation.get("promote_candidates") or []) + list(recommendation.get("demote_candidates") or [])
+    candidates = candidates[:MAX_RECOMMENDATION_APPLY_MOVES]
+    apply_path = visibility_state_paths(codex_home)["recommendation_apply_root"] / f"{apply_id}.json"
+    receipt = {
+        "schema_version": 1,
+        "apply_id": apply_id,
+        "recommendation_id": sanitize_text(str(recommendation.get("recommendation_id") or recommendation_path.stem), limit=160),
+        "created_at": utc_now().isoformat(),
+        "local_day": today,
+        "status": "apply_started",
+        "receipt_backing": "written_before_moves",
+        "max_moves_per_apply": MAX_RECOMMENDATION_APPLY_MOVES,
+        "planned_items": candidates,
+        "moved_items": [],
+        "errors": [],
+        "rollback_items": [],
+        **safety_flags(),
+    }
+    write_visibility_receipt(apply_path, receipt)
+    moved: list[dict[str, Any]] = []
+    errors: list[str] = []
+    for candidate in candidates:
+        try:
+            moved_item = apply_recommendation_move(candidate, apply_id=apply_id, codex_home=codex_home)
+        except (OSError, shutil.Error, ValueError) as exc:
+            errors.append(sanitize_text(str(exc), limit=180))
+            receipt["status"] = "partial_with_errors" if moved else "failed_no_moves"
+            receipt["errors"] = errors
+            receipt["updated_at"] = utc_now().isoformat()
+            write_visibility_receipt(apply_path, receipt)
+            break
+        moved.append(moved_item)
+        receipt["moved_items"] = moved
+        receipt["rollback_items"] = moved
+        receipt["status"] = "partial_in_progress"
+        receipt["updated_at"] = utc_now().isoformat()
+        write_visibility_receipt(apply_path, receipt)
+    receipt["status"] = "applied" if moved and not errors else ("partial_with_errors" if moved else "failed_no_moves")
+    receipt["completed_at"] = utc_now().isoformat()
+    receipt["errors"] = errors
+    receipt["moved_items"] = moved
+    receipt["rollback_items"] = moved
+    write_visibility_receipt(apply_path, receipt)
+    after_skills = index_skills(repo_root, codex_home)
+    payload = envelope(
+        "visibility apply-recommendations",
+        {
+            "ok": not errors,
+            "apply_id": apply_id,
+            "recommendation_id": receipt["recommendation_id"],
+            "status": receipt["status"],
+            "local_day": today,
+            "applied_move_count": len(moved),
+            "moved_groups": len(moved),
+            "moved_skill_count": sum(int(item.get("skill_count") or 0) for item in moved),
+            "max_moves_per_apply": MAX_RECOMMENDATION_APPLY_MOVES,
+            "errors": errors,
+            "receipt_path_hint": "[CODEX_HOME]/state/skills2cli/visibility-recommendation-applies/<apply_id>.json",
+            "moved_items": [sanitized_candidate(item) for item in moved],
+            "post_apply_skill_layer_counts": build_skill_layer_counts(after_skills),
+            "restart_required": bool(moved),
+            "manual_apply_only": True,
+            **safety_flags(),
+            "moves_user_skill_dirs_on_apply": True,
+            "raw_paths_retained": False,
+            "raw_skill_bodies_retained": False,
+        },
+    )
+    emit(payload, args.json)
+    return 0 if not errors else 1
+
+
 def score_record(record: dict[str, Any], terms: list[str]) -> int:
     haystack = " ".join(
         str(record.get(key, "")) for key in ("skill_id", "name", "source_layer", "description_summary")
@@ -1090,7 +1852,7 @@ def command_show(args: argparse.Namespace) -> int:
     record, path = found
     record = dict(record)
     if args.full:
-        body = sanitize_text(read_text_lossy(path), limit=SHOW_BODY_LIMIT)
+        body = sanitize_body_text(read_text_lossy(path), limit=SHOW_BODY_LIMIT)
         record.update({"full_body_included": True, "full_body_redacted": True, "body": body})
     else:
         record.update({"full_body_included": False})
@@ -2032,6 +2794,41 @@ def build_parser() -> argparse.ArgumentParser:
     add_common(show)
     show.set_defaults(func=command_show)
 
+    hidden = subparsers.add_parser("hidden", help="Discover and read hidden standalone user skills without global restore.")
+    hidden_sub = hidden.add_subparsers(dest="hidden_command")
+
+    hidden_index = hidden_sub.add_parser("index", help="Index hidden standalone user skills.")
+    add_common(hidden_index)
+    hidden_index.add_argument("--limit", type=int, default=50)
+    hidden_index.set_defaults(func=command_hidden_index)
+
+    hidden_search = hidden_sub.add_parser("search", help="Search visible and hidden skills together.")
+    hidden_search.add_argument("query")
+    hidden_search.add_argument("--limit", type=int, default=20)
+    add_common(hidden_search)
+    hidden_search.set_defaults(func=command_hidden_search)
+
+    hidden_suggest = hidden_sub.add_parser("suggest", help="Suggest hidden skills for a task without loading them.")
+    hidden_suggest.add_argument("--query", required=True)
+    hidden_suggest.add_argument("--limit", type=int, default=10)
+    add_common(hidden_suggest)
+    hidden_suggest.set_defaults(func=command_hidden_suggest)
+
+    hidden_show = hidden_sub.add_parser("show", help="Show hidden skill metadata only.")
+    hidden_show.add_argument("hidden_skill_id")
+    add_common(hidden_show)
+    hidden_show.set_defaults(func=command_hidden_show)
+
+    hidden_load = hidden_sub.add_parser("load", help="Read one hidden SKILL.md body without restoring it globally.")
+    hidden_load.add_argument("hidden_skill_id")
+    hidden_load.add_argument("--query", default="", help="Optional triggering query; only a hash is recorded.")
+    hidden_load.add_argument("--confidence", type=float, default=0.8)
+    hidden_load.add_argument("--batch-id", default=None)
+    hidden_load.add_argument("--chunk-index", type=int, default=0)
+    hidden_load.add_argument("--chunk-size", type=int, default=HIDDEN_LOAD_DEFAULT_CHUNK_BYTES)
+    add_common(hidden_load)
+    hidden_load.set_defaults(func=command_hidden_load)
+
     profile = subparsers.add_parser("profile", help="Profile suggestion commands.")
     profile_sub = profile.add_subparsers(dest="profile_command")
     suggest = profile_sub.add_parser("suggest", help="Suggest a profile for a task without applying it.")
@@ -2089,6 +2886,23 @@ def build_parser() -> argparse.ArgumentParser:
     visibility_status.add_argument("--limit", type=int, default=5)
     visibility_status.add_argument("--json", action="store_true")
     visibility_status.set_defaults(func=command_visibility_status)
+
+    visibility_recommend = visibility_sub.add_parser("recommend", help="Generate evidence-driven visibility recommendations without applying them.")
+    visibility_recommend.add_argument("--root", default=str(default_repo_root()), help="Repository root containing .codex/skills.")
+    visibility_recommend.add_argument("--codex-home", default=str(default_codex_home()))
+    visibility_recommend.add_argument("--days", type=int, default=30)
+    visibility_recommend.add_argument("--limit", type=int, default=20)
+    visibility_recommend.add_argument("--json", action="store_true")
+    visibility_recommend.set_defaults(func=command_visibility_recommend)
+
+    visibility_apply_recommendations = visibility_sub.add_parser("apply-recommendations", help="Manually apply a visibility recommendation receipt.")
+    visibility_apply_recommendations.add_argument("--receipt", required=True, help="Recommendation id or recommendation JSON path.")
+    visibility_apply_recommendations.add_argument("--root", default=str(default_repo_root()), help="Repository root containing .codex/skills.")
+    visibility_apply_recommendations.add_argument("--codex-home", default=str(default_codex_home()))
+    visibility_apply_recommendations.add_argument("--apply", action="store_true", help="Required explicit apply flag for moving skill directories.")
+    visibility_apply_recommendations.add_argument("--operator-confirmation", action="store_true", help="Required explicit confirmation for moving skill directories.")
+    visibility_apply_recommendations.add_argument("--json", action="store_true")
+    visibility_apply_recommendations.set_defaults(func=command_visibility_apply_recommendations)
 
     return parser
 

@@ -1,9 +1,0 @@
-schema: spec-driven
-created: 2026-06-30
-x_change_class: skills2cli-hidden-progressive-disclosure
-x_archive_deferred_reason: "Phase A freezes the plan; Phase B implements runtime, tests, and stable spec promotion."
-x_code_evidence_paths:
-  - tools/skills2cli.py
-  - test/skills2cli.test.py
-  - docs_bilingual/implementation_plans/codex_skills2cli_hidden_progressive_disclosure_plan.md
-  - docs_bilingual/implementation_plans/codex_skills2cli_hidden_progressive_disclosure_plan.zh-CN.md

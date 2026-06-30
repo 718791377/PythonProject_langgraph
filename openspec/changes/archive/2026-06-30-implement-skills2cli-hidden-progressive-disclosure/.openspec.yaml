@@ -1,0 +1,10 @@
+schema: spec-driven
+created: 2026-06-30
+x_change_class: skills2cli-hidden-progressive-disclosure
+x_code_evidence_paths:
+  - tools/skills2cli.py
+  - test/skills2cli.test.py
+  - tools/install_user_level_mcp_skills_cli.py
+  - docs_bilingual/implementation_plans/codex_skills2cli_hidden_progressive_disclosure_plan.md
+  - docs_bilingual/implementation_plans/codex_skills2cli_hidden_progressive_disclosure_plan.zh-CN.md
+x_archived_after_runtime_validation: true
