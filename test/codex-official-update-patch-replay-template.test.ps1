@@ -541,7 +541,9 @@ try {
     Assert-Equal ($nonWindowsLockedUpdate.windows_codex_lock_preflight.blocking_enabled) $false 'Non-Windows lock preflight should report blocking_enabled=false.'
     Assert-Equal ($nonWindowsLockedUpdate.windows_codex_lock_preflight.allowed) $true 'Non-Windows lock preflight should allow the update.'
     Assert-Equal ([string]$nonWindowsLockedUpdate.windows_codex_lock_preflight.lock_risk) 'unknown' 'Non-Windows lock preflight should report lock_risk=unknown.'
-    Assert-ArrayContains -Actual @($nonWindowsLockedUpdate.windows_codex_lock_preflight.warnings | ForEach-Object { [string]$_ }) -Expected 'Windows lock preflight is only actionable on Windows.' -Message 'Non-Windows lock preflight warning was not reported.'
+    $nonWindowsLockedWarnings = [string[]]@($nonWindowsLockedUpdate.windows_codex_lock_preflight.warnings)
+    Assert-True ($nonWindowsLockedWarnings.Count -ge 1) 'Non-Windows lock preflight warning list should not be empty.'
+    Assert-ArrayContains -Actual $nonWindowsLockedWarnings -Expected 'Windows lock preflight is only actionable on Windows.' -Message 'Non-Windows lock preflight warning was not reported.'
 
     Reset-OfficialUpdateEnv
     Initialize-OfficialUpdateCheckpoint
@@ -550,7 +552,9 @@ try {
     Assert-True (Test-Path -LiteralPath $NpmInstallMarker) 'Non-Windows update should not parse Windows-only fake process inventory before fake npm install proceeds.'
     Assert-Equal ($nonWindowsInvalidInventoryUpdate.windows_codex_lock_preflight.checked) $false 'Non-Windows invalid-inventory lock preflight should report checked=false.'
     Assert-Equal ($nonWindowsInvalidInventoryUpdate.windows_codex_lock_preflight.allowed) $true 'Non-Windows invalid-inventory lock preflight should allow the update.'
-    Assert-ArrayContains -Actual @($nonWindowsInvalidInventoryUpdate.windows_codex_lock_preflight.warnings | ForEach-Object { [string]$_ }) -Expected 'Windows lock preflight is only actionable on Windows.' -Message 'Non-Windows invalid-inventory warning was not reported.'
+    $nonWindowsInvalidInventoryWarnings = [string[]]@($nonWindowsInvalidInventoryUpdate.windows_codex_lock_preflight.warnings)
+    Assert-True ($nonWindowsInvalidInventoryWarnings.Count -ge 1) 'Non-Windows invalid-inventory warning list should not be empty.'
+    Assert-ArrayContains -Actual $nonWindowsInvalidInventoryWarnings -Expected 'Windows lock preflight is only actionable on Windows.' -Message 'Non-Windows invalid-inventory warning was not reported.'
   }
 
   Reset-OfficialUpdateEnv
