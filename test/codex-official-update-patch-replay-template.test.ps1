@@ -435,8 +435,10 @@ function New-FakeCodexLockProcess {
 Remove-TestTree -Path $TempRoot
 New-StagedOfficialInstallTree
 New-FakeCommandBin
-Ensure-Directory -Path (Join-Path $FakeNpmRoot '@openai')
-Ensure-Directory -Path (Join-Path $FakeNpmRoot '@openai\.codex-leftover')
+$FakeOpenAiScopeRoot = Join-Path $FakeNpmRoot '@openai'
+$FakeCodexLeftoverRoot = Join-Path $FakeOpenAiScopeRoot '.codex-leftover'
+Ensure-Directory -Path $FakeOpenAiScopeRoot
+Ensure-Directory -Path $FakeCodexLeftoverRoot
 
 $previousPath = [Environment]::GetEnvironmentVariable('Path', 'Process')
 $previousUpperPath = [Environment]::GetEnvironmentVariable('PATH', 'Process')
@@ -586,9 +588,10 @@ try {
   Reset-OfficialUpdateEnv
   Initialize-OfficialUpdateCheckpoint
   $stagingUpdate = Invoke-TemplateJson -Stage 'update'
-  $stagingCandidates = @($stagingUpdate.windows_codex_lock_preflight.leftover_staging_candidates | ForEach-Object { [string]$_ })
-  Assert-ArrayContains -Actual $stagingCandidates -Expected (Join-Path $FakeNpmRoot '@openai\.codex-leftover') -Message 'Lock preflight did not report fake leftover @openai/.codex-* staging directory.'
-  Assert-True (Test-Path -LiteralPath (Join-Path $FakeNpmRoot '@openai\.codex-leftover')) 'Template must report but not delete leftover Codex staging directories.'
+  $stagingCandidates = [string[]]@($stagingUpdate.windows_codex_lock_preflight.leftover_staging_candidates)
+  Assert-True ($stagingCandidates.Count -ge 1) 'Lock preflight should report at least one fake leftover @openai/.codex-* staging directory.'
+  Assert-ArrayContains -Actual $stagingCandidates -Expected $FakeCodexLeftoverRoot -Message 'Lock preflight did not report fake leftover @openai/.codex-* staging directory.'
+  Assert-True (Test-Path -LiteralPath $FakeCodexLeftoverRoot) 'Template must report but not delete leftover Codex staging directories.'
 
   $diff = Invoke-TemplateJson -Stage 'diff'
   Assert-Equal $diff.stage.stage 'diff' 'Diff stage report used the wrong stage.'
