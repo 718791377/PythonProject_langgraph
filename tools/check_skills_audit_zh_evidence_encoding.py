@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -103,10 +104,32 @@ def add_git_paths(paths: set[str], root: Path, args: list[str]) -> None:
             paths.add(rel)
 
 
+def is_gitlab_default_branch_pipeline_merge_commit(root: Path, branch: str) -> bool:
+    if os.environ.get("GITLAB_CI", "").lower() not in {"1", "true", "yes"}:
+        return False
+    default_branch = os.environ.get("CI_DEFAULT_BRANCH") or "main"
+    ci_branch = os.environ.get("CI_COMMIT_BRANCH") or branch
+    if ci_branch != default_branch:
+        return False
+    parents = run_git(root, ["rev-list", "--parents", "-n", "1", "HEAD"])
+    if parents.returncode != 0:
+        return False
+    parts = parents.stdout.strip().split()
+    if len(parts) != 3:
+        return False
+    subject = run_git(root, ["show", "-s", "--format=%s", "HEAD"])
+    if subject.returncode != 0:
+        return False
+    return subject.stdout.strip().startswith("Merge branch '") and " into '" in subject.stdout
+
+
 def choose_diff_base(root: Path, requested_base: str | None) -> str | None:
     if requested_base:
         return requested_base
     branch = run_git(root, ["branch", "--show-current"]).stdout.strip()
+    effective_branch = branch or os.environ.get("CI_COMMIT_BRANCH", "")
+    if effective_branch and is_gitlab_default_branch_pipeline_merge_commit(root, effective_branch):
+        return "HEAD^2"
     if branch and branch != "main":
         main_check = run_git(root, ["rev-parse", "--verify", "main"])
         if main_check.returncode == 0:
