@@ -817,7 +817,7 @@ function Get-CodexPackageLockTargets {
         $openAiScopeRoot = Join-Path $GlobalNpmRoot '@openai'
         $codexPackageRoot = Join-Path $openAiScopeRoot 'codex'
         if (Test-Path -LiteralPath $openAiScopeRoot) {
-            $stagingDirectories = @(Get-ChildItem -LiteralPath $openAiScopeRoot -Directory -Filter '.codex-*' -ErrorAction SilentlyContinue | ForEach-Object {
+            $stagingDirectories = @(Get-ChildItem -LiteralPath $openAiScopeRoot -Directory -Force -Filter '.codex-*' -ErrorAction SilentlyContinue | ForEach-Object {
                 [pscustomobject]@{
                     path = [string]$_.FullName
                     exists = $true
