@@ -493,43 +493,65 @@ try {
   Assert-True (-not (($globalNpmListingOutput -join [Environment]::NewLine).Contains('NativeCommandError'))) 'Global npm listing stderr was polluted by PowerShell NativeCommandError formatting.'
   Assert-True (-not (($globalNpmListingOutput -join [Environment]::NewLine).Contains('FullyQualifiedErrorId'))) 'Global npm listing stderr was polluted by PowerShell error-record metadata.'
 
-  Reset-OfficialUpdateEnv
-  Initialize-OfficialUpdateCheckpoint
-  Set-FakeProcessInventory -Processes @((New-FakeCodexLockProcess))
-  $lockedUpdateError = Invoke-TemplateFailureText -Stage 'update'
-  Assert-True ($lockedUpdateError.Contains('Windows Codex lock preflight detected likely active Codex or Node processes')) 'Update stage did not fail closed when fake Codex lock inventory was present.'
-  Assert-True (-not (Test-Path -LiteralPath $NpmInstallMarker)) 'Lock-risk blocking must happen before fake npm install creates the marker.'
-  $lockedUpdateReport = Get-TemplateReport
-  Assert-Equal ([string]$lockedUpdateReport.windows_codex_lock_preflight.lock_risk) 'detected' 'Lock-risk blocking should still write a structured preflight report.'
-  Assert-Equal ([string]$lockedUpdateReport.windows_codex_lock_preflight.recommended_action) 'close_codex_sessions_then_rerun' 'Lock-risk blocking report should recommend closing Codex sessions and rerunning.'
+  if (Test-IsWindowsPlatform) {
+    Reset-OfficialUpdateEnv
+    Initialize-OfficialUpdateCheckpoint
+    Set-FakeProcessInventory -Processes @((New-FakeCodexLockProcess))
+    $lockedUpdateError = Invoke-TemplateFailureText -Stage 'update'
+    Assert-True ($lockedUpdateError.Contains('Windows Codex lock preflight detected likely active Codex or Node processes')) 'Update stage did not fail closed when fake Codex lock inventory was present.'
+    Assert-True (-not (Test-Path -LiteralPath $NpmInstallMarker)) 'Lock-risk blocking must happen before fake npm install creates the marker.'
+    $lockedUpdateReport = Get-TemplateReport
+    Assert-Equal ([string]$lockedUpdateReport.windows_codex_lock_preflight.lock_risk) 'detected' 'Lock-risk blocking should still write a structured preflight report.'
+    Assert-Equal ([string]$lockedUpdateReport.windows_codex_lock_preflight.recommended_action) 'close_codex_sessions_then_rerun' 'Lock-risk blocking report should recommend closing Codex sessions and rerunning.'
 
-  Reset-OfficialUpdateEnv
-  Initialize-OfficialUpdateCheckpoint
-  Set-FakeProcessInventory -Processes @((New-FakeCodexLockProcess))
-  $overrideUpdate = Invoke-TemplateJson -Stage 'update' -AllowLockedCodexUpdate
-  Assert-True (Test-Path -LiteralPath $NpmInstallMarker) 'AllowLockedCodexUpdate should let fake npm install proceed.'
-  Assert-True ($overrideUpdate.windows_codex_lock_preflight.override_used -eq $true) 'Lock preflight did not record override_used=true.'
-  Assert-Equal ([string]$overrideUpdate.windows_codex_lock_preflight.lock_risk) 'detected' 'Override update should still report detected lock risk.'
+    Reset-OfficialUpdateEnv
+    Initialize-OfficialUpdateCheckpoint
+    Set-FakeProcessInventory -Processes @((New-FakeCodexLockProcess))
+    $overrideUpdate = Invoke-TemplateJson -Stage 'update' -AllowLockedCodexUpdate
+    Assert-True (Test-Path -LiteralPath $NpmInstallMarker) 'AllowLockedCodexUpdate should let fake npm install proceed.'
+    Assert-True ($overrideUpdate.windows_codex_lock_preflight.override_used -eq $true) 'Lock preflight did not record override_used=true.'
+    Assert-Equal ([string]$overrideUpdate.windows_codex_lock_preflight.lock_risk) 'detected' 'Override update should still report detected lock risk.'
 
-  Reset-OfficialUpdateEnv
-  Initialize-OfficialUpdateCheckpoint
-  [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', '{not valid json', 'Process')
-  $unknownUpdateError = Invoke-TemplateFailureText -Stage 'update'
-  Assert-True ($unknownUpdateError.Contains('Windows Codex lock preflight could not complete safely')) 'Update stage did not fail closed when lock preflight inventory was unknown.'
-  Assert-True (-not (Test-Path -LiteralPath $NpmInstallMarker)) 'Unknown lock-risk blocking must happen before fake npm install creates the marker.'
-  $unknownUpdateReport = Get-TemplateReport
-  Assert-Equal ([string]$unknownUpdateReport.windows_codex_lock_preflight.lock_risk) 'unknown' 'Unknown inventory failure should be reported as lock_risk=unknown.'
-  Assert-Equal ([string]$unknownUpdateReport.windows_codex_lock_preflight.recommended_action) 'manual_review' 'Unknown lock-risk report should recommend manual review.'
-  Assert-True ($null -eq $unknownUpdateReport.official_update) 'Unknown preflight failure should not execute official npm update by default.'
+    Reset-OfficialUpdateEnv
+    Initialize-OfficialUpdateCheckpoint
+    [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', '{not valid json', 'Process')
+    $unknownUpdateError = Invoke-TemplateFailureText -Stage 'update'
+    Assert-True ($unknownUpdateError.Contains('Windows Codex lock preflight could not complete safely')) 'Update stage did not fail closed when lock preflight inventory was unknown.'
+    Assert-True (-not (Test-Path -LiteralPath $NpmInstallMarker)) 'Unknown lock-risk blocking must happen before fake npm install creates the marker.'
+    $unknownUpdateReport = Get-TemplateReport
+    Assert-Equal ([string]$unknownUpdateReport.windows_codex_lock_preflight.lock_risk) 'unknown' 'Unknown inventory failure should be reported as lock_risk=unknown.'
+    Assert-Equal ([string]$unknownUpdateReport.windows_codex_lock_preflight.recommended_action) 'manual_review' 'Unknown lock-risk report should recommend manual review.'
+    Assert-True ($null -eq $unknownUpdateReport.official_update) 'Unknown preflight failure should not execute official npm update by default.'
 
-  Reset-OfficialUpdateEnv
-  Initialize-OfficialUpdateCheckpoint
-  [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', '{not valid json', 'Process')
-  $unknownOverrideUpdate = Invoke-TemplateJson -Stage 'update' -AllowLockedCodexUpdate
-  Assert-True (Test-Path -LiteralPath $NpmInstallMarker) 'AllowLockedCodexUpdate should let fake npm install proceed when preflight is unknown.'
-  Assert-True ($unknownOverrideUpdate.windows_codex_lock_preflight.override_used -eq $true) 'Unknown preflight override did not record override_used=true.'
-  Assert-Equal ([string]$unknownOverrideUpdate.windows_codex_lock_preflight.lock_risk) 'unknown' 'Unknown override update should still report lock_risk=unknown.'
-  Assert-Equal ([string]$unknownOverrideUpdate.windows_codex_lock_preflight.recommended_action) 'manual_review' 'Unknown override report should keep manual_review recommendation.'
+    Reset-OfficialUpdateEnv
+    Initialize-OfficialUpdateCheckpoint
+    [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', '{not valid json', 'Process')
+    $unknownOverrideUpdate = Invoke-TemplateJson -Stage 'update' -AllowLockedCodexUpdate
+    Assert-True (Test-Path -LiteralPath $NpmInstallMarker) 'AllowLockedCodexUpdate should let fake npm install proceed when preflight is unknown.'
+    Assert-True ($unknownOverrideUpdate.windows_codex_lock_preflight.override_used -eq $true) 'Unknown preflight override did not record override_used=true.'
+    Assert-Equal ([string]$unknownOverrideUpdate.windows_codex_lock_preflight.lock_risk) 'unknown' 'Unknown override update should still report lock_risk=unknown.'
+    Assert-Equal ([string]$unknownOverrideUpdate.windows_codex_lock_preflight.recommended_action) 'manual_review' 'Unknown override report should keep manual_review recommendation.'
+  } else {
+    Reset-OfficialUpdateEnv
+    Initialize-OfficialUpdateCheckpoint
+    Set-FakeProcessInventory -Processes @((New-FakeCodexLockProcess))
+    $nonWindowsLockedUpdate = Invoke-TemplateJson -Stage 'update'
+    Assert-True (Test-Path -LiteralPath $NpmInstallMarker) 'Non-Windows update should skip Windows-only lock preflight and let fake npm install proceed.'
+    Assert-Equal ($nonWindowsLockedUpdate.windows_codex_lock_preflight.checked) $false 'Non-Windows lock preflight should report checked=false.'
+    Assert-Equal ($nonWindowsLockedUpdate.windows_codex_lock_preflight.blocking_enabled) $false 'Non-Windows lock preflight should report blocking_enabled=false.'
+    Assert-Equal ($nonWindowsLockedUpdate.windows_codex_lock_preflight.allowed) $true 'Non-Windows lock preflight should allow the update.'
+    Assert-Equal ([string]$nonWindowsLockedUpdate.windows_codex_lock_preflight.lock_risk) 'unknown' 'Non-Windows lock preflight should report lock_risk=unknown.'
+    Assert-ArrayContains -Actual @($nonWindowsLockedUpdate.windows_codex_lock_preflight.warnings | ForEach-Object { [string]$_ }) -Expected 'Windows lock preflight is only actionable on Windows.' -Message 'Non-Windows lock preflight warning was not reported.'
+
+    Reset-OfficialUpdateEnv
+    Initialize-OfficialUpdateCheckpoint
+    [Environment]::SetEnvironmentVariable('CODEX_OFFICIAL_UPDATE_FAKE_PROCESS_INVENTORY_JSON', '{not valid json', 'Process')
+    $nonWindowsInvalidInventoryUpdate = Invoke-TemplateJson -Stage 'update'
+    Assert-True (Test-Path -LiteralPath $NpmInstallMarker) 'Non-Windows update should not parse Windows-only fake process inventory before fake npm install proceeds.'
+    Assert-Equal ($nonWindowsInvalidInventoryUpdate.windows_codex_lock_preflight.checked) $false 'Non-Windows invalid-inventory lock preflight should report checked=false.'
+    Assert-Equal ($nonWindowsInvalidInventoryUpdate.windows_codex_lock_preflight.allowed) $true 'Non-Windows invalid-inventory lock preflight should allow the update.'
+    Assert-ArrayContains -Actual @($nonWindowsInvalidInventoryUpdate.windows_codex_lock_preflight.warnings | ForEach-Object { [string]$_ }) -Expected 'Windows lock preflight is only actionable on Windows.' -Message 'Non-Windows invalid-inventory warning was not reported.'
+  }
 
   Reset-OfficialUpdateEnv
   Initialize-OfficialUpdateCheckpoint
