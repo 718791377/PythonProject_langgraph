@@ -1064,7 +1064,7 @@ try {
     if ([string]::IsNullOrWhiteSpace(`$env:Path)) {
       `$env:Path = `$cleanupShimDirectory
     } else {
-      `$env:Path = `$cleanupShimDirectory + ';' + `$env:Path
+      `$env:Path = `$cleanupShimDirectory + [string][System.IO.Path]::PathSeparator + `$env:Path
     }
     if (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.CMD;*') {
       `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
