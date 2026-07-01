@@ -1066,11 +1066,17 @@ try {
     } else {
       `$env:Path = `$cleanupShimDirectory + [string][System.IO.Path]::PathSeparator + `$env:Path
     }
-    if (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.CMD;*') {
+    if ([string]::IsNullOrWhiteSpace(`$env:PATHEXT)) {
+      `$env:PATHEXT = '.CMD;.COM'
+    } elseif (`$env:PATHEXT -notlike '.CMD;*') {
       `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
     }
-    if (`$taskkillExeShimEnabled -and -not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.EXE;*') {
-      `$env:PATHEXT = '.EXE;' + `$env:PATHEXT
+    if (`$taskkillExeShimEnabled) {
+      if ([string]::IsNullOrWhiteSpace(`$env:PATHEXT)) {
+        `$env:PATHEXT = '.EXE;.CMD;.COM'
+      } elseif (`$env:PATHEXT -notlike '.EXE;*') {
+        `$env:PATHEXT = '.EXE;' + `$env:PATHEXT
+      }
     }
   }
 
@@ -1208,11 +1214,17 @@ if (-not [string]::IsNullOrWhiteSpace(`$codexUserLevelCleanupShimDirectory) -and
   Add-CodexUserLevelPathEntry -PathEntry `$codexUserLevelCleanupShimDirectory
   `$codexUserLevelTaskkillExeShimPath = Join-Path `$codexUserLevelCleanupShimDirectory 'taskkill.exe'
   if (Test-Path -LiteralPath `$codexUserLevelTaskkillExeShimPath) {
-    if (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.EXE;*') {
+    if ([string]::IsNullOrWhiteSpace(`$env:PATHEXT)) {
+      `$env:PATHEXT = '.EXE;.CMD;.COM'
+    } elseif (`$env:PATHEXT -notlike '.EXE;*') {
       `$env:PATHEXT = '.EXE;' + `$env:PATHEXT
     }
-  } elseif (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.CMD;*') {
-    `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
+  } else {
+    if ([string]::IsNullOrWhiteSpace(`$env:PATHEXT)) {
+      `$env:PATHEXT = '.CMD;.COM'
+    } elseif (`$env:PATHEXT -notlike '.CMD;*') {
+      `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
+    }
   }
 }
 
