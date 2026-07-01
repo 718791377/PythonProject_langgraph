@@ -309,25 +309,25 @@ function New-FakeCommandBin {
     'echo staged npm install %*',
     'exit /b 0'
   ) -join [Environment]::NewLine
-  Set-Content -LiteralPath (Join-Path $FakeBin 'npm.cmd') -Encoding ASCII -NoNewline -Value $fakeNpm
+  if (Test-IsWindowsPlatform) {
+    Set-Content -LiteralPath (Join-Path $FakeBin 'npm.cmd') -Encoding ASCII -NoNewline -Value $fakeNpm
 
-  $fakeOmx = @(
-    '@echo off',
-    'echo staged omx %*',
-    'exit /b 0'
-  ) -join [Environment]::NewLine
-  Set-Content -LiteralPath (Join-Path $FakeBin 'omx.cmd') -Encoding ASCII -NoNewline -Value $fakeOmx
+    $fakeOmx = @(
+      '@echo off',
+      'echo staged omx %*',
+      'exit /b 0'
+    ) -join [Environment]::NewLine
+    Set-Content -LiteralPath (Join-Path $FakeBin 'omx.cmd') -Encoding ASCII -NoNewline -Value $fakeOmx
 
-  $fakePwsh = @(
-    '@echo off',
-    'echo staged powershell cwd %CD%',
-    'echo staged powershell host %*',
-    'echo staged powershell stderr raw 1>&2',
-    'exit /b 0'
-  ) -join [Environment]::NewLine
-  Set-Content -LiteralPath (Join-Path $FakeBin 'pwsh.cmd') -Encoding ASCII -NoNewline -Value $fakePwsh
-
-  if (-not (Test-IsWindowsPlatform)) {
+    $fakePwsh = @(
+      '@echo off',
+      'echo staged powershell cwd %CD%',
+      'echo staged powershell host %*',
+      'echo staged powershell stderr raw 1>&2',
+      'exit /b 0'
+    ) -join [Environment]::NewLine
+    Set-Content -LiteralPath (Join-Path $FakeBin 'pwsh.cmd') -Encoding ASCII -NoNewline -Value $fakePwsh
+  } else {
     $fakeNpmPath = Join-Path $FakeBin 'npm'
     $fakeNpmUnix = @'
 #!/bin/sh
