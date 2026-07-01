@@ -915,9 +915,9 @@ function Get-CodexUpdateLockPreflight {
         [switch]$AllowLockedUpdate
     )
 
-    $isWindows = ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT)
+    $runningOnWindows = ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT)
     $targets = Get-CodexPackageLockTargets -GlobalNpmRoot ([string]$GlobalNpmRootInfo.root_path)
-    if (-not $isWindows) {
+    if (-not $runningOnWindows) {
         return [pscustomobject]@{
             platform = [string][System.Environment]::OSVersion.Platform
             checked = $false
