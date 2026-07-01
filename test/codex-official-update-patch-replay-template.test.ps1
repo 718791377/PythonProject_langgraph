@@ -257,6 +257,23 @@ function New-StagedOfficialInstallTree {
   Set-Content -LiteralPath (Join-Path $CodexHome 'skills\worker\SKILL.md') -Encoding UTF8 -NoNewline -Value "---`nname: worker`ndescription: staged worker skill`n---`n"
 }
 
+function Test-IsWindowsPlatform {
+  return ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT)
+}
+
+function Set-ExecutableBitIfNeeded {
+  param([Parameter(Mandatory)] [string[]]$Path)
+  if (Test-IsWindowsPlatform) { return }
+  foreach ($item in $Path) {
+    if (Test-Path -LiteralPath $item) {
+      & chmod '+x' $item
+      if ($LASTEXITCODE -ne 0) {
+        throw "chmod failed for fake command: $item"
+      }
+    }
+  }
+}
+
 function New-FakeCommandBin {
   Ensure-Directory -Path $FakeBin
   $fakeNpm = @(
@@ -309,6 +326,62 @@ function New-FakeCommandBin {
     'exit /b 0'
   ) -join [Environment]::NewLine
   Set-Content -LiteralPath (Join-Path $FakeBin 'pwsh.cmd') -Encoding ASCII -NoNewline -Value $fakePwsh
+
+  if (-not (Test-IsWindowsPlatform)) {
+    $fakeNpmPath = Join-Path $FakeBin 'npm'
+    $fakeNpmUnix = @'
+#!/bin/sh
+case "$1" in
+  ls)
+    echo "staged npm listing stdout"
+    echo "staged npm listing stderr " >&2
+    exit 7
+    ;;
+  root)
+    if [ -n "$CODEX_TEST_NPM_ROOT" ]; then printf '%s\n' "$CODEX_TEST_NPM_ROOT"; else printf '%s\n' '/tmp/staged/npm-root'; fi
+    exit 0
+    ;;
+  install)
+    if [ -n "$CODEX_TEST_NPM_INSTALL_MARKER" ]; then printf '%s\n' 'staged npm install' > "$CODEX_TEST_NPM_INSTALL_MARKER"; fi
+    case "$CODEX_TEST_NPM_INSTALL_OUTPUT_MODE" in
+      cleanup_eperm)
+        echo 'npm warn cleanup Failed to remove some directories ['
+        printf '%s\n' "npm warn cleanup EPERM: operation not permitted, unlink \"$CODEX_TEST_NPM_ROOT\\@openai\\.codex-locked\\node_modules\\@openai\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\bin\\codex.exe\""
+        echo 'npm warn cleanup ]'
+        ;;
+      eperm_only)
+        printf '%s\n' "npm warn EPERM: operation not permitted while probing \"$CODEX_TEST_NPM_ROOT\\@openai\\codex\\vendor\\x86_64-pc-windows-msvc\\bin\\codex.exe\""
+        ;;
+    esac
+    if [ -n "$CODEX_TEST_NPM_INSTALL_EXIT_CODE" ]; then exit "$CODEX_TEST_NPM_INSTALL_EXIT_CODE"; fi
+    echo "staged npm install $*"
+    exit 0
+    ;;
+esac
+echo "staged npm $*"
+exit 0
+'@
+    Set-Content -LiteralPath $fakeNpmPath -Encoding ASCII -NoNewline -Value $fakeNpmUnix
+
+    $fakeOmxPath = Join-Path $FakeBin 'omx'
+    $fakeOmxUnix = @'
+#!/bin/sh
+echo "staged omx $*"
+exit 0
+'@
+    Set-Content -LiteralPath $fakeOmxPath -Encoding ASCII -NoNewline -Value $fakeOmxUnix
+
+    $fakePwshPath = Join-Path $FakeBin 'pwsh'
+    $fakePwshUnix = @'
+#!/bin/sh
+echo "staged powershell cwd $(pwd)"
+echo "staged powershell host $*"
+echo "staged powershell stderr raw " >&2
+exit 0
+'@
+    Set-Content -LiteralPath $fakePwshPath -Encoding ASCII -NoNewline -Value $fakePwshUnix
+    Set-ExecutableBitIfNeeded -Path @($fakeNpmPath, $fakeOmxPath, $fakePwshPath)
+  }
 }
 
 function Reset-TemplateCheckpoint {
@@ -378,9 +451,27 @@ try {
     $nodeCommand = Get-Command 'node' -ErrorAction Stop | Select-Object -First 1
   }
   $nodeDirectory = Split-Path -Parent ([string]$nodeCommand.Source)
-  $system32 = Join-Path $env:SystemRoot 'System32'
-  [Environment]::SetEnvironmentVariable('PATH', 'C:\stale-uppercase-path-entry', 'Process')
-  [Environment]::SetEnvironmentVariable('Path', ($FakeBin + ';' + $nodeDirectory + ';' + $system32), 'Process')
+  $pathSeparator = [string][System.IO.Path]::PathSeparator
+  if (Test-IsWindowsPlatform) {
+    $testPathEntries = @($FakeBin, $nodeDirectory)
+    $systemRoot = [Environment]::GetEnvironmentVariable('SystemRoot', 'Process')
+    if ([string]::IsNullOrWhiteSpace($systemRoot)) {
+      $systemRoot = [Environment]::GetEnvironmentVariable('SystemRoot', 'Machine')
+    }
+    if (-not [string]::IsNullOrWhiteSpace($systemRoot)) {
+      $testPathEntries += (Join-Path $systemRoot 'System32')
+    }
+    [Environment]::SetEnvironmentVariable('PATH', 'C:\stale-uppercase-path-entry', 'Process')
+    [Environment]::SetEnvironmentVariable('Path', ($testPathEntries -join $pathSeparator), 'Process')
+  } else {
+    $existingPath = [Environment]::GetEnvironmentVariable('PATH', 'Process')
+    $testPathEntries = @($FakeBin, $nodeDirectory)
+    if (-not [string]::IsNullOrWhiteSpace($existingPath)) {
+      $testPathEntries += $existingPath.Split($pathSeparator, [System.StringSplitOptions]::RemoveEmptyEntries)
+    }
+    [Environment]::SetEnvironmentVariable('PATH', (($testPathEntries | Select-Object -Unique) -join $pathSeparator), 'Process')
+    [Environment]::SetEnvironmentVariable('Path', $null, 'Process')
+  }
   Reset-OfficialUpdateEnv
 
   $replayTemplateContent = Get-Content -LiteralPath $TemplatePath -Raw
