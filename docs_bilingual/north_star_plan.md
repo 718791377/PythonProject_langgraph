@@ -13,7 +13,13 @@ status: draft
 
 This is the metrics-layer North Star plan for the Codex CLI personal production durable-team platform. It translates the white-paper narrative, MRD requirements, and product-lifecycle inventory maps into measurable direction. It is not runtime evidence that a durable or persistent team is currently running.
 
-Fresh source evidence for this refresh comes from ignored extraction artifacts generated on 2026-05-24T09:22:30+00:00 under `.omx/state/langgraph/extraction/`: `fresh_source_manifest.json`, `fresh_source_synthesis.json`, and `fresh_source_items.jsonl`. The extraction covers 54 sources: 31 Business Management sources, 23 PMP sources, 31 PDFs / 9,288 pages, 9 EPUBs / 363 spine items, 14 Markdown full-text files, and 19,043,382 extracted text characters. The tracked document records synthesis only; source text, per-unit extraction streams, and extraction logs remain uncommitted.
+Fresh source evidence for this refresh comes from ignored extraction artifacts generated at `2026-06-15T17:33:52Z` under `.omx/state/langgraph/extraction/fresh-source-lifecycle-whitepaper-pmi-refresh-20260616/`: `fresh_source_manifest.json`, `fresh_source_synthesis.json`, and the local raw `fresh_source_items.jsonl`. The extraction covers 54 sources: 31 Business Management sources, 23 PMP sources, 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, 14 Markdown full-text files, and 18,492,044 extracted text characters. The tracked document records synthesis only; source text, per-unit extraction streams, and extraction logs remain uncommitted.
+
+## 0. 2026-06-15 Durable-Team Corpus Sync Checkpoint
+
+This file participates in the core `codex_cli_personal_production_durable_team` corpus sync. For durable-team-specific filename discovery, the alias `docs_bilingual/north_star/codex_cli_personal_production_durable_team_north_star.md` points back to this content-authoritative plan. The current synchronized corpus is: white paper, governance research note, MRD, North Star plan, implementation plan, playbook, lifecycle maps, and OpenSpec specs. The shared rule is that the 10-layer model is the runtime/governance capability core, while the 12-layer model is the product/business lifecycle planning frame.
+
+Evidence boundary: tracked evidence for the June 2026 source refresh is the archived OpenSpec change, verification report, and updated synthesis documents. Raw extraction streams under `.omx/state/langgraph/extraction/` are ignored local artifacts and may be absent from a clean worktree. This file therefore must not claim that raw extraction cache presence is required for cold-start understanding, and it must not treat any draft document as runtime evidence that a durable or persistent team is currently running.
 
 ## Primary North Star Metric
 
@@ -32,7 +38,7 @@ Fresh source evidence for this refresh comes from ignored extraction artifacts g
 ## Guardrail Metrics
 
 - Zero false claims that a durable or persistent team ran without selector, manifest, heartbeat, worker record, or closed-agent evidence.
-- Zero use of stale extraction cache as the source of truth when the task requires fresh reading.
+- Zero use of an outdated extraction cache as the source of truth when the task requires fresh reading.
 - Zero unauthorized remote publication, protected-branch mutation, or cross-project Git commit.
 - Zero mixing of Codex platform durable state with downstream business runtime truth.
 
@@ -44,6 +50,8 @@ Fresh source evidence for this refresh comes from ignored extraction artifacts g
 | Personal production one-person company | 12 trunk layers + 5 virtual departments + 30 responsibility domains + 20 cross-cutting modules + 60 core documents + 15 governed AI agents + 15 recommended books + 12 minimal startup documents | Downstream repositories own customer evidence, revenue, finance, legal, support, release, durable state, and lessons learned |
 
 ## Process-Group Operating Model
+
+Layer-level I/T/O authority remains in `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`; PMI overlay and tailoring authority remain in `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md`. This North Star plan owns metric direction, decision thresholds, and evidence cadence.
 
 | Process group | Inputs | Tools and Techniques | Outputs |
 | --- | --- | --- | --- |

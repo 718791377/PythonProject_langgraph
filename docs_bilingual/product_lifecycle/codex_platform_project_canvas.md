@@ -2,6 +2,10 @@
 
 This canvas is a lightweight alignment artifact for the Codex CLI personal production durable-team platform. It is not a replacement for the white paper, MRD, implementation plan, OpenSpec, or release evidence. It follows the `Business Management/` synthesis by keeping the platform intentionally small, mechanism-driven, outcome-measured, and repo-local.
 
+## Source And Process Boundary
+
+The current canvas is derived from the `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` evidence boundary in `fresh_source_reading_evidence.md`. When this canvas authorizes execution, expand the affected lifecycle layer into Inputs, Tools and Techniques, and Outputs in the relevant OpenSpec change, implementation plan, or lifecycle document rather than treating the canvas itself as the whole delivery record.
+
 ## Purpose
 
 Build a personal production-grade Codex CLI durable-team platform that lets one maintainer work across multiple repositories without losing context, mixing repo-local durable truth, or breaking native Codex.

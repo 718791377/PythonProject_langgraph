@@ -19,6 +19,40 @@ if (-not (Test-Path -LiteralPath $profilesPath)) {
 }
 
 $profiles = Get-Content -LiteralPath $profilesPath -Raw -Encoding UTF8 | ConvertFrom-Json
+
+function Add-UniqueString {
+  param([System.Collections.Generic.List[string]]$Items, [string]$Value)
+  if ([string]::IsNullOrWhiteSpace($Value)) { return }
+  if (-not $Items.Contains($Value)) { $Items.Add($Value) | Out-Null }
+}
+
+function ConvertTo-StringArray {
+  param($Value)
+  if ($null -eq $Value) { return @() }
+  if ($Value -is [string]) { return @([string]$Value) }
+  return @($Value | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+}
+
+function Get-PluginConfigIds {
+  param($Profiles, [string]$Plugin)
+  $ids = New-Object System.Collections.Generic.List[string]
+  $aliasesRoot = $Profiles.plugin_config_ids
+  if ($null -ne $aliasesRoot) {
+    $property = @($aliasesRoot.PSObject.Properties | Where-Object { $_.Name -eq $Plugin } | Select-Object -First 1)
+    if ($property) {
+      foreach ($id in ConvertTo-StringArray $property[0].Value) { Add-UniqueString -Items $ids -Value $id }
+    }
+  }
+  if ($ids.Count -eq 0) {
+    Add-UniqueString -Items $ids -Value $Plugin
+  }
+  return @($ids)
+}
+
+function Get-ManagedExtraPluginConfigIds {
+  param($Profiles)
+  return @(ConvertTo-StringArray $Profiles.managed_extra_plugin_config_ids)
+}
 $codexHomePath = [System.IO.Path]::GetFullPath($CodexHome)
 if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
   $ConfigPath = Join-Path $codexHomePath 'config.toml'
@@ -60,10 +94,19 @@ function Get-TargetMap {
     $enable = @($enable)
   }
   $map = [ordered]@{}
-  foreach ($plugin in @($enable)) { $map[[string]$plugin] = $true }
+  foreach ($plugin in @($enable)) {
+    foreach ($configId in Get-PluginConfigIds -Profiles $Profiles -Plugin ([string]$plugin)) {
+      $map[[string]$configId] = $true
+    }
+  }
   if ([bool]$entry.hard_load.disable_other_known_plugins) {
     foreach ($plugin in @($Profiles.known_plugins)) {
-      if (-not $map.Contains([string]$plugin)) { $map[[string]$plugin] = $false }
+      foreach ($configId in Get-PluginConfigIds -Profiles $Profiles -Plugin ([string]$plugin)) {
+        if (-not $map.Contains([string]$configId)) { $map[[string]$configId] = $false }
+      }
+    }
+    foreach ($configId in Get-ManagedExtraPluginConfigIds -Profiles $Profiles) {
+      if (-not $map.Contains([string]$configId)) { $map[[string]$configId] = $false }
     }
   }
   return [ordered]@{ entry = $entry; target_map = $map }
@@ -154,6 +197,43 @@ if ($RestoreLatest) {
 if ([string]::IsNullOrWhiteSpace($Module)) {
   $known = (@($profiles.modules.PSObject.Properties) | ForEach-Object { $_.Name }) -join ', '
   throw "Module is required unless -RestoreLatest is used. Known modules: $known"
+}
+
+
+function Reject-NonCanonicalHardLoadTarget {
+  param([string]$Reason, [string]$TargetProfile = $null, [string]$TaskModule = $null, [string]$ScenarioProfile = $null)
+  $payload = [ordered]@{
+    ok = $false
+    error = $Reason
+    module = $Module
+    target_profile = $TargetProfile
+    task_module = $TaskModule
+    scenario_profile = $ScenarioProfile
+    mode = 'hard-load-preview-rejected'
+    mutates_config = $false
+    edits_plugin_cache = $false
+    profile_apply_performed = $false
+    explanation = 'Task modules and scenario profiles are soft-load guidance only; hard-load applies only to canonical top-level profiles.'
+    canonical_preview_command = $(if ($TargetProfile) { ".\tools\skill_sources\plugin-modules\scripts\set_plugin_profile.ps1 $TargetProfile -Json" } else { $null })
+    soft_load_preview_command = $(if ($TaskModule) { ".\tools\skill_sources\plugin-modules\scripts\load_module.ps1 $TargetProfile.$TaskModule -Json" } elseif ($ScenarioProfile) { ".\tools\skill_sources\plugin-modules\scripts\load_module.ps1 $ScenarioProfile -Json" } else { $null })
+    guidance = @(
+      'Use load_module.ps1 for scenario or profile.task_module soft-load guidance.',
+      'Use set_plugin_profile.ps1 only with a canonical top-level profile such as core-dev or web-saas.',
+      'No config.toml or plugin cache files were edited.'
+    )
+  }
+  if ($Json) { $payload | ConvertTo-Json -Depth 16 } else { Write-Error $payload.explanation }
+  exit 2
+}
+
+if ($Module.Contains('.')) {
+  $parts = $Module.Split('.', 2)
+  Reject-NonCanonicalHardLoadTarget -Reason 'task_module_not_hard_load_target' -TargetProfile $parts[0] -TaskModule $parts[1]
+}
+
+$scenarioMatch = @($profiles.scenario_profiles.PSObject.Properties | Where-Object { $_.Name -eq $Module } | Select-Object -First 1)
+if ($scenarioMatch) {
+  Reject-NonCanonicalHardLoadTarget -Reason 'scenario_profile_not_hard_load_target' -TargetProfile ([string]$scenarioMatch[0].Value.target_profile) -ScenarioProfile $Module
 }
 
 $result = Get-TargetMap -Profiles $profiles -ModuleName $Module

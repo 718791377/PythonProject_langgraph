@@ -13,6 +13,12 @@ status: draft
 
 本 playbook 把个人开发者生产级持久化团队 draft 目标拆成冷启动维护者可以照着执行的 release slices。Draft 目标解释架构；本 playbook 解释下一步如何做。
 
+## 0. 2026-06-15 持久化团队文档族同步检查点
+
+本文参与核心 `codex_cli_personal_production_durable_team` 文档族同步。当前同步文档族包括：白皮书、治理研究稿、MRD、北极星计划、实施方案、playbook、生命周期地图和 OpenSpec 规格。共享规则是：10 层模型是运行时/治理能力核心，12 层模型是产品/商业生命周期规划框架。
+
+证据边界：2026 年 6 月 source refresh 的已提交证据是归档 OpenSpec change、验证报告和已更新的综合文档。`.omx/state/langgraph/extraction/` 下的 raw extraction streams 是被忽略的本地 artifacts，clean worktree 中可能不存在。因此，本文不得声称 raw extraction cache 是冷启动理解的必备条件，也不得把任何 draft 文档当成 durable 或 persistent team 当前正在运行的 runtime evidence。
+
 ## 固定规则
 
 - OpenSpec - 用于结构性仓库变更的规格驱动治理工具。
@@ -21,6 +27,18 @@ status: draft
 - `native_omx`、`omx team` 和 LangGraph runtime apply mode - 运行时变更入口；只有 release slice 明确允许时才能启动。
 - `.omx/state/` - 每个仓库自己的 repo-local durable state 目录，不能跨项目共享。
 - local GGUF model files - 本地大模型二进制文件，必须排除在普通 Git 之外。
+
+
+## 权威栈与同构链接
+
+本 playbook 是执行程序文件。它不替代权威计数地图、白皮书、研究正本或 PMI 裁剪文件；每个 release slice 在改变架构、治理深度或运行时行为之前，都必须回链到相关权威文件。
+
+
+- Codex 持久化团队平台目标：12 层主干层级、4 个虚拟部门、24 个责任域、18 个横切模块、48 个核心文档、12 个受治理 AI Agent、12 本推荐书籍。权威清单是 `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md`。
+- 一人公司经营系统目标：12 层主干层级、5 个虚拟部门、30 个责任域、20 个横切模块、60 个核心文档、15 个受治理 AI Agent、15 本推荐书籍、12 个最小启动文档。权威清单是 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`。
+- 白皮书与研究正本：`docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md` 保持战略叙事角色，`docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md` 保持证据密集的运行时/治理研究正本角色。除非后续受治理变更证明其中一个生命周期角色已经失效，否则不要物理合并。
+- 10 层到 12 层桥接：使用 `docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.zh-CN.md` 把 10 层运行时研究模型映射到 12 层产品/商业生命周期模型。
+- PMI 裁剪：当 release slice 需要过程组式的输入、工具与技术、输出，或需要在完整架构、整个项目轻量、阶段局部轻量、模块级轻量与混合治理之间作决定时，使用 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md`。
 
 ## Release Slice 模板
 

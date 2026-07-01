@@ -24,14 +24,55 @@ status: draft
 
 默认合并规则：
 
+更新触发矩阵：平台边界变化 -> 必须更新白皮书；能力模型、证据基础或运行时分解变化 -> 必须更新本文；生命周期桥接、数量权威或 PMI 权威变化 -> 两者都要更新。白皮书引用结论；本文拥有判据、证据和官方/推导区分。
+
 1. 只要两份文件服务不同读者或不同生命周期层，就保持分开。
 2. 当平台故事、边界或范式变化时，更新白皮书。
 3. 当生产级判据、证据基础或运行时能力分解变化时，更新本文。
 4. 只有当其中一份文件变成另一份的无功能重复时才合并；当前不满足该条件。
 
+## 0. 2026-06-15 持久化团队文档族同步检查点
+
+本文参与核心 `codex_cli_personal_production_durable_team` 文档族同步。当前同步文档族包括：白皮书、治理研究稿、MRD、北极星计划、实施方案、playbook、生命周期地图和 OpenSpec 规格。共享规则是：10 层模型是运行时/治理能力核心，12 层模型是产品/商业生命周期规划框架。
+
+证据边界：2026 年 6 月 source refresh 的已提交证据是归档 OpenSpec change、验证报告和已更新的综合文档。`.omx/state/langgraph/extraction/` 下的 raw extraction streams 是被忽略的本地 artifacts，clean worktree 中可能不存在。因此，本文不得声称 raw extraction cache 是冷启动理解的必备条件，也不得把任何 draft 文档当成 durable 或 persistent team 当前正在运行的 runtime evidence。
+
 ## 0.1 从 10 层研究模型桥接到仓库 12 层生命周期
 
-本文使用 10 层模型，因为它研究持久化团队 runtime 的最低生产能力。仓库生命周期使用 12 层，因为产品与治理工作还必须覆盖叙事、市场、增长、运营和复盘学习。
+本文使用 10 层模型，因为它研究持久化团队 runtime 的最低生产能力。仓库生命周期使用 12 层，因为产品与治理工作还必须覆盖叙事、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营和复盘学习。
+
+简言之：10 层模型是执行时 runtime/governance capability model；12 层模型是产品/商业生命周期 receiving model。本文不会替代 12 层生命周期，12 层生命周期也不会把本文的 runtime 模型重新编号。
+
+两者分离是刻意设计：
+
+- 研究稿拥有 evidence lens：判断一个系统是否可恢复、可治理、可审计、安全，并且可由个人长期维护。
+- 白皮书拥有 narrative lens：说明 Codex CLI 平台为什么存在、服务谁、保持哪些边界，以及如何嵌入更大的产品/商业生命周期。
+- bridge 文档拥有 translation grammar：说明每个 runtime finding 应落到哪个 12 层生命周期主干，以及生命周期主张需要回查哪些 runtime 证据。
+
+本文不拥有 PMI 过程权威；过程组和裁剪规则依赖 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md`。
+
+### 12 层生命周期接收视图
+
+下表是 lifecycle work 的接收视图，不替代第 6 节的 canonical 10 层 runtime model。
+
+| 12 层生命周期主干 | 研究稿提供的能力证据 | 白皮书承担的叙事职责 |
+| --- | --- | --- |
+| 0. 认知叙事 | 可恢复、可治理、可审计的系统，而不是“更多 Agent” | 解释为什么需要新的操作范式 |
+| 1. 商业 | 维护成本、恢复成本、风险成本和个人可持续性 | 定义平台投入逻辑和风险收益边界 |
+| 2. 市场 | 目标操作者、替代方案痛点和采用阻力 | 解释谁需要这个平台以及为什么现在需要 |
+| 3. 战略 | 本地优先、个人维护者控制、不混用 backend family | 定义平台取舍和非目标 |
+| 4. 指标 | 恢复、审批、评测、回归、成本和上下文质量 | 为北极星指标与护栏提供来源 |
+| 5. 产品 | CLI、GUI、API、审批入口和控制中心工作流 | 描述用户可见的平台能力 |
+| 6. 技术 | 持久化内核、checkpoint/history、memory、retrieval 和 security | 支撑平台架构可信度 |
+| 7. 组织 | leader/worker 分工、agent 权限和 human takeover | 定义人机协作与治理责任 |
+| 8. 执行 | durable task flow、fan-out/fan-in、gates 和 rollback | 解释交付和发布纪律 |
+| 9. 增长 | 可复用知识循环、采用证据和模板传播边界 | 解释平台如何被采用和复用 |
+| 10. 运营 | runbook、blocked-run query、恢复演练、支持和降级 | 解释长期运行和恢复能力 |
+| 11. 复盘 | 评测回归、事故复盘、经验教训和治理更新 | 解释学习闭环和持续改进 |
+
+### 10 层 runtime 落地视图
+
+下表保持本文的 10 层能力模型不变，只显示主要 lifecycle landing zones。
 
 | 10 层研究模型 | 主要落地到 12 层生命周期的哪些区域 | 原因 |
 | --- | --- | --- |
@@ -46,7 +87,7 @@ status: draft
 | 9. 安全与持久化加固 | 技术、组织、运营 | 安全是架构、权限和运行纪律的组合 |
 | 10. 本地 GUI 控制中心 | 产品、技术、运营 | 控制面同时是用户表面和生产表面 |
 
-12 层生命周期还增加了本文不直接承担的四个主干：认知叙事、商业、市场和增长。参见 `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md`。数量权威见 `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`；PMI 交付和裁剪权威见 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md`。
+12 层生命周期还增加了本文不直接承担的四个主干：认知叙事、商业、市场和增长。这些主干解释平台为什么存在、服务谁，以及 adoption 或 value 应如何度量。参见 `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md`。数量权威见 `docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md`；PMI 交付和裁剪权威见 `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md`。
 
 ## 1. 摘要
 
@@ -136,6 +177,8 @@ status: draft
 
 ## 3. 研究方法与证据基础
 
+本次 2026-06-16 刷新同时使用本地 reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`（`2026-06-15T17:33:52Z`）作为产品/经营语境证据：54 个本地来源、9,656 个页/spine/全文读取单元、18,492,044 个抽取字符。该证据更新本研究稿、白皮书与 12 层生命周期之间的关系，但不替代本文的运行时/治理研究基础。
+
 本文采用跨来源综合方法。
 
 主要依据来自公开、官方、当前可访问的文档，覆盖：
@@ -215,6 +258,16 @@ codex-ohmy
 - 没有第 2 到第 3 层，系统无法成为“团队”
 - 没有第 4 到第 6 层，系统缺少长期增强能力
 - 没有第 7 到第 10 层，系统无法稳定进入生产
+
+双视角判据：
+
+| 问题类型 | 何时使用 10 层研究模型 | 何时使用 12 层生命周期 |
+| --- | --- | --- |
+| 能力是否完整 | 问题是 runtime 能否持久化、恢复、协同、记忆、评测、安全或暴露 operator control | 问题是该能力作为 requirement、document、metric、runbook 或 learning item 应由哪个 product/business 生命周期层接收 |
+| 权威与证据 | 主张需要 runtime proof、官方来源支撑、工程判断或生产就绪判据 | 主张需要认知叙事、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营或复盘 owner |
+| 是否合并文件 | 如果并入白皮书会丢失证据细节，就保留研究稿 | 如果吸收完整研究矩阵会削弱白皮书的平台叙事，就保留白皮书 |
+
+因此，把研究稿对齐到 12 层生命周期是合适的，但只应作为接收视图；不应把研究稿本身从 10 层重新编号成 12 层。
 
 ## 7. 持久化内核专题深化
 
@@ -1034,6 +1087,8 @@ LangChain 官方把 RAG 方案至少分成：
 
 ## 14. 参考架构
 
+本节是同一 10 层 runtime model 的部署/参考平面呈现，不是与 10 层研究模型或仓库 12 层生命周期竞争的第三套层级系统。
+
 推荐参考架构如下：
 
 - `L0 操作面` - CLI、GUI、API
@@ -1166,3 +1221,20 @@ LangChain 官方把 RAG 方案至少分成：
 - `生产试运行` - maturity label for a bounded production trial under governance.
 - `生产级` - maturity label for a system suitable for sustained governed production use.
 - 进一步地，`个人开发者可长期维护`
+
+## 附录：10 层执行落地 I/T/O
+
+本附录不把研究稿变成 PMI 权威。它只说明每个 runtime capability layer 在落到平台执行时应如何翻译。详细过程语法仍由 `docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md`、`docs_bilingual/product_lifecycle/pmi_project_management_reference_map.zh-CN.md` 与 `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md` 拥有。
+
+| 10 层 runtime 能力 | 主要接收到的 12 层生命周期视角 | 输入 | 工具与技术 | 输出 |
+| --- | --- | --- | --- | --- |
+| 持久化内核 | 技术、执行、运营 | runtime 状态需求、恢复风险、checkpoint 需求、durable-state 边界 | 状态 schema 设计、checkpoint 复核、replay/recovery 演练、完整性检查 | durable-state contract、恢复证据、rollback 边界 |
+| 交互与执行 | 产品、技术、执行 | 用户任务、工具权限、执行上下文、审批约束 | tool-call 校验、命令门禁、worktree 隔离、execution trace 复核 | 受控执行工件、changed-path list、批准或拒绝证据 |
+| 团队编排 | 组织、执行、运营 | 冻结计划、切片 ownership、worker 角色、热点清单 | leader-owned fan-out、有界等待、mailbox 或 graph routing、fan-in review | worker patch set、执行证据、集成决策 |
+| 长期记忆 | 技术、运营、复盘 | 保留需求、隐私边界、复用目标、删除规则 | 记忆分类、namespace 设计、保留/删除策略、检索质量检查 | memory contract、保留证据、安全召回边界 |
+| 上下文增强 | 技术、指标、运营 | source corpus、startup summary、prompt budget、相关性目标 | 上下文选择、摘要、citation map、新鲜度检查 | context bundle、source map、stale-context 拒绝规则 |
+| 向量数据库与检索存储 | 技术、运营 | 语料单元、metadata、tenant/project 边界、query use case | chunk/index 设计、metadata filter、backup/restore 复核、删除测试 | retrieval store contract、质量基线、生命周期策略 |
+| 质量保障 | 技术、执行、运营 | 验收标准、schema 约束、工具副作用、gate 要求 | runtime guard、输出校验、approval gate、policy check | 已接受输出、已拒绝缺陷、质量门证据 |
+| 评测与回归 | 指标、执行、复盘 | baseline、回归风险、比较目标、发布阈值 | offline/online eval、test suite、diff review、实验对比 | evaluation report、regression gate、发布决策 |
+| 安全与持久化加固 | 技术、组织、运营 | secrets、权限、审计需求、信任边界、恢复风险 | 最小权限复核、威胁建模、audit logging、加密/完整性检查 | security control record、audit trail、恢复安全运行规则 |
+| 本地 GUI 控制中心 | 产品、技术、运营 | operator workflow、审批表面、状态可见性、恢复动作 | UI/control-surface review、authority-boundary check、replay/approval inspection | operator control record、approval/recovery panel requirement、usability feedback |

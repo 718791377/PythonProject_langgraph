@@ -126,12 +126,15 @@ User request
 ```text
 Routing trace:
 phase=<define-target|read-context|freeze-plan|execute-parallel|integrate-converge|stabilize|verify-accept>
-capability_chain=subagent_routing:<auto|manual|off> > oh_my_codex:<on|off> > langgraph:<on|off>
+capability_chain=<subagent_routing/oh_my_codex/langgraph state chain>
 backend_default=<langgraph|native_omx|none>
-backend_ready=<true|false|unknown>
+backend_ready=<true|false>
 experts=<none|analystxN|architect|planner|writer|verifier|blocked:<reason>|...>
 durable_workflow=<not_needed|candidate|selected|running|complete|blocked>
-persistent_team=<not_selected|not_needed|candidate|selected|running|complete|blocked>
+persistent_team=<not_needed|candidate|selected|running|complete|blocked>
+main_session_escalation=<not_needed|preflight|pending_approval|granted|timed_out|blocked>
+approval_timeout_risk=<none|low|medium|high|expired>
+approval_receipt=<none|receipt id or repo-local artifact path>
 why=<task-shape, threshold, blocker, or evidence reason>
 ```
 

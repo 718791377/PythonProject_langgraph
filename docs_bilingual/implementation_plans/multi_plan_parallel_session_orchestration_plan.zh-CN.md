@@ -59,10 +59,10 @@ translation_of: docs_bilingual/implementation_plans/multi_plan_parallel_session_
 ## 当前状态
 
 <!-- CURRENT_STATUS_START -->
-Stage: implemented-local 治理已完成；真实 runtime lane 继续处于待刷新规划状态。
-Owner session: main Codex leader 串行拥有 parent/child plans、specs、registries、CI、安全规则与 OpenSpec guard wiring 等 shared hotspots。
-Current gate: 验证本次 Phase 0 本地合入状态刷新包、合入本地 `main`，并停在 remote-publication gate。
-Runtime boundary: CLI-Anything/WXWork_CLI、Browser/CLI adapters、Codex harnesses、skills2cli/mcp2cli（`knowsuchagency/mcp2cli`、rollback pointer、update receipt）、gstack、canary 与 Spec Kit 条目仅记录未来 checker/runtime 要求。Priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit；blocked：本包不 install、start、enable、smoke-run、live-run，也不运行 `specify init`。
+Stage: strict plan family 本地收尾，待远端发布授权。
+Owner session: main Codex leader 串行化收尾热点。
+Current gate: `72c657a` 已证明 R6 family completion；合入后停在 remote-publication gate，除非当前消息点名远端发布动作。
+Runtime boundary: 不重跑外部 live action；保留 `knowsuchagency/mcp2cli` marker。Family checker：53 members、14 direct R6、2 successor、29 gov/checker、8 no-live、0 stale/missing/error。Priority: Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit。
 <!-- CURRENT_STATUS_END -->
 
 ## 执行模型
@@ -414,8 +414,8 @@ Lane-specific R5 约束：
 | Phase 2 | `launcher_payload_context_boundary_plan` | implemented and locally integrated | Launcher payload file-backed boundary hardening entered local `main` at `6f1ef48`. |
 | Phase 2 | `startup_mojibake_utf8_recovery_plan` | implemented and locally integrated | Startup mojibake recovery source-report repair entered local `main` at `43d3ae9`. |
 | Phase 2 follow-up | `prompt_canary_canonical_visible_marker_restore_plan` | implemented-local | 恢复 canonical visible canary，并约束 replay/model-context blocking。 |
-| Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | active；checker/runtime 待实现 | Stop-Slop/Caveman 响应密度检查器和受保护 rewrite runtime 方案。 |
-| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | active；checker/runtime 待实现 | gstack 风格 Codex delivery-loop 检查器和受保护 dry-run runtime 方案。 |
+| Phase 4 | `stop_slop_caveman_response_density_runtime_plan` | R6 live-executed; checker-backed | Covered by full-family R6 checker. |
+| Phase 4 | `gstack_codex_delivery_loop_runtime_governance_plan` | R6 live-executed; checker-backed | Covered by full-family R6 checker. |
 | Phase 5 | `comet_management_record_bootstrap_plan` | implemented and locally integrated | Local `main` includes closeout commit `8b8bfd6`; management records, checklist gates, monitoring return state, safe paths, and archive evidence are covered by focused Comet runtime tests. |
 | Phase 5 | `comet_runtime_policy_checker_alignment_plan` | implemented and locally integrated | Local `main` includes closeout commit `3335b67`; stable specs, policy checker, runtime tests, and CI registration are aligned. |
 | Phase 5 | `comet_monitoring_return_transition_plan` | implemented and locally integrated | Local `main` includes closeout commit `05d22bd`; return transitions and monitoring blocked/needs-decision gates are verified. |
@@ -483,7 +483,7 @@ Lane-specific R5 约束：
 - [x] Stage B runtime 恢复：恢复 self-retire runtime helper/checker 行为，并在 `898f9d0` 合入本地 `main`。
 - [x] Phase 0 收口：在 Phase 2 准入前收口 inventory registry alignment 子方案和 parent orchestration index 子方案。
 - [x] 后续阶段：Phase 0 收口包已经合入本地 `main`；Phase 2 context 与 UTF-8 safety 子方案已按 Work-Conserving 模型启动，部分包已进入本地 `main`。
-- [x] Phase 4 父子方案治理更新：把会话表面覆盖从 routing trace 扩展到 `Routing trace` 与 `Updated Plan`，保持这两个标签稳定，保留 `Updated Plan` 复选框/状态清单语义，并保留保存版 evidence 的机器可读 ASCII token。
+- [x] Phase 4 父子方案治理更新：把会话表面覆盖从 routing trace 扩展到 `Routing trace` 与 `Updated Plan`，保持这两个标签稳定，保留 `Updated Plan` 单面板进度语义，并保留保存版 evidence 的机器可读 ASCII token。
 - [x] Phase 4 最终收口：确认全部 Phase 4 子方案已实现、已本地验证、已合入本地 `main`，并停在远端发布门。
 - [x] Phase 1A hardening：将 `--self-retire` ROB entry 校验从 post-merge metadata 记录提升为合入前硬门。
 - [x] Stage B decomposition：把 MCP/skills/browser/CLI 来源 lane 提取为分阶段子 implementation_plan，而不是把旧来源方案直接挂成父方案子方案。
@@ -496,6 +496,7 @@ Lane-specific R5 约束：
 - [x] Stage B follow-up: create and register the gstack Codex delivery-loop child plan before checker/runtime work.
 - [x] Stage D follow-up: 从官方 `github/spec-kit` 来源刷新 Spec Kit 子方案，并记录未来 Checker + Runtime 要求；本包不实现脚本。
 - [x] 2026-06-07 conflict-priority refresh: Comet-first priority; no Checker + Runtime implementation.
+- [x] 2026-06-11 R6 family closeout：记录 53 members、14/14 direct R6 lane `live-executed`、2 successor-covered source、0 stale/missing/error。
 <!-- TASK_BACKLOG_END -->
 
 ## 验收标准
@@ -539,7 +540,7 @@ Stage B 后续确认后的验收条件：
 - 2026-05-31 ROB retire preflight implementation: 分支 `harden-rob-retire-preflight-20260531` 已新增 self-retire ROB 前置硬门、focused RED/GREEN 覆盖和 CI manifest 登记；更广本地门禁仍需在 local-main 集成前运行。
 - 2026-05-31 ROB retire 前置硬门治理：发现 `--self-retire` 缺少对应 ROB entry 时，旧 helper 会在 fast-forward merge 后才因 retire metadata 报错；本次重开 Phase 1A hardening，要求 ROB entry ready 与 gate 状态在 acquire lock / rollback ref / merge 前 fail closed。
 - 2026-05-31 Phase 4 最终收口：分支 `close-phase4-final-20260531` 同步父方案与全部 Phase 4 子方案状态，确认所有 Phase 4 checklist 已关闭，过期的本地集成门已替换为远端发布门，并且 Phase 5 已可准入但不代表授权远端发布。
-- 2026-05-30 Phase 4 固定标签修正：分支 `implement-routing-updated-plan-fixed-labels-20260530c` 更新本父方案与 `chinese_routing_trace_conversation_surface_plan` 子方案；`Routing trace` 与 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持复选框/状态清单语义，中文解释内容仍允许；远端发布仍未授权。
+- 2026-05-30 Phase 4 固定标签修正：分支 `implement-routing-updated-plan-fixed-labels-20260530c` 更新本父方案与 `chinese_routing_trace_conversation_surface_plan` 子方案；`Routing trace` 与 `Updated Plan` 保持英文用户可见标签，`Updated Plan` 保持单个 CLI/tree 进度面板语义，中文解释内容仍允许；远端发布仍未授权。
 - 2026-05-30 Phase 4 会话表面治理更新：分支 `chinese-routing-updated-plan-20260530` 曾把会话表面覆盖从 routing trace 扩展到 updated plan；其中“固定标签应替换为中文标题”的旧表述已由上一条固定标签修正取代；远端发布仍未授权。
 - 2026-05-30 完整提交流程对齐包：分支 `align-complete-flow-parent-plans-20260530` 已合入本地 `main`；该包由 `codex-align-complete-flow-parent-plans-20260530` 认领 `parent_parallel_orchestration_index_plan`，ROB entry `rob-align-complete-flow-parent-plans-20260530` 记录父方案族文档候选包，并把父方案和声明 `parent_plan` 指向本文件的子方案统一对齐到 session-owned self-retire、`local-main-retire.lock` 和远端发布门模型。
 - 2026-05-30 Phase 0 收口包：分支 `phase0-plan-index-closure-20260530` 已合入本地 `main`，并收口 `plan_inventory_registry_alignment_plan` 与 `parent_parallel_orchestration_index_plan`；机器可读盘点证据为 `docs_bilingual/implementation_evidence/phase0_plan_inventory_registry_alignment_20260530.json`；Phase 2 不再被 Phase 0 本地合入阻塞。
@@ -578,4 +579,5 @@ Stage B 后续确认后的验收条件：
 Stage B 迁移 checker/test/spec 后，删除 `user_level_mcp_skills_discovery_facade_plan.*` 与 `user_level_mcp_skills_browser_cli_governance_plan.*`。
 
 - 2026-06-04 Stage B implementation: split checkers/tests/spec wiring now back three child lanes; old mixed source plans are deleted from active docs registry and filesystem; remote publication remains closed.
+- 2026-06-11 R6 family closeout evidence：本地 `main` 提交 `72c657a` 增加 full-family checker/guard/CI wiring，保留 claim/rollback；验证为 `family_members=53`、`direct_r6_lane=14`、`successor_owned_migration_source=2`、`governance_checker_runtime=29`、`no_live_runtime_scope=8`、`stale_status_findings=0`，R6 receipt coverage 14/14 accepted。
 <!-- EVIDENCE_INDEX_END -->

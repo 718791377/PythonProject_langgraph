@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-21
+x_change_class: profile-routing-runtime-plan
+x_archive_deferred_reason: "Stage A freezes the skills2cli profile routing contract; Stage B must implement and verify runtime behavior before archive."
+x_archive_follow_up: "After Stage B local-main integration, archive the change and promote routing requirements into the stable plugin-modules profile-helper spec."

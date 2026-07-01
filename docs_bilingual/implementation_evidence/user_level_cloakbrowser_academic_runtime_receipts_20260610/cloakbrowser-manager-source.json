@@ -1,0 +1,29 @@
+{
+  "docker_install_allowed": false,
+  "docker_present": false,
+  "generated_at": "2026-06-10T16:09:47.946443+00:00",
+  "install_root_hash": "aeb4bcc1e8e5690b2918cd2369fde548",
+  "install_root_label": "codex-tools/cloakbrowser-manager/source",
+  "installed_version": "source-main",
+  "native_codex_files_mutated": false,
+  "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+  "raw_paths_included": false,
+  "redaction_status": "pass",
+  "remote_publication_mutated": false,
+  "rollback_label": "remove codex-tools/cloakbrowser-manager",
+  "rollback_pointer_hash": "27fc2a8ffa662839410aacbe38707db3",
+  "runtime_stage": "R6 blocked",
+  "schema_version": 1,
+  "smoke_result": {
+    "blocker": "docker_missing_or_not_authorized",
+    "command_hash": "2b361f3c7e4c5cf658056ade6942b67b",
+    "status": "blocked"
+  },
+  "source_ref": "a85b213286c8a25475a6f3243c47f99375ffa772",
+  "source_url": "https://github.com/CloakHQ/CloakBrowser-Manager",
+  "state_label": "codex-tools/cloakbrowser-manager/state",
+  "state_path_hash": "3d66b470864df35db4feb6bc5ea43cf4",
+  "tool_name": "cloakbrowser-manager-source",
+  "wrapper_label": "codex-tools/cloakbrowser-manager/source/docker-compose.yml-or-compose-file",
+  "wrapper_path_hash": "4ea3ffcf674c4ef90d65422326cd66f9"
+}

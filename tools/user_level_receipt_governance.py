@@ -82,6 +82,21 @@ ACTIVE_CANDIDATE_REQUIRED_FIELDS = (
     "authority_decision",
 )
 
+R6_LIVE_REQUIRED_FIELDS = (
+    "receipt_type",
+    "lane",
+    "live_mode",
+    "live_attempted",
+    "live_executed",
+    "external_side_effects",
+    "target_env_keys",
+    "target_env_hash",
+    "execution_receipt",
+    "blocked_reason",
+    "template_distribution",
+    *ACTIVE_CANDIDATE_REQUIRED_FIELDS,
+)
+
 ROLLBACK_REQUIRED_FIELDS = (
     "rollback_target",
     "rollback_pointer",
@@ -710,6 +725,29 @@ def command_active_check(args: argparse.Namespace) -> dict[str, Any]:
     )
 
 
+def command_r6_live_check(args: argparse.Namespace) -> dict[str, Any]:
+    receipt_path = Path(args.receipt)
+    receipt, load_blockers = load_receipt(receipt_path)
+    blockers = list(load_blockers)
+    summary: dict[str, Any] = {}
+    if receipt is not None:
+        from check_r6_live_runtime_receipts import normalize_lane, receipt_summary, validate_lane_receipt
+
+        lane = normalize_lane(args.lane or receipt.get("lane"))
+        blockers.extend(validate_lane_receipt(receipt, lane))
+        summary = receipt_summary(receipt, path=receipt_path, lane=lane, blockers=sorted(set(blockers)))
+    ok = not blockers
+    return response(
+        ok,
+        "r6-live-check",
+        blockers=sorted(set(blockers)),
+        r6_live_valid=ok,
+        r6_live_summary=summary,
+        runtime_stage="R6" if ok else ("blocked" if receipt else "missing"),
+        remote_publication_mutated=bool(receipt.get("remote_publication_mutated")) if receipt else False,
+    )
+
+
 def command_rollback_check(args: argparse.Namespace) -> dict[str, Any]:
     receipt_path = Path(args.receipt)
     receipt, load_blockers = load_receipt(receipt_path)
@@ -756,6 +794,8 @@ def command_template(args: argparse.Namespace) -> dict[str, Any]:
         fields = list(SMOKE_REQUIRED_FIELDS)
     elif args.kind == "active":
         fields = list(ACTIVE_CANDIDATE_REQUIRED_FIELDS)
+    elif args.kind == "r6-live":
+        fields = list(R6_LIVE_REQUIRED_FIELDS)
     else:
         fields = list(ROLLBACK_REQUIRED_FIELDS)
     return response(True, "template", blockers=[], kind=args.kind, required_fields=fields)
@@ -800,6 +840,11 @@ def build_parser() -> argparse.ArgumentParser:
     active.add_argument("--owner-lane", default=None)
     active.add_argument("--json", action="store_true")
 
+    r6_live = sub.add_parser("r6-live-check", help="Validate R6 live-runtime receipt evidence without performing actions.")
+    r6_live.add_argument("--receipt", required=True)
+    r6_live.add_argument("--lane", default=None)
+    r6_live.add_argument("--json", action="store_true")
+
     rollback = sub.add_parser("rollback-check", help="Validate rollback executor receipt evidence without executing rollback.")
     rollback.add_argument("--receipt", required=True)
     rollback.add_argument("--owner-lane", default=None)
@@ -810,7 +855,7 @@ def build_parser() -> argparse.ArgumentParser:
     redact.add_argument("--json", action="store_true")
 
     template = sub.add_parser("template", help="Show required receipt fields.")
-    template.add_argument("--kind", choices=("authorization", "update", "smoke", "active", "rollback"), required=True)
+    template.add_argument("--kind", choices=("authorization", "update", "smoke", "active", "r6-live", "rollback"), required=True)
     template.add_argument("--json", action="store_true")
     return parser
 
@@ -823,6 +868,7 @@ def main(argv: list[str] | None = None) -> int:
         "update-check": command_update_check,
         "smoke-check": command_smoke_check,
         "active-check": command_active_check,
+        "r6-live-check": command_r6_live_check,
         "rollback-check": command_rollback_check,
         "redact-check": command_redact_check,
         "template": command_template,

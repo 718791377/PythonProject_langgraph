@@ -1,3 +1,13 @@
+---
+doc_id: codex_durable_team_platform_build_lifecycle
+lang: zh-CN
+doc_class: product_lifecycle
+status: draft
+canonical_path: docs_bilingual/product_lifecycle/codex_durable_team_platform_build_lifecycle.md
+zh_cn_path: docs_bilingual/product_lifecycle/codex_durable_team_platform_build_lifecycle.zh-CN.md
+translation_of: docs_bilingual/product_lifecycle/codex_durable_team_platform_build_lifecycle.md
+---
+
 # Codex CLI 持久化团队平台建设生命周期
 
 本文适用于在 `D:\PythonProject_langgraph` 中建设 Codex CLI 个人开发者生产级持久化团队平台；这是 Codex 编排源码仓库。本文不描述下游业务项目如何管理自己的产品工作。
@@ -5,6 +15,10 @@
 完整 0-11 / 12 层生命周期是权威平台地图：认知、商业、市场、战略、指标、产品、技术、组织、执行、增长、运营、复盘。单个 MR、MVP 切片和 OpenSpec change 应按风险裁剪该地图的深度，而不是默认展开每一层。
 
 本平台生命周期使用 `business_management_source_synthesis.zh-CN.md` 作为源库叠加层。它强化 Codex 平台是一套一人 operating system：先诊断再构建、让机制保持小、执行前先塑形、衡量结果、保护架构和信任边界、显式定义人和 Agent 的 ownership、保持运营可支持，并把重复经验转化为 checker 或模板。
+
+## 来源证据边界
+
+本平台建设生命周期已按 `fresh_source_reading_evidence.zh-CN.md` 刷新，证据运行 ID 为 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`，生成时间为 `2026-06-15T17:33:52Z`。该运行对被 Git 忽略的 `Business Management/` 与 `PMP/` 来源根目录按 PDF 每页、EPUB spine item、Markdown 全文读取。本文只使用 tracked synthesis 与 inventory maps 中的派生规则；原始抽取文本不得作为提交态权威引用。
 
 ## Scope
 
@@ -387,3 +401,28 @@ Codex CLI 平台目标固定为：
 ## Release Slicing Rule
 
 一个平台 MR 通常只应该修改一个层级或一个控制面。好的例子包括：新增一份 lifecycle reference、新增一个 checker、归档一个 OpenSpec change、细化一个 release gate 或更新一条模板规则。
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- Codex boundary: Codex owns execution truth for agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries, while consuming business intent from the one-person company.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

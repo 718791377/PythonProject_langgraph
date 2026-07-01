@@ -1,3 +1,12 @@
+---
+doc_id: codex_project_consumption_lifecycle
+lang: en
+doc_class: product_lifecycle
+status: draft
+canonical_path: docs_bilingual/product_lifecycle/codex_project_consumption_lifecycle.md
+zh_cn_path: docs_bilingual/product_lifecycle/codex_project_consumption_lifecycle.zh-CN.md
+---
+
 # Downstream Project Consumption Lifecycle
 
 This document describes how later projects consume the Codex CLI durable-team platform. A downstream project may use the user-level runtime, native Codex subagents, templates, governance ideas, and optional durable lanes, but it owns its own repository facts and business work.
@@ -7,6 +16,10 @@ This document describes how later projects consume the Codex CLI durable-team pl
 `D:\PythonProject_langgraph` is the platform source repository; it owns the Codex orchestration line, templates, shared policies, and helper source.
 
 A downstream project owns its own product scope, business artifacts, OpenSpec tree, Git history, durable state, release state, and local lessons learned. A downstream project must not treat the platform repository as its repo-local durable truth.
+
+## Source Evidence Boundary
+
+This downstream consumption lifecycle is refreshed against the same `fresh_source_reading_evidence.md` run as the platform lifecycle. The source evidence informs reusable tailoring rules only. A downstream project must still create or refresh its own customer evidence, metrics, release evidence, durable state, and lessons in its own repository before applying these rules.
 
 ## Downstream Lifecycle Tailoring Overlay
 
@@ -42,7 +55,7 @@ For downstream business work that is a real one-person-company operating system,
 - 15 governed AI agents: Strategy, Research, Product, UX/Copy, Engineering, QA, Data, Growth, Sales, Customer Success, Support, Finance, Legal/Risk, Knowledge, and Chief of Staff.
 - 15 recommended books: Scaling People; Working Backwards; High Output Management; INSPIRED; Product Operations; Measure What Matters; Lean Analytics; The Lean Startup; Obviously Awesome; Traction; Deploy Empathy; Shape Up; Team Topologies; Company of One; The E-Myth Revisited.
 
-The minimum startup set is deliberately only 12 documents: `company-thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
+The minimum startup set is deliberately only 12 documents: `thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.md`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
 
 Do not start a downstream one-person company by creating all 60 documents. Start with the 12 minimal documents, then expand only when risk, customer evidence, revenue, compliance, delivery, or operations requires deeper coverage.
 
@@ -418,3 +431,28 @@ Small downstream projects can start with the minimum local surfaces:
 - `openspec/` as the project-local OpenSpec governance tree.
 - `.omx/state/` as the project-local durable state directory; it is needed only when durable lanes are used.
 - `.gitignore` as the project ignore file; it ignores caches, state, generated artifacts, and local secrets.
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- Codex boundary: Codex owns execution truth for agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries, while consuming business intent from the one-person company.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

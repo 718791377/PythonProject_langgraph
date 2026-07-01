@@ -12,6 +12,10 @@ These rules are a general governance overlay. They do not replace white papers, 
 
 The local source-library synthesis lives in `business_management_source_synthesis.md`. It summarizes page-level and spine-item-level reading of the ignored `Business Management/` library and translates the sources into repository-specific lifecycle rules rather than source-book excerpts.
 
+## Source Evidence Boundary
+
+This lifecycle stack now points to `fresh_source_reading_evidence.md` for the current `one-person-company-pmi-refresh-stageb-20260619` (`2026-06-18T18:37:58Z`) Business Management / PMP evidence boundary, to `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` for the current lifecycle Markdown reread, and to `ten_to_twelve_layer_bridge.md` for the research/white-paper layer bridge. Raw extraction text remains outside Git.
+
 ## Two Target Architecture Modes
 
 This lifecycle now has two explicit operating modes.
@@ -35,6 +39,10 @@ For any layer that drives work, use the PMI process-group style as the execution
 
 This rule applies to every lifecycle layer, every delivery gate, and every release slice. It prevents a layer from becoming a loose essay with no start condition, no control technique, and no deliverable output.
 
+
+## Document-Type PMI Overlay Rule
+
+Use `pmi_project_management_reference_map.md` to select PMI depth by document type. White papers and North Star plans should use PMI primarily for value, tailoring, and measurement framing. Lifecycle layers and implementation plans should use Process Groups as execution grammar and PMBOK 6 I/T/O vocabulary only when they produce execution artifacts. Program, portfolio, and PMO overlays are not default ceremony; they enter only when multiple initiatives, shared capacity, governance services, or oversight needs are present.
 
 ## Value-Delivery Overlay
 
@@ -223,7 +231,7 @@ Core question: What evidence tells us whether the strategy is working?
 - OMTM analysis selects the one metric that matters most for the current stage.
 - Guardrail metric design protects quality, cost, trust, security, reliability, and operator attention.
 - Tracking-plan and data-dictionary design define event names, dimensions, owners, and metric definitions.
-- `metrics.yaml` is the machine-readable metrics contract; it defines North Star, input, guardrail, and stage metrics.
+- `metrics.md` is the machine-readable metrics contract; it defines North Star, input, guardrail, and stage metrics.
 - `tracking_plan.md` is the tracking plan; it defines events, sources, owners, and quality checks.
 - `data_dictionary.md` is the data dictionary; it defines metric terms and data ownership.
 
@@ -455,6 +463,6 @@ Small internal tooling work usually needs a short strategy or North Star note, m
 
 For the Codex CLI durable-team platform, `docs_bilingual/north_star_plan.md` is the repository-level North Star plan. It defines the primary success metric, input metrics, guardrails, staged decision thresholds, and the 12-layer platform/downstream inventory comparison.
 
-For a downstream one-person-company operating system, the lightweight floor is the 12 minimal startup documents defined in `one_person_company_inventory_map.md`: `vision.md`, `business-model.md`, `customer-segments.md`, `positioning.md`, `offer-map.md`, `delivery-plan.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`. A downstream project should expand toward the 60-document system only when customer evidence, revenue exposure, delivery complexity, governance risk, or long-term operating cost justifies the deeper architecture.
+For a downstream one-person-company operating system, the lightweight floor is the 12 minimal startup documents defined in `one_person_company_inventory_map.md` and measured by the dedicated North Star at `../north_star/personal_production_one_person_company_operations_north_star.md`: `thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.md`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`. A downstream project should expand toward the 60-document system only when customer evidence, revenue exposure, delivery complexity, governance risk, or long-term operating cost justifies the deeper architecture.
 
 The more a project affects money, users, trust, compliance, or long-term platform behavior, the more of this stack should be explicit. Lightweight mode may be whole-project only for low-risk early work; otherwise keep high-risk phases or modules on the full architecture path and lighten only bounded low-risk slices.

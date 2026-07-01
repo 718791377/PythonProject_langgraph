@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from project_moe_gui.toolchain import (  # noqa: E402
     DEFAULT_MODE_CLI,
+    DEFAULT_PRIVATE_PROMPT_SOURCE,
     DEFAULT_OFF_WRAPPER,
     DEFAULT_ON_WRAPPER,
     check_phase1_readiness,
@@ -24,6 +25,7 @@ def main() -> int:
     parser.add_argument("--agent-name", required=True)
     parser.add_argument("--state-namespace", required=True)
     parser.add_argument("--mode-cli", default=str(DEFAULT_MODE_CLI))
+    parser.add_argument("--private-prompt-source", default=str(DEFAULT_PRIVATE_PROMPT_SOURCE))
     parser.add_argument("--on-wrapper", default=str(DEFAULT_ON_WRAPPER))
     parser.add_argument("--off-wrapper", default=str(DEFAULT_OFF_WRAPPER))
     parser.add_argument(
@@ -55,6 +57,7 @@ def main() -> int:
         args.agent_name,
         args.state_namespace,
         Path(args.mode_cli),
+        private_prompt_source=Path(args.private_prompt_source),
         on_wrapper=Path(args.on_wrapper),
         off_wrapper=Path(args.off_wrapper),
         startup_paths=startup_hooks,

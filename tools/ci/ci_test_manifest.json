@@ -14,6 +14,12 @@
     "check_local_main_retire_lock.test.py",
     "check_complete_local_flow_self_retire_preflight.test.py",
     "check_skills_audit_output_retention.test.py",
+    "check_skills_audit_final_review_state.test.py",
+    "check_skills_audit_final_review_precheck.test.py",
+    "check_skills_audit_human_review_decision_record.test.py",
+    "check_skills_audit_cadence_contract.test.py",
+    "check_skills_audit_frontmatter_resolution.test.py",
+    "check_skills_audit_zh_evidence_encoding.test.py",
     "spec_kit_authority_guard.test.py",
     "run_openspec_guard_json.test.py",
     "check_local_mirrored_ci_gate.test.py",
@@ -39,6 +45,7 @@
     "check_fanout_write_ownership_evidence.test.py",
     "check_comet_superpowers_visibility.test.py",
     "check_plugin_modules_skill.test.py",
+    "check_skills2cli_profile_routing.test.py",
     "evidence_intake_pipeline.test.py",
     "evidence_adapters.test.py",
     "check_pyside6_shared_runtime_contract.test.py",
@@ -49,6 +56,8 @@
     "check_pyside6_packaging_opt_in_contract.test.py",
     "check_pyside6_operator_usage_guide.test.py",
     "project_moe_gui_toolchain.test.py",
+    "check_codex_skills_governance.test.py",
+    "repair_codex_skill_frontmatter.test.py",
     "user_level_mcp_skills_cli_install.test.py",
     "skills2cli.test.py",
     "mcp2cli.test.py",
@@ -58,6 +67,9 @@
     "cdp_bridge_governance.test.py",
     "user_level_receipt_governance.test.py",
     "check_r5_active_candidate_receipts.test.py",
+    "check_r6_live_runtime_receipts.test.py",
+    "test_check_multi_plan_family_r6_live_runtime.py",
+    "r6_live_runtime.test.py",
     "check_document_pair_policy.test.py",
     "check_git_commit_language.test.py",
     "check_plan_exit_execution_governance.test.py",
@@ -73,8 +85,29 @@
     "cli_anything_governance.test.py",
     "wxwork_cli_governance.test.py",
     "gstack_codex_delivery_loop_runtime.test.py",
-    "check_gstack_codex_delivery_loop.test.py"
+    "check_gstack_codex_delivery_loop.test.py",
+    "check_user_level_cloakbrowser_academic_runtime.test.py",
+    "user_level_document_tools.test.py",
+    "reference6_capability_install.test.py",
+    "reference7_capability_install.test.py",
+    "reference8_capability_install.test.py",
+    "reference_recursive_capability_install.test.py",
+    "check_embedded_codex_governance_alignment.test.py",
+    "check_embedded_codex_startup_kits.test.py",
+    "check_codex_one_person_next_supplement_sequence.test.py",
+    "check_codex_one_person_operational_runtime_pack.test.py",
+    "check_codex_one_person_operational_instance_pack.test.py",
+    "operations_package_docs.test.py"
   ],
-  "node_mjs": [],
-  "powershell_ps1": []
+  "node_mjs": [
+    "openclaw-omx-windows-prompt-startup-evidence-fix.test.mjs",
+    "openclaw-omx-windows-prompt-controller-startup-status-fix.test.mjs",
+    "openclaw-omx-windows-prompt-controller-shutdown-fix.test.mjs",
+    "openclaw-omx-windows-prompt-controller-exec-status-fix.test.mjs",
+    "openclaw-omx-windows-prompt-runtime-shutdown-fix.test.mjs"
+  ],
+  "powershell_ps1": [
+    "install-codex-user-level-team-mode.test.ps1",
+    "codex-official-update-patch-replay-template.test.ps1"
+  ]
 }

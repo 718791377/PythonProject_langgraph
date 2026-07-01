@@ -165,6 +165,102 @@
       "description": "Prevents local-only Skills usage audit JSON and .tmp artifacts from being retained in Git; long-term evidence must be sanitized Markdown."
     },
     {
+      "id": "skills-audit-final-review-state",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_final_review_state.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_final_review_state"
+      ],
+      "description": "Verifies the Skills usage audit final-review, closure, candidate, and apply-gate state without marking summary-reviewed, generating candidates, or applying profiles."
+    },
+    {
+      "id": "skills-audit-final-review-precheck",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_final_review_precheck.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_final_review_precheck"
+      ],
+      "description": "Verifies machine precheck evidence for final-summary noise and manual-conflict review items while keeping final human review, candidate generation, and profile apply gates closed."
+    },
+    {
+      "id": "skills-audit-human-review-decision-record",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_human_review_decision_record.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_human_review_decision_record"
+      ],
+      "description": "Verifies optional human-review decision records for the Skills usage audit without automatically marking summary-reviewed, generating candidates, applying profiles, or retaining raw paths, secrets, transcripts, logs, or warning excerpts."
+    },
+    {
+      "id": "skills-audit-cadence-contract",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_cadence_contract.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_cadence_contract"
+      ],
+      "description": "Verifies the Skills usage audit repeat count, weekly frequency, original end date, event-triggered warning triage, and post-final monitoring-only boundary."
+    },
+    {
+      "id": "skills-audit-frontmatter-resolution",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_frontmatter_resolution.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_frontmatter_resolution"
+      ],
+      "description": "Verifies the Skills usage audit bridge from historical invalid SKILL.md skipped-loading warnings to the current frontmatter compatibility inventory, requiring current invalid_total=0 without editing config, plugin cache, skill bodies, or profiles."
+    },
+    {
+      "id": "skills-audit-zh-evidence-encoding",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md",
+        "docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_skills_audit_zh_evidence_encoding.py"
+      ],
+      "guard_steps": [
+        "check_skills_audit_zh_evidence_encoding"
+      ],
+      "description": "Fails closed when current, future, changed, or explicitly protected Skills usage audit zh-CN evidence is unreadable UTF-8, contains replacement characters, placeholder question-mark runs, or high-signal mojibake markers; untouched legacy evidence is warning-only."
+    },
+    {
       "id": "name-clarity-rule",
       "owner_level": "project",
       "status": "implemented",
@@ -791,6 +887,209 @@
         "check_durable_routing_smoke_receipts"
       ],
       "description": "Requires every R5 active-candidate or bounded live handoff lane to present authorization, owner lease, target/action allowlist, timeout release, rollback, cleanup, redaction, authority decision, and no remote-publication mutation evidence before adoption is treated as positive."
+    },
+    {
+      "id": "user-level-cloakbrowser-academic-runtime",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/user_level_cloakbrowser_academic_research_runtime_plan.md",
+        "docs_bilingual/implementation_plans/user_level_cloakbrowser_academic_research_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_user_level_cloakbrowser_academic_runtime.py",
+        "tools/run_openspec_guard.py",
+        "tools/run_cloakbrowser_manager_source_runtime.py"
+      ],
+      "guard_steps": [
+        "check_user_level_cloakbrowser_academic_runtime"
+      ],
+      "description": "Keeps CloakBrowser, CloakBrowser-Manager, and academic-research-suite user-level installs/runtime smoke receipt-backed, hash-only, Docker-non-installing, native-Codex-non-mutating, and behind the remote-publication gate."
+    },
+    {
+      "id": "reference6-capability-install",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/reference6_user_project_capability_install_plan.md",
+        "docs_bilingual/implementation_plans/reference6_user_project_capability_install_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/reference6_capability_install.py",
+        "tools/check_reference6_capability_install.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_reference6_capability_install"
+      ],
+      "description": "Keeps Reference 6 capabilities layered into user-level install artifacts and General/General_2 template surfaces, reusing Codex provider env_key names only, writing hash-redacted receipts, recording blockers with fill/resume commands, and preserving the remote-publication gate."
+    },
+    {
+      "id": "reference7-capability-install",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/reference6_reference7_user_project_live_runtime_plan.md",
+        "docs_bilingual/implementation_plans/reference6_reference7_user_project_live_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/reference7_capability_install.py",
+        "tools/check_reference7_capability_install.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_reference7_capability_install"
+      ],
+      "description": "Keeps Reference 7 non-Codex upstreams adapted into Codex skill, agent, runtime-wrapper, or project-template surfaces before any live-executed claim; rejects raw upstream install-only evidence, writes hash-redacted receipts, reuses env_key names only, and preserves the remote-publication gate."
+    },
+    {
+      "id": "reference8-capability-install",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/reference6_reference7_reference8_user_project_live_runtime_plan.md",
+        "docs_bilingual/implementation_plans/reference6_reference7_reference8_user_project_live_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/reference8_capability_install.py",
+        "tools/check_reference8_capability_install.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_reference8_capability_install"
+      ],
+      "description": "Keeps Reference 8 non-Codex upstreams adapted into Codex skill, agent, runtime-wrapper, derived-template, or inert project-template surfaces before any live-executed claim; rejects raw upstream install-only evidence, permits explicit provision-recorded receipts for missing commercial desktop runtimes, reuses env_key names only, and preserves the remote-publication gate."
+    },
+    {
+      "id": "reference-recursive-capability-install",
+      "owner_level": "user",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.md",
+        "docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/reference_recursive_capability_install.py",
+        "tools/check_reference_recursive_capability_install.py",
+        "tools/run_openspec_guard.py",
+        "test/reference_recursive_capability_install.test.py"
+      ],
+      "guard_steps": [
+        "check_reference_recursive_capability_install"
+      ],
+      "description": "Requires Reference 6/7/8 upstream links to be recursively expanded to installable child units with Codex adapters, hash-redacted update/smoke receipts, Browserbase disabled inheritance, dedupe/provision states, template sync, and no raw-upstream completion claims."
+    },
+    {
+      "id": "embedded-codex-governance-alignment-runtime",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/embedded_codex_governance_alignment_runtime_plan.md",
+        "docs_bilingual/implementation_plans/embedded_codex_governance_alignment_runtime_plan.zh-CN.md",
+        "docs_bilingual/governance/one_person_company_embedded_codex_governance_policy.md",
+        "docs_bilingual/governance/one_person_company_embedded_codex_governance_policy.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_embedded_codex_governance_alignment.py",
+        "test/check_embedded_codex_governance_alignment.test.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_embedded_codex_governance_alignment"
+      ],
+      "description": "Fails closed when the one-person-company operating system and embedded Codex durable-team governance drift: business truth, execution truth, shared ledger fields, canonical names, package isolation, semantic mappings, registry links, CI registration, and guard linkage must remain aligned."
+    },
+    {
+      "id": "operations-package-runtime",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md",
+        "docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/generate_operations_package.py",
+        "tools/check_operations_package_docs.py",
+        "test/operations_package_docs.test.py"
+      ],
+      "guard_steps": [],
+      "description": "Generates and validates governed bilingual operations packages for the Codex durable-team and one-person-company targets."
+    },
+    {
+      "id": "embedded-codex-startup-kits",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.md",
+        "docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.zh-CN.md",
+        "docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.md",
+        "docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.zh-CN.md",
+        "docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.md",
+        "docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_embedded_codex_startup_kits.py",
+        "test/check_embedded_codex_startup_kits.test.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_embedded_codex_startup_kits"
+      ],
+      "description": "Fails closed when the embedded Codex startup-kit docs, shared ledger templates, tailoring template, project kit, registry entries, CI registration, and guard linkage drift from the frozen Stage B plan."
+    },
+    {
+      "id": "codex-one-person-next-supplement-sequence",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.md",
+        "docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_codex_one_person_next_supplement_sequence.py",
+        "test/check_codex_one_person_next_supplement_sequence.test.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_codex_one_person_next_supplement_sequence"
+      ],
+      "description": "Fails closed when the Codex durable-team and one-person-company next supplement sequence drifts from the frozen Stage B order, truth boundary, tailoring modes, process-group grammar, generator closeout, registry, CI, or guard registration."
+    },
+    {
+      "id": "codex-one-person-operational-runtime-pack",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_one_person_operational_runtime_pack_plan.md",
+        "docs_bilingual/implementation_plans/codex_one_person_operational_runtime_pack_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_codex_one_person_operational_runtime_pack.py",
+        "test/check_codex_one_person_operational_runtime_pack.test.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_codex_one_person_operational_runtime_pack"
+      ],
+      "description": "Fails closed when the Codex embedded one-person-company operational runtime pack drifts from required shared ledgers, Codex execution pack, business operations pack, mixed dual-gate governance pack, process-group grammar, truth boundaries, registry, CI, guard, or safety backing."
+    },
+    {
+      "id": "codex-one-person-operational-instance-pack",
+      "owner_level": "project",
+      "status": "implemented",
+      "prompt_reminders": [
+        "docs_bilingual/implementation_plans/codex_one_person_operational_instance_pack_plan.md",
+        "docs_bilingual/implementation_plans/codex_one_person_operational_instance_pack_plan.zh-CN.md"
+      ],
+      "script_controls": [
+        "tools/check_codex_one_person_operational_instance_pack.py",
+        "test/check_codex_one_person_operational_instance_pack.test.py",
+        "tools/run_openspec_guard.py"
+      ],
+      "guard_steps": [
+        "check_codex_one_person_operational_instance_pack"
+      ],
+      "description": "Fails closed when the Codex embedded one-person-company operational instance pack drifts from required entrypoint, shared-ledger, Codex execution, business operation, mixed dual-gate, process-group, truth-boundary, registry, CI, guard, or safety backing rules."
     }
   ]
 }

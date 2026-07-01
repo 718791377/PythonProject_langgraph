@@ -12,6 +12,10 @@
 
 本地源库综合位于 `business_management_source_synthesis.zh-CN.md`。它总结被 Git 忽略的 `Business Management/` 源库逐页和 EPUB spine item 级读取结果，并把来源转译为仓库特定生命周期规则，而不是复制原书正文。
 
+## 来源证据边界
+
+当前生命周期栈指向 `fresh_source_reading_evidence.zh-CN.md`，作为本次 `one-person-company-pmi-refresh-stageb-20260619`（`2026-06-18T18:37:58Z`）证据边界；同时指向 `ten_to_twelve_layer_bridge.zh-CN.md`，用于打通研究稿与白皮书的分层关系。原始抽取文本保持在 Git 之外。
+
 ## 两种目标架构模式
 
 本生命周期现在明确区分两种运行模式。
@@ -33,6 +37,10 @@
 
 该规则适用于每一个生命周期层、每一个交付门和每一个发布切片，避免层级变成没有启动条件、控制技术和交付输出的散文。
 
+
+## 按文档类型选择 PMI 叠加层规则
+
+使用 `pmi_project_management_reference_map.zh-CN.md` 按文档类型选择 PMI 深度。白皮书与北极星计划主要使用 PMI 的价值、裁剪和度量 framing。生命周期层级与实施计划使用 Process Groups 作为执行语法；只有在产生执行工件时才展开 PMBOK 第 6 版 I/T/O 词汇。项目集、项目组合和 PMO 叠加层不是默认 ceremony；只有当多个倡议、共享容量、治理服务或监督需求出现时才进入。
 
 ## 价值交付叠加层
 
@@ -217,7 +225,7 @@
 - OMTM 分析：选择当前阶段最重要的 One Metric That Matters。
 - 护栏指标设计：保护质量、成本、信任、安全、可靠性和 operator attention。
 - Tracking plan 和数据字典设计：定义事件、维度、owner 和指标口径。
-- `metrics.yaml` 是机器可读指标契约；它定义北极星、输入、护栏和阶段指标。
+- `metrics.md` 是机器可读指标契约；它定义北极星、输入、护栏和阶段指标。
 - `tracking_plan.md` 是埋点计划；它定义事件、来源、owner 和质量检查。
 - `data_dictionary.md` 是数据字典；它定义指标术语和数据 ownership。
 
@@ -449,6 +457,10 @@
 
 对 Codex CLI durable-team 平台，`docs_bilingual/north_star_plan.zh-CN.md` 是仓库级北极星 Plan。它定义主成功指标、输入指标、护栏指标、分阶段决策阈值，以及 12 层平台/下游清单对照。
 
-对下游一人公司操作系统，轻量起步底线是 `one_person_company_inventory_map.zh-CN.md` 定义的 12 个最小启动文档：`vision.md`、`business-model.md`、`customer-segments.md`、`positioning.md`、`offer-map.md`、`delivery-plan.md`、`finance-model.md`、`ops-playbook.md`、`metrics.yaml`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。只有当客户证据、收入暴露、交付复杂度、治理风险或长期运营成本证明需要更深覆盖时，下游项目才应扩展到 60 文档系统。
+对下游一人公司操作系统，轻量起步底线是 `one_person_company_inventory_map.zh-CN.md` 定义的 12 个最小启动文档：`thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.md`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。只有当客户证据、收入暴露、交付复杂度、治理风险或长期运营成本证明需要更深覆盖时，下游项目才应扩展到 60 文档系统。
 
 项目越影响金钱、用户、信任、合规或长期平台行为，这套文档栈就越应该显式化。轻量模式只有在低风险早期工作中才能覆盖整个项目；其他情况应让高风险阶段或模块保持完整架构路径，只对边界清晰的低风险切片轻量化。
+
+## 一人公司北极星引用
+
+对于下游一人公司运营系统，12 个最小启动文档是轻量底座；专属北极星位于 `docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.zh-CN.md`，用于判断业务循环是否经过客户、收入、支持、学习与受治理 Agent 评审证据验证。

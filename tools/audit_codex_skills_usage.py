@@ -19,6 +19,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+from skills2cli import build_frontmatter_compatibility_summary  # noqa: E402
+
 
 SKILL_ANNOUNCE_PATTERNS = [
     re.compile(r"使用技能[:：]\s*([^\n\r]+)"),
@@ -45,7 +50,35 @@ PRIVATE_PATH_PATTERNS = (
 )
 ACCESS_TOKEN_PATTERN = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie)\s*[:=]\s*([^\s,;\"']+)")
 STANDALONE_TOKEN_PATTERN = re.compile(r"(?i)\b(?:sk-[a-z0-9_-]{6,}|xox[baprs]-[a-z0-9_-]{6,})\b")
-REDACTION_MARKERS = ("[REDACTED_PATH]", "[REDACTED_SECRET]")
+UUID_PATTERN = re.compile(r"(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b")
+CALL_ID_PATTERN = re.compile(r"\bcall_(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{6,}\b")
+RESPONSE_ID_PATTERN = re.compile(r"\bresp_(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{6,}\b")
+RUNTIME_ID_ASSIGNMENT_PATTERN = re.compile(
+    r"(?i)\b("
+    r"(?:thread|turn|session|conversation)[._-]?id"
+    r"|submission\.id"
+    r"|rpc\.request_id"
+    r"|app_server\.connection_id"
+    r"|request[._-]?id"
+    r"|connection[._-]?id"
+    r")\s*[:=]\s*(?:\\?\"[^\"\s,;)}]+\\?\"|[^\s,;)}]+)"
+)
+RAW_RUNTIME_ID_ASSIGNMENT_PATTERN = re.compile(
+    r"(?i)\b("
+    r"(?:thread|turn|session|conversation)[._-]?id"
+    r"|submission\.id"
+    r"|rpc\.request_id"
+    r"|app_server\.connection_id"
+    r"|request[._-]?id"
+    r"|connection[._-]?id"
+    r")\s*[:=]\s*(?!\[REDACTED_ID\])(?:\\?\"[^\"\s,;)}]+\\?\"|[^\s,;)}]+)"
+)
+TOKEN_COUNTER_PATTERN = re.compile(
+    r"(?i)\b(?:[A-Za-z0-9_.-]*token_usage\.[A-Za-z0-9_.-]*tokens?|(?:[A-Za-z0-9_.-]*token_usage\.)?"
+    r"(?:(?:cached|non[_-]?cached|uncached)[_-])?"
+    r"(?:input|output|total|cached|reasoning)[_-]?tokens?)\s*[:=]\s*\d+\b"
+)
+REDACTION_MARKERS = ("[REDACTED_PATH]", "[REDACTED_SECRET]", "[REDACTED_ID]", "[REDACTED_TOKEN_COUNT]")
 GENERIC_EXPLICIT_SKILL_NOISE = {
     "a",
     "an",
@@ -96,6 +129,7 @@ REQUIRED_REPORT_FIELDS = {
     "safety",
     "config_summary",
     "inventory_summary",
+    "frontmatter_compatibility",
     "log_evidence",
     "warning_severity",
     "warning_triage",
@@ -117,6 +151,7 @@ REQUIRED_REPORT_FIELD_TYPES = {
     "safety": dict,
     "config_summary": dict,
     "inventory_summary": dict,
+    "frontmatter_compatibility": dict,
     "log_evidence": dict,
     "warning_severity": dict,
     "warning_triage": dict,
@@ -368,6 +403,8 @@ REQUIRED_WARNING_TRIAGE_FIELDS = {
     "recent_skipped_loading_samples",
     "recent_skipped_loading_sample_excerpts",
     "skipped_loading_review",
+    "frontmatter_resolution",
+    "current_frontmatter_invalid_total",
     "recommended_action",
 }
 REQUIRED_WARNING_TRIAGE_FIELD_TYPES = {
@@ -381,8 +418,44 @@ REQUIRED_WARNING_TRIAGE_FIELD_TYPES = {
     "recent_skipped_loading_samples": int,
     "recent_skipped_loading_sample_excerpts": list,
     "skipped_loading_review": str,
+    "frontmatter_resolution": str,
+    "current_frontmatter_invalid_total": int,
     "recommended_action": str,
 }
+REQUIRED_FRONTMATTER_COMPATIBILITY_FIELDS = {
+    "checked_with",
+    "total",
+    "invalid_total",
+    "by_error",
+    "by_layer",
+    "codex_name_limit",
+    "codex_description_limit",
+    "raw_paths_retained",
+    "raw_skill_bodies_retained",
+    "mutates_config",
+    "edits_plugin_cache",
+    "profile_apply_performed",
+}
+REQUIRED_FRONTMATTER_COMPATIBILITY_FIELD_TYPES = {
+    "checked_with": str,
+    "total": int,
+    "invalid_total": int,
+    "by_error": dict,
+    "by_layer": dict,
+    "codex_name_limit": int,
+    "codex_description_limit": int,
+    "raw_paths_retained": bool,
+    "raw_skill_bodies_retained": bool,
+    "mutates_config": bool,
+    "edits_plugin_cache": bool,
+    "profile_apply_performed": bool,
+}
+FRONTMATTER_COMPATIBILITY_NON_NEGATIVE_INTEGER_FIELDS = (
+    "total",
+    "invalid_total",
+    "codex_name_limit",
+    "codex_description_limit",
+)
 VALID_WARNING_TRIAGE_STATUSES = {
     "not_requested",
     "blocked",
@@ -393,7 +466,14 @@ VALID_WARNING_TRIAGE_STATUSES = {
 WARNING_TRIAGE_WINDOW_POLICY = "use_days_1_or_since_for_warning_triage"
 VALID_WARNING_TRIAGE_SKIPPED_LOADING_REVIEWS = {
     "record_source_and_do_not_edit_vendor_cache_without_authorization",
+    "historical_warning_current_inventory_clean",
+    "current_invalid_skills_present_review_repair_plan_without_profile_apply",
     "none",
+}
+VALID_FRONTMATTER_RESOLUTION_STATES = {
+    "not_checked",
+    "historical_warning_current_inventory_clean",
+    "current_invalid_skills_present",
 }
 VALID_WARNING_TRIAGE_BLOCKERS = {
     "warning_triage_window_not_narrow",
@@ -402,6 +482,7 @@ WARNING_TRIAGE_NON_NEGATIVE_INTEGER_FIELDS = (
     "budget_warning_count",
     "skipped_loading_count",
     "recent_skipped_loading_samples",
+    "current_frontmatter_invalid_total",
 )
 REQUIRED_CADENCE_REVIEW_FIELDS = {
     "late_run",
@@ -713,11 +794,31 @@ def sanitize_log_excerpt(text: str, limit: int = 500) -> str:
         sanitized = pattern.sub("[REDACTED_PATH]", sanitized)
     sanitized = ACCESS_TOKEN_PATTERN.sub(lambda m: m.group(0).replace(m.group(1), "[REDACTED_SECRET]"), sanitized)
     sanitized = STANDALONE_TOKEN_PATTERN.sub("[REDACTED_SECRET]", sanitized)
+    sanitized = RUNTIME_ID_ASSIGNMENT_PATTERN.sub("[REDACTED_ID]", sanitized)
+    sanitized = CALL_ID_PATTERN.sub("[REDACTED_ID]", sanitized)
+    sanitized = RESPONSE_ID_PATTERN.sub("[REDACTED_ID]", sanitized)
+    sanitized = UUID_PATTERN.sub("[REDACTED_ID]", sanitized)
+    sanitized = TOKEN_COUNTER_PATTERN.sub("[REDACTED_TOKEN_COUNT]", sanitized)
     return truncate_preserving_redaction_markers(sanitized, limit)
 
 
 def sanitize_manual_value(value: str, limit: int = 300) -> str:
     return sanitize_log_excerpt(value.strip(), limit=limit)
+
+
+def raw_runtime_identifier_violation(text: str) -> str | None:
+    """Return a field-contract violation suffix for runtime identifiers left in retained excerpts."""
+    if RAW_RUNTIME_ID_ASSIGNMENT_PATTERN.search(text):
+        return "contains_raw_runtime_id_assignment"
+    if CALL_ID_PATTERN.search(text):
+        return "contains_raw_call_id"
+    if RESPONSE_ID_PATTERN.search(text):
+        return "contains_raw_response_id"
+    if UUID_PATTERN.search(text):
+        return "contains_raw_uuid"
+    if TOKEN_COUNTER_PATTERN.search(text):
+        return "contains_raw_token_counter"
+    return None
 
 
 def sanitize_retained_path(value: str | None, limit: int = MANUAL_NOTE_PATH_LIMIT) -> str | None:
@@ -1581,6 +1682,7 @@ def build_audit_state(
 def build_warning_triage(
     args: argparse.Namespace,
     logs_data: dict[str, Any],
+    frontmatter_compatibility: dict[str, Any],
     cutoff: datetime,
     generated_at: datetime,
 ) -> dict[str, Any]:
@@ -1596,11 +1698,16 @@ def build_warning_triage(
         for row in recent_skipped_loading[:3]
         if isinstance(row, dict) and str(row.get("message_excerpt") or "").strip()
     ]
-    skipped_loading_review = (
-        "record_source_and_do_not_edit_vendor_cache_without_authorization"
-        if skipped_loading_count
-        else "none"
-    )
+    current_invalid_total = int(frontmatter_compatibility.get("invalid_total") or 0)
+    if skipped_loading_count and current_invalid_total == 0:
+        skipped_loading_review = "historical_warning_current_inventory_clean"
+        frontmatter_resolution = "historical_warning_current_inventory_clean"
+    elif skipped_loading_count:
+        skipped_loading_review = "current_invalid_skills_present_review_repair_plan_without_profile_apply"
+        frontmatter_resolution = "current_invalid_skills_present"
+    else:
+        skipped_loading_review = "none"
+        frontmatter_resolution = "not_checked"
     available = bool(logs_data.get("available"))
     if not requested:
         status = "not_requested"
@@ -1634,6 +1741,8 @@ def build_warning_triage(
         "recent_skipped_loading_samples": recent_skipped_loading_samples,
         "recent_skipped_loading_sample_excerpts": recent_skipped_loading_sample_excerpts,
         "skipped_loading_review": skipped_loading_review,
+        "frontmatter_resolution": frontmatter_resolution,
+        "current_frontmatter_invalid_total": current_invalid_total,
         "all_descriptions_removed_count": logs_data.get("all_descriptions_removed_count", 0),
         "max_omitted_additional_skills": logs_data.get("max_omitted_additional_skills", 0),
         "recent_budget_warning_samples": len(logs_data.get("recent_budget_warnings") or []),
@@ -1692,6 +1801,41 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
     config_violations = []
     if "current_profile" not in config:
         config_violations.append("current_profile_missing")
+    frontmatter_compatibility = (
+        report.get("frontmatter_compatibility")
+        if isinstance(report.get("frontmatter_compatibility"), dict)
+        else {}
+    )
+    frontmatter_violations: list[str] = []
+    for field in sorted(REQUIRED_FRONTMATTER_COMPATIBILITY_FIELDS):
+        if field not in frontmatter_compatibility:
+            frontmatter_violations.append(f"{field}_missing")
+    for field, expected_type in sorted(REQUIRED_FRONTMATTER_COMPATIBILITY_FIELD_TYPES.items()):
+        if field in frontmatter_compatibility and not isinstance(frontmatter_compatibility.get(field), expected_type):
+            frontmatter_violations.append(f"{field}_invalid_type")
+    for field in FRONTMATTER_COMPATIBILITY_NON_NEGATIVE_INTEGER_FIELDS:
+        if field in frontmatter_compatibility:
+            value = frontmatter_compatibility.get(field)
+            if isinstance(value, bool) or not isinstance(value, int):
+                if f"{field}_invalid_type" not in frontmatter_violations:
+                    frontmatter_violations.append(f"{field}_invalid_type")
+            elif value < 0:
+                frontmatter_violations.append(f"{field}_negative")
+    for field in ("raw_paths_retained", "raw_skill_bodies_retained", "mutates_config", "edits_plugin_cache", "profile_apply_performed"):
+        if frontmatter_compatibility.get(field) is not False:
+            frontmatter_violations.append(f"{field}_not_false")
+    if frontmatter_compatibility.get("checked_with") not in (None, "tools/skills2cli.py index"):
+        frontmatter_violations.append("checked_with_invalid_value")
+    if isinstance(frontmatter_compatibility.get("by_error"), dict):
+        for key, value in frontmatter_compatibility["by_error"].items():
+            if not isinstance(key, str) or isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                frontmatter_violations.append("by_error_invalid_item")
+                break
+    if isinstance(frontmatter_compatibility.get("by_layer"), dict):
+        for key, value in frontmatter_compatibility["by_layer"].items():
+            if not isinstance(key, str) or isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                frontmatter_violations.append("by_layer_invalid_item")
+                break
     log_evidence = report.get("log_evidence") if isinstance(report.get("log_evidence"), dict) else {}
     log_violations = []
     for field in sorted(REQUIRED_LOG_EVIDENCE_FIELDS):
@@ -1727,6 +1871,10 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
                 break
             if STANDALONE_TOKEN_PATTERN.search(excerpt):
                 log_violations.append("recent_budget_warning_sample_excerpts_contains_standalone_token")
+                break
+            runtime_violation = raw_runtime_identifier_violation(excerpt)
+            if runtime_violation:
+                log_violations.append(f"recent_budget_warning_sample_excerpts_{runtime_violation}")
                 break
     warning_severity = (
         report.get("warning_severity") if isinstance(report.get("warning_severity"), dict) else {}
@@ -1771,6 +1919,8 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         warning_triage_violations.append("window_policy_invalid_value")
     if warning_triage.get("skipped_loading_review") not in (None, *VALID_WARNING_TRIAGE_SKIPPED_LOADING_REVIEWS):
         warning_triage_violations.append("skipped_loading_review_invalid_value")
+    if warning_triage.get("frontmatter_resolution") not in (None, *VALID_FRONTMATTER_RESOLUTION_STATES):
+        warning_triage_violations.append("frontmatter_resolution_invalid_value")
     triage_blockers = warning_triage.get("blockers")
     if isinstance(triage_blockers, list):
         for blocker in triage_blockers:
@@ -1809,6 +1959,10 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
                 break
             if STANDALONE_TOKEN_PATTERN.search(excerpt):
                 warning_triage_violations.append("recent_skipped_loading_sample_excerpts_contains_standalone_token")
+                break
+            runtime_violation = raw_runtime_identifier_violation(excerpt)
+            if runtime_violation:
+                warning_triage_violations.append(f"recent_skipped_loading_sample_excerpts_{runtime_violation}")
                 break
     cadence_review = report.get("cadence_review") if isinstance(report.get("cadence_review"), dict) else {}
     cadence_review_violations = []
@@ -2132,6 +2286,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         + [f"safety:{field}" for field in safety_violations]
         + [f"audit_state:{field}" for field in audit_state_violations]
         + [f"config_summary:{field}" for field in config_violations]
+        + [f"frontmatter_compatibility:{field}" for field in frontmatter_violations]
         + [f"log_evidence:{field}" for field in log_violations]
         + [f"warning_severity:{field}" for field in warning_severity_violations]
         + [f"warning_triage:{field}" for field in warning_triage_violations]
@@ -2177,6 +2332,7 @@ def validate_report_field_contract(report: dict[str, Any], *, require_embedded: 
         "safety_violations": safety_violations,
         "audit_state_violations": audit_state_violations,
         "config_summary_violations": config_violations,
+        "frontmatter_compatibility_violations": frontmatter_violations,
         "log_evidence_violations": log_violations,
         "warning_severity_violations": warning_severity_violations,
         "warning_triage_violations": warning_triage_violations,
@@ -2464,6 +2620,7 @@ def build_script_capability_boundaries() -> dict[str, Any]:
         "reliable_coverage": [
             "plugin_enabled_disabled_unknown_state_from_config_toml",
             "user_repo_plugin_skill_inventory_counts",
+            "current_skill_frontmatter_compatibility_summary",
             "session_explicit_skill_announcements_skill_path_reads_helper_calls_and_tool_call_names",
             "logs_2_sqlite_budget_warnings_all_descriptions_removed_omitted_skills_and_skipped_loading_samples",
             "profile_module_aggregation_from_helper_calls_and_plugin_skill_path_reads",
@@ -2476,6 +2633,7 @@ def build_script_capability_boundaries() -> dict[str, Any]:
             "tool_call_names_and_stable_aliases_are_medium_evidence_not_plugin_or_profile_apply_evidence",
             "unreadable_rotated_or_missing_logs_can_underreport_warning_counts",
             "missing_or_stale_profile_registry_data_can_make_module_evidence_incomplete",
+            "frontmatter_repair_requires_separate_operator_authorization",
         ],
         "enhancement_triggers": [
             "same_false_positive_pattern_repeats_in_two_weekly_reports",
@@ -2483,6 +2641,7 @@ def build_script_capability_boundaries() -> dict[str, Any]:
             "stable_tool_call_pattern_maps_to_a_plugin_or_module_but_is_not_in_the_alias_registry",
             "live_session_warning_cannot_be_localized_from_logs_2_sqlite",
             "profile_registry_and_enabled_plugin_surface_diverge_enough_to_mislead_module_evidence",
+            "rerun_frontmatter_compatibility_bridge_after_each_new_skipped_loading_warning",
         ],
         "stable_tool_call_alias_registry": stable_tool_call_alias_registry(),
     }
@@ -2864,10 +3023,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     session_data = scan_sessions(codex_home, root, cutoff, modules)
     logs_data = scan_logs(codex_home, cutoff, generated_at)
     inventory_counts = collect_inventory_counts(codex_home, root)
+    frontmatter_compatibility = build_frontmatter_compatibility_summary(root, codex_home)
     module_evidence = build_module_evidence(profiles, session_data)
     noise_review = build_noise_review(session_data)
     warning_severity = build_warning_severity(logs_data)
-    warning_triage = build_warning_triage(args, logs_data, cutoff, generated_at)
+    warning_triage = build_warning_triage(args, logs_data, frontmatter_compatibility, cutoff, generated_at)
     audit_state = build_audit_state(args, cutoff, generated_at)
     current_profile = build_current_profile_summary(profiles, enabled_plugins)
     manual_notes = collect_manual_notes(getattr(args, "manual_notes", []) or [])
@@ -2909,6 +3069,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "weekly_report_review": "manual_review_required",
         },
         "inventory_summary": inventory_counts,
+        "frontmatter_compatibility": frontmatter_compatibility,
         "log_evidence": logs_data,
         "warning_severity": warning_severity,
         "warning_triage": warning_triage,
@@ -2948,6 +3109,11 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
     )
     output_retention = report.get("output_retention", {})
     precommit_update_archive = report.get("precommit_update_archive", {})
+    frontmatter_compatibility = (
+        report.get("frontmatter_compatibility")
+        if isinstance(report.get("frontmatter_compatibility"), dict)
+        else {}
+    )
     runtime_paths = report.get("runtime_paths", {})
     audit_state = report.get("audit_state", {})
     field_contract = report.get("field_contract", {})
@@ -2989,6 +3155,7 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Field contract requires embedded contract: `{field_contract.get('requires_embedded_field_contract')}`",
         f"- Field contract safety violations: `{len(field_contract.get('safety_violations') or [])}`",
         f"- Field contract audit-state violations: `{len(field_contract.get('audit_state_violations') or [])}`",
+        f"- Field contract frontmatter-compatibility violations: `{len(field_contract.get('frontmatter_compatibility_violations') or [])}`",
         f"- Field contract log-evidence violations: `{len(field_contract.get('log_evidence_violations') or [])}`",
         f"- Field contract warning-severity violations: `{len(field_contract.get('warning_severity_violations') or [])}`",
         f"- Field contract warning-triage violations: `{len(field_contract.get('warning_triage_violations') or [])}`",
@@ -3028,6 +3195,8 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- All descriptions removed count: `{warnings.get('all_descriptions_removed_count')}`",
         f"- Max omitted additional skills: `{warnings.get('max_omitted_additional_skills')}`",
         f"- Skipped loading count: `{warnings.get('skipped_loading_count')}`",
+        f"- Current frontmatter invalid skills: `{frontmatter_compatibility.get('invalid_total')}`",
+        f"- Current frontmatter check: `{frontmatter_compatibility.get('checked_with')}`",
         f"- Highest severity: `{warning_severity.get('level')}`",
         f"- Severity reason: `{warning_severity.get('reason')}`",
         f"- Severity recommended action: `{warning_severity.get('recommended_action')}`",
@@ -3043,6 +3212,8 @@ def render_markdown_summary(report: dict[str, Any]) -> str:
         f"- Recent skipped-loading samples: `{warning_triage.get('recent_skipped_loading_samples')}`",
         f"- Recent skipped-loading sample excerpts: {bounded_inline_list(warning_triage.get('recent_skipped_loading_sample_excerpts') or [], limit=3)}",
         f"- Skipped-loading review: `{warning_triage.get('skipped_loading_review')}`",
+        f"- Frontmatter resolution: `{warning_triage.get('frontmatter_resolution')}`",
+        f"- Current frontmatter invalid total: `{warning_triage.get('current_frontmatter_invalid_total')}`",
         f"- Recommended action: `{warning_triage.get('recommended_action')}`",
         "",
         "## Module evidence",
@@ -3314,6 +3485,11 @@ def print_human(report: dict[str, Any]) -> None:
     inventory_summary = (
         report.get("inventory_summary") if isinstance(report.get("inventory_summary"), dict) else {}
     )
+    frontmatter_compatibility = (
+        report.get("frontmatter_compatibility")
+        if isinstance(report.get("frontmatter_compatibility"), dict)
+        else {}
+    )
     log_evidence = report.get("log_evidence", {}) if isinstance(report.get("log_evidence"), dict) else {}
     warning_severity = (
         report.get("warning_severity") if isinstance(report.get("warning_severity"), dict) else {}
@@ -3397,6 +3573,20 @@ def print_human(report: dict[str, Any]) -> None:
         f"repo={inventory_summary.get('repo_skills')} "
         f"plugin={inventory_summary.get('plugin_skills')}"
     )
+    print(
+        "Frontmatter compatibility: "
+        f"invalid_total={frontmatter_compatibility.get('invalid_total')} "
+        f"total={frontmatter_compatibility.get('total')} "
+        f"checked_with={frontmatter_compatibility.get('checked_with')}"
+    )
+    print(
+        "Frontmatter compatibility safety: "
+        f"raw_paths_retained={frontmatter_compatibility.get('raw_paths_retained')} "
+        f"raw_skill_bodies_retained={frontmatter_compatibility.get('raw_skill_bodies_retained')} "
+        f"mutates_config={frontmatter_compatibility.get('mutates_config')} "
+        f"edits_plugin_cache={frontmatter_compatibility.get('edits_plugin_cache')} "
+        f"profile_apply_performed={frontmatter_compatibility.get('profile_apply_performed')}"
+    )
     print(f"Log evidence available: {log_evidence.get('available')}")
     print(f"Budget warnings: {log_evidence.get('budget_warning_count')}")
     print(
@@ -3469,6 +3659,11 @@ def print_human(report: dict[str, Any]) -> None:
         f"{bounded_inline_list(warning_triage.get('recent_skipped_loading_sample_excerpts') or [], limit=3)}"
     )
     print(f"Warning triage skipped-loading review: {warning_triage.get('skipped_loading_review')}")
+    print(
+        "Warning triage frontmatter resolution: "
+        f"{warning_triage.get('frontmatter_resolution')} "
+        f"current_invalid_total={warning_triage.get('current_frontmatter_invalid_total')}"
+    )
     print(f"Warning triage recommended action: {warning_triage.get('recommended_action')}")
     warning_triage_blockers = warning_triage.get("blockers") if isinstance(warning_triage.get("blockers"), list) else []
     print(
@@ -3579,6 +3774,7 @@ def print_human(report: dict[str, Any]) -> None:
         "Field contract violation groups: "
         f"safety={len(field_contract.get('safety_violations') or [])} "
         f"audit_state={len(field_contract.get('audit_state_violations') or [])} "
+        f"frontmatter_compatibility={len(field_contract.get('frontmatter_compatibility_violations') or [])} "
         f"log_evidence={len(field_contract.get('log_evidence_violations') or [])} "
         f"warning_severity={len(field_contract.get('warning_severity_violations') or [])} "
         f"warning_triage={len(field_contract.get('warning_triage_violations') or [])} "

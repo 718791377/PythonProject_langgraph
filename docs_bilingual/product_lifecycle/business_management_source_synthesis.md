@@ -4,12 +4,13 @@ This document summarizes repository-relevant lessons from the fresh extraction r
 
 ## Fresh Extraction Scope
 
-This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/` freshly regenerated on 2026-05-24T09:22:30+00:00. These artifacts are evidence for this refresh, not a substitute for the source files and not a reusable conclusion cache.
+This refresh is grounded in the ignored artifacts under `.omx/state/langgraph/extraction/business_pmp_20260619/` freshly regenerated at `2026-06-18T18:37:58Z` with run ID `one-person-company-pmi-refresh-stageb-20260619`. These artifacts are evidence for this refresh, not a substitute for the source files and not a reusable conclusion cache.
 
 - Manifest: `fresh_source_manifest.json`
 - Per-unit extraction log: `fresh_source_items.jsonl`
 - Compact rollup: `fresh_source_synthesis.json`
 - Extractor entrypoint: `fresh_extract_sources.py`
+- Lifecycle Markdown manifest: `product_lifecycle_markdown_manifest.json`
 
 All 54 recorded sources completed with status `ok`.
 
@@ -19,22 +20,23 @@ All 54 recorded sources completed with status `ok`.
 
 | Family | Sources | PDFs / pages | EPUBs / spine items | Markdown / full-text files | Total read units | Extracted text chars | Blank units | Low-text units |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Business Management | 31 | 22 / 6,253 | 7 / 305 | 2 / 2 | 6,560 | 14,702,314 | 352 | 511 |
-| PMP | 23 | 9 / 3,035 | 2 / 58 | 12 / 12 | 3,105 | 4,341,068 | 392 | 752 |
-| **Total** | **54** | **31 / 9,288** | **9 / 363** | **14 / 14** | **9,665** | **19,043,382** | **744** | **1,263** |
+| Business Management | 31 | 22 / 6,245 | 7 / 304 | 2 / 2 | 6,551 | 14,161,228 | 642 | 832 |
+| PMP | 23 | 9 / 3,035 | 2 / 58 | 12 / 12 | 3,105 | 4,330,816 | 392 | 758 |
+| **Total** | **54** | **31 / 9,280** | **9 / 362** | **14 / 14** | **9,656** | **18,492,044** | **1,034** | **1,590** |
 
 ### Intake method by format
 
 | Format | Recorded count | Unit of coverage | Extraction method | Practical interpretation |
 | --- | ---: | --- | --- | --- |
-| PDF | 31 files | Page | PyMuPDF `get_text("text")` for every page | Suitable for page-count evidence, low-text-page tracking, and scanned/image-heavy caveats |
+| PDF | 31 files | Page | `pypdf` page extraction with PyMuPDF fallback when needed | Suitable for page-count evidence, low-text-page tracking, and scanned/image-heavy caveats |
 | EPUB | 9 files | OPF spine item | `ebooklib` spine iteration plus HTML/XHTML text extraction | Suitable for chapter/spine coverage without flattening the original reading order |
 | Markdown | 14 files | Full file | Full UTF-8 text read | Suitable for exact architecture inventories, headings, and repository-local terminology |
 
 ### Coverage caveats worth preserving
 
 - Low-text review is part of coverage accounting, not proof of missing reading. Many low-text units are covers, blanks, diagrams, scans, or image-dominant pages.
-- The highest low-text concentration sits in a few scanned or image-heavy PMP PDFs, especially `PMBOK 8th Edition.pdf` (401 pages, 372 low-text), `PMBOK 6 Chinese edition.pdf` (812 pages, 293 low-text), `Agile Practice Guide Chinese edition.pdf` (184 pages, 183 low-text), and `Portfolio Management Chinese edition.pdf` (142 pages, 141 low-text).
+- `Business Management/Escaping the build trap.pdf` failed `pypdf` at file level and succeeded through the PyMuPDF fallback; the manifest records this as source `S0010`.
+- The highest low-text concentration sits in a few scanned or image-heavy PDFs, especially `Business Management/Lean Analytics.pdf` (439 pages, 388 low-text), `PMP/Agile Practice Guide Chinese companion PDF` (184 pages, 183 low-text), `PMP/PMBOK 6 Chinese companion PDF` (812 pages, 301 low-text), and `PMP/Portfolio Management Standard Chinese companion PDF` (142 pages, 141 low-text).
 - Because this document is a synthesis artifact, it records counts, methods, and interpretations rather than reproducing raw extraction text.
 
 ## Target Architecture Inventory Evidence
@@ -111,3 +113,12 @@ For `D:/PythonProject_langgraph`, the fresh-read evidence supports a split model
 - **Platform architecture and operating-system truth** come from the two local architecture notes plus Business Management sources on architecture, discovery, governance, and intentional smallness.
 - **Execution discipline and delivery control** come from PMP standards and PMBOK-8-era interpretation notes.
 - **Tracked repository docs** should continue to summarize source-backed implications, not preserve raw extraction text.
+
+## One-Person-Company Operating Interpretation
+
+The Stage B synthesis keeps two source families separate:
+
+- Business Management sources define how a small operator chooses a narrow strategy, validates customers, positions an offer, designs product and support loops, protects architecture boundaries, and keeps operations intentionally small.
+- PMP sources define how execution is started, planned, performed, monitored, controlled, closed, and tailored when the work carries customer, revenue, trust, support, compliance, release, or governed-agent risk.
+
+For a one-person company, the synthesis is not "always full architecture." It is "always full awareness of the 12 layers, with local expansion where risk appears." The 12 minimal startup documents are the default floor. The 60-document system is a target library that becomes active only when customer evidence, revenue exposure, delivery complexity, support obligations, compliance, sensitive data, or agent automation justify it.

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
+import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -12,6 +13,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "tools" / "run_durable_routing_smoke.py"
 CHECKER = ROOT / "tools" / "check_durable_routing_smoke_receipts.py"
+
+
+def load_runner_module():
+    spec = importlib.util.spec_from_file_location("run_durable_routing_smoke", RUNNER)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load durable routing smoke runner")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def run_command(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -199,6 +210,20 @@ class DurableRoutingSmokeReceiptTests(unittest.TestCase):
         self.assertFalse(receipt_payload["durable_team_launched"])
         self.assertFalse(receipt_payload["omx_apply_performed"])
         self.assertFalse(receipt_payload["langgraph_thread_started"])
+
+    def test_safe_command_allows_apply_suffix_in_paths_but_rejects_apply_flags(self) -> None:
+        runner = load_runner_module()
+        with tempfile.TemporaryDirectory(prefix="durable-smoke-apply-") as tmp:
+            root = Path(tmp) / "fixture-apply"
+            command = [
+                sys.executable,
+                str(root / "tools" / "check_fixture.py"),
+                "--dry-run-apply",
+            ]
+            self.assertEqual(runner.validate_safe_command(command, root), [])
+            for apply_flag in ("--apply", "-Apply", "/apply", "--apply=true"):
+                flagged = command[:-1] + [apply_flag]
+                self.assertIn("command_apply_flag_forbidden", runner.validate_safe_command(flagged, root))
 
     def valid_active_candidate_receipt(self) -> dict:
         return {

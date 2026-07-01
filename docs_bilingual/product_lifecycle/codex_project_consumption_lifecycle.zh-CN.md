@@ -1,3 +1,13 @@
+---
+doc_id: codex_project_consumption_lifecycle
+lang: zh-CN
+doc_class: product_lifecycle
+status: draft
+canonical_path: docs_bilingual/product_lifecycle/codex_project_consumption_lifecycle.md
+zh_cn_path: docs_bilingual/product_lifecycle/codex_project_consumption_lifecycle.zh-CN.md
+translation_of: docs_bilingual/product_lifecycle/codex_project_consumption_lifecycle.md
+---
+
 # 后续项目消费平台能力生命周期
 
 本文描述后续项目如何消费 Codex CLI 持久化团队平台。下游项目可以使用用户级 runtime、原生 Codex subagents、模板、治理思想和可选 durable lanes，但它拥有自己的仓库事实和业务工作。
@@ -7,6 +17,10 @@
 `D:\PythonProject_langgraph` 是平台源码仓库；它拥有 Codex 编排线、模板、共享策略和 helper source。
 
 下游项目拥有自己的产品范围、商业文档、OpenSpec tree、Git 历史、durable state、release state 和本地 lessons learned。下游项目不得把平台仓库当成自己的 repo-local durable truth。
+
+## 来源证据边界
+
+本下游消费生命周期与平台生命周期共用 `fresh_source_reading_evidence.zh-CN.md` 所记录的 fresh-read 证据运行。该来源证据只用于形成可复用裁剪规则。下游项目在采用这些规则前，仍必须在自己的仓库里创建或刷新 customer evidence、metrics、release evidence、durable state 与 lessons。
 
 ## 下游生命周期裁剪叠加规则
 
@@ -42,7 +56,7 @@
 - 15 个受治理 AI Agent：Strategy、Research、Product、UX/Copy、Engineering、QA、Data、Growth、Sales、Customer Success、Support、Finance、Legal/Risk、Knowledge、Chief of Staff。
 - 15 本推荐书籍：Scaling People、Working Backwards、High Output Management、INSPIRED、Product Operations、Measure What Matters、Lean Analytics、The Lean Startup、Obviously Awesome、Traction、Deploy Empathy、Shape Up、Team Topologies、Company of One、The E-Myth Revisited。
 
-最小启动集刻意只有 12 个文档：`company-thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.yaml`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。
+最小启动集刻意只有 12 个文档：`thesis.md`、`business-model.md`、`offer.md`、`pricing.md`、`user-segments.md`、`growth-model.md`、`finance-model.md`、`ops-playbook.md`、`metrics.md`、`risk-register.md`、`agent-governance.md`、`monthly-review.md`。
 
 不要一开始就为下游一人公司创建全部 60 个文档。先用 12 个最小文档启动；只有当风险、客户证据、收入、合规、交付或运营要求更深覆盖时，再逐步扩展。
 
@@ -402,3 +416,28 @@
 - `openspec/` 作为项目本地 OpenSpec 治理树。
 - `.omx/state/` 作为项目本地 durable state 目录；仅在使用 durable lanes 时需要。
 - `.gitignore` 作为项目忽略文件；它用于忽略缓存、状态、生成产物和本地密钥。
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- Codex boundary: Codex owns execution truth for agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries, while consuming business intent from the one-person company.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

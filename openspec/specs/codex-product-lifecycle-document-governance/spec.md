@@ -148,3 +148,103 @@ The repository SHALL define explicit lifecycle tailoring rules for when to use t
 - **THEN** the guidance states whether the whole project, a local phase, or a module is lightweight
 - **AND** it records Inputs, Tools and Techniques, and Outputs for the tailoring decision
 - **AND** it defines escalation triggers if risk, uncertainty, coupling, adoption, release impact, or stakeholder impact grows
+
+### Requirement: Fresh source reading evidence for lifecycle refreshes
+Lifecycle, whitepaper, research, and North Star refreshes that claim Business Management or PMP/PMI evidence SHALL record a fresh extraction run before updating tracked conclusions.
+
+#### Scenario: PDF source is included
+- **WHEN** a local PDF source is part of the refresh
+- **THEN** the extraction evidence records one status row per page
+- **AND** records whether `pypdf` or PyMuPDF/fitz was used for each page or file fallback
+
+#### Scenario: EPUB source is included
+- **WHEN** a local EPUB source is part of the refresh
+- **THEN** the extraction evidence records one status row per spine item
+- **AND** records skipped navigation or non-content items explicitly
+
+#### Scenario: Markdown source is included
+- **WHEN** a local Markdown source is part of the refresh
+- **THEN** the extraction evidence records full-document reading status, hash, modified time, and character count
+
+### Requirement: Whitepaper and research relationship preservation
+The Codex durable-team whitepaper and solo-maintainable production persistent team research note SHALL remain separate unless a later governed change proves that one no longer has an independent lifecycle role.
+
+#### Scenario: 10-layer and 12-layer models both appear
+- **WHEN** tracked documents mention both models
+- **THEN** they identify the 10-layer model as runtime/governance research view
+- **AND** identify the 12-layer model as product/business lifecycle view
+- **AND** provide a bridge rather than treating the models as contradictory.
+
+### Requirement: PMI tailoring and execution grammar authority
+Lifecycle, whitepaper, research, and North Star refreshes that use PMI evidence SHALL distinguish strategic narrative from execution grammar and SHALL record explicit tailoring rules for full, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid governance.
+
+#### Scenario: Execution-facing lifecycle layer is updated
+- **WHEN** a lifecycle layer or delivery gate drives execution
+- **THEN** the receiving document states Inputs, Tools and Techniques, and Outputs
+- **AND** records whether the full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid outcome applies to the affected scope
+
+#### Scenario: PMI editions and practice guides are referenced
+- **WHEN** PMBOK, Process Groups, Agile, program, portfolio, or PMO sources are referenced
+- **THEN** the document states the primary overlay and supplemental role
+- **AND** avoids expanding older editions unless they add execution vocabulary, continuity, translation clarity, or historical comparison
+- **AND** states entry and exit conditions for Agile, program, portfolio, and PMO overlays.
+
+### Requirement: Bilingual UTF-8 document integrity
+Paired English and zh-CN documents updated by this change SHALL preserve the same governance decisions and SHALL NOT contain mojibake or replacement-marker additions.
+
+#### Scenario: zh-CN document is touched
+- **WHEN** a zh-CN tracked document is updated
+- **THEN** the changed text is valid UTF-8 Chinese or intentional technical terminology
+- **AND** no newly added three-ASCII-question-mark or replacement-character text remains
+- **AND** English-only governance additions have a zh-CN counterpart when the paired document exists.
+
+### Requirement: Lifecycle Governance Maintains Durable-Team Proof Surfaces
+
+Lifecycle governance SHALL register and preserve the durable-team delivery matrix, source traceability index, and process-group contract as first-class lifecycle proof surfaces. The lifecycle stack SHALL use these proof surfaces when source-backed durable-team refreshes affect white papers, research notes, North Star plans, lifecycle maps, implementation plans, playbooks, or OpenSpec specs.
+
+The process-group contract SHALL be the handoff authority for deciding when a lifecycle layer, delivery gate, or release slice needs Inputs, Tools and Techniques, and Outputs. The source traceability index SHALL be the handoff authority for current source-run identity and tracked-versus-ignored evidence boundaries.
+
+#### Scenario: Lifecycle refresh changes execution-facing guidance
+
+- **GIVEN** a lifecycle refresh uses Business Management or PMP evidence and changes execution-facing durable-team guidance
+- **WHEN** a maintainer checks whether the refresh is governed
+- **THEN** the registry exposes the three proof-surface document pairs
+- **AND** the lifecycle spec requires the source traceability index to identify the current fresh-reading run
+- **AND** the lifecycle spec requires the process-group contract before execution-facing rules are treated as complete
+- **AND** the lifecycle spec keeps raw extraction text and local cache logs outside tracked authority
+
+### Requirement: Product Lifecycle Governance Covers Full Body Operations Documents
+
+The product lifecycle document governance SHALL treat generated operations-package body documents as execution-facing lifecycle artifacts governed by the 12-layer stack, process-group Inputs / Tools And Techniques / Outputs, and explicit tailoring decisions.
+
+#### Scenario: A body document is generated from a core-document list
+
+- **GIVEN** a Codex or one-person-company core-document list defines a document family and filename
+- **WHEN** Stage B generates the corresponding body document
+- **THEN** the document SHALL identify its 12-layer placement
+- **AND** it SHALL expose Inputs, Tools And Techniques, and Outputs for execution-facing use
+- **AND** it SHALL state how the document participates in full, lightweight, phase-local, module-level, or hybrid governance.
+
+### Requirement: Tailoring May Be Whole Project Phase Local Module Level Or Hybrid
+
+The lifecycle governance SHALL distinguish whole-project lightweight architecture from phase-local and module-level lightweight architecture, and SHALL allow hybrid architecture when only part of the project can safely be light.
+
+#### Scenario: A project selects a lightweight scope
+
+- **GIVEN** a project, phase, or module is being planned
+- **WHEN** the operator records a tailoring decision
+- **THEN** the decision SHALL state whether the entire project is lightweight, only one phase is lightweight, only one module is lightweight, or the overall approach is hybrid
+- **AND** it SHALL state why the chosen scope is neither heavier nor lighter than needed
+- **AND** it SHALL define escalation triggers for moving to hybrid or full architecture.
+
+### Requirement: Registry Tracks Body Documents As First Class Artifacts
+
+The bilingual document registry SHALL track generated body documents as first class lifecycle artifacts rather than treating them as unregistered runtime cache.
+
+#### Scenario: A generated body document is added
+
+- **GIVEN** the generator creates an English primary body document and a zh-CN companion
+- **WHEN** the body layer is validated
+- **THEN** `docs_bilingual/docs_registry.yaml` SHALL contain a unique `doc_id`
+- **AND** it SHALL contain the English canonical path and zh-CN companion path
+- **AND** the generated document SHALL be source-controlled Markdown, not an ignored cache file.

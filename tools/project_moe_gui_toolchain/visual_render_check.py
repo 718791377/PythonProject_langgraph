@@ -16,13 +16,26 @@ DEFAULT_SECTIONS = ["overview", "sessions", "workbench", "diagnostics", "setting
 DEFAULT_VISUAL_SIZES = ((1180, 720), (1366, 768), (1440, 900))
 FIXTURE_PROFILES = ("default", "long-content", "dense-sessions")
 SECTION_REQUIRED_TEXT = {
-    "overview": ["Project MOE", "Project default", "Enable project default", "Disable project default"],
+    "overview": ["Project Expert Lens", "Project default", "Enable project default", "Disable project default"],
     "sessions": [
         "Sessions",
         "Session list",
-        "Session MOE lenses",
-        "Enable session MOE",
-        "Disable session MOE",
+        "Session details",
+        "Session:",
+        "Created:",
+        "Updated:",
+        "Directory:",
+        "Branch:",
+        "Conversation:",
+        "Expert lens status and actions",
+        "Session expert lenses",
+        "Expert lens modules and lenses",
+        "Strict Graduate Advisor Module",
+        "Socratic Questioning Module",
+        "Five Classic Thinking Models Module",
+        "决策树模型专家",
+        "Enable session expert lenses",
+        "Disable session expert lenses",
         "Apply session lenses",
         "Clear session lenses",
     ],
@@ -93,7 +106,7 @@ def parse_size(value: str) -> tuple[int, int]:
     except ValueError as exc:
         raise argparse.ArgumentTypeError("size must use integer WIDTHxHEIGHT") from exc
     if width < 320 or height < 240:
-        raise argparse.ArgumentTypeError("size is too small for Project MOE GUI validation")
+        raise argparse.ArgumentTypeError("size is too small for Project Expert Lens GUI validation")
     return width, height
 
 
@@ -108,6 +121,26 @@ def _copy_jsonable(value: Any) -> Any:
     return json.loads(json.dumps(value, ensure_ascii=False))
 
 
+def _fixture_session_display_block(row: dict[str, Any]) -> dict[str, Any]:
+    conversation = row.get("conversation") if isinstance(row.get("conversation"), dict) else {}
+    title = str(conversation.get("title") or row.get("conversation_title") or "")
+    preview = str(conversation.get("preview") or row.get("conversation_preview") or "")
+    conversation_text = preview or title
+    if title and preview and title != preview:
+        conversation_text = f"{title}\n{preview}"
+    fields = {
+        "Session": str(row.get("visible_session_id") or row.get("full_session_id") or row.get("session_id") or row.get("display_id") or ""),
+        "Created": str(row.get("created_display") or row.get("created_at") or ""),
+        "Updated": str(row.get("updated_display") or row.get("updated_at") or row.get("last_seen_at") or ""),
+        "Directory": str(row.get("directory") or ""),
+        "Branch": str(row.get("branch") or "unknown"),
+        "Conversation": conversation_text,
+    }
+    labels = ["Session", "Created", "Updated", "Directory", "Branch", "Conversation"]
+    lines = [f"{label}: {fields[label]}" for label in labels]
+    return {"schema_version": SCHEMA_VERSION, "labels": labels, "fields": fields, "lines": lines, "text": "\n".join(lines)}
+
+
 def _fixture_session(index: int, *, long_content: bool = False) -> dict[str, Any]:
     suffix = f"{index:02d}"
     session_id = f"session-fixture-{suffix}-abcdef1234567890"
@@ -115,21 +148,40 @@ def _fixture_session(index: int, *, long_content: bool = False) -> dict[str, Any
     if long_content:
         display_id = "session-fixture-with-extra-long-display-name-for-visual-overflow-regression-" + suffix
         lens_summary = "lenses=" + ", ".join([f"very_long_lens_identifier_{item}_{suffix}" for item in range(4)])
+        directory = "D:/target/projects/project-moe-gui-visual-regression-with-a-very-long-session-directory-name/" + suffix
+        conversation_title = "Long session title used to verify wrapping and eliding in the Sessions card " + suffix
+        conversation_preview = "Conversation preview stays inside the card while preserving the required Conversation label for visual checks. " + ("detail " * 18) + suffix
     else:
         display_id = f"session-fixture-{suffix}"
         lens_summary = "All lenses" if index % 3 else "lenses=blind_review,aigc_risk"
-    return {
+        directory = "D:/target/project-moe-gui-dense-fixture"
+        conversation_title = f"Fixture task brief {suffix}"
+        conversation_preview = f"Fixture conversation preview {suffix}"
+    row = {
         "row_index": index,
         "valid": index % 7 != 0,
         "token": "ok" if index % 7 != 0 else "invalid_json",
         "message": "ok" if index % 7 != 0 else "Invalid fixture session record for visual gate.",
         "session_id": session_id,
         "display_id": display_id,
+        "visible_session_id": session_id,
+        "full_session_id": session_id,
+        "created_at": f"2026-06-06T{index % 24:02d}:00:00+00:00",
+        "created_display": f"2026-06-06 {index % 24:02d}:00:00",
+        "created_relative": f"{index + 1}d ago",
+        "updated_at": f"2026-06-07T{index % 24:02d}:00:00+00:00",
+        "updated_display": f"2026-06-07 {index % 24:02d}:00:00",
+        "updated_relative": f"{index + 2}h ago",
+        "directory": directory,
+        "branch": "main",
+        "conversation": {"title": conversation_title, "preview": conversation_preview, "message_counts": {"user": 1, "assistant": 1}},
+        "conversation_title": conversation_title,
+        "conversation_preview": conversation_preview,
         "enabled": index % 2 == 0,
         "label": label,
         "source": "manual-session" if index % 2 == 0 else "project-propagated",
         "selected_lenses": [] if index % 3 else ["blind_review", "aigc_risk"],
-        "selected_categories": [] if index % 4 else ["review"],
+        "selected_categories": [] if index % 4 else ["strict_graduate_advisor"],
         "effective_lens_mode": "all" if index % 3 else "selected",
         "lens_selection_scope": "session",
         "lens_selection_summary": lens_summary,
@@ -142,29 +194,79 @@ def _fixture_session(index: int, *, long_content: bool = False) -> dict[str, Any
             "high_contrast_text": f"Session {display_id}: {label}; lenses: {lens_summary}",
         },
     }
+    row["session_display_block"] = _fixture_session_display_block(row)
+    row["session_display_lines"] = row["session_display_block"]["lines"]
+    return row
 
 
 def _fixture_lens(index: int, *, long_content: bool = False) -> dict[str, Any]:
-    lens_id = f"fixture_lens_{index:02d}"
+    default_ids = [
+        "blind_review",
+        "advisor_interrogation",
+        "aigc_risk",
+        "novelty",
+        "literature_evidence",
+        "structure_expression",
+        "socratic_cbt",
+        "feynman_learning",
+        "first_principles",
+        "pyramid_principle",
+        "swot_analysis",
+        "decision_tree",
+    ]
+    lens_id = default_ids[index] if index < len(default_ids) else f"fixture_lens_{index:02d}"
     if long_content:
-        label = "Extremely long Project MOE expert lens label for visual regression and wrapping behavior " + str(index).zfill(2)
+        label = "Extremely long Project Expert Lens expert lens label for visual regression and wrapping behavior " + str(index).zfill(2)
         description = "Long fixture lens description used to stress card, checkbox, and handoff preview rendering without reading private prompts."
     else:
         label = f"Fixture lens {index:02d}"
         description = "Fixture lens for visual render gate."
-    return {"id": lens_id, "label": label, "description": description, "category": f"category_{index % 8:02d}"}
+    zh_label = {
+        "blind_review": "盲审专家镜头",
+        "advisor_interrogation": "严苛导师追问镜头",
+        "aigc_risk": "AIGC / AI 味风险镜头",
+        "novelty": "创新性与差异化镜头",
+        "literature_evidence": "文献与证据链镜头",
+        "structure_expression": "结构与表达镜头",
+        "socratic_cbt": "认知行为式苏格拉底提问镜头",
+        "feynman_learning": "费曼学习法专家",
+        "first_principles": "第一性原理专家",
+        "pyramid_principle": "金字塔原理专家",
+        "swot_analysis": "SWOT 分析专家",
+        "decision_tree": "决策树模型专家",
+    }.get(lens_id, label)
+    return {"id": lens_id, "label": label, "zh_label": zh_label, "en_label": label, "description": description, "category": f"category_{index % 8:02d}"}
 
 
 def _fixture_category(index: int, lens_count: int, *, long_content: bool = False) -> dict[str, Any]:
+    governed = [
+        (
+            "strict_graduate_advisor",
+            "Strict Graduate Advisor Module",
+            "严苛的研究生导师专家模块",
+            ["blind_review", "advisor_interrogation", "aigc_risk", "novelty", "literature_evidence", "structure_expression"],
+        ),
+        (
+            "socratic_questioning",
+            "Socratic Questioning Module",
+            "认知行为式提问专家模块",
+            ["socratic_cbt"],
+        ),
+        (
+            "five_classic_thinking_models",
+            "Five Classic Thinking Models Module",
+            "五大经典思维模型专家模块",
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+        ),
+    ]
+    if index < len(governed):
+        category_id, label, zh_label, lens_ids = governed[index]
+        return {"id": category_id, "label": label, "zh_label": zh_label, "en_label": label, "description": "Fixture governed category for visual render gate.", "lens_ids": [item for item in lens_ids if item]}
     category_id = f"category_{index:02d}"
-    if long_content:
-        label = "Very long Project MOE expert category label for dense visual regression " + str(index).zfill(2)
-        description = "Long category description used by the visual fixture profile."
-    else:
-        label = f"Category {index:02d}"
-        description = "Fixture category for visual render gate."
+    label = ("Very long Project Expert Lens expert category label for dense visual regression " + str(index).zfill(2)) if long_content else f"Category {index:02d}"
+    description = "Long category description used by the visual fixture profile." if long_content else "Fixture category for visual render gate."
     lens_ids = [f"fixture_lens_{item:02d}" for item in range(index, lens_count, max(1, min(8, lens_count)))]
-    return {"id": category_id, "label": label, "description": description, "lens_ids": lens_ids}
+    return {"id": category_id, "label": label, "zh_label": label, "en_label": label, "description": description, "lens_ids": lens_ids}
 
 
 def build_fixture_view_model(profile: str, view_model: dict[str, Any]) -> dict[str, Any]:
@@ -177,7 +279,10 @@ def build_fixture_view_model(profile: str, view_model: dict[str, Any]) -> dict[s
 
     long_content = profile == "long-content"
     session_count = 8 if long_content else 24
-    lens_count = 10 if long_content else 18
+    # Keep the full governed lens set in the long-content profile as well.
+    # The profile's purpose is to stress long labels and dense text, not to
+    # remove the final five-thinking-model lens from the visual surface.
+    lens_count = 12 if long_content else 18
     category_count = 5 if long_content else 8
     sessions = [_fixture_session(index, long_content=long_content) for index in range(session_count)]
     lenses = [_fixture_lens(index, long_content=long_content) for index in range(lens_count)]
@@ -550,6 +655,109 @@ def visible_required_texts(items: list[dict[str, Any]], required: Iterable[str])
     return missing, found
 
 
+def collect_widget_visible_items(root: Any, window_rect: Rect) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    items: list[dict[str, Any]] = []
+    violations: list[dict[str, Any]] = []
+
+    def walk(widget: Any, clip_rect: Rect, path: str, scroll_depth: int = 0) -> None:
+        try:
+            visible = bool(widget.isVisible())
+        except Exception:
+            visible = True
+        try:
+            geom = widget.geometry()
+            top_left = widget.mapTo(root, widget.rect().topLeft())
+            rect = Rect(float(top_left.x()), float(top_left.y()), float(geom.width()), float(geom.height()))
+        except Exception:
+            rect = Rect(0.0, 0.0, 0.0, 0.0)
+        class_name = type(widget).__name__
+        next_scroll_depth = scroll_depth + (1 if "ScrollArea" in class_name or "ScrollBar" in class_name else 0)
+        object_name = ""
+        try:
+            object_name = str(widget.objectName() or "")
+        except Exception:
+            object_name = ""
+        widget_path = f"{path}/{class_name}{('#' + object_name) if object_name else ''}"
+        text = ""
+        try:
+            if hasattr(widget, "text"):
+                text = str(widget.text() or "")
+            elif hasattr(widget, "placeholderText"):
+                text = str(widget.placeholderText() or "")
+        except Exception:
+            text = ""
+        if visible and rect.w > 0 and rect.h > 0:
+            user_visible = bool(text) or class_name in {"QPushButton", "QCheckBox", "QComboBox", "QLineEdit", "QTextEdit", "QListWidget", "QLabel"}
+            if text:
+                text_width: float | None = None
+                try:
+                    text_width = float(widget.fontMetrics().horizontalAdvance(text))
+                except Exception:
+                    text_width = None
+                available_text_width = rect.w
+                if class_name == "QCheckBox":
+                    available_text_width = max(0.0, rect.w - 30.0)
+                elif class_name == "QPushButton":
+                    available_text_width = max(0.0, rect.w - 24.0)
+                item = {
+                    "class": class_name,
+                    "path": widget_path,
+                    "text": text,
+                    "rect": rect.as_dict(),
+                    "clip_rect": clip_rect.as_dict(),
+                    "content_width": round(text_width, 2) if text_width is not None else None,
+                    "content_height": None,
+                    "wrap_mode": None,
+                    "elide": None,
+                    "scroll_depth": next_scroll_depth,
+                    "clipped_by_clip": not rect.inside(clip_rect, tolerance=2.0),
+                    "clipped_by_window": not rect.intersects(window_rect, tolerance=0.0),
+                }
+                items.append(item)
+                if (
+                    text_width is not None
+                    and class_name in {"QLabel", "QCheckBox", "QPushButton"}
+                    and text_width > available_text_width + 4.0
+                ):
+                    violations.append(
+                        {
+                            "kind": "widget_text_width_overflow",
+                            **item,
+                            "available_text_width": round(available_text_width, 2),
+                        }
+                    )
+            if user_visible and next_scroll_depth == 0 and not rect.inside(clip_rect, tolerance=2.0):
+                violations.append(
+                    {
+                        "kind": "widget_outside_clip",
+                        "class": class_name,
+                        "path": widget_path,
+                        "text": text[:160],
+                        "rect": rect.as_dict(),
+                        "clip_rect": clip_rect.as_dict(),
+                    }
+                )
+        try:
+            children = widget.children()
+        except Exception:
+            children = []
+        direct_children = []
+        for child in children:
+            try:
+                if hasattr(child, "geometry"):
+                    direct_children.append(child)
+            except Exception:
+                continue
+        for index, child in enumerate(direct_children):
+            child_clip = clip_rect
+            if "ScrollArea" in class_name and rect.w > 0 and rect.h > 0:
+                child_clip = rect
+            walk(child, child_clip, f"{widget_path}[{index}]", next_scroll_depth)
+
+    walk(root, window_rect, "root")
+    return items, violations
+
+
 def install_fonts(app: Any) -> dict[str, Any]:
     from PySide6.QtGui import QFont, QFontDatabase
 
@@ -671,7 +879,7 @@ def run_visual_check(args: argparse.Namespace) -> dict[str, Any]:
                     "ok": True,
                     "token": "ok",
                     "message": "visual render check skipped Workbench handoff export",
-                    "export_text": "Project MOE visual render handoff export placeholder",
+                    "export_text": "Project Expert Lens visual render handoff export placeholder",
                     "session_id": session_id,
                     "session_display_id": session_display_id,
                     "selected_lenses": selected_lenses_json,
@@ -757,7 +965,7 @@ def run_visual_check(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "ok": ok,
         "token": token,
-        "message": "Project MOE GUI visual render check passed." if ok else "Project MOE GUI visual render check found render, visibility, or overflow issues.",
+        "message": "Project Expert Lens GUI visual render check passed." if ok else "Project Expert Lens GUI visual render check found render, visibility, or overflow issues.",
         "toolchain": "project_moe_gui_visual_render_check",
         "qml_path": str(qml_path),
         "qml_source": qml_source,
@@ -774,10 +982,91 @@ def run_visual_check(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def run_widget_visual_check(args: argparse.Namespace) -> dict[str, Any]:
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    os.environ.setdefault("PYTHONUTF8", "1")
+    sys.path.insert(0, str(toolchain_root() / "src"))
+
+    from PySide6.QtCore import qInstallMessageHandler
+    from project_moe_gui.gui_shell import create_product_widget_window
+
+    view_model, preflight = load_view_model(args)
+    view_model = build_fixture_view_model(args.fixture_profile, view_model)
+    qt_messages: list[dict[str, Any]] = []
+
+    def message_handler(mode: Any, context: Any, message: str) -> None:  # pragma: no cover - Qt callback
+        qt_messages.append({"mode": str(mode), "file": str(getattr(context, "file", "") or ""), "line": int(getattr(context, "line", 0) or 0), "message": str(message)})
+
+    qInstallMessageHandler(message_handler)
+    app, window = create_product_widget_window(view_model, config={}, project_root=args.target_project)
+    font_report = install_fonts(app)
+    output_dir = Path(args.output_dir).resolve(strict=False)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    page_reports: list[dict[str, Any]] = []
+    for width, height in args.sizes:
+        window.resize(width, height)
+        window.show()
+        for section in args.sections:
+            if hasattr(window, "set_selected_section"):
+                window.set_selected_section(section)
+            for _ in range(args.settle_iterations):
+                app.processEvents()
+                time.sleep(args.settle_sleep_seconds)
+            image = window.grab().toImage()
+            screenshot = output_dir / f"{section}_{width}x{height}.png"
+            image.save(str(screenshot))
+            window_rect = Rect(0.0, 0.0, float(width), float(height))
+            items, violations = collect_widget_visible_items(window, window_rect)
+            required = SECTION_REQUIRED_TEXT.get(section, [])
+            missing, found = visible_required_texts(items, required)
+            stats = image_stats(image)
+            page_ok = bool(stats["non_blank"]) and not missing and not violations
+            page_reports.append(
+                {
+                    "section": section,
+                    "width": width,
+                    "height": height,
+                    "ok": page_ok,
+                    "screenshot": str(screenshot),
+                    "image_stats": stats,
+                    "required_text": {"required": required, "missing": missing, "found": {key: value["rect"] for key, value in found.items()}},
+                    "visible_text_count": len(items),
+                    "violations": violations[:120],
+                }
+            )
+    suspicious_messages = [
+        item for item in qt_messages if any(token in item.get("message", "") for token in ["ReferenceError", "TypeError", "Cannot assign", "Unable to", "failed", "Failed"])
+    ]
+    window.hide()
+    ok = all(page["ok"] for page in page_reports) and not suspicious_messages and font_report["ok"]
+    token = "ok" if ok else "blocked:visual_render_check_failed"
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ok": ok,
+        "token": token,
+        "message": "Project Expert Lens GUI widget visual render check passed." if ok else "Project Expert Lens GUI widget visual render check found render, visibility, or overflow issues.",
+        "toolchain": "project_moe_gui_visual_render_check",
+        "shell": "widgets",
+        "target_project": str(args.target_project) if args.target_project else None,
+        "sections": args.sections,
+        "sizes": [f"{width}x{height}" for width, height in args.sizes],
+        "output_dir": str(output_dir),
+        "font_report": font_report,
+        "qt_suspicious_messages": suspicious_messages,
+        "preflight_token": preflight.get("token"),
+        "preflight_ok": preflight.get("ok"),
+        "pages": page_reports,
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Render Project MOE GUI QML pages offscreen and fail on missing text or visual overflow.")
+    parser = argparse.ArgumentParser(
+        description="Render Project Expert Lens GUI QML pages offscreen or product Widgets pages offscreen and fail on missing text or visual overflow.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--target-project", type=Path, help="Target project that has project-moe-gui.cmd installed.")
     parser.add_argument("--view-model-json", type=Path, help="JSON file containing either a view_model object or a raw view model.")
+    parser.add_argument("--shell", choices=["auto", "widgets", "qml"], default="auto", help="Visual shell to render. auto uses the product Widgets shell when the view model declares it, otherwise QML fallback.")
     parser.add_argument("--qml-source", choices=["auto", "target-project", "current-worktree", "source", "central-toolchain"], default="auto")
     parser.add_argument("--qml-path", type=Path, help="Explicit QML path to render.")
     parser.add_argument("--sections", nargs="+", choices=DEFAULT_SECTIONS, default=list(DEFAULT_SECTIONS))
@@ -799,7 +1088,16 @@ def main(argv: list[str] | None = None) -> int:
     args.sizes = normalized_sizes(args)
     maybe_reexec_under_runtime(args)
     try:
-        payload = run_visual_check(args)
+        shell = args.shell
+        if shell == "auto":
+            view_model, _preflight = load_view_model(args)
+            visual = view_model.get("visual") if isinstance(view_model, dict) else {}
+            product_ui = view_model.get("product_ui") if isinstance(view_model, dict) else {}
+            shell = "widgets" if (
+                (isinstance(visual, dict) and visual.get("primary_shell") == "qfluentwidgets-qtwidgets")
+                or (isinstance(product_ui, dict) and product_ui.get("primary_shell") == "qfluentwidgets-qtwidgets")
+            ) else "qml"
+        payload = run_widget_visual_check(args) if shell == "widgets" else run_visual_check(args)
     except Exception as exc:
         payload = {
             "schema_version": SCHEMA_VERSION,

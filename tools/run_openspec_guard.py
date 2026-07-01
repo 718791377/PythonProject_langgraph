@@ -112,6 +112,11 @@ def main() -> int:
     governance_rules_script = root / "tools" / "check_document_governance_rules.py"
     document_pair_policy_script = root / "tools" / "check_document_pair_policy.py"
     implementation_plan_rules_script = root / "tools" / "check_implementation_plan_rules.py"
+    embedded_codex_governance_alignment_script = root / "tools" / "check_embedded_codex_governance_alignment.py"
+    embedded_codex_startup_kits_script = root / "tools" / "check_embedded_codex_startup_kits.py"
+    codex_one_person_next_supplement_sequence_script = root / "tools" / "check_codex_one_person_next_supplement_sequence.py"
+    codex_one_person_operational_runtime_pack_script = root / "tools" / "check_codex_one_person_operational_runtime_pack.py"
+    codex_one_person_operational_instance_pack_script = root / "tools" / "check_codex_one_person_operational_instance_pack.py"
     git_commit_language_script = root / "tools" / "check_git_commit_language.py"
     local_flow_scripted_enforcement_script = root / "tools" / "check_local_flow_scripted_enforcement.py"
     skills_governance_script = root / "tools" / "check_codex_skills_governance.py"
@@ -122,6 +127,12 @@ def main() -> int:
     spec_kit_authority_guard_script = root / "tools" / "check_spec_kit_authority_guard.py"
     precommit_update_archive_script = root / "tools" / "check_precommit_update_archive.py"
     skills_audit_output_retention_script = root / "tools" / "check_skills_audit_output_retention.py"
+    skills_audit_final_review_state_script = root / "tools" / "check_skills_audit_final_review_state.py"
+    skills_audit_final_review_precheck_script = root / "tools" / "check_skills_audit_final_review_precheck.py"
+    skills_audit_human_review_decision_record_script = root / "tools" / "check_skills_audit_human_review_decision_record.py"
+    skills_audit_cadence_contract_script = root / "tools" / "check_skills_audit_cadence_contract.py"
+    skills_audit_frontmatter_resolution_script = root / "tools" / "check_skills_audit_frontmatter_resolution.py"
+    skills_audit_zh_evidence_encoding_script = root / "tools" / "check_skills_audit_zh_evidence_encoding.py"
     openspec_code_archive_evidence_script = root / "tools" / "check_openspec_code_archive_evidence.py"
     openspec_comet_superpowers_policy_script = root / "tools" / "check_openspec_comet_superpowers_policy.py"
     comet_superpowers_visibility_script = root / "tools" / "check_comet_superpowers_visibility.py"
@@ -135,6 +146,11 @@ def main() -> int:
     stop_slop_caveman_smoke_receipts_script = root / "tools" / "check_stop_slop_caveman_smoke_receipts.py"
     gstack_codex_delivery_loop_script = root / "tools" / "check_gstack_codex_delivery_loop.py"
     user_level_mcp_skills_cli_install_script = root / "tools" / "check_user_level_mcp_skills_cli_install.py"
+    user_level_cloakbrowser_academic_runtime_script = root / "tools" / "check_user_level_cloakbrowser_academic_runtime.py"
+    reference6_capability_install_script = root / "tools" / "check_reference6_capability_install.py"
+    reference7_capability_install_script = root / "tools" / "check_reference7_capability_install.py"
+    reference8_capability_install_script = root / "tools" / "check_reference8_capability_install.py"
+    reference_recursive_capability_install_script = root / "tools" / "check_reference_recursive_capability_install.py"
     local_mirrored_ci_gate_script = root / "tools" / "check_local_mirrored_ci_gate.py"
     remote_publication_approval_policy_script = root / "tools" / "check_remote_publication_approval_policy.py"
     role_routing_directive_evidence_script = root / "tools" / "check_role_routing_directive_evidence.py"
@@ -147,6 +163,7 @@ def main() -> int:
     windows_cleanup_output_control_script = root / "tools" / "check_windows_cleanup_output_control.py"
     launcher_payload_context_boundary_script = root / "tools" / "check_launcher_payload_context_boundary.py"
     plugin_modules_skill_script = root / "tools" / "check_plugin_modules_skill.py"
+    skills2cli_profile_routing_script = root / "tools" / "check_skills2cli_profile_routing.py"
     pyside6_shared_runtime_contract_script = root / "tools" / "check_pyside6_shared_runtime_contract.py"
     pyside6_gui_template_contract_script = root / "tools" / "check_pyside6_gui_template_contract.py"
     pyside6_gui_preview_helper_contract_script = root / "tools" / "check_pyside6_gui_preview_helper_contract.py"
@@ -158,6 +175,8 @@ def main() -> int:
     durable_routing_smoke_gate_template_script = root / "tools" / "check_durable_routing_smoke_gate_template.py"
     durable_routing_smoke_receipts_script = root / "tools" / "check_durable_routing_smoke_receipts.py"
     r5_active_candidate_receipts_script = root / "tools" / "check_r5_active_candidate_receipts.py"
+    r6_live_runtime_receipts_script = root / "tools" / "check_r6_live_runtime_receipts.py"
+    multi_plan_family_r6_live_runtime_script = root / "tools" / "check_multi_plan_family_r6_live_runtime.py"
     codex_native_rollback_release_gate_template_script = root / "tools" / "check_codex_native_rollback_release_gate_template.py"
     worktree_hygiene_script = root / "tools" / "check_worktree_session_hygiene.py"
     worktree_task_receipt_script = root / "tools" / "check_worktree_task_receipt.py"
@@ -181,6 +200,31 @@ def main() -> int:
         raise SystemExit(f"Missing document pair policy check script: {document_pair_policy_script}")
     if not implementation_plan_rules_script.exists():
         raise SystemExit(f"Missing implementation plan rules check script: {implementation_plan_rules_script}")
+    if not embedded_codex_governance_alignment_script.exists():
+        raise SystemExit(
+            "Missing embedded Codex governance alignment check script: "
+            f"{embedded_codex_governance_alignment_script}"
+        )
+    if not embedded_codex_startup_kits_script.exists():
+        raise SystemExit(
+            "Missing embedded Codex startup kits check script: "
+            f"{embedded_codex_startup_kits_script}"
+        )
+    if not codex_one_person_next_supplement_sequence_script.exists():
+        raise SystemExit(
+            "Missing Codex one-person next supplement sequence check script: "
+            f"{codex_one_person_next_supplement_sequence_script}"
+        )
+    if not codex_one_person_operational_runtime_pack_script.exists():
+        raise SystemExit(
+            "Missing Codex one-person operational runtime pack check script: "
+            f"{codex_one_person_operational_runtime_pack_script}"
+        )
+    if not codex_one_person_operational_instance_pack_script.exists():
+        raise SystemExit(
+            "Missing Codex one-person operational instance pack check script: "
+            f"{codex_one_person_operational_instance_pack_script}"
+        )
     if not git_commit_language_script.exists():
         raise SystemExit(f"Missing Git commit language check script: {git_commit_language_script}")
     if not local_flow_scripted_enforcement_script.exists():
@@ -201,6 +245,27 @@ def main() -> int:
         raise SystemExit(f"Missing pre-commit update/archive check script: {precommit_update_archive_script}")
     if not skills_audit_output_retention_script.exists():
         raise SystemExit(f"Missing Skills audit output retention check script: {skills_audit_output_retention_script}")
+    if not skills_audit_final_review_state_script.exists():
+        raise SystemExit(f"Missing Skills audit final review state check script: {skills_audit_final_review_state_script}")
+    if not skills_audit_final_review_precheck_script.exists():
+        raise SystemExit(f"Missing Skills audit final review precheck script: {skills_audit_final_review_precheck_script}")
+    if not skills_audit_human_review_decision_record_script.exists():
+        raise SystemExit(
+            "Missing Skills audit human review decision-record check script: "
+            f"{skills_audit_human_review_decision_record_script}"
+        )
+    if not skills_audit_cadence_contract_script.exists():
+        raise SystemExit(f"Missing Skills audit cadence contract check script: {skills_audit_cadence_contract_script}")
+    if not skills_audit_frontmatter_resolution_script.exists():
+        raise SystemExit(
+            "Missing Skills audit frontmatter resolution check script: "
+            f"{skills_audit_frontmatter_resolution_script}"
+        )
+    if not skills_audit_zh_evidence_encoding_script.exists():
+        raise SystemExit(
+            "Missing Skills audit zh-CN evidence encoding check script: "
+            f"{skills_audit_zh_evidence_encoding_script}"
+        )
     if not openspec_code_archive_evidence_script.exists():
         raise SystemExit(f"Missing OpenSpec code archive evidence check script: {openspec_code_archive_evidence_script}")
     if not openspec_comet_superpowers_policy_script.exists():
@@ -227,6 +292,16 @@ def main() -> int:
         raise SystemExit(f"Missing gstack Codex delivery-loop check script: {gstack_codex_delivery_loop_script}")
     if not user_level_mcp_skills_cli_install_script.exists():
         raise SystemExit(f"Missing user-level MCP/skills CLI install check script: {user_level_mcp_skills_cli_install_script}")
+    if not user_level_cloakbrowser_academic_runtime_script.exists():
+        raise SystemExit(f"Missing user-level CloakBrowser/Academic Research runtime check script: {user_level_cloakbrowser_academic_runtime_script}")
+    if not reference6_capability_install_script.exists():
+        raise SystemExit(f"Missing Reference 6 capability install check script: {reference6_capability_install_script}")
+    if not reference7_capability_install_script.exists():
+        raise SystemExit(f"Missing Reference 7 capability install check script: {reference7_capability_install_script}")
+    if not reference8_capability_install_script.exists():
+        raise SystemExit(f"Missing Reference 8 capability install check script: {reference8_capability_install_script}")
+    if not reference_recursive_capability_install_script.exists():
+        raise SystemExit(f"Missing Reference recursive capability install check script: {reference_recursive_capability_install_script}")
     if not local_mirrored_ci_gate_script.exists():
         raise SystemExit(f"Missing local mirrored CI/MR gate check script: {local_mirrored_ci_gate_script}")
     if not remote_publication_approval_policy_script.exists():
@@ -267,6 +342,10 @@ def main() -> int:
         raise SystemExit(f"Missing durable routing smoke receipts check script: {durable_routing_smoke_receipts_script}")
     if not r5_active_candidate_receipts_script.exists():
         raise SystemExit(f"Missing R5 active-candidate receipt check script: {r5_active_candidate_receipts_script}")
+    if not r6_live_runtime_receipts_script.exists():
+        raise SystemExit(f"Missing R6 live-runtime receipt check script: {r6_live_runtime_receipts_script}")
+    if not multi_plan_family_r6_live_runtime_script.exists():
+        raise SystemExit(f"Missing multi-plan family R6 live-runtime check script: {multi_plan_family_r6_live_runtime_script}")
     if not codex_native_rollback_release_gate_template_script.exists():
         raise SystemExit(f"Missing Codex native rollback release gate template check script: {codex_native_rollback_release_gate_template_script}")
     if not worktree_hygiene_script.exists():
@@ -373,6 +452,31 @@ def main() -> int:
                 "OpenSpec guard failed during implementation plan rules verification.",
             ),
             (
+                "check_embedded_codex_governance_alignment",
+                [str(python_exe), str(embedded_codex_governance_alignment_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during embedded Codex governance alignment verification.",
+            ),
+            (
+                "check_embedded_codex_startup_kits",
+                [str(python_exe), str(embedded_codex_startup_kits_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during embedded Codex startup kits verification.",
+            ),
+            (
+                "check_codex_one_person_next_supplement_sequence",
+                [str(python_exe), str(codex_one_person_next_supplement_sequence_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Codex one-person next supplement sequence verification.",
+            ),
+            (
+                "check_codex_one_person_operational_runtime_pack",
+                [str(python_exe), str(codex_one_person_operational_runtime_pack_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Codex one-person operational runtime pack verification.",
+            ),
+            (
+                "check_codex_one_person_operational_instance_pack",
+                [str(python_exe), str(codex_one_person_operational_instance_pack_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Codex one-person operational instance pack verification.",
+            ),
+            (
                 "check_git_commit_language",
                 [str(python_exe), str(git_commit_language_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Git commit language verification.",
@@ -416,6 +520,42 @@ def main() -> int:
                 "check_skills_audit_output_retention",
                 [str(python_exe), str(skills_audit_output_retention_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during Skills audit output retention verification.",
+            ),
+            (
+                "check_skills_audit_final_review_state",
+                [str(python_exe), str(skills_audit_final_review_state_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Skills audit final review state verification.",
+            ),
+            (
+                "check_skills_audit_final_review_precheck",
+                [str(python_exe), str(skills_audit_final_review_precheck_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Skills audit final review precheck verification.",
+            ),
+            (
+                "check_skills_audit_human_review_decision_record",
+                [
+                    str(python_exe),
+                    str(skills_audit_human_review_decision_record_script),
+                    "--root",
+                    str(root),
+                    "--json",
+                ],
+                "OpenSpec guard failed during Skills audit human review decision-record verification.",
+            ),
+            (
+                "check_skills_audit_cadence_contract",
+                [str(python_exe), str(skills_audit_cadence_contract_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Skills audit cadence-contract verification.",
+            ),
+            (
+                "check_skills_audit_frontmatter_resolution",
+                [str(python_exe), str(skills_audit_frontmatter_resolution_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Skills audit frontmatter-resolution verification.",
+            ),
+            (
+                "check_skills_audit_zh_evidence_encoding",
+                [str(python_exe), str(skills_audit_zh_evidence_encoding_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Skills audit zh-CN evidence encoding verification.",
             ),
             (
                 "check_openspec_code_archive_evidence",
@@ -483,6 +623,31 @@ def main() -> int:
                 "OpenSpec guard failed during user-level MCP/skills CLI install verification.",
             ),
             (
+                "check_user_level_cloakbrowser_academic_runtime",
+                [str(python_exe), str(user_level_cloakbrowser_academic_runtime_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during user-level CloakBrowser/Academic Research runtime verification.",
+            ),
+            (
+                "check_reference6_capability_install",
+                [str(python_exe), str(reference6_capability_install_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Reference 6 capability install verification.",
+            ),
+            (
+                "check_reference7_capability_install",
+                [str(python_exe), str(reference7_capability_install_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Reference 7 Codex adapter install verification.",
+            ),
+            (
+                "check_reference8_capability_install",
+                [str(python_exe), str(reference8_capability_install_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Reference 8 Codex adapter install verification.",
+            ),
+            (
+                "check_reference_recursive_capability_install",
+                [str(python_exe), str(reference_recursive_capability_install_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during Reference recursive installable-unit verification.",
+            ),
+            (
                 "check_local_mirrored_ci_gate",
                 [str(python_exe), str(local_mirrored_ci_gate_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during local mirrored CI/MR gate verification.",
@@ -543,6 +708,11 @@ def main() -> int:
                 "OpenSpec guard failed during plugin-modules skill verification.",
             ),
             (
+                "check_skills2cli_profile_routing",
+                [str(python_exe), str(skills2cli_profile_routing_script), "--root", str(root), "--json"],
+                "OpenSpec guard failed during skills2cli profile routing verification.",
+            ),
+            (
                 "check_pyside6_shared_runtime_contract",
                 [str(python_exe), str(pyside6_shared_runtime_contract_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during PySide6 shared runtime contract verification.",
@@ -596,6 +766,16 @@ def main() -> int:
                 "check_r5_active_candidate_receipts",
                 [str(python_exe), str(r5_active_candidate_receipts_script), "--root", str(root), "--json"],
                 "OpenSpec guard failed during R5 active-candidate receipt verification.",
+            ),
+            (
+                "check_r6_live_runtime_receipts",
+                [str(python_exe), str(r6_live_runtime_receipts_script), "--root", str(root), "--require-coverage", "--json"],
+                "OpenSpec guard failed during R6 live-runtime receipt verification.",
+            ),
+            (
+                "check_multi_plan_family_r6_live_runtime",
+                [str(python_exe), str(multi_plan_family_r6_live_runtime_script), "--root", str(root), "--require-coverage", "--json"],
+                "OpenSpec guard failed during multi-plan family R6 live-runtime verification.",
             ),
             (
                 "check_codex_native_rollback_release_gate_template",
@@ -780,6 +960,30 @@ def main() -> int:
     )
 
     run_checked(
+        [str(python_exe), str(embedded_codex_startup_kits_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during embedded Codex startup kits verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(codex_one_person_next_supplement_sequence_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Codex one-person next supplement sequence verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(codex_one_person_operational_runtime_pack_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Codex one-person operational runtime pack verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(codex_one_person_operational_instance_pack_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Codex one-person operational instance pack verification.",
+    )
+
+    run_checked(
         [str(python_exe), str(local_flow_scripted_enforcement_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during local-flow scripted enforcement verification.",
@@ -822,6 +1026,36 @@ def main() -> int:
         [str(python_exe), str(skills_audit_output_retention_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during Skills audit output retention verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_final_review_state_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit final review state verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_final_review_precheck_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit final review precheck verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_human_review_decision_record_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit human review decision-record verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_cadence_contract_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit cadence-contract verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_frontmatter_resolution_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit frontmatter-resolution verification.",
+    )
+    run_checked(
+        [str(python_exe), str(skills_audit_zh_evidence_encoding_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Skills audit zh-CN evidence encoding verification.",
     )
     run_checked(
         [str(python_exe), str(openspec_code_archive_evidence_script), "--root", str(root)],
@@ -894,6 +1128,33 @@ def main() -> int:
     )
 
     run_checked(
+        [str(python_exe), str(user_level_cloakbrowser_academic_runtime_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during user-level CloakBrowser/Academic Research runtime verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(reference6_capability_install_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Reference 6 capability install verification.",
+    )
+    run_checked(
+        [str(python_exe), str(reference7_capability_install_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Reference 7 Codex adapter install verification.",
+    )
+    run_checked(
+        [str(python_exe), str(reference8_capability_install_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Reference 8 Codex adapter install verification.",
+    )
+    run_checked(
+        [str(python_exe), str(reference_recursive_capability_install_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during Reference recursive installable-unit verification.",
+    )
+
+    run_checked(
         [str(python_exe), str(local_mirrored_ci_gate_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during local mirrored CI/MR gate verification.",
@@ -951,6 +1212,12 @@ def main() -> int:
         [str(python_exe), str(plugin_modules_skill_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during plugin-modules skill verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(skills2cli_profile_routing_script), "--root", str(root)],
+        cwd=root,
+        failure_message="OpenSpec guard failed during skills2cli profile routing verification.",
     )
 
     run_checked(
@@ -1017,6 +1284,18 @@ def main() -> int:
         [str(python_exe), str(r5_active_candidate_receipts_script), "--root", str(root)],
         cwd=root,
         failure_message="OpenSpec guard failed during R5 active-candidate receipt verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(r6_live_runtime_receipts_script), "--root", str(root), "--require-coverage"],
+        cwd=root,
+        failure_message="OpenSpec guard failed during R6 live-runtime receipt verification.",
+    )
+
+    run_checked(
+        [str(python_exe), str(multi_plan_family_r6_live_runtime_script), "--root", str(root), "--require-coverage"],
+        cwd=root,
+        failure_message="OpenSpec guard failed during multi-plan family R6 live-runtime verification.",
     )
 
     run_checked(

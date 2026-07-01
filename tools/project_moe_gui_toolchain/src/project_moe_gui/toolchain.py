@@ -15,16 +15,40 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     tomllib = None  # type: ignore[assignment]
 
-from project_moe_gui import CLI_CONTRACT, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
+from project_moe_gui import CANONICAL_TOOLCHAIN_NAME, CLI_CONTRACT, LEGACY_PRODUCT_DISPLAY_NAME, PRODUCT_DISPLAY_NAME, PRODUCT_DISPLAY_NAME_ZH, TOOLCHAIN_NAME, TOOLCHAIN_VERSION
 from project_moe_gui.daemon import build_daemon_launch_plan, windows_daemon_artifact_plan
-from project_moe_gui.gui_shell import GUI_SHELL_CONTRACT, qml_shell_path, qml_visual_contract
+from project_moe_gui.gui_shell import (
+    DEFAULT_EXPERT_CATEGORIES,
+    DEFAULT_EXPERT_LENSES,
+    DEPRECATED_LENS_ALIASES,
+    LEGACY_CATEGORY_ID_ALIASES,
+    GUI_SHELL_CONTRACT,
+    qml_shell_path,
+    qml_visual_contract,
+)
 from project_moe_gui.qfluent_runtime import expected_qfluent_dependency, qfluent_license_manifest
 
 
 SCHEMA_VERSION = 1
+PRODUCT_SHELL_CONTRACT = "project-moe-gui-product-widgets-v1"
 DEFAULT_MODE_CLI = Path("tools/thesis_moe_mode.py")
 DEFAULT_SHARED_RUNTIME_ROOT = Path(r"D:\PythonProject_langgraph\.shared_runtimes\pyside6")
 DEFAULT_TOOLCHAIN_SOURCE_ROOT = Path(r"D:\PythonProject_langgraph\tools\project_moe_gui_toolchain")
+DEFAULT_MODE_CLI_TIMEOUT_SECONDS = 60.0
+MODE_CLI_TIMEOUT_ENV = "PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS"
+
+
+def mode_cli_timeout_seconds(default: float = DEFAULT_MODE_CLI_TIMEOUT_SECONDS) -> float:
+    raw = os.environ.get(MODE_CLI_TIMEOUT_ENV)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        parsed = float(str(raw).strip())
+    except ValueError:
+        return default
+    if parsed <= 0:
+        return default
+    return parsed
 
 
 def current_toolchain_source_root() -> Path:
@@ -37,8 +61,6 @@ def stable_toolchain_source_root() -> Path:
         return Path(configured).expanduser().resolve(strict=False)
     current_root = current_toolchain_source_root().resolve(strict=False)
     default_root = DEFAULT_TOOLCHAIN_SOURCE_ROOT.resolve(strict=False)
-    if current_root != default_root and ".worktrees" in current_root.parts:
-        return current_root
     if DEFAULT_TOOLCHAIN_SOURCE_ROOT.exists():
         return default_root
     return current_root
@@ -51,17 +73,17 @@ def validate_toolchain_source_root(source_root: Path) -> tuple[str, list[dict[st
     init_py = package_root / "__init__.py"
     status = "import_skipped"
     if not root.exists():
-        errors.append(blocker("blocked:toolchain_source_root_unavailable", "Configured Project MOE GUI toolchain source root is missing.", toolchain_source_root=str(root)))
+        errors.append(blocker("blocked:toolchain_source_root_unavailable", "Configured Project Expert Lens GUI toolchain source root is missing.", toolchain_source_root=str(root)))
         return "missing", errors
     if not init_py.exists():
-        errors.append(blocker("blocked:toolchain_source_root_invalid", "Configured Project MOE GUI toolchain source root does not contain src/project_moe_gui.", toolchain_source_root=str(root), expected=str(init_py)))
+        errors.append(blocker("blocked:toolchain_source_root_invalid", "Configured Project Expert Lens GUI toolchain source root does not contain src/project_moe_gui.", toolchain_source_root=str(root), expected=str(init_py)))
         return "invalid", errors
     code = "import project_moe_gui, project_moe_gui.toolchain; print(project_moe_gui.TOOLCHAIN_NAME)"
     env = dict(os.environ)
     env["PYTHONPATH"] = str(root / "src") + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8", errors="replace", check=False, env=env)
     if result.returncode != 0:
-        errors.append(blocker("blocked:toolchain_source_root_import_failed", "Configured Project MOE GUI toolchain source root cannot import project_moe_gui.", toolchain_source_root=str(root), stderr=result.stderr[-800:]))
+        errors.append(blocker("blocked:toolchain_source_root_import_failed", "Configured Project Expert Lens GUI toolchain source root cannot import project_moe_gui.", toolchain_source_root=str(root), stderr=result.stderr[-800:]))
         status = "import_failed"
     else:
         status = "import_ok"
@@ -73,16 +95,22 @@ LAUNCHER_RELATIVE = Path("tools/project_moe_gui/launcher.py")
 README_RELATIVE = Path("tools/project_moe_gui/README.md")
 CMD_RELATIVE = Path("project-moe-gui.cmd")
 SILENT_VBS_RELATIVE = Path("project-moe-gui-silent.vbs")
+CANONICAL_CMD_RELATIVE = Path("project-expert-lens-gui.cmd")
+CANONICAL_SILENT_VBS_RELATIVE = Path("project-expert-lens-gui-silent.vbs")
 QML_RELATIVE = Path("tools/project_moe_gui/qml/ProjectMoeGui.qml")
-MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, SILENT_VBS_RELATIVE, QML_RELATIVE]
+TURN_GATE_RELATIVE = Path("tools/thesis_moe_turn_gate.py")
+MANAGED_RELATIVES = [LAUNCHER_RELATIVE, CONFIG_RELATIVE, README_RELATIVE, CMD_RELATIVE, SILENT_VBS_RELATIVE, CANONICAL_CMD_RELATIVE, CANONICAL_SILENT_VBS_RELATIVE, QML_RELATIVE, TURN_GATE_RELATIVE]
 UNINSTALL_MANAGED_ALLOWLIST = {
     "tools/project_moe_gui/launcher.py",
     "tools/project_moe_gui/project_moe_gui.config.json",
     "tools/project_moe_gui/project_moe_gui.install-manifest.json",
     "tools/project_moe_gui/README.md",
     "tools/project_moe_gui/qml/ProjectMoeGui.qml",
+    "tools/thesis_moe_turn_gate.py",
     "project-moe-gui.cmd",
     "project-moe-gui-silent.vbs",
+    "project-expert-lens-gui.cmd",
+    "project-expert-lens-gui-silent.vbs",
 }
 RECOVERABLE_UPDATE_BLOCKER_CODES = {
     "blocked:toolchain_source_root_unavailable",
@@ -133,8 +161,8 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
     "blocked:missing_agent_toml": {
         "category": "agent_toml",
         "phase": "bootstrap",
-        "action": "create_project_moe_agent_toml",
-        "description": "Create the project-local MOE agent TOML with required top-level fields and standard Project MOE extension sections.",
+        "action": "create_native_compatible_project_expert_lens_agent_toml",
+        "description": "Create the project-local Project Expert Lens agent TOML with native Codex-compatible top-level fields only.",
         "requires_target_project_write": True,
     },
     "blocked:agent_toml_missing_required_fields": {
@@ -148,42 +176,14 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
         "category": "agent_toml",
         "phase": "repair",
         "action": "align_agent_toml_name_with_requested_agent",
-        "description": "Align the agent TOML top-level name with the Project MOE GUI configuration and readiness command.",
+        "description": "Align the agent TOML top-level name with the Project Expert Lens GUI configuration and readiness command.",
         "requires_target_project_write": True,
     },
-    "blocked:agent_toml_missing_extension_sections": {
+    "blocked:agent_toml_unsupported_custom_fields": {
         "category": "agent_toml",
         "phase": "repair",
-        "action": "add_project_moe_standard_extension_sections",
-        "description": "Add [project], [moe], [dispatch], and [extensions] standard sections to the existing agent TOML.",
-        "requires_target_project_write": True,
-    },
-    "blocked:agent_project_boundary_invalid": {
-        "category": "agent_toml",
-        "phase": "repair",
-        "action": "repair_agent_project_boundary_fields",
-        "description": "Repair [project] scope, namespace, and private prompt policy fields to match the Project MOE boundary contract.",
-        "requires_target_project_write": True,
-    },
-    "blocked:agent_state_namespace_mismatch": {
-        "category": "agent_toml",
-        "phase": "repair",
-        "action": "align_agent_state_namespace",
-        "description": "Align the agent TOML namespace and state paths with the requested Project MOE state namespace.",
-        "requires_target_project_write": True,
-    },
-    "blocked:agent_moe_boundary_invalid": {
-        "category": "agent_toml",
-        "phase": "repair",
-        "action": "repair_agent_moe_boundary_fields",
-        "description": "Repair [moe] kind, family, manual-enable, and state-path fields to the Project MOE standard.",
-        "requires_target_project_write": True,
-    },
-    "blocked:agent_dispatch_boundary_incomplete": {
-        "category": "agent_toml",
-        "phase": "repair",
-        "action": "repair_agent_dispatch_boundary",
-        "description": "Use brief-based dispatch, forbid full-history custom-role dispatch, and configure supported fallback paths.",
+        "action": "remove_custom_project_expert_lens_tables_from_native_agent_toml",
+        "description": "Remove custom Project Expert Lens tables or keys from native Codex agent TOML; readiness is proven through config, CLI, wrappers, startup hook, private prompt source, and .omx/state instead.",
         "requires_target_project_write": True,
     },
     "blocked:invalid_agent_toml": {
@@ -232,7 +232,7 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
         "category": "private_prompt_source",
         "phase": "repair",
         "action": "move_private_prompt_source_outside_gui_managed_artifacts",
-        "description": "Keep private prompt source outside Project MOE GUI managed artifacts.",
+        "description": "Keep private prompt source outside Project Expert Lens GUI managed artifacts.",
         "requires_target_project_write": True,
     },
     "blocked:missing_mode_cli": {
@@ -309,7 +309,7 @@ PHASE1_REMEDIATION_ACTIONS: dict[str, dict[str, Any]] = {
         "category": "mode_cli_contract",
         "phase": "repair",
         "action": "repair_mode_cli_schema_version",
-        "description": "Return the supported Project MOE GUI toolchain schema_version in every read-contract envelope.",
+        "description": "Return the supported Project Expert Lens Agent GUI toolchain schema_version in every read-contract envelope.",
         "requires_target_project_write": True,
     },
     "blocked:cli_command_echo_mismatch": {
@@ -506,25 +506,18 @@ PHASE1_OPERATOR_DOC_REQUIRED_TOKENS = (
 PHASE1_STARTUP_HOOK_REQUIRED_TOKENS = (
     "thesis_moe_mode.py",
     "status --json",
+    "thesis_moe_turn_gate.py",
+    "user message",
+    "next user message",
     "startup",
     "resume",
     "continue",
     "reload",
     "phase change",
 )
-PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS = ("project", "moe", "dispatch", "extensions")
-PHASE1_AGENT_PROJECT_REQUIRED_VALUES = {
-    "scope": "repo-local",
-    "private_prompt_policy": "do-not-copy-full-content",
-}
-PHASE1_AGENT_MOE_REQUIRED_VALUES = {
-    "kind": "project-moe-agent",
-    "family": "project-specific",
-    "requires_manual_enable": True,
-}
-PHASE1_AGENT_DISPATCH_REQUIRED_MODE = "brief-based"
-PHASE1_AGENT_DISPATCH_REQUIRED_FORBIDDEN = ("full-history-fork-with-custom-role",)
-PHASE1_AGENT_DISPATCH_REQUIRED_FALLBACKS = ("main-session-takeover", "durable-brief")
+PHASE1_AGENT_REQUIRED_FIELDS = ("name", "description", "developer_instructions")
+PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS = frozenset((*PHASE1_AGENT_REQUIRED_FIELDS, "model", "model_reasoning_effort"))
+PHASE1_AGENT_LEGACY_CUSTOM_TABLES = ("project", "moe", "dispatch", "extensions")
 PRIVATE_CLI_FIELD_NAMES = {
     "developer_instructions",
     "moe_md",
@@ -699,6 +692,39 @@ def runtime_state_dirty_details(git_status: dict[str, Any], namespace: str) -> d
     }
 
 
+def dirty_target_runtime_warning(git_status: dict[str, Any], namespace: str, runtime_dirty: dict[str, Any] | None = None) -> dict[str, Any]:
+    details = runtime_dirty if runtime_dirty is not None else runtime_state_dirty_details(git_status, namespace)
+    return {
+        "code": "warning:dirty_target_project_allowed_for_gui_runtime",
+        "message": "Target project has dirty or untracked files. GUI launch, read, and MOE state writes may continue, but install/update/managed-file overwrite/local commit still require a clean target worktree.",
+        "dirty_count": git_status.get("dirty_count"),
+        "records_sample": git_status.get("records_sample") or [],
+        "runtime_state_dirty_details": details,
+        "blocks_install_update_or_commit": True,
+        "blocks_gui_runtime": False,
+    }
+
+
+def strict_clean_git_errors(root: Path, *, operation: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    git_status = git_status_summary(root)
+    if git_status["token"] == "ok":
+        git_status["clean_worktree_enforced"] = True
+        return [], git_status
+    if git_status["token"] == "blocked:git_status_unavailable":
+        # Some import-safe fixtures provide only a .git evidence directory instead of a
+        # real Git repository. Production target projects such as A are real Git
+        # worktrees and remain dirty-blocked by the branch below. Keep the
+        # unavailable status visible as diagnostics without turning these fixtures
+        # into write blockers.
+        git_status["clean_worktree_enforced"] = False
+        git_status["clean_worktree_enforcement_reason"] = "git_status_unavailable_diagnostic_only"
+        return [], git_status
+    code = "blocked:dirty_target_project"
+    message = "Target project must be a clean Git worktree before install, update, or managed-file overwrite."
+    git_status["clean_worktree_enforced"] = True
+    return [blocker(code, message, operation=operation, git_status=git_status)], git_status
+
+
 def safe_relative(root: Path, relative: str | Path, token: str = "blocked:path_outside_project") -> tuple[Path | None, dict[str, Any] | None]:
     rel = Path(relative)
     if rel.is_absolute():
@@ -723,6 +749,14 @@ def validate_identifiers(agent_name: str, namespace: str) -> list[dict[str, Any]
     return errors
 
 
+def _agent_toml_unknown_top_level_keys(data: dict[str, Any]) -> list[str]:
+    return sorted(str(key) for key in set(data) - PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS)
+
+
+def _agent_toml_legacy_custom_tables(data: dict[str, Any]) -> list[str]:
+    return [name for name in PHASE1_AGENT_LEGACY_CUSTOM_TABLES if isinstance(data.get(name), dict)]
+
+
 def check_agent_toml(root: Path, agent_name: str) -> list[dict[str, Any]]:
     errors: list[dict[str, Any]] = []
     rel = Path(".codex/agents") / f"{agent_name}.toml"
@@ -731,12 +765,24 @@ def check_agent_toml(root: Path, agent_name: str) -> list[dict[str, Any]]:
         return [err]
     assert path is not None
     if not path.exists():
-        return [blocker("blocked:missing_agent_toml", "Target project must define the MOE agent TOML before GUI install.", path=norm(rel))]
+        return [blocker("blocked:missing_agent_toml", "Target project must define the native-compatible Project Expert Lens agent TOML before GUI install.", path=norm(rel))]
     if tomllib is not None:
         try:
             data = tomllib.loads(read_text(path))
             if data.get("name") != agent_name:
                 errors.append(blocker("blocked:agent_name_mismatch", "Agent TOML top-level name must match --agent-name.", expected=agent_name, observed=data.get("name")))
+            unknown = _agent_toml_unknown_top_level_keys(data)
+            if unknown:
+                errors.append(
+                    blocker(
+                        "blocked:agent_toml_unsupported_custom_fields",
+                        "Native Codex agent TOML must not contain custom Project Expert Lens top-level keys or tables.",
+                        path=norm(rel),
+                        unsupported_top_level_keys=unknown,
+                        legacy_custom_tables=_agent_toml_legacy_custom_tables(data),
+                        allowed_top_level_keys=sorted(PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS),
+                    )
+                )
         except Exception as exc:
             errors.append(blocker("blocked:invalid_agent_toml", "Cannot parse target agent TOML.", path=norm(rel), error=str(exc)))
     return errors
@@ -745,21 +791,29 @@ def check_agent_toml(root: Path, agent_name: str) -> list[dict[str, Any]]:
 def inspect_agent_toml(root: Path, agent_name: str, namespace: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     rel = Path(".codex/agents") / f"{agent_name}.toml"
     path, err = safe_relative(root, rel, "blocked:agent_toml_path_invalid")
-    if err:
-        return {"path": norm(rel), "exists": False, "required_fields_ok": False, "extension_sections": []}, [err]
-    assert path is not None
-    details: dict[str, Any] = {
+    base_details: dict[str, Any] = {
         "path": norm(rel),
-        "exists": path.exists(),
+        "exists": False,
         "required_fields_ok": False,
+        "native_schema_compatible": False,
+        "allowed_top_level_keys": sorted(PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS),
+        "unsupported_top_level_keys": [],
+        "legacy_custom_tables": [],
         "extension_sections": [],
-        "required_extension_sections": list(PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS),
-        "extension_fields_ok": False,
+        "required_extension_sections": [],
+        "extension_fields_ok": True,
+        "project_lens_metadata_source": "config_cli_wrappers_startup_private_prompt_and_state",
         "private_prompt_source": "MOE.md",
+        "state_namespace_source": "toolchain_config_and_mode_cli",
+        "state_namespace": namespace,
         "standard_profile_ready": False,
     }
+    if err:
+        return base_details, [err]
+    assert path is not None
+    details = {**base_details, "exists": path.exists()}
     if not path.exists():
-        return details, [blocker("blocked:missing_agent_toml", "Target project must define the MOE agent TOML before Phase 1 readiness.")]
+        return details, [blocker("blocked:missing_agent_toml", "Target project must define the native-compatible Project Expert Lens agent TOML before Phase 1 readiness.")]
     if tomllib is None:
         return details, [blocker("blocked:tomllib_unavailable", "Cannot validate agent TOML without tomllib.")]
     errors: list[dict[str, Any]] = []
@@ -767,121 +821,31 @@ def inspect_agent_toml(root: Path, agent_name: str, namespace: str) -> tuple[dic
         data = tomllib.loads(read_text(path))
     except Exception as exc:
         return details, [blocker("blocked:invalid_agent_toml", "Cannot parse target agent TOML.", path=norm(rel), error=str(exc))]
-    required = ["name", "description", "developer_instructions"]
-    missing = [key for key in required if not str(data.get(key) or "").strip()]
+    missing = [key for key in PHASE1_AGENT_REQUIRED_FIELDS if not str(data.get(key) or "").strip()]
     if missing:
         errors.append(blocker("blocked:agent_toml_missing_required_fields", "Agent TOML is missing required top-level fields.", missing=missing))
     if data.get("name") != agent_name:
         errors.append(blocker("blocked:agent_name_mismatch", "Agent TOML top-level name must match --agent-name.", expected=agent_name, observed=data.get("name")))
-    project_section = data.get("project") if isinstance(data.get("project"), dict) else {}
-    moe_section = data.get("moe") if isinstance(data.get("moe"), dict) else {}
-    dispatch_section = data.get("dispatch") if isinstance(data.get("dispatch"), dict) else {}
+    unsupported = _agent_toml_unknown_top_level_keys(data)
+    legacy_custom_tables = _agent_toml_legacy_custom_tables(data)
+    if unsupported:
+        errors.append(
+            blocker(
+                "blocked:agent_toml_unsupported_custom_fields",
+                "Native Codex agent TOML must contain only supported top-level fields; Project Expert Lens metadata belongs in config, CLI, wrappers, startup hooks, private prompt source, and .omx/state.",
+                unsupported_top_level_keys=unsupported,
+                legacy_custom_tables=legacy_custom_tables,
+                allowed_top_level_keys=sorted(PHASE1_AGENT_ALLOWED_TOP_LEVEL_KEYS),
+            )
+        )
     details["required_fields_ok"] = not missing
-    details["extension_sections"] = [name for name in ["project", "moe", "dispatch", "extensions"] if isinstance(data.get(name), dict)]
-    details["private_prompt_source"] = str(project_section.get("private_prompt_source") or "MOE.md")
-    missing_sections = [section for section in PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS if not isinstance(data.get(section), dict)]
-    if missing_sections:
-        errors.append(
-            blocker(
-                "blocked:agent_toml_missing_extension_sections",
-                "Agent TOML must include the standard Project MOE extension sections before Phase 1 readiness.",
-                missing=missing_sections,
-                required=list(PHASE1_AGENT_REQUIRED_EXTENSION_SECTIONS),
-            )
-        )
-    for key, expected in PHASE1_AGENT_PROJECT_REQUIRED_VALUES.items():
-        observed = project_section.get(key)
-        if observed != expected:
-            errors.append(
-                blocker(
-                    "blocked:agent_project_boundary_invalid",
-                    "Agent TOML [project] boundary fields must match the Project MOE standard.",
-                    field=f"project.{key}",
-                    expected=expected,
-                    observed=observed,
-                )
-            )
-    project_namespace = project_section.get("state_namespace")
-    if project_namespace != namespace:
-        errors.append(
-            blocker(
-                "blocked:agent_state_namespace_mismatch",
-                "Agent TOML [project].state_namespace must match --state-namespace.",
-                field="project.state_namespace",
-                expected=namespace,
-                observed=project_namespace,
-            )
-        )
-    if moe_section.get("state_namespace") not in {None, namespace}:
-        errors.append(blocker("blocked:agent_state_namespace_mismatch", "Agent TOML [moe].state_namespace must match --state-namespace when present.", field="moe.state_namespace", expected=namespace, observed=moe_section.get("state_namespace")))
-    expected_state_paths = {
-        "project_default_state": f".omx/state/{namespace}/project-default.json",
-        "session_state_dir": f".omx/state/{namespace}/sessions",
-    }
-    for key, expected in {**PHASE1_AGENT_MOE_REQUIRED_VALUES, **expected_state_paths}.items():
-        observed = moe_section.get(key)
-        if observed != expected:
-            errors.append(
-                blocker(
-                    "blocked:agent_moe_boundary_invalid",
-                    "Agent TOML [moe] fields must match the Project MOE state boundary.",
-                    field=f"moe.{key}",
-                    expected=expected,
-                    observed=observed,
-                )
-            )
-    dispatch_mode = dispatch_section.get("mode")
-    if dispatch_mode != PHASE1_AGENT_DISPATCH_REQUIRED_MODE:
-        errors.append(
-            blocker(
-                "blocked:agent_dispatch_boundary_incomplete",
-                "Agent TOML [dispatch].mode must use the compatible Project MOE dispatch mode.",
-                field="dispatch.mode",
-                expected=PHASE1_AGENT_DISPATCH_REQUIRED_MODE,
-                observed=dispatch_mode,
-            )
-        )
-    forbidden_dispatch = dispatch_section.get("forbidden")
-    missing_forbidden = [
-        item
-        for item in PHASE1_AGENT_DISPATCH_REQUIRED_FORBIDDEN
-        if not isinstance(forbidden_dispatch, list) or item not in forbidden_dispatch
-    ]
-    if missing_forbidden:
-        errors.append(
-            blocker(
-                "blocked:agent_dispatch_boundary_incomplete",
-                "Agent TOML dispatch boundary must forbid incompatible full-history custom-role dispatch.",
-                field="dispatch.forbidden",
-                missing=missing_forbidden,
-            )
-        )
-    fallback_dispatch = dispatch_section.get("fallback")
-    missing_fallbacks = [
-        item
-        for item in PHASE1_AGENT_DISPATCH_REQUIRED_FALLBACKS
-        if not isinstance(fallback_dispatch, list) or item not in fallback_dispatch
-    ]
-    if missing_fallbacks:
-        errors.append(
-            blocker(
-                "blocked:agent_dispatch_boundary_incomplete",
-                "Agent TOML dispatch boundary must define compatible fallback paths.",
-                field="dispatch.fallback",
-                missing=missing_fallbacks,
-            )
-        )
-    extension_blocker_codes = {
-        "blocked:agent_toml_missing_extension_sections",
-        "blocked:agent_project_boundary_invalid",
-        "blocked:agent_state_namespace_mismatch",
-        "blocked:agent_moe_boundary_invalid",
-        "blocked:agent_dispatch_boundary_incomplete",
-    }
-    details["extension_fields_ok"] = not any(error["code"] in extension_blocker_codes for error in errors)
-    details["standard_profile_ready"] = details["required_fields_ok"] and details["extension_fields_ok"] and data.get("name") == agent_name
+    details["unsupported_top_level_keys"] = unsupported
+    details["legacy_custom_tables"] = legacy_custom_tables
+    details["extension_sections"] = legacy_custom_tables
+    details["native_schema_compatible"] = not unsupported
+    details["extension_fields_ok"] = not unsupported
+    details["standard_profile_ready"] = details["required_fields_ok"] and details["native_schema_compatible"] and data.get("name") == agent_name
     return details, errors
-
 
 def inspect_private_prompt(root: Path, source: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     rel = Path(source or "MOE.md")
@@ -931,7 +895,7 @@ def inspect_private_prompt(root: Path, source: str) -> tuple[dict[str, Any], lis
         errors.append(
             blocker(
                 "blocked:private_prompt_source_managed_by_toolchain",
-                "Project-private prompt source must not point at Project MOE GUI managed artifacts.",
+                "Project-private prompt source must not point at Project Expert Lens GUI managed artifacts.",
                 path=norm(rel),
             )
         )
@@ -1119,7 +1083,7 @@ def run_cli(root: Path, mode_cli: Path, command: str) -> tuple[dict[str, Any] | 
             text=True,
             encoding="utf-8",
             errors="replace",
-            timeout=20,
+            timeout=mode_cli_timeout_seconds(),
             check=False,
         )
     except subprocess.TimeoutExpired:
@@ -1168,7 +1132,7 @@ def require_cli_envelope(
         errors.append(
             blocker(
                 "blocked:cli_envelope_schema_version_mismatch",
-                "Mode CLI JSON envelope schema_version is not supported by this Project MOE GUI toolchain.",
+                "Mode CLI JSON envelope schema_version is not supported by this Project Expert Lens Agent GUI toolchain.",
                 command=command,
                 expected=SCHEMA_VERSION,
                 observed=payload.get("schema_version"),
@@ -1826,7 +1790,7 @@ def main() -> int:
     try:
         config = json.loads(config_path.read_text(encoding="utf-8-sig"))
     except Exception as exc:
-        return emit({"schema_version": 1, "ok": False, "token": "blocked:launcher_config_invalid", "exit_code": 5, "message": "Cannot read Project MOE GUI config.", "error": str(exc)}, args.json)
+        return emit({"schema_version": 1, "ok": False, "token": "blocked:launcher_config_invalid", "exit_code": 5, "message": "Cannot read Project Expert Lens GUI config.", "error": str(exc)}, args.json)
 
     project_root = launcher.parents[2]
     source_root = Path(str(config.get("toolchain_source_root") or ""))
@@ -1883,6 +1847,7 @@ def main() -> int:
             Path(mode_cli_value),
             execute_cli=True,
             allow_runtime_state_dirty=True,
+            allow_dirty_target_warning=True,
         )
     except Exception as exc:
         return emit({
@@ -1890,13 +1855,13 @@ def main() -> int:
             "ok": False,
             "token": "blocked:phase1_readiness_gate_unavailable",
             "exit_code": 5,
-            "message": "Cannot run Project MOE Phase 1 readiness gate before GUI preflight.",
+            "message": "Cannot run Project Expert Lens Phase 1 readiness gate before GUI preflight.",
             "project_root": str(project_root),
             "mode_cli": str(mode_cli),
             "error": str(exc),
             "control_mode_allowed": False,
             "target_project_write_allowed_by_launcher": False,
-            "blockers": [{"code": "blocked:phase1_readiness_gate_unavailable", "message": "Cannot run Project MOE Phase 1 readiness gate before GUI preflight.", "error": str(exc)}],
+            "blockers": [{"code": "blocked:phase1_readiness_gate_unavailable", "message": "Cannot run Project Expert Lens Phase 1 readiness gate before GUI preflight.", "error": str(exc)}],
         }, args.json)
 
     if not (readiness.get("ok") and readiness.get("control_mode_allowed") is True and readiness.get("readiness_status") == "ready"):
@@ -1906,7 +1871,7 @@ def main() -> int:
             "ok": False,
             "token": str(readiness.get("token") or "blocked:phase1_readiness_gate_failed"),
             "exit_code": 5,
-            "message": "Project MOE Phase 1 readiness gate blocks GUI preflight before target CLI reads.",
+            "message": "Project Expert Lens Phase 1 readiness gate blocks GUI preflight before target CLI reads.",
             "project_root": str(project_root),
             "mode_cli": str(mode_cli),
             "readiness_status": readiness.get("readiness_status"),
@@ -1943,7 +1908,7 @@ def main() -> int:
     try:
         from project_moe_gui import gui_shell
     except Exception as exc:
-        return emit({"schema_version": 1, "ok": False, "token": "blocked:gui_shell_unavailable", "exit_code": 5, "message": "Cannot import central Project MOE GUI shell.", "toolchain_source_root": str(source_root), "error": str(exc)}, args.json)
+        return emit({"schema_version": 1, "ok": False, "token": "blocked:gui_shell_unavailable", "exit_code": 5, "message": "Cannot import central Project Expert Lens GUI shell.", "toolchain_source_root": str(source_root), "error": str(exc)}, args.json)
 
     runtime_config = dict(config)
     runtime_config["runtime_project_root"] = str(project_root)
@@ -1960,12 +1925,14 @@ def main() -> int:
     preflight["launcher_runtime_reexec"] = os.environ.get("PROJECT_MOE_GUI_RUNTIME_REEXEC") == "1"
     preflight["daemon_launch"] = daemon_plan
     preflight["qfluentwidgets_status"] = qfluent_status
+    preflight["phase1_warnings"] = list(readiness.get("warnings") or [])
     preflight["phase1_readiness_gate"] = {
         "readiness_status": readiness.get("readiness_status"),
         "adaptation_lane": readiness.get("adaptation_lane"),
         "control_mode_allowed": readiness.get("control_mode_allowed"),
         "cli_execution_mode": readiness.get("cli_execution_mode"),
         "git_status": readiness.get("git_status"),
+        "warnings": list(readiness.get("warnings") or []),
     }
     if args.preflight:
         return emit(preflight, args.json)
@@ -1992,17 +1959,31 @@ if __name__ == "__main__":
 '''
 
 
-def cmd_text() -> str:
-    return '@echo off\nsetlocal\nset PYTHONUTF8=1\nif not defined PROJECT_MOE_GUI_DAEMON_CHILD set PROJECT_MOE_GUI_DAEMON_CHILD=\ncd /d "%~dp0"\npython "%~dp0tools\\project_moe_gui\\launcher.py" %*\nexit /b %ERRORLEVEL%\n'
+def cmd_text(runtime_root: Path = DEFAULT_SHARED_RUNTIME_ROOT) -> str:
+    runtime_python = runtime_root / ".venv" / "Scripts" / "python.exe"
+    return (
+        '@echo off\n'
+        'setlocal\n'
+        'set PYTHONUTF8=1\n'
+        'if not defined PROJECT_MOE_GUI_DAEMON_CHILD set PROJECT_MOE_GUI_DAEMON_CHILD=\n'
+        'cd /d "%~dp0"\n'
+        f'set "PROJECT_MOE_GUI_CONFIGURED_PYTHON={win_rel(runtime_python)}"\n'
+        'if exist "%PROJECT_MOE_GUI_CONFIGURED_PYTHON%" (\n'
+        '  "%PROJECT_MOE_GUI_CONFIGURED_PYTHON%" "%~dp0tools\\project_moe_gui\\launcher.py" %*\n'
+        ') else (\n'
+        '  python "%~dp0tools\\project_moe_gui\\launcher.py" %*\n'
+        ')\n'
+        'exit /b %ERRORLEVEL%\n'
+    )
 
 
-def silent_vbs_text() -> str:
-    return '''Option Explicit
+def silent_vbs_text(diagnostic_entry: str = "project-moe-gui.cmd") -> str:
+    return f'''Option Explicit
 Dim shell, fso, scriptDir, command, i
 Set shell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
-command = QuoteArg(scriptDir & "\\project-moe-gui.cmd")
+command = QuoteArg(scriptDir & "\\{diagnostic_entry}")
 For i = 0 To WScript.Arguments.Count - 1
   command = command & " " & QuoteArg(WScript.Arguments(i))
 Next
@@ -2020,9 +2001,9 @@ def qml_shell_text() -> str:
 
 
 def readme_text(agent_name: str, namespace: str) -> str:
-    return f"""# Project MOE GUI managed artifacts
+    return f"""# Project Expert Lens Agent GUI managed artifacts
 
-This directory is managed by `D:\\PythonProject_langgraph` Project MOE GUI toolchain.
+This directory is managed by `D:\\PythonProject_langgraph` Project Expert Lens Agent GUI toolchain.
 
 - Agent: `{agent_name}`
 - State namespace: `{namespace}`
@@ -2034,8 +2015,10 @@ Phase 2B provides an import-safe GUI shell and guarded visible-launch path throu
 
 Launch entries:
 
-- `project-moe-gui.cmd`: diagnostic entry. It may show CMD/PowerShell output and supports `--preflight --json`.
-- `project-moe-gui-silent.vbs`: no-console double-click entry for human GUI launch. It delegates to the diagnostic entry with a hidden parent window and leaves machine diagnostics on the `.cmd` path.
+- `project-expert-lens-gui.cmd`: canonical diagnostic entry. It may show CMD/PowerShell output and supports `--preflight --json`.
+- `project-expert-lens-gui-silent.vbs`: canonical no-console double-click entry for human GUI launch.
+- `project-moe-gui.cmd`: legacy diagnostic alias, kept for compatibility.
+- `project-moe-gui-silent.vbs`: legacy no-console alias, kept for compatibility.
 """
 
 
@@ -2056,29 +2039,51 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
         {
             "schema_version": SCHEMA_VERSION,
             "toolchain": TOOLCHAIN_NAME,
+            "canonical_toolchain": CANONICAL_TOOLCHAIN_NAME,
+            "product_display_name": PRODUCT_DISPLAY_NAME,
+            "product_display_name_zh": PRODUCT_DISPLAY_NAME_ZH,
+            "legacy_product_display_name": LEGACY_PRODUCT_DISPLAY_NAME,
             "toolchain_version": TOOLCHAIN_VERSION,
             "cli_contract": CLI_CONTRACT,
             "agent_name": agent_name,
             "state_namespace": namespace,
             "mode_cli": norm(mode_cli),
+            "private_prompt_source": norm(DEFAULT_PRIVATE_PROMPT_SOURCE),
             "project_root_strategy": "launcher-parent-git-root",
             "pyside6_runtime": "shared-runtime",
             "python_runtime_strategy": "shared-gui-runtime",
             "python_utf8": True,
-            "visual_dependency": qml_visual_contract(),
+            "visual_dependency": {
+                **expected_qfluent_dependency(),
+                "library": "QFluentWidgets / Qt Widgets",
+                "style": "Fluent Widgets",
+                "primary_shell": "qfluentwidgets-qtwidgets",
+                "fallback_shell": "qml-material",
+            },
             "qml_shell": {
-                "primary": True,
+                "primary": False,
                 "relative_path": norm(QML_RELATIVE),
                 "style": "Material",
                 "managed_artifact": True,
                 "central_fallback_allowed": True,
+                "fallback_role": "explicit-qml-fallback",
             },
-            "legacy_visual_dependency": expected_qfluent_dependency(),
+            "legacy_visual_dependency": qml_visual_contract(),
             "gui_dependency_license_manifest": qfluent_license_manifest(),
+            "product_shell_contract": PRODUCT_SHELL_CONTRACT,
+            "product_shell": {
+                "primary": True,
+                "library": "QFluentWidgets / Qt Widgets",
+                "style": "Fluent Widgets",
+                "contract": PRODUCT_SHELL_CONTRACT,
+                "qml_fallback_env": "PROJECT_MOE_GUI_USE_QML_FALLBACK=1",
+            },
             "daemon_launch": daemon_plan,
             "silent_launch": {
                 "entry": norm(SILENT_VBS_RELATIVE),
                 "diagnostic_entry": norm(CMD_RELATIVE),
+                "canonical_entry": norm(CANONICAL_SILENT_VBS_RELATIVE),
+                "canonical_diagnostic_entry": norm(CANONICAL_CMD_RELATIVE),
                 "uses_wscript_hidden_window": True,
                 "keeps_preflight_on_cmd": True,
                 "configured_python_executable": daemon_plan.get("configured_python_executable"),
@@ -2096,6 +2101,23 @@ def config_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, 
             "installed_target_project_root": str(root),
             "toolchain_source_root": str(stable_toolchain_source_root()),
             "gui_shell_contract": GUI_SHELL_CONTRACT,
+            "codex_session_discovery": {
+                "enabled": True,
+                "strategy": "read-only-codex-session-jsonl-top-level-user-sessions-with-preview",
+                "sessions_root": "%USERPROFILE%/.codex/sessions",
+                "session_index_role": "supplemental-labels-only",
+                "target_project_scope": "session_meta.cwd must be the installed target project or a child path, and thread_source must be top-level user session",
+                "reads_message_bodies": True,
+                "message_body_scope": "target_project_top_level_user_assistant_preview_only",
+                "hides_child_agent_sessions_from_default_view": True,
+                "discovered_only_rows_visible": True,
+            },
+            "running_session_turn_gate": {
+                "enabled": True,
+                "helper": norm(TURN_GATE_RELATIVE),
+                "effect_timing": "next_user_message",
+                "fail_closed_on_ambiguous_current_session": True,
+            },
         }
     )
     return data
@@ -2106,10 +2128,288 @@ def artifacts(root: Path, agent_name: str, namespace: str, mode_cli: Path, runti
         LAUNCHER_RELATIVE: launcher_text(),
         CONFIG_RELATIVE: json.dumps(config_payload(root, agent_name, namespace, mode_cli, runtime_root, existing_config), ensure_ascii=False, indent=2) + "\n",
         README_RELATIVE: readme_text(agent_name, namespace),
-        CMD_RELATIVE: cmd_text(),
+        CMD_RELATIVE: cmd_text(runtime_root),
         SILENT_VBS_RELATIVE: silent_vbs_text(),
+        CANONICAL_CMD_RELATIVE: cmd_text(runtime_root),
+        CANONICAL_SILENT_VBS_RELATIVE: silent_vbs_text("project-expert-lens-gui.cmd"),
         QML_RELATIVE: qml_shell_text(),
+        TURN_GATE_RELATIVE: phase1_turn_gate_template(mode_cli),
     }
+
+
+def phase1_public_lens_catalog() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    category_by_lens: dict[str, str] = {}
+    categories: list[dict[str, Any]] = []
+    for category in DEFAULT_EXPERT_CATEGORIES:
+        category_id = str(category["id"])
+        lens_ids = [str(item) for item in category.get("lens_ids", [])]
+        for lens_id in lens_ids:
+            category_by_lens[lens_id] = category_id
+        categories.append(
+            {
+                key: category[key]
+                for key in (
+                    "id",
+                    "label",
+                    "zh_label",
+                    "en_label",
+                    "description",
+                    "zh_description",
+                    "en_description",
+                    "lens_ids",
+                )
+                if key in category
+            }
+        )
+    lenses: list[dict[str, Any]] = []
+    for lens in DEFAULT_EXPERT_LENSES:
+        lens_id = str(lens["id"])
+        payload = {
+            key: lens[key]
+            for key in ("id", "label", "zh_label", "en_label", "description", "zh_description", "en_description")
+            if key in lens
+        }
+        payload["category"] = category_by_lens.get(lens_id, "strict_graduate_advisor")
+        lenses.append(payload)
+    return lenses, categories
+
+
+def phase1_public_catalog_constants_text() -> str:
+    lenses, categories = phase1_public_lens_catalog()
+    thinking_model_lens_ids = list(DEPRECATED_LENS_ALIASES.get("thinking_dispatcher", []))
+    lens_aliases = {str(key): [str(item) for item in value] for key, value in DEPRECATED_LENS_ALIASES.items()}
+    category_aliases = {str(key): str(value) for key, value in LEGACY_CATEGORY_ID_ALIASES.items()}
+    return "\n".join(
+        [
+            "THINKING_MODEL_LENS_IDS = " + json.dumps(thinking_model_lens_ids, ensure_ascii=False, indent=4),
+            "DEPRECATED_LENS_ALIASES = " + json.dumps(lens_aliases, ensure_ascii=False, indent=4),
+            "DEPRECATED_CATEGORY_ALIASES = " + json.dumps(category_aliases, ensure_ascii=False, indent=4),
+            "PUBLIC_LENSES = " + json.dumps(lenses, ensure_ascii=False, indent=4),
+            "PUBLIC_CATEGORIES = " + json.dumps(categories, ensure_ascii=False, indent=4),
+            'LENS_IDS = {str(item["id"]) for item in PUBLIC_LENSES}',
+            'CATEGORY_IDS = {str(item["id"]) for item in PUBLIC_CATEGORIES}',
+            "",
+        ]
+    )
+
+
+def _phase1_replace_catalog_constants(text: str) -> tuple[str, str | None]:
+    public_start = text.find("PUBLIC_LENSES = [")
+    if public_start < 0:
+        return text, None
+    constants_start = public_start
+    for marker in ("THINKING_MODEL_LENS_IDS = [", "DEPRECATED_LENS_ALIASES = {", "DEPRECATED_CATEGORY_ALIASES = {"):
+        marker_index = text.rfind("\n" + marker, 0, public_start)
+        if marker_index >= 0:
+            constants_start = min(constants_start, marker_index + 1)
+    class_marker = "\n\nclass ThesisMoeError"
+    end = text.find(class_marker, public_start)
+    if end < 0:
+        return text, "blocked:phase1_mode_cli_catalog_anchor_missing"
+    return text[:constants_start] + phase1_public_catalog_constants_text() + text[end:], None
+
+
+def _phase1_replace_selected_helpers(text: str) -> tuple[str, str | None]:
+    replacement = '''def expand_lens_aliases(values: list[str]) -> list[str]:
+    result: list[str] = []
+    for value in values:
+        expanded = DEPRECATED_LENS_ALIASES.get(value, [value])
+        for item in expanded:
+            if item not in result:
+                result.append(item)
+    return result
+
+
+def normalize_category_aliases(values: list[str]) -> list[str]:
+    result: list[str] = []
+    for value in values:
+        item = DEPRECATED_CATEGORY_ALIASES.get(value, value)
+        if item not in result:
+            result.append(item)
+    return result
+
+
+def selected_lenses_from(data: Optional[dict[str, Any]]) -> list[str]:
+    return expand_lens_aliases(selected_list(data, "selected_lenses"))
+
+
+def selected_categories_from(data: Optional[dict[str, Any]]) -> list[str]:
+    return normalize_category_aliases(selected_list(data, "selected_categories"))
+
+
+'''
+    start_match = re.search(r"\ndef (?:expand_lens_aliases|normalize_category_aliases|selected_lenses_from)\(", text)
+    if not start_match:
+        return text, "blocked:phase1_mode_cli_selected_helper_anchor_missing"
+    start = start_match.start() + 1
+    end_match = re.search(r"\ndef effective_lens_mode\(", text[start:])
+    if not end_match:
+        return text, "blocked:phase1_mode_cli_selected_helper_anchor_missing"
+    end = start + end_match.start() + 1
+    return text[:start] + replacement + text[end:], None
+
+
+def _phase1_replace_validate_lens_selection(text: str) -> tuple[str, str | None]:
+    replacement = '''def validate_lens_selection(selected_lenses: list[str], selected_categories: list[str]) -> None:
+    supported_lenses = set(LENS_IDS) | set(DEPRECATED_LENS_ALIASES)
+    supported_categories = set(CATEGORY_IDS) | set(DEPRECATED_CATEGORY_ALIASES)
+    invalid_lenses = [item for item in selected_lenses if item not in supported_lenses]
+    invalid_categories = [item for item in selected_categories if item not in supported_categories]
+    if invalid_lenses or invalid_categories:
+        raise ThesisMoeError(
+            "blocked:invalid_lens_selection",
+            "selected MOE lens or category is not in the public list-lenses catalog",
+            2,
+            {
+                "invalid_lenses": invalid_lenses,
+                "invalid_categories": invalid_categories,
+                "supported_lenses": sorted(supported_lenses),
+                "supported_categories": sorted(supported_categories),
+            },
+        )
+'''
+    pattern = r"def validate_lens_selection\(selected_lenses: list\[str\], selected_categories: list\[str\]\) -> None:.*?(?=\n\ndef parsed_selection)"
+    new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+    if count != 1:
+        return text, "blocked:phase1_mode_cli_validate_anchor_missing"
+    return new_text, None
+
+
+def _phase1_replace_parsed_selection(text: str) -> tuple[str, str | None]:
+    replacement = '''def parsed_selection(args: argparse.Namespace) -> tuple[Optional[list[str]], Optional[list[str]]]:
+    lenses = getattr(args, "lens", None)
+    categories = getattr(args, "category", None)
+    selected_lenses = unique_preserve_order(lenses) if lenses is not None else None
+    selected_categories = unique_preserve_order(categories) if categories is not None else None
+    if selected_lenses is not None or selected_categories is not None:
+        validate_lens_selection(selected_lenses or [], selected_categories or [])
+    if selected_lenses is not None:
+        selected_lenses = expand_lens_aliases(selected_lenses)
+    if selected_categories is not None:
+        selected_categories = normalize_category_aliases(selected_categories)
+    return selected_lenses, selected_categories
+'''
+    pattern = r"def parsed_selection\(args: argparse.Namespace\) -> tuple\[Optional\[list\[str\]\], Optional\[list\[str\]\]\]:.*?(?=\n\ndef attach_lens_fields)"
+    new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+    if count != 1:
+        return text, "blocked:phase1_mode_cli_parsed_selection_anchor_missing"
+    return new_text, None
+
+
+def migrate_phase1_mode_cli_catalog_text(text: str) -> tuple[str, list[str]]:
+    blockers: list[str] = []
+    for migrate in (
+        _phase1_replace_catalog_constants,
+        _phase1_replace_selected_helpers,
+        _phase1_replace_validate_lens_selection,
+        _phase1_replace_parsed_selection,
+    ):
+        text, blocker_code = migrate(text)
+        if blocker_code:
+            blockers.append(blocker_code)
+    return text, blockers
+
+
+def phase1_mode_cli_catalog_migration_plan(root: Path, mode_cli: Path) -> dict[str, Any]:
+    full, err = safe_relative(root, mode_cli, "blocked:mode_cli_path_invalid")
+    if err:
+        return {"path": norm(mode_cli), "action": "blocked", "managed": False, "phase1_contract": True, "blocker": err}
+    assert full is not None
+    if not full.exists():
+        return {"path": norm(mode_cli), "action": "unchanged", "managed": False, "phase1_contract": True, "reason": "mode_cli_missing"}
+    original = read_text(full)
+    if "PUBLIC_LENSES" not in original or "PUBLIC_CATEGORIES" not in original:
+        return {"path": norm(mode_cli), "action": "unchanged", "managed": False, "phase1_contract": True, "reason": "public_catalog_not_detected"}
+    migrated, blocker_codes = migrate_phase1_mode_cli_catalog_text(original)
+    if blocker_codes:
+        return {
+            "path": norm(mode_cli),
+            "action": "blocked",
+            "managed": False,
+            "phase1_contract": True,
+            "blocker": blocker(blocker_codes[0], "Existing Phase 1 mode CLI catalog could not be safely migrated.", path=norm(mode_cli), blockers=blocker_codes),
+        }
+    if migrated == original:
+        return {"path": norm(mode_cli), "action": "unchanged", "managed": False, "phase1_contract": True}
+    return {
+        "path": norm(mode_cli),
+        "action": "update",
+        "managed": False,
+        "phase1_contract": True,
+        "migration": "phase1_public_lens_catalog_0_2_41",
+        "old_sha256": sha256_bytes(original.encode("utf-8")),
+        "new_sha256": sha256_bytes(migrated.encode("utf-8")),
+        "new_text": migrated,
+    }
+
+
+def apply_phase1_mode_cli_catalog_migration(root: Path, plan: dict[str, Any]) -> list[dict[str, Any]]:
+    if plan.get("action") != "update":
+        return []
+    rel = Path(str(plan.get("path") or ""))
+    full, err = safe_relative(root, rel, "blocked:mode_cli_path_invalid")
+    if err:
+        raise RuntimeError(err["message"])
+    assert full is not None
+    status = write_text_if_changed(full, str(plan["new_text"]))
+    return [{"path": norm(rel), "status": status, "managed": False, "phase1_contract": True}]
+
+
+def public_phase1_cli_migration_action(plan: dict[str, Any]) -> dict[str, Any]:
+    public = {key: value for key, value in plan.items() if key != "new_text"}
+    if "new_text" in plan:
+        public["new_text_redacted"] = True
+    return public
+
+
+def phase1_wrapper_migration_plan(root: Path, mode_cli: Path) -> list[dict[str, Any]]:
+    planned: list[dict[str, Any]] = []
+    for rel, command in [(DEFAULT_ON_WRAPPER, "project-on"), (DEFAULT_OFF_WRAPPER, "project-off")]:
+        full, err = safe_relative(root, rel, "blocked:wrapper_path_invalid")
+        canonical = phase1_wrapper_template(mode_cli, command)
+        if err:
+            planned.append({"path": norm(rel), "action": "blocked", "managed": False, "phase1_contract": True, "blocker": err})
+            continue
+        assert full is not None
+        if not full.exists():
+            planned.append({"path": norm(rel), "action": "unchanged", "managed": False, "phase1_contract": True, "reason": "wrapper_missing_phase1_scaffold_required"})
+            continue
+        old = read_text(full)
+        action = "unchanged" if old == canonical else "update"
+        planned.append(
+            {
+                "path": norm(rel),
+                "action": action,
+                "managed": False,
+                "phase1_contract": True,
+                "expected_command": command,
+                "project_default_semantics": True,
+                "hardcoded_lenses_or_categories": False,
+                "reason": "already_current" if action == "unchanged" else "refresh_project_default_wrapper_contract",
+                "new_text": canonical if action == "update" else None,
+            }
+        )
+    return planned
+
+
+def public_phase1_wrapper_migration_action(plan: dict[str, Any]) -> dict[str, Any]:
+    public = {key: value for key, value in plan.items() if key != "new_text"}
+    if plan.get("new_text") is not None:
+        public["new_text_redacted"] = True
+    return public
+
+
+def apply_phase1_wrapper_migration(root: Path, plans: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    applied: list[dict[str, Any]] = []
+    for plan in plans:
+        if plan.get("action") != "update":
+            continue
+        full, err = safe_relative(root, Path(str(plan.get("path") or "")), "blocked:wrapper_path_invalid")
+        if err:
+            raise RuntimeError(err["message"])
+        assert full is not None
+        applied.append({"path": str(plan["path"]), "status": write_text_if_changed(full, str(plan.get("new_text") or "")), "managed": False, "phase1_contract": True})
+    return applied
 
 
 def manifest_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path, planned: dict[Path, str], previous: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -2118,6 +2418,9 @@ def manifest_payload(root: Path, agent_name: str, namespace: str, mode_cli: Path
     return {
         "schema_version": SCHEMA_VERSION,
         "toolchain": TOOLCHAIN_NAME,
+        "canonical_toolchain": CANONICAL_TOOLCHAIN_NAME,
+        "product_display_name": PRODUCT_DISPLAY_NAME,
+        "product_display_name_zh": PRODUCT_DISPLAY_NAME_ZH,
         "toolchain_version": TOOLCHAIN_VERSION,
         "cli_contract": CLI_CONTRACT,
         "target_project_root": str(root),
@@ -2162,12 +2465,14 @@ def check_phase1_readiness(
     agent_name: str,
     namespace: str,
     mode_cli: Path,
+    private_prompt_source: Path = DEFAULT_PRIVATE_PROMPT_SOURCE,
     on_wrapper: Path = DEFAULT_ON_WRAPPER,
     off_wrapper: Path = DEFAULT_OFF_WRAPPER,
     startup_paths: list[Path] | None = None,
     operator_doc_paths: list[Path] | None = None,
     execute_cli: bool = True,
     allow_runtime_state_dirty: bool = False,
+    allow_dirty_target_warning: bool = False,
 ) -> dict[str, Any]:
     errors = validate_identifiers(agent_name, namespace)
     evidence = project_evidence(root)
@@ -2175,11 +2480,18 @@ def check_phase1_readiness(
         errors.append(blocker("blocked:missing_project_evidence", "Target directory does not look like a project.", expected=PROJECT_EVIDENCE))
     git_status = git_status_summary(root)
     runtime_dirty = runtime_state_dirty_details(git_status, namespace) if git_status["token"] == "blocked:dirty_target_project" else None
+    dirty_runtime_warnings: list[dict[str, Any]] = []
     if git_status["token"] == "blocked:dirty_target_project":
         if allow_runtime_state_dirty and runtime_dirty and runtime_dirty["all_dirty_records_runtime_state_only"]:
             git_status["token"] = "ok:runtime_state_dirty_allowed"
             git_status["runtime_state_dirty_allowed"] = True
             git_status["runtime_state_dirty_details"] = runtime_dirty
+            dirty_runtime_warnings.append(dirty_target_runtime_warning(git_status, namespace, runtime_dirty))
+        elif allow_dirty_target_warning:
+            git_status["token"] = "ok:dirty_target_project_allowed_for_gui_runtime"
+            git_status["dirty_target_warning_allowed"] = True
+            git_status["runtime_state_dirty_details"] = runtime_dirty
+            dirty_runtime_warnings.append(dirty_target_runtime_warning(git_status, namespace, runtime_dirty))
         else:
             errors.append(
                 blocker(
@@ -2195,7 +2507,8 @@ def check_phase1_readiness(
 
     agent_details, agent_errors = inspect_agent_toml(root, agent_name, namespace)
     errors.extend(agent_errors)
-    prompt_details, prompt_errors = inspect_private_prompt(root, str(agent_details.get("private_prompt_source") or "MOE.md"))
+    prompt_details, prompt_errors = inspect_private_prompt(root, str(private_prompt_source or DEFAULT_PRIVATE_PROMPT_SOURCE))
+    agent_details["private_prompt_source"] = norm(private_prompt_source or DEFAULT_PRIVATE_PROMPT_SOURCE)
     errors.extend(prompt_errors)
     mode_cli_surface, mode_surface_errors = inspect_mode_cli_surface(root, mode_cli)
     errors.extend(mode_surface_errors)
@@ -2230,7 +2543,7 @@ def check_phase1_readiness(
         }
     readiness_status = "ready" if not errors and execute_cli else ("static-ready-candidate" if not errors else "blocked")
     remediation_plan = build_phase1_remediation_plan(errors, lane, execute_cli)
-    warnings = build_phase1_readiness_warnings(execute_cli, cli_details)
+    warnings = [*dirty_runtime_warnings, *build_phase1_readiness_warnings(execute_cli, cli_details)]
     checked_files = build_phase1_checked_files(
         agent_details,
         prompt_details,
@@ -2255,6 +2568,7 @@ def check_phase1_readiness(
         "agent_name": agent_name,
         "state_namespace": namespace,
         "mode_cli": norm(mode_cli),
+        "private_prompt_source_path": norm(private_prompt_source or DEFAULT_PRIVATE_PROMPT_SOURCE),
         "project_root_evidence": evidence,
         "git_status": git_status,
         "agent_toml": agent_details,
@@ -2274,34 +2588,16 @@ def check_phase1_readiness(
 
 
 def phase1_agent_toml_template(agent_name: str, namespace: str, private_prompt_source: Path) -> str:
-    return f'''name = "{agent_name}"
-description = "Project-local MOE agent. Replace this placeholder with a short project-specific description before enabling GUI control."
-developer_instructions = """
-Project-local MOE instructions live in the project-private prompt source.
-Do not copy private prompt content into shared toolchain or user-level caches.
-"""
-
-[project]
-scope = "repo-local"
-state_namespace = "{namespace}"
-private_prompt_source = "{norm(private_prompt_source)}"
-private_prompt_policy = "do-not-copy-full-content"
-
-[moe]
-kind = "project-moe-agent"
-family = "project-specific"
-requires_manual_enable = true
-project_default_state = ".omx/state/{namespace}/project-default.json"
-session_state_dir = ".omx/state/{namespace}/sessions"
-
-[dispatch]
-mode = "brief-based"
-forbidden = ["full-history-fork-with-custom-role"]
-fallback = ["main-session-takeover", "durable-brief"]
-
-[extensions]
-'''
-
+    private_prompt = norm(private_prompt_source)
+    return (
+        f'name = "{agent_name}"\n'
+        'description = "Project-local Expert Lens agent. Replace this placeholder with a short project-specific description before enabling GUI control."\n'
+        'developer_instructions = """\n'
+        f'Project-local Expert Lens instructions live in the project-private prompt source `{private_prompt}`.\n'
+        'Do not copy private prompt content into shared toolchain or user-level caches.\n'
+        f'Project Expert Lens metadata is intentionally not stored as custom TOML tables; readiness is proven through GUI config, mode CLI, wrappers, startup hook, private prompt source, and .omx/state/{namespace}.\n'
+        '"""\n'
+    )
 
 def phase1_private_prompt_placeholder(agent_name: str, namespace: str) -> str:
     return f"""# Project MOE private prompt placeholder
@@ -2311,7 +2607,7 @@ State namespace: `{namespace}`
 
 Replace this placeholder inside the target project only.
 Do not copy another project's private `MOE.md` content into this file.
-Do not move this content into `.codex/agents/`, `.omx/state/`, or Project MOE GUI managed artifacts.
+Do not move this content into `.codex/agents/`, `.omx/state/`, or Project Expert Lens GUI managed artifacts.
 """
 
 
@@ -2327,12 +2623,19 @@ AGENT_NAME = "{agent_name}"
 STATE_NAMESPACE = "{namespace}"
 CLI_CONTRACT = "{CLI_CONTRACT}"
 PUBLIC_LENSES = [
-    {{"id": "blind_review", "label": "Blind-review expert", "description": "Public placeholder lens metadata only.", "category": "review"}},
-    {{"id": "aigc_risk", "label": "AIGC risk expert", "description": "Public placeholder lens metadata only.", "category": "risk"}},
+    {{"id": "blind_review", "label": "Blind-review expert", "zh_label": "盲审专家镜头", "en_label": "Blind-review expert", "description": "Public placeholder lens metadata only.", "category": "strict_graduate_advisor"}},
+    {{"id": "aigc_risk", "label": "AIGC risk expert", "zh_label": "AIGC / AI 味风险镜头", "en_label": "AIGC risk expert", "description": "Public placeholder lens metadata only.", "category": "strict_graduate_advisor"}},
+    {{"id": "socratic_cbt", "label": "Socratic CBT-style questioning expert", "zh_label": "认知行为式苏格拉底提问镜头", "en_label": "Socratic CBT-style questioning expert", "description": "Public placeholder lens metadata only.", "category": "socratic_questioning"}},
+    {{"id": "feynman_learning", "label": "Feynman learning expert", "zh_label": "费曼学习法专家", "en_label": "Feynman learning expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
+    {{"id": "first_principles", "label": "First principles expert", "zh_label": "第一性原理专家", "en_label": "First principles expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
+    {{"id": "pyramid_principle", "label": "Pyramid principle expert", "zh_label": "金字塔原理专家", "en_label": "Pyramid principle expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
+    {{"id": "swot_analysis", "label": "SWOT analysis expert", "zh_label": "SWOT 分析专家", "en_label": "SWOT analysis expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
+    {{"id": "decision_tree", "label": "Decision tree model expert", "zh_label": "决策树模型专家", "en_label": "Decision tree model expert", "description": "Public placeholder lens metadata only.", "category": "five_classic_thinking_models"}},
 ]
 PUBLIC_CATEGORIES = [
-    {{"id": "review", "label": "Review", "description": "Review-oriented public lenses."}},
-    {{"id": "risk", "label": "Risk", "description": "Risk-oriented public lenses."}},
+    {{"id": "strict_graduate_advisor", "label": "Strict Graduate Advisor Module", "zh_label": "严苛的研究生导师专家模块", "en_label": "Strict Graduate Advisor Module", "description": "Strict advisor public lenses.", "lens_ids": ["blind_review", "aigc_risk"]}},
+    {{"id": "socratic_questioning", "label": "Socratic Questioning Module", "zh_label": "认知行为式提问专家模块", "en_label": "Socratic Questioning Module", "description": "Socratic public lenses.", "lens_ids": ["socratic_cbt"]}},
+    {{"id": "five_classic_thinking_models", "label": "Five Classic Thinking Models Module", "zh_label": "五大经典思维模型专家模块", "en_label": "Five Classic Thinking Models Module", "description": "Five independent thinking-model public lenses.", "lens_ids": ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"]}},
 ]
 
 
@@ -2394,13 +2697,26 @@ if __name__ == "__main__":
 
 
 def phase1_wrapper_template(mode_cli: Path, command: str) -> str:
-    return f'@echo off\nsetlocal\npython "%~dp0{win_rel(mode_cli)}" {command} --json\nexit /b %ERRORLEVEL%\n'
+    return (
+        '@echo off\n'
+        'setlocal\n'
+        'set PYTHONUTF8=1\n'
+        'rem Project-default MOE wrapper; lens/category selections are managed by the Project MOE CLI/GUI, not hard-coded here.\n'
+        f'python "%~dp0{win_rel(mode_cli)}" {command} --json\n'
+        'exit /b %ERRORLEVEL%\n'
+    )
 
 
 def phase1_startup_hook_template(mode_cli: Path) -> str:
     return f"""# Project startup MOE activation hook
 
-On startup, resume, continue, reload, or phase change, run:
+Before every user message that leads to a substantive answer, and also on startup, resume, continue, reload, or phase change, run the turn gate when present:
+
+```powershell
+python .\\tools\\thesis_moe_turn_gate.py --json
+```
+
+Fallback when the turn gate is not available:
 
 ```powershell
 python .\\{win_rel(mode_cli)} status --json
@@ -2408,7 +2724,305 @@ python .\\{win_rel(mode_cli)} status --json
 
 Only apply project MOE rules when the effective status says it is enabled.
 If the command is missing, invalid, or returns a blocker, fail closed and report the stable token.
+GUI changes to a running session do not interrupt the current response; they are applied on the next user message after this turn gate/status read.
 """
+
+
+def phase1_turn_gate_template(mode_cli: Path) -> str:
+    mode_cli_text = norm(mode_cli)
+    return f'''#!/usr/bin/env python3
+"""Per-turn Project Expert Lens status gate for running Codex sessions.
+
+This helper is installed as a managed Project MOE GUI artifact. It reads only
+Codex ``session_meta`` records to identify the current session and then delegates
+all MOE state reads to the target project's Phase 1 CLI. It never reads message
+bodies, credentials, private prompt files, or GUI-managed state JSON directly.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+SCHEMA_VERSION = 1
+CLI_CONTRACT = "{CLI_CONTRACT}"
+DEFAULT_MODE_CLI = Path(r"{mode_cli_text}")
+SESSION_ENV_CANDIDATES = (
+    "THESIS_MOE_SESSION_ID",
+    "CODEX_THREAD_ID",
+    "CODEX_SESSION_ID",
+    "OPENAI_CODEX_SESSION_ID",
+    "OH_MY_CODEX_SESSION_ID",
+    "OMX_SESSION_ID",
+    "CODEX_SESSION",
+)
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def emit(payload: dict[str, Any], json_mode: bool) -> int:
+    if json_mode:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print(f"{{payload.get('token')}}: {{payload.get('message') or payload.get('effective_enabled')}}")
+    return int(payload.get("exit_code", 0 if payload.get("ok") else 1))
+
+
+def blocker(code: str, message: str, **extra: Any) -> dict[str, Any]:
+    payload: dict[str, Any] = {{
+        "schema_version": SCHEMA_VERSION,
+        "command": "turn-gate",
+        "ok": False,
+        "token": code,
+        "exit_code": 1,
+        "message": message,
+        "generated_at": utc_now(),
+        "effect_timing": "next_user_message",
+        "effective_enabled": False,
+        "effective_source": "fail-closed",
+        "apply_project_moe_rules": False,
+        "cli_contract": CLI_CONTRACT,
+        "privacy_policy": {{
+            "reads_codex_session_meta": True,
+            "reads_message_bodies": False,
+            "reads_credentials": False,
+            "reads_private_prompt": False,
+            "delegates_moe_state_to_mode_cli": True,
+        }},
+    }}
+    payload.update(extra)
+    return payload
+
+
+def project_root_from_here() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def is_inside_project(candidate: str | Path | None, root: Path) -> bool:
+    if candidate is None or str(candidate).strip() == "":
+        return False
+    try:
+        path = Path(str(candidate)).expanduser().resolve(strict=False)
+        root_resolved = root.resolve(strict=False)
+        return path == root_resolved or root_resolved in path.parents
+    except Exception:
+        return False
+
+
+def read_session_meta(path: Path) -> dict[str, Any] | None:
+    try:
+        with path.open("r", encoding="utf-8-sig", errors="replace") as handle:
+            for index, line in enumerate(handle):
+                if index >= 120:
+                    break
+                try:
+                    item = json.loads(line)
+                except Exception:
+                    continue
+                if not isinstance(item, dict) or item.get("type") != "session_meta":
+                    continue
+                payload = item.get("payload") if isinstance(item.get("payload"), dict) else item
+                return payload if isinstance(payload, dict) else None
+    except Exception:
+        return None
+    return None
+
+
+def discover_project_sessions(root: Path, sessions_root: Path, *, max_files: int = 20000) -> dict[str, Any]:
+    records: list[dict[str, Any]] = []
+    scanned = 0
+    skipped_other_project = 0
+    skipped_without_meta = 0
+    truncated = False
+    if sessions_root.exists() and sessions_root.is_dir():
+        try:
+            files = sorted(sessions_root.rglob("*.jsonl"), key=lambda item: item.stat().st_mtime, reverse=True)
+        except Exception:
+            files = []
+        for path in files:
+            if scanned >= max_files:
+                truncated = True
+                break
+            scanned += 1
+            meta = read_session_meta(path)
+            if not meta:
+                skipped_without_meta += 1
+                continue
+            cwd = meta.get("cwd") or meta.get("project_root") or meta.get("working_directory") or meta.get("repo_root")
+            if not is_inside_project(cwd, root):
+                skipped_other_project += 1
+                continue
+            session_id = meta.get("id") or meta.get("session_id") or meta.get("thread_id") or meta.get("resume_id")
+            if not session_id:
+                skipped_without_meta += 1
+                continue
+            records.append(
+                {{
+                    "session_id": str(session_id),
+                    "thread_id": str(meta.get("thread_id") or meta.get("resume_id") or session_id),
+                    "updated_at": meta.get("timestamp") or meta.get("updated_at") or meta.get("created_at"),
+                    "source": str(path),
+                    "metadata_only": True,
+                }}
+            )
+    deduped: dict[str, dict[str, Any]] = {{}}
+    for item in records:
+        deduped.setdefault(str(item["session_id"]), item)
+    sessions = list(deduped.values())
+    return {{
+        "sessions_root": str(sessions_root),
+        "sessions_root_exists": sessions_root.exists(),
+        "sessions": sessions,
+        "count": len(sessions),
+        "scanned_files": scanned,
+        "skipped_other_project": skipped_other_project,
+        "skipped_without_meta": skipped_without_meta,
+        "truncated": truncated,
+        "reads_message_bodies": False,
+    }}
+
+
+def choose_current_session_id(root: Path, explicit_session_id: str | None, sessions_root: Path) -> tuple[str | None, str, dict[str, Any]]:
+    if explicit_session_id:
+        return explicit_session_id, "argument", {{"count": 0, "sessions": []}}
+    for name in SESSION_ENV_CANDIDATES:
+        value = os.environ.get(name)
+        if value:
+            return value, f"env:{{name}}", {{"count": 0, "sessions": []}}
+    discovery = discover_project_sessions(root, sessions_root)
+    sessions = discovery.get("sessions") if isinstance(discovery.get("sessions"), list) else []
+    if len(sessions) == 1 and isinstance(sessions[0], dict):
+        return str(sessions[0].get("session_id")), "codex-session-meta-unique", discovery
+    if len(sessions) > 1:
+        return None, "ambiguous-codex-session-meta", discovery
+    return None, "missing", discovery
+
+
+def public_status(payload: dict[str, Any], *, current_session_id_source: str, discovery: dict[str, Any]) -> dict[str, Any]:
+    selected_lenses = payload.get("selected_lenses") if isinstance(payload.get("selected_lenses"), list) else []
+    selected_categories = payload.get("selected_categories") if isinstance(payload.get("selected_categories"), list) else []
+    effective_enabled = payload.get("effective_enabled") is True
+    return {{
+        "schema_version": SCHEMA_VERSION,
+        "command": "turn-gate",
+        "ok": payload.get("ok") is True,
+        "token": str(payload.get("token") or "blocked:mode_cli_status_not_ok"),
+        "exit_code": 0 if payload.get("ok") is True and payload.get("token") == "ok" else 1,
+        "message": "Project MOE turn gate read effective session state.",
+        "generated_at": utc_now(),
+        "effect_timing": "next_user_message",
+        "effective_enabled": effective_enabled,
+        "effective_source": payload.get("effective_source") or "fail-closed",
+        "apply_project_moe_rules": effective_enabled,
+        "session_id": payload.get("session_id"),
+        "session_id_source": payload.get("session_id_source"),
+        "current_session_id_source": current_session_id_source,
+        "selected_lenses": [str(item) for item in selected_lenses],
+        "selected_categories": [str(item) for item in selected_categories],
+        "effective_lens_mode": payload.get("effective_lens_mode") or ("selected" if selected_lenses or selected_categories else "all"),
+        "lens_selection_scope": payload.get("lens_selection_scope") or "session",
+        "project_default_enabled": payload.get("project_default_enabled"),
+        "session_override_enabled": payload.get("session_override_enabled"),
+        "status_reason": payload.get("status_reason"),
+        "mode_cli_command": "status --json --session-id <current-session>",
+        "cli_contract": payload.get("cli_contract") or CLI_CONTRACT,
+        "codex_session_discovery": {{
+            key: value for key, value in discovery.items() if key != "sessions"
+        }},
+        "privacy_policy": {{
+            "reads_codex_session_meta": True,
+            "reads_message_bodies": False,
+            "reads_credentials": False,
+            "reads_private_prompt": False,
+            "delegates_moe_state_to_mode_cli": True,
+        }},
+    }}
+
+
+def run_mode_cli(root: Path, mode_cli: Path, session_id: str) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    full_mode_cli = mode_cli if mode_cli.is_absolute() else root / mode_cli
+    try:
+        result = subprocess.run(
+            [sys.executable, str(full_mode_cli), "status", "--json", "--session-id", str(session_id)],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            timeout=20,
+        )
+    except subprocess.TimeoutExpired:
+        return None, blocker("blocked:mode_cli_timeout", "Project MOE turn gate status read timed out.")
+    except Exception as exc:
+        return None, blocker("blocked:mode_cli_invocation_failed", "Project MOE turn gate could not invoke the target mode CLI.", error=str(exc))
+    if result.returncode != 0:
+        return None, blocker(
+            "blocked:mode_cli_failed",
+            "Project MOE turn gate status read returned non-zero.",
+            exit_code=result.returncode,
+            stderr=result.stderr[-800:],
+        )
+    try:
+        payload = json.loads(result.stdout)
+    except Exception as exc:
+        return None, blocker("blocked:mode_cli_invalid_json", "Project MOE turn gate status read did not emit JSON.", error=str(exc), stdout=result.stdout[-800:])
+    if not isinstance(payload, dict):
+        return None, blocker("blocked:mode_cli_invalid_json", "Project MOE turn gate status JSON must be an object.")
+    return payload, None
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Read Project Expert Lens status for the current running Codex session.")
+    parser.add_argument("--json", action="store_true", help="Print JSON output.")
+    parser.add_argument("--session-id", help="Explicit current session id override.")
+    parser.add_argument("--mode-cli", default=str(DEFAULT_MODE_CLI), help="Target-project Phase 1 mode CLI path.")
+    parser.add_argument("--codex-sessions-root", help="Override Codex session log root for tests.")
+    args = parser.parse_args(argv)
+
+    root = project_root_from_here()
+    sessions_root = Path(args.codex_sessions_root or Path(os.environ.get("USERPROFILE") or str(Path.home())) / ".codex" / "sessions").expanduser().resolve(strict=False)
+    session_id, source, discovery = choose_current_session_id(root, args.session_id, sessions_root)
+    if not session_id and source == "ambiguous-codex-session-meta":
+        return emit(
+            blocker(
+                "blocked:ambiguous_current_session_id",
+                "Multiple Codex sessions match this project; provide a runtime session environment variable or --session-id.",
+                codex_session_discovery={{key: value for key, value in discovery.items() if key != "sessions"}},
+                candidate_count=discovery.get("count"),
+            ),
+            args.json,
+        )
+    if not session_id:
+        return emit(
+            blocker(
+                "blocked:current_session_id_unavailable",
+                "No current Codex session id was available from environment or unique project session metadata.",
+                codex_session_discovery={{key: value for key, value in discovery.items() if key != "sessions"}},
+            ),
+            args.json,
+        )
+    payload, error = run_mode_cli(root, Path(args.mode_cli), session_id)
+    if error:
+        error["current_session_id_source"] = source
+        error["session_id"] = session_id
+        return emit(error, args.json)
+    assert payload is not None
+    return emit(public_status(payload, current_session_id_source=source, discovery=discovery), args.json)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+'''
 
 
 def phase1_operator_doc_template(mode_cli: Path, on_wrapper: Path, off_wrapper: Path) -> str:
@@ -2815,6 +3429,9 @@ def install(root: Path, agent_name: str, namespace: str, mode_cli: Path, runtime
     errors.extend(load_errors)
     planned = artifacts(root, agent_name, namespace, mode_cli, runtime_root, old_config)
     changes, changed = planned_changes(root, planned)
+    strict_errors, strict_git_status = strict_clean_git_errors(root, operation="install_project_moe_gui")
+    if not dry_run and changed:
+        errors.extend(strict_errors)
     manifest = manifest_payload(root, agent_name, namespace, mode_cli, planned, old_manifest)
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -2823,6 +3440,9 @@ def install(root: Path, agent_name: str, namespace: str, mode_cli: Path, runtime
         "ok": not errors,
         "token": "ok" if not errors else errors[0]["code"],
         "toolchain": TOOLCHAIN_NAME,
+        "canonical_toolchain": CANONICAL_TOOLCHAIN_NAME,
+        "product_display_name": PRODUCT_DISPLAY_NAME,
+        "product_display_name_zh": PRODUCT_DISPLAY_NAME_ZH,
         "toolchain_version": TOOLCHAIN_VERSION,
         "cli_contract": CLI_CONTRACT,
         "target_project_root": str(root),
@@ -2835,6 +3455,8 @@ def install(root: Path, agent_name: str, namespace: str, mode_cli: Path, runtime
         "blockers": errors,
         "project_root_evidence": details["project_root_evidence"],
         "cli_contract_check": details["cli_contract_check"],
+        "git_status": strict_git_status,
+        "clean_worktree_required_for_apply": True,
         "rollback_hint": manifest["rollback_hint"],
     }
     if errors or dry_run:
@@ -2879,7 +3501,7 @@ def managed_file_uninstall_plan(root: Path, manifest: dict[str, Any]) -> tuple[l
         if rel not in UNINSTALL_MANAGED_ALLOWLIST:
             blocker_payload = blocker(
                 "blocked:uninstall_path_not_in_managed_allowlist",
-                "Uninstall may delete only the Project MOE GUI managed artifact allowlist, even if a target manifest lists another path.",
+                "Uninstall may delete only the Project Expert Lens GUI managed artifact allowlist, even if a target manifest lists another path.",
                 path=rel,
                 allowed=sorted(UNINSTALL_MANAGED_ALLOWLIST),
             )
@@ -2966,7 +3588,7 @@ def plan_uninstall(root: Path, apply_requested: bool = False) -> dict[str, Any]:
     planned_deletes: list[dict[str, Any]] = []
     protected_files: list[str] = []
     if not manifest or not config:
-        errors.extend(load_errors or [blocker("blocked:not_installed", "Project MOE GUI is not installed in target project.")])
+        errors.extend(load_errors or [blocker("blocked:not_installed", "Project Expert Lens GUI is not installed in target project.")])
     else:
         planned_deletes, delete_errors = managed_file_uninstall_plan(root, manifest)
         errors.extend(delete_errors)
@@ -2976,7 +3598,7 @@ def plan_uninstall(root: Path, apply_requested: bool = False) -> dict[str, Any]:
         try:
             applied_file_changes = apply_managed_file_uninstall(root, planned_deletes)
         except Exception as exc:
-            errors.append(blocker("blocked:uninstall_apply_failed", "Project MOE GUI uninstall apply failed before completing all planned deletes.", error=str(exc)))
+            errors.append(blocker("blocked:uninstall_apply_failed", "Project Expert Lens GUI uninstall apply failed before completing all planned deletes.", error=str(exc)))
     return {
         "schema_version": SCHEMA_VERSION,
         "command": "plan_project_moe_gui_uninstall",
@@ -3018,7 +3640,7 @@ def check_install(root: Path, skip_runtime_import: bool = False) -> dict[str, An
     errors: list[dict[str, Any]] = []
     manifest, config, load_errors = existing_install(root)
     if not manifest or not config:
-        errors.extend(load_errors or [blocker("blocked:not_installed", "Project MOE GUI is not installed in target project.")])
+        errors.extend(load_errors or [blocker("blocked:not_installed", "Project Expert Lens GUI is not installed in target project.")])
     else:
         errors.extend(load_errors)
         errors.extend(hash_errors(root, manifest))
@@ -3078,7 +3700,22 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
     mode_cli = Path(str(config.get("mode_cli") or manifest.get("mode_cli") or DEFAULT_MODE_CLI))
     runtime_root = Path(str(config.get("shared_runtime_root") or DEFAULT_SHARED_RUNTIME_ROOT))
     planned = artifacts(root, agent, namespace, mode_cli, runtime_root, config)
-    changes, changed = planned_changes(root, planned)
+    changes, managed_changed = planned_changes(root, planned)
+    phase1_cli_migration = phase1_mode_cli_catalog_migration_plan(root, mode_cli)
+    phase1_cli_actions = [public_phase1_cli_migration_action(phase1_cli_migration)]
+    phase1_cli_changed = phase1_cli_migration.get("action") == "update"
+    if phase1_cli_migration.get("action") == "blocked" and phase1_cli_migration.get("blocker"):
+        errors.append(phase1_cli_migration["blocker"])
+    phase1_wrapper_migrations = phase1_wrapper_migration_plan(root, mode_cli)
+    phase1_wrapper_actions = [public_phase1_wrapper_migration_action(item) for item in phase1_wrapper_migrations]
+    phase1_wrapper_changed = any(item.get("action") == "update" for item in phase1_wrapper_migrations)
+    for item in phase1_wrapper_migrations:
+        if item.get("action") == "blocked" and item.get("blocker"):
+            errors.append(item["blocker"])
+    changed = managed_changed or phase1_cli_changed or phase1_wrapper_changed
+    strict_errors, strict_git_status = strict_clean_git_errors(root, operation="update_project_moe_gui")
+    if not dry_run and changed:
+        errors.extend(strict_errors)
     new_manifest = manifest_payload(root, agent, namespace, mode_cli, planned, manifest)
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -3092,8 +3729,12 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
         "target_toolchain_version": TOOLCHAIN_VERSION,
         "config_schema_version": config.get("schema_version"),
         "cli_contract": config.get("cli_contract"),
-        "migration_actions": changes,
+        "migration_actions": changes + phase1_cli_actions + phase1_wrapper_actions,
+        "phase1_cli_migration_actions": phase1_cli_actions,
+        "phase1_wrapper_migration_actions": phase1_wrapper_actions,
         "no_op": not changed,
+        "git_status": strict_git_status,
+        "clean_worktree_required_for_apply": True,
         "recoverable_blockers": current_blockers,
         "blockers": errors,
         "rollback_hint": new_manifest["rollback_hint"],
@@ -3101,6 +3742,8 @@ def update(root: Path, dry_run: bool, skip_runtime_import: bool = True) -> dict[
     if errors or dry_run:
         return payload
     payload["applied_file_changes"] = apply_artifacts(root, planned, new_manifest)
+    payload["applied_file_changes"].extend(apply_phase1_mode_cli_catalog_migration(root, phase1_cli_migration))
+    payload["applied_file_changes"].extend(apply_phase1_wrapper_migration(root, phase1_wrapper_migrations))
     payload["update_receipt"] = {
         "target_project_root": str(root),
         "old_toolchain_version": manifest.get("toolchain_version"),

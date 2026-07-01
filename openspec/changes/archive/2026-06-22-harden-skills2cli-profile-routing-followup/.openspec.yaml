@@ -1,0 +1,17 @@
+﻿schema: spec-driven
+created: 2026-06-22
+x_change_class: profile-routing-runtime-hardening-plan
+x_archive_deferred_reason: "Phase A freezes the follow-up contract; Phase B implements runtime/checker/test hardening before archive."
+x_archive_follow_up: "After Phase B validation and local-main integration, archive this change and promote stable requirements."
+x_code_evidence_paths:
+  - tools/skills2cli.py
+  - tools/skills2cli_profile_registry_contract.py
+  - tools/check_plugin_modules_skill.py
+  - tools/check_skills2cli_profile_routing.py
+  - tools/skill_sources/plugin-modules/references/profiles.json
+  - tools/skill_sources/plugin-modules/scripts/list_module.ps1
+  - tools/skill_sources/plugin-modules/scripts/load_module.ps1
+  - tools/skill_sources/plugin-modules/scripts/set_plugin_profile.ps1
+  - test/skills2cli.test.py
+  - test/check_plugin_modules_skill.test.py
+  - test/check_skills2cli_profile_routing.test.py

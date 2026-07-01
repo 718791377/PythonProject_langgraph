@@ -8,18 +8,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from skills2cli_profile_registry_contract import (
+    CANONICAL_PROFILE_IDS,
+    ORTHOGONAL_SCOPE_FIELDS,
+    PLUGIN_MODULES_SKILL_RELATIVE,
+    REQUIRED_TASK_FIELDS,
+    entry_scope_mismatches,
+    task_module_identity,
+    truthy_list,
+)
+
 CHECK_NAME = "plugin_modules_skill"
-SKILL_RELATIVE = Path("tools/skill_sources/plugin-modules")
-REQUIRED_MODULES = [
-    "core-dev",
-    "web-saas",
-    "company-ops",
-    "market-research",
-    "customer-comms",
-    "creative-content",
-    "pyside6-gui",
-    "full",
-]
+SKILL_RELATIVE = PLUGIN_MODULES_SKILL_RELATIVE
+REQUIRED_MODULES = list(CANONICAL_PROFILE_IDS)
 REQUIRED_FILES = [
     "SKILL.md",
     "references/profiles.json",
@@ -41,6 +42,8 @@ PYSIDE6_REPO_HINT_TARGETS = [
     Path("tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template"),
 ]
 REQUIRED_SCRIPT_MARKERS = {
+    "nested_hard_load_reject": "task_module_not_hard_load_target",
+    "scenario_hard_load_reject": "scenario_profile_not_hard_load_target",
     "apply_gate": "[switch]$Apply",
     "restore_gate": "[switch]$RestoreLatest",
     "backup_function": "Backup-CodexPluginModulesConfig",
@@ -110,6 +113,23 @@ def validate(root: Path) -> dict[str, Any]:
             if profiles.get("schema_version") != 1:
                 errors.append("profiles.json schema_version must be 1.")
             modules = profiles.get("modules", {})
+
+            scenario_profiles = profiles.get("scenario_profiles", {})
+            if not isinstance(scenario_profiles, dict) or not scenario_profiles:
+                errors.append("profiles.json must define advisory scenario_profiles.")
+            for scenario_name, scenario_entry in scenario_profiles.items() if isinstance(scenario_profiles, dict) else []:
+                target = scenario_entry.get("target_profile") if isinstance(scenario_entry, dict) else None
+                if target not in modules:
+                    errors.append(f"Scenario profile `{scenario_name}` target_profile must resolve to a canonical module.")
+                if scenario_name in modules:
+                    errors.append(f"Scenario profile `{scenario_name}` must not be a canonical hard-load module.")
+                for field in ORTHOGONAL_SCOPE_FIELDS:
+                    if not truthy_list(scenario_entry.get(field) if isinstance(scenario_entry, dict) else None):
+                        errors.append(f"Scenario profile `{scenario_name}` is missing orthogonal field `{field}`.")
+                for mismatch in entry_scope_mismatches(scenario_entry if isinstance(scenario_entry, dict) else {}):
+                    errors.append(
+                        f"Scenario profile `{scenario_name}` orthogonal field `{mismatch['field']}` expected `{mismatch['expected']}` but found `{mismatch['actual']}`."
+                    )
             for module in REQUIRED_MODULES:
                 entry = modules.get(module)
                 if not isinstance(entry, dict):
@@ -123,6 +143,39 @@ def validate(root: Path) -> dict[str, Any]:
                 soft_load = entry.get("soft_load", {})
                 if "skill_doc_hints" not in soft_load:
                     errors.append(f"Module `{module}` is missing soft_load.skill_doc_hints.")
+                if module != "full":
+                    for field in ("scene_description", "scenario_description", "route_when", "negative_examples", "load_policy", "ranking_signals", "task_modules"):
+                        if not truthy_list(entry.get(field)):
+                            errors.append(f"Module `{module}` is missing routing field `{field}`.")
+                    for field in ORTHOGONAL_SCOPE_FIELDS:
+                        if not truthy_list(entry.get(field)):
+                            errors.append(f"Module `{module}` is missing orthogonal field `{field}`.")
+                    for mismatch in entry_scope_mismatches(entry):
+                        errors.append(
+                            f"Module `{module}` orthogonal field `{mismatch['field']}` expected `{mismatch['expected']}` but found `{mismatch['actual']}`."
+                        )
+                    task_modules = entry.get("task_modules", {})
+                    if isinstance(task_modules, dict):
+                        for task_name, task_entry in task_modules.items():
+                            for field in REQUIRED_TASK_FIELDS:
+                                if field == "plugin_hints" and module == "pyside6-gui":
+                                    continue
+                                if not truthy_list(task_entry.get(field)):
+                                    errors.append(f"Task module `{module}.{task_name}` is missing field `{field}`.")
+                            identity = task_module_identity(str(module), str(task_name), task_entry)
+                            if not identity["declared_matches_expected"]:
+                                errors.append(
+                                    f"Task module `{module}.{task_name}` qualified_name must be `{identity['expected_qualified_name']}`."
+                                )
+                            for mismatch in entry_scope_mismatches(task_entry):
+                                errors.append(
+                                    f"Task module `{module}.{task_name}` orthogonal field `{mismatch['field']}` expected `{mismatch['expected']}` but found `{mismatch['actual']}`."
+                                )
+                    else:
+                        errors.append(f"Module `{module}` task_modules must be an object.")
+                full_entry = modules.get("full")
+                if isinstance(full_entry, dict) and full_entry.get("explicit_full_request_required") is not True:
+                    errors.append("Module `full` must declare explicit_full_request_required=true.")
             safety = profiles.get("safety", {})
             if safety.get("backup_before_config_write") is not True:
                 errors.append("profiles.json safety.backup_before_config_write must be true.")
@@ -157,7 +210,7 @@ def validate(root: Path) -> dict[str, Any]:
     load_script = skill_root / "scripts" / "load_module.ps1"
     if load_script.exists():
         text = read_text(load_script)
-        for phrase in ["[string]$RepoRoot", "repo_root", "StartsWith('repo:'", "Join-Path $repoRootPath"]:
+        for phrase in ["[string]$RepoRoot", "repo_root", "StartsWith('repo:'", "Join-Path $repoRootPath", "entry_kind", "target_profile", "task_module"]:
             if phrase not in text:
                 errors.append(f"load_module.ps1 missing repo-local hint support marker: {phrase}")
 

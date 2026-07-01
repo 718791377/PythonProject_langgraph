@@ -1,0 +1,282 @@
+{
+  "blocked_completion_protocol": {
+    "record_fill_command": true,
+    "record_missing": true,
+    "record_redacted_verification_command": true,
+    "record_resume_step": true
+  },
+  "capabilities": [
+    {
+      "id": "open-design",
+      "install_mode": "codex-adapter-and-template",
+      "kind": "github-source",
+      "layer": "user_level",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "gui_or_local_service_allowed": true,
+        "live_runtime_target": "codex-home:skills/open-design/SKILL.md + general-template:template_assets/reference6-active/adapters/open-design.md",
+        "live_smoke_kind": "codex_adapter_design_export_fixture",
+        "per_link_required": true,
+        "raw_upstream_install_only_counts": false,
+        "receipt_redaction": "hash_plus_human_checkable_label",
+        "source_reference_only_counts": false
+      },
+      "notes": "Design-to-code reference adapted as a Codex skill/runtime wrapper and General template surface.",
+      "smoke_kind": "codex-design-export-fixture",
+      "source_url": "https://github.com/nexu-io/open-design"
+    },
+    {
+      "id": "html-anything",
+      "install_mode": "codex-adapter-and-template",
+      "kind": "github-source",
+      "layer": "user_level",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "gui_or_local_service_allowed": false,
+        "live_runtime_target": "codex-home:skills/html-anything/SKILL.md + general-template:template_assets/reference6-active/adapters/html-anything.md",
+        "live_smoke_kind": "codex_adapter_html_artifact_generation",
+        "per_link_required": true,
+        "raw_upstream_install_only_counts": false,
+        "receipt_redaction": "hash_plus_human_checkable_label",
+        "source_reference_only_counts": false
+      },
+      "notes": "HTML generation reference adapted as a Codex runtime wrapper and General template surface.",
+      "smoke_kind": "codex-html-artifact-generation",
+      "source_url": "https://github.com/nexu-io/html-anything"
+    },
+    {
+      "id": "browserbase-skills",
+      "install_mode": "codex-skill-service-wrapper",
+      "kind": "external-service-adapter",
+      "layer": "user_level",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "completion_policy": "optional_disabled",
+        "credential_gate": [
+          "BROWSERBASE_API_KEY",
+          "BROWSERBASE_PROJECT_ID"
+        ],
+        "disabled": true,
+        "disabled_reason": "user_disabled_browserbase_service_lane",
+        "disabled_resume_env_keys": [
+          "BROWSERBASE_API_KEY",
+          "BROWSERBASE_PROJECT_ID"
+        ],
+        "gui_or_local_service_allowed": false,
+        "live_runtime_target": "codex-home:skills/browserbase-skills/SKILL.md + codex-home:tools/reference6-capability-install/reference6-smoke",
+        "live_smoke_kind": "external_service_api_inspection",
+        "per_link_required": false,
+        "raw_upstream_install_only_counts": false,
+        "receipt_redaction": "hash_plus_human_checkable_label",
+        "source_reference_only_counts": false
+      },
+      "completion_policy": "optional_disabled",
+      "disabled": true,
+      "disabled_reason": "user_disabled_browserbase_service_lane",
+      "disabled_resume_env_keys": [
+        "BROWSERBASE_API_KEY",
+        "BROWSERBASE_PROJECT_ID"
+      ],
+      "notes": "Browserbase skill packaging reference; currently disabled by user decision. Restore by providing Browserbase env keys and rerunning the live API inspection through the Codex adapter.",
+      "required_env_keys": [
+        "BROWSERBASE_API_KEY",
+        "BROWSERBASE_PROJECT_ID"
+      ],
+      "smoke_kind": "browserbase-api-session-inspection",
+      "source_url": "https://github.com/browserbase/skills"
+    },
+    {
+      "id": "pymupdf",
+      "import_name": "fitz",
+      "install_mode": "python-wrapper-live-fixture",
+      "kind": "python-package",
+      "layer": "user_level",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "gui_or_local_service_allowed": false,
+        "live_runtime_target": "codex-home:tools/reference6-capability-install/reference6-smoke --capability pymupdf",
+        "live_smoke_kind": "python_pdf_roundtrip_fixture",
+        "per_link_required": true,
+        "raw_upstream_install_only_counts": false,
+        "receipt_redaction": "hash_plus_human_checkable_label",
+        "source_reference_only_counts": false
+      },
+      "notes": "PyMuPDF live smoke creates, reopens, extracts text from, and inspects a tiny PDF fixture.",
+      "package_name": "PyMuPDF",
+      "smoke_kind": "python-pdf-roundtrip",
+      "source_url": "https://github.com/pymupdf/pymupdf"
+    },
+    {
+      "id": "mineru",
+      "import_name": "mineru",
+      "install_mode": "codex-service-wrapper",
+      "kind": "external-service-adapter",
+      "layer": "user_level",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [
+          "MINERU_API_KEY"
+        ],
+        "gui_or_local_service_allowed": false,
+        "live_runtime_target": "codex-home:skills/mineru/SKILL.md + codex-home:tools/reference6-capability-install/reference6-smoke",
+        "live_smoke_kind": "external_service_api_fixture_preflight",
+        "per_link_required": true,
+        "raw_upstream_install_only_counts": false,
+        "receipt_redaction": "hash_plus_human_checkable_label",
+        "source_reference_only_counts": false
+      },
+      "notes": "MinerU live execution requires the official service/API key and a tiny fixture preflight through the Codex wrapper.",
+      "package_name": "mineru",
+      "required_env_keys": [
+        "MINERU_API_KEY"
+      ],
+      "service_urls": [
+        "https://mineru.net/",
+        "https://mineru.net/apiManage/limit"
+      ],
+      "smoke_kind": "mineru-api-fixture-preflight",
+      "source_url": "https://github.com/opendatalab/MinerU"
+    },
+    {
+      "id": "mineru-api-limit",
+      "install_mode": "codex-service-receipt",
+      "kind": "external-service-adapter",
+      "layer": "user_level",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [
+          "MINERU_API_KEY"
+        ],
+        "gui_or_local_service_allowed": false,
+        "live_runtime_target": "codex-home:state/reference6-capability-install/service-receipts/mineru-api-limit",
+        "live_smoke_kind": "external_service_quota_inspection",
+        "per_link_required": true,
+        "raw_upstream_install_only_counts": false,
+        "receipt_redaction": "hash_plus_human_checkable_label",
+        "source_reference_only_counts": false
+      },
+      "notes": "MinerU account quota/limit link; live execution requires MINERU_API_KEY and records a redacted account-safe quota inspection receipt.",
+      "required_env_keys": [
+        "MINERU_API_KEY"
+      ],
+      "service_urls": [
+        "https://mineru.net/apiManage/limit"
+      ],
+      "smoke_kind": "mineru-quota-limit-api-inspection",
+      "source_url": "https://mineru.net/apiManage/limit"
+    },
+    {
+      "id": "mineru-site",
+      "install_mode": "codex-service-availability-receipt",
+      "kind": "external-site-adapter",
+      "layer": "user_level",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "gui_or_local_service_allowed": false,
+        "live_runtime_target": "codex-home:state/reference6-capability-install/service-receipts/mineru-site",
+        "live_smoke_kind": "external_site_reachability",
+        "per_link_required": true,
+        "raw_upstream_install_only_counts": false,
+        "receipt_redaction": "hash_plus_human_checkable_label",
+        "source_reference_only_counts": false
+      },
+      "notes": "MinerU public site/API availability receipt bound to the MinerU Codex adapter.",
+      "service_urls": [
+        "https://mineru.net/"
+      ],
+      "smoke_kind": "mineru-site-reachability",
+      "source_url": "https://mineru.net/"
+    },
+    {
+      "id": "book-to-skill",
+      "install_mode": "codex-skill-converter-wrapper",
+      "kind": "github-source",
+      "layer": "user_level",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "gui_or_local_service_allowed": false,
+        "live_runtime_target": "codex-home:skills/book-to-skill/SKILL.md + codex-home:state/reference6-capability-install/live-artifacts/book-to-skill",
+        "live_smoke_kind": "codex_skill_converter_fixture",
+        "per_link_required": true,
+        "raw_upstream_install_only_counts": false,
+        "receipt_redaction": "hash_plus_human_checkable_label",
+        "source_reference_only_counts": false
+      },
+      "notes": "Skill generation from long-form documents adapted as a Codex converter fixture.",
+      "smoke_kind": "codex-skill-converter-fixture",
+      "source_url": "https://github.com/virgiliojr94/book-to-skill"
+    },
+    {
+      "id": "mattpocock-skills",
+      "install_mode": "codex-skill-adapter-install",
+      "kind": "skill-source",
+      "layer": "user_level",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "gui_or_local_service_allowed": false,
+        "live_runtime_target": "codex-home:skills/mattpocock-skills/SKILL.md",
+        "live_smoke_kind": "codex_skill_read_route_fixture",
+        "per_link_required": true,
+        "raw_upstream_install_only_counts": false,
+        "receipt_redaction": "hash_plus_human_checkable_label",
+        "source_reference_only_counts": false
+      },
+      "notes": "Matt Pocock skills reference adapted by installing a Codex-readable sample skill and routing fixture.",
+      "smoke_kind": "codex-skill-read-route-fixture",
+      "source_url": "https://github.com/mattpocock/skills"
+    }
+  ],
+  "codex_config_policy": {
+    "config_path": "C:/Users/<user>/.codex/config.toml",
+    "copy_secret_values": false,
+    "encoding": "utf-8-sig",
+    "reuse_mode": "env_key_name_only"
+  },
+  "generated_policy": {
+    "codex_completion_surfaces": [
+      "Codex SKILL.md",
+      "Codex runtime wrapper",
+      "Codex project template adapter",
+      "hash-redacted receipt"
+    ],
+    "codex_config_policy": {
+      "config_path": "C:/Users/<user>/.codex/config.toml",
+      "copy_secret_values": false,
+      "encoding": "utf-8-sig",
+      "reuse_mode": "env_key_name_only"
+    },
+    "external_service_credentials_required_for_live_executed": true,
+    "gui_or_local_service_requires_real_launch_receipt": true,
+    "per_link_true_live_runtime_required": true,
+    "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+    "raw_upstream_install_counts_as_codex_live_executed": false,
+    "remote_publication_allowed": false,
+    "source_reference_only_counts_as_live_executed": false
+  },
+  "layers": {
+    "project_template_general": {
+      "mode": "active_reusable_template",
+      "target": "D:/PythonProject_General"
+    },
+    "project_template_general_2": {
+      "mode": "inert_upgrade_template",
+      "target": "D:/PythonProject_General_2"
+    },
+    "user_level": {
+      "mutates_codex_config_toml": false,
+      "mutates_native_codex_files": false,
+      "receipt_subdir": "state/reference6-capability-install/receipts",
+      "state_subdir": "state/reference6-capability-install",
+      "tool_subdir": "tools/reference6-capability-install"
+    }
+  },
+  "manifest_id": "reference6-user-project-capability-install",
+  "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+  "schema_version": 1
+}

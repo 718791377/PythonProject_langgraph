@@ -27,6 +27,34 @@ $Script:ManagedBy = 'codex-user-level-team-mode-p0'
 $Script:NativeCodexNames = @('codex', 'codex.cmd', 'codex.ps1')
 $Script:StartupProfileStartMarker = '# OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-STARTUP:START'
 $Script:StartupProfileEndMarker = '# OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-STARTUP:END'
+$Script:AllowedAgentModels = @('gpt-5.4', 'gpt-5.5')
+$Script:DefaultNormalizedAgentModel = 'gpt-5.4'
+$Script:AgentModelDefaults = @{
+  'analyst' = 'gpt-5.4'
+  'architect' = 'gpt-5.5'
+  'bug-finder' = 'gpt-5.4'
+  'bug-judge' = 'gpt-5.4'
+  'bug-rebutter' = 'gpt-5.4'
+  'build-fixer' = 'gpt-5.4'
+  'code-reviewer' = 'gpt-5.5'
+  'code-simplifier' = 'gpt-5.5'
+  'critic' = 'gpt-5.5'
+  'debugger' = 'gpt-5.5'
+  'dependency-expert' = 'gpt-5.4'
+  'designer' = 'gpt-5.4'
+  'executor' = 'gpt-5.5'
+  'explore' = 'gpt-5.4'
+  'git-master' = 'gpt-5.4'
+  'planner' = 'gpt-5.5'
+  'researcher' = 'gpt-5.4'
+  'security-reviewer' = 'gpt-5.5'
+  'team-executor' = 'gpt-5.5'
+  'team-leader' = 'gpt-5.5'
+  'test-engineer' = 'gpt-5.5'
+  'verifier' = 'gpt-5.5'
+  'vision' = 'gpt-5.4'
+  'writer' = 'gpt-5.4'
+}
 
 function Resolve-TargetCodexHome {
   $candidate = $null
@@ -173,6 +201,141 @@ function Write-ManagedTextFile {
 
   Set-Content -LiteralPath $Path -Value $Content -Encoding ASCII -NoNewline
   return 'written'
+}
+
+function Get-TopLevelTomlStringValue {
+  param(
+    [AllowEmptyString()]
+    [string]$Content,
+    [Parameter(Mandatory)]
+    [string]$Name
+  )
+
+  $match = [regex]::Match($Content, ('(?m)^\s*{0}\s*=\s*"([^"]*)"\s*$' -f [regex]::Escape($Name)))
+  if (-not $match.Success) {
+    return $null
+  }
+  return [string]$match.Groups[1].Value
+}
+
+function Resolve-AgentModelDefault {
+  param(
+    [AllowEmptyString()]
+    [string]$RoleName,
+    [AllowEmptyString()]
+    [string]$CurrentModel
+  )
+
+  if (-not [string]::IsNullOrWhiteSpace($RoleName)) {
+    $roleKey = $RoleName.ToLowerInvariant()
+    if ($Script:AgentModelDefaults.ContainsKey($roleKey)) {
+      return [string]$Script:AgentModelDefaults[$roleKey]
+    }
+  }
+
+  if ($CurrentModel -in $Script:AllowedAgentModels) {
+    return $CurrentModel
+  }
+
+  return $Script:DefaultNormalizedAgentModel
+}
+
+function Normalize-AgentModelContent {
+  param(
+    [Parameter(Mandatory)]
+    [string]$Content
+  )
+
+  $roleName = Get-TopLevelTomlStringValue -Content $Content -Name 'name'
+  $currentModel = Get-TopLevelTomlStringValue -Content $Content -Name 'model'
+  if ([string]::IsNullOrWhiteSpace($roleName) -or [string]::IsNullOrWhiteSpace($currentModel)) {
+    return [ordered]@{
+      content = $Content
+      changed = $false
+      role = $roleName
+      model = $currentModel
+      target_model = $null
+    }
+  }
+
+  $targetModel = Resolve-AgentModelDefault -RoleName $roleName -CurrentModel $currentModel
+  $updated = $Content
+  $updated = [regex]::Replace($updated, '(?m)^\s*model\s*=\s*"[^"]+"\s*$', ('model = "{0}"' -f $targetModel))
+  $updated = [regex]::Replace($updated, '(?m)^(\s*-\s*resolved_model:\s*)\S+\s*$', ('${1}' + $targetModel))
+  $updated = [regex]::Replace($updated, 'This role is executing under the exact \S+ model\.', ('This role is executing under the exact {0} model.' -f $targetModel))
+  $updated = [regex]::Replace($updated, 'gpt-5\.3-codex-spark|gpt-5\.3-codex|gpt-5\.3|gpt-5\.4-mini|gpt-5\.5-mini', $targetModel)
+
+  return [ordered]@{
+    content = $updated
+    changed = ($updated -ne $Content)
+    role = $roleName
+    model = $currentModel
+    target_model = $targetModel
+  }
+}
+
+function Normalize-AgentModelFile {
+  param(
+    [Parameter(Mandatory)]
+    [string]$Path
+  )
+
+  if (-not (Test-Path -LiteralPath $Path)) {
+    return $null
+  }
+
+  $existing = Get-Content -LiteralPath $Path -Raw
+  $normalized = Normalize-AgentModelContent -Content $existing
+  if (-not [bool]$normalized.changed) {
+    return [ordered]@{
+      path = $Path
+      role = $normalized.role
+      previous_model = $normalized.model
+      model = $normalized.target_model
+      status = 'unchanged'
+    }
+  }
+
+  Set-Content -LiteralPath $Path -Value ([string]$normalized.content) -Encoding ASCII -NoNewline
+  return [ordered]@{
+    path = $Path
+    role = $normalized.role
+    previous_model = $normalized.model
+    model = $normalized.target_model
+    status = 'model_normalized'
+  }
+}
+
+function Get-AgentTomlPaths {
+  param(
+    [Parameter(Mandatory)]
+    [string]$AgentsDirectory
+  )
+
+  if (-not (Test-Path -LiteralPath $AgentsDirectory)) {
+    return @()
+  }
+
+  return @(
+    Get-ChildItem -LiteralPath $AgentsDirectory -Filter '*.toml' -File -ErrorAction SilentlyContinue |
+      ForEach-Object { [string]$_.FullName }
+  )
+}
+
+function Normalize-AgentModelFiles {
+  param(
+    [Parameter(Mandatory)]
+    [string]$AgentsDirectory
+  )
+
+  $results = @()
+  foreach ($path in Get-AgentTomlPaths -AgentsDirectory $AgentsDirectory) {
+    $result = Normalize-AgentModelFile -Path $path
+    if ($null -ne $result) {
+      $results += $result
+    }
+  }
+  return $results
 }
 
 function New-DefaultState {
@@ -763,6 +926,16 @@ function Try-CompileWindowsTaskkillExeShim {
     [string]$OutputPath
   )
 
+  if ([System.Environment]::OSVersion.Platform -ne [System.PlatformID]::Win32NT) {
+    return [ordered]@{
+      attempted = $true
+      compiled = $false
+      output_path = $OutputPath
+      compiler_path = ''
+      reason = 'taskkill.exe shim compilation is Windows-only'
+    }
+  }
+
   $csc = Get-Command 'csc.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
   $compilerPath = ''
   if ($null -ne $csc) {
@@ -817,8 +990,12 @@ function Try-CompileWindowsTaskkillExeShim {
   $stderr = Join-Path $compileTempDirectory ("taskkill-shim-compile-{0}.err" -f $compileTempId)
   try {
     $arguments = @('/nologo', '/target:exe', ("/out:$OutputPath"), $SourcePath)
-    $process = Start-Process -FilePath $compilerPath -ArgumentList $arguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-    if ($process.ExitCode -eq 0 -and (Test-Path -LiteralPath $OutputPath)) {
+    $compileOutput = @(& $compilerPath @arguments 2>&1 | ForEach-Object { [string]$_ })
+    $compileExitCode = if (Test-Path -LiteralPath variable:LASTEXITCODE) { [int]$LASTEXITCODE } else { 0 }
+    if ($compileOutput.Count -gt 0) {
+      Set-Content -LiteralPath $stdout -Encoding UTF8 -Value ($compileOutput -join [Environment]::NewLine)
+    }
+    if ($compileExitCode -eq 0 -and (Test-Path -LiteralPath $OutputPath)) {
       return [ordered]@{
         attempted = $true
         compiled = $true
@@ -829,10 +1006,7 @@ function Try-CompileWindowsTaskkillExeShim {
     }
 
     $diagnostic = ''
-    if (Test-Path -LiteralPath $stderr) {
-      $diagnostic = (Get-Content -LiteralPath $stderr -Raw -ErrorAction SilentlyContinue)
-    }
-    if ([string]::IsNullOrWhiteSpace($diagnostic) -and (Test-Path -LiteralPath $stdout)) {
+    if (Test-Path -LiteralPath $stdout) {
       $diagnostic = (Get-Content -LiteralPath $stdout -Raw -ErrorAction SilentlyContinue)
     }
     return [ordered]@{
@@ -840,7 +1014,7 @@ function Try-CompileWindowsTaskkillExeShim {
       compiled = $false
       output_path = $OutputPath
       compiler_path = $compilerPath
-      reason = ("csc.exe exited with code {0}. {1}" -f $process.ExitCode, $diagnostic).Trim()
+      reason = ("csc.exe exited with code {0}. {1}" -f $compileExitCode, $diagnostic).Trim()
     }
   }
   finally {
@@ -874,6 +1048,12 @@ $runtimeContent
 `$cleanupShimDirectoryEnvName = 'CODEX_USER_LEVEL_CLEANUP_SHIM_DIRECTORY'
 `$previousCleanupShimDirectory = [Environment]::GetEnvironmentVariable(`$cleanupShimDirectoryEnvName, 'Process')
 `$hadPreviousCleanupShimDirectory = `$null -ne `$previousCleanupShimDirectory
+`$codexHomeEnvName = 'CODEX_HOME'
+`$previousCodexHome = [Environment]::GetEnvironmentVariable(`$codexHomeEnvName, 'Process')
+`$hadPreviousCodexHome = `$null -ne `$previousCodexHome
+`$workerLaunchModeEnvName = 'OMX_TEAM_WORKER_LAUNCH_MODE'
+`$previousWorkerLaunchMode = [Environment]::GetEnvironmentVariable(`$workerLaunchModeEnvName, 'Process')
+`$hadPreviousWorkerLaunchMode = `$null -ne `$previousWorkerLaunchMode
 `$cleanupShimDirectory = Join-Path `$PSScriptRoot 'win-shims'
 `$taskkillExeShimPath = Join-Path `$cleanupShimDirectory 'taskkill.exe'
 `$taskkillExeShimRequested = $taskkillExeShimRequestedLiteral
@@ -884,15 +1064,27 @@ try {
     if ([string]::IsNullOrWhiteSpace(`$env:Path)) {
       `$env:Path = `$cleanupShimDirectory
     } else {
-      `$env:Path = `$cleanupShimDirectory + ';' + `$env:Path
+      `$env:Path = `$cleanupShimDirectory + [string][System.IO.Path]::PathSeparator + `$env:Path
     }
-    if (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.CMD;*') {
+    if ([string]::IsNullOrWhiteSpace(`$env:PATHEXT)) {
+      `$env:PATHEXT = '.CMD;.COM'
+    } elseif (`$env:PATHEXT -notlike '.CMD;*') {
       `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
     }
-    if (`$taskkillExeShimEnabled -and -not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.EXE;*') {
-      `$env:PATHEXT = '.EXE;' + `$env:PATHEXT
+    if (`$taskkillExeShimEnabled) {
+      if ([string]::IsNullOrWhiteSpace(`$env:PATHEXT)) {
+        `$env:PATHEXT = '.EXE;.CMD;.COM'
+      } elseif (`$env:PATHEXT -notlike '.EXE;*') {
+        `$env:PATHEXT = '.EXE;' + `$env:PATHEXT
+      }
     }
   }
+
+  `$nativeOmxPreflight = Get-CodexUserLevelNativeOmxOperationalPreflight
+  if ([string]`$nativeOmxPreflight.runtime_backend -eq 'windows_prompt_process_controller') {
+    [Environment]::SetEnvironmentVariable(`$workerLaunchModeEnvName, 'prompt', 'Process')
+  }
+  [Environment]::SetEnvironmentVariable(`$codexHomeEnvName, (Get-CodexUserLevelCodexHome), 'Process')
 
   & `$nativeCodexCommandPath @startupArgs @Arguments
   `$exitCode = 0
@@ -907,6 +1099,16 @@ finally {
     [Environment]::SetEnvironmentVariable(`$cleanupShimDirectoryEnvName, `$previousCleanupShimDirectory, 'Process')
   } else {
     [Environment]::SetEnvironmentVariable(`$cleanupShimDirectoryEnvName, `$null, 'Process')
+  }
+  if (`$hadPreviousCodexHome) {
+    [Environment]::SetEnvironmentVariable(`$codexHomeEnvName, `$previousCodexHome, 'Process')
+  } else {
+    [Environment]::SetEnvironmentVariable(`$codexHomeEnvName, `$null, 'Process')
+  }
+  if (`$hadPreviousWorkerLaunchMode) {
+    [Environment]::SetEnvironmentVariable(`$workerLaunchModeEnvName, `$previousWorkerLaunchMode, 'Process')
+  } else {
+    [Environment]::SetEnvironmentVariable(`$workerLaunchModeEnvName, `$null, 'Process')
   }
 }
 exit `$exitCode
@@ -993,13 +1195,15 @@ function Add-CodexUserLevelPathEntry {
     return
   }
 
+  `$pathSeparator = [string][System.IO.Path]::PathSeparator
+  `$pathSeparatorPattern = [regex]::Escape(`$pathSeparator)
   `$pathEntries = @()
   if (-not [string]::IsNullOrWhiteSpace([string]`$env:Path)) {
-    `$pathEntries = @([string]`$env:Path -split ';' | Where-Object {
+    `$pathEntries = @([string]`$env:Path -split `$pathSeparatorPattern | Where-Object {
       -not [string]::IsNullOrWhiteSpace([string]`$_) -and [string]`$_ -ne `$PathEntry
     })
   }
-  `$env:Path = (@(`$PathEntry) + `$pathEntries) -join ';'
+  `$env:Path = (@(`$PathEntry) + `$pathEntries) -join `$pathSeparator
 }
 
 `$codexUserLevelBinDirectory = '$escapedLauncherDirectory'
@@ -1010,11 +1214,17 @@ if (-not [string]::IsNullOrWhiteSpace(`$codexUserLevelCleanupShimDirectory) -and
   Add-CodexUserLevelPathEntry -PathEntry `$codexUserLevelCleanupShimDirectory
   `$codexUserLevelTaskkillExeShimPath = Join-Path `$codexUserLevelCleanupShimDirectory 'taskkill.exe'
   if (Test-Path -LiteralPath `$codexUserLevelTaskkillExeShimPath) {
-    if (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.EXE;*') {
+    if ([string]::IsNullOrWhiteSpace(`$env:PATHEXT)) {
+      `$env:PATHEXT = '.EXE;.CMD;.COM'
+    } elseif (`$env:PATHEXT -notlike '.EXE;*') {
       `$env:PATHEXT = '.EXE;' + `$env:PATHEXT
     }
-  } elseif (-not [string]::IsNullOrWhiteSpace(`$env:PATHEXT) -and `$env:PATHEXT -notlike '.CMD;*') {
-    `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
+  } else {
+    if ([string]::IsNullOrWhiteSpace(`$env:PATHEXT)) {
+      `$env:PATHEXT = '.CMD;.COM'
+    } elseif (`$env:PATHEXT -notlike '.CMD;*') {
+      `$env:PATHEXT = '.CMD;' + `$env:PATHEXT
+    }
   }
 }
 
@@ -1118,7 +1328,7 @@ function Get-TeamLeaderTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "team-leader"
 description = "Current main Codex CLI session profile for user-level team mode"
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "medium"
 developer_instructions = """
 <identity>
@@ -1220,12 +1430,18 @@ You are Team Leader. The current main Codex CLI session is the leader lane. Do n
   - stabilize with 1+ blocking issues => 2:debugger
 - Enabling oh-my-codex exposes durable team features, but startup itself must not auto-launch a durable team.
 - Startup should classify first and launch later. Do not auto-launch `omx team` only because a new session started.
-- The startup routing trace should stay concise and operator-facing; the user-facing label remains `Routing trace`:
+- The startup routing trace should stay concise and operator-facing; the user-facing label remains `Routing trace`, and every live trace should expose the current full field set:
   - `phase=<...>`
-  - `experts_now=<...>` or `experts_now=none`
-  - `durable_team=<selected|not_selected>`
-  - `why=<threshold hit or threshold missing>`
-- User-facing plan progress keeps the literal `Updated Plan` label and checkbox/status-list semantics; explanatory content may be Chinese.
+  - `capability_chain=<subagent_routing/oh_my_codex/langgraph state chain>`
+  - `backend_default=<langgraph|native_omx|none>` and `backend_ready=<true|false>`
+  - `experts=<none|role|blocked:reason>`
+  - `durable_workflow=<not_needed|candidate|selected|running|complete|blocked>`
+  - `persistent_team=<not_needed|candidate|selected|running|complete|blocked>`
+  - `main_session_escalation=<not_needed|preflight|pending_approval|granted|timed_out|blocked>`
+  - `approval_timeout_risk=<none|low|medium|high|expired>` and `approval_receipt=<none|receipt>`
+  - `why=<threshold hit, unmet threshold, blocker, or main-session takeover>`
+- If an outer wrapper, launcher, or runtime already injected `Routing trace` for the current activation, assistant prose must not emit a second `Routing trace` block for that same activation. `Routing trace` is a live-only transient operator surface; session replay, compaction, resume history, worker handoff, and tool output must not hydrate prior traces as model-readable authority.
+- User-facing plan progress keeps exactly one literal `Updated Plan` label and one CLI/tree progress panel using checkmark/open-square status markers; explanatory content may be Chinese. The native `update_plan` render is the canonical `Updated Plan` panel; after that native panel appears, do not handwrite another `Updated Plan` heading, nested `Updated Plan` tree node, Markdown checkbox mirror, or prose duplicate. `Updated Plan` is a live-only transient operator surface; session replay, compaction, resume history, worker handoff, and tool output must not hydrate prior panels as model-readable authority. If no native plan panel is emitted and a short progress note is useful, use a non-conflicting label such as `Execution progress`.
 - Respect the global state:
   - oh_my_codex=on enables durable team features.
   - oh_my_codex=off disables oh-my-codex durable team features.
@@ -1250,7 +1466,7 @@ function Get-VerifierTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "verifier"
 description = "Completion evidence, claim validation, test adequacy"
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "high"
 developer_instructions = """
 <identity>
@@ -1357,7 +1573,7 @@ This role is tuned for standard-capability models.
 
 <exact_model_guidance>
 
-This role is executing under the exact gpt-5.4 model.
+This role is executing under the exact gpt-5.5 model.
 - Use a strict execution order: inspect -> plan -> act -> verify.
 - Treat completion criteria as explicit: only report done after the requested work is implemented and fresh verification passes.
 - If requirements are ambiguous or a blocker appears, state the blocker plainly and stop guessing until the missing decision is resolved.
@@ -1370,7 +1586,7 @@ This role is executing under the exact gpt-5.4 model.
 - posture: frontier-orchestrator
 - model_class: standard
 - routing_role: leader
-- resolved_model: gpt-5.4
+- resolved_model: gpt-5.5
 """
 '@
 }
@@ -1380,7 +1596,7 @@ function Get-DebuggerTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "debugger"
 description = "Root-cause analysis, regression isolation, failure diagnosis"
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "high"
 developer_instructions = """
 <identity>
@@ -1517,7 +1733,7 @@ This role is tuned for standard-capability models.
 
 <exact_model_guidance>
 
-This role is executing under the exact gpt-5.4 model.
+This role is executing under the exact gpt-5.5 model.
 - Use a strict execution order: inspect -> plan -> act -> verify.
 - Treat completion criteria as explicit: only report done after the requested work is implemented and fresh verification passes.
 - If requirements are ambiguous or a blocker appears, state the blocker plainly and stop guessing until the missing decision is resolved.
@@ -1530,7 +1746,7 @@ This role is executing under the exact gpt-5.4 model.
 - posture: deep-worker
 - model_class: standard
 - routing_role: executor
-- resolved_model: gpt-5.4
+- resolved_model: gpt-5.5
 """
 '@
 }
@@ -1987,7 +2203,7 @@ function Get-BugFinderTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "bug-finder"
 description = "Recall-first candidate bug finder for contested or noisy review"
-model = "gpt-5.4-mini"
+model = "gpt-5.4"
 model_reasoning_effort = "high"
 developer_instructions = """
 <identity>
@@ -2040,7 +2256,7 @@ function Get-BugRebutterTomlContent {
 # OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED
 name = "bug-rebutter"
 description = "Evidence-first rebuttal role for candidate bug triage"
-model = "gpt-5.4-mini"
+model = "gpt-5.4"
 model_reasoning_effort = "high"
 developer_instructions = """
 <identity>
@@ -2437,6 +2653,120 @@ function Get-CodexUserLevelBinDirectory {
   return (Join-Path (Get-CodexUserLevelCodexHome) 'bin')
 }
 
+function Test-CodexUserLevelNativeWindows {
+  return ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT)
+}
+
+function Test-CodexUserLevelTmuxAvailable {
+  $tmuxCommand = Get-Command 'tmux' -ErrorAction SilentlyContinue
+  return ($null -ne $tmuxCommand)
+}
+
+function Get-CodexUserLevelNativeOmxOperationalPreflight {
+  $rawLaunchMode = [string]$env:OMX_TEAM_WORKER_LAUNCH_MODE
+  $normalizedLaunchMode = $rawLaunchMode.Trim().ToLowerInvariant()
+  $runtimeBackend = 'unknown'
+  $workerLaunchMode = ''
+  $blockers = @()
+
+  if (Test-CodexUserLevelNativeWindows) {
+    if ([string]::IsNullOrWhiteSpace($normalizedLaunchMode) -or $normalizedLaunchMode -eq 'prompt') {
+      $runtimeBackend = 'windows_prompt_process_controller'
+      $workerLaunchMode = 'prompt'
+    } elseif ($normalizedLaunchMode -eq 'tmux' -or $normalizedLaunchMode -eq 'interactive') {
+      $runtimeBackend = 'unix_tmux'
+      $workerLaunchMode = 'interactive'
+      if (-not (Test-CodexUserLevelTmuxAvailable)) {
+        $blockers += 'blocked:tmux_only_backend'
+      }
+      if ([string]::IsNullOrWhiteSpace([string]$env:TMUX)) {
+        $blockers += 'blocked:not_in_tmux_session'
+      }
+    } else {
+      $runtimeBackend = 'unknown'
+      $workerLaunchMode = ''
+      $blockers += 'blocked:runtime_backend_unavailable'
+    }
+  } else {
+    if ([string]::IsNullOrWhiteSpace($normalizedLaunchMode) -or $normalizedLaunchMode -eq 'tmux' -or $normalizedLaunchMode -eq 'interactive') {
+      $runtimeBackend = 'unix_tmux'
+      $workerLaunchMode = 'interactive'
+      if (-not (Test-CodexUserLevelTmuxAvailable)) {
+        $blockers += 'blocked:tmux_only_backend'
+      }
+      if ([string]::IsNullOrWhiteSpace([string]$env:TMUX)) {
+        $blockers += 'blocked:not_in_tmux_session'
+      }
+    } elseif ($normalizedLaunchMode -eq 'prompt') {
+      $runtimeBackend = 'unknown'
+      $workerLaunchMode = 'prompt'
+      $blockers += 'blocked:windows_backend_not_implemented'
+    } else {
+      $runtimeBackend = 'unknown'
+      $workerLaunchMode = ''
+      $blockers += 'blocked:runtime_backend_unavailable'
+    }
+  }
+
+  $dedupedBlockers = @()
+  foreach ($blocker in @($blockers)) {
+    if (-not [string]::IsNullOrWhiteSpace([string]$blocker) -and [string]$blocker -notin $dedupedBlockers) {
+      $dedupedBlockers += [string]$blocker
+    }
+  }
+
+  $operationalReady = ($runtimeBackend -ne 'unknown' -and $dedupedBlockers.Count -eq 0)
+  return [ordered]@{
+    backend_family = 'native_omx'
+    runtime_backend = $runtimeBackend
+    worker_launch_mode = $workerLaunchMode
+    raw_worker_launch_mode = $rawLaunchMode
+    preflight_passed = $operationalReady
+    operational_ready = $operationalReady
+    blockers = @($dedupedBlockers)
+  }
+}
+
+function Invoke-CodexUserLevelNativeOmxLaunchCommand {
+  param(
+    [Parameter(Mandatory)]
+    [string]$CommandPath,
+    [Parameter(Mandatory)]
+    [string[]]$Arguments
+  )
+
+  $preflight = Get-CodexUserLevelNativeOmxOperationalPreflight
+  if (-not [bool]$preflight.operational_ready) {
+    throw ('native_omx_preflight_failed:{0}' -f (@($preflight.blockers) -join ','))
+  }
+
+  $launchModeEnvName = 'OMX_TEAM_WORKER_LAUNCH_MODE'
+  $previousLaunchMode = [Environment]::GetEnvironmentVariable($launchModeEnvName, 'Process')
+  $hadPreviousLaunchMode = $null -ne $previousLaunchMode
+  $codexHomeEnvName = 'CODEX_HOME'
+  $previousCodexHome = [Environment]::GetEnvironmentVariable($codexHomeEnvName, 'Process')
+  $hadPreviousCodexHome = $null -ne $previousCodexHome
+  try {
+    if ([string]$preflight.runtime_backend -eq 'windows_prompt_process_controller') {
+      [Environment]::SetEnvironmentVariable($launchModeEnvName, 'prompt', 'Process')
+    }
+    [Environment]::SetEnvironmentVariable($codexHomeEnvName, (Get-CodexUserLevelCodexHome), 'Process')
+    & $CommandPath @Arguments
+  }
+  finally {
+    if ($hadPreviousCodexHome) {
+      [Environment]::SetEnvironmentVariable($codexHomeEnvName, $previousCodexHome, 'Process')
+    } else {
+      [Environment]::SetEnvironmentVariable($codexHomeEnvName, $null, 'Process')
+    }
+    if ($hadPreviousLaunchMode) {
+      [Environment]::SetEnvironmentVariable($launchModeEnvName, $previousLaunchMode, 'Process')
+    } else {
+      [Environment]::SetEnvironmentVariable($launchModeEnvName, $null, 'Process')
+    }
+  }
+}
+
 function Get-CodexUserLevelPythonAssetsDirectory {
   return (Join-Path (Get-CodexUserLevelCodexHome) 'python')
 }
@@ -2478,6 +2808,9 @@ function New-CodexUserLevelDurableCapabilityReadinessRecord {
     [bool]$RepoStateSelected,
     [string]$InstallState = '',
     [string[]]$RequiredHelpers = @(),
+    [string]$RuntimeBackend = 'unknown',
+    [bool]$PreflightPassed = $false,
+    [bool]$OperationalReady = $false,
     [string[]]$Blockers = @()
   )
 
@@ -2485,7 +2818,7 @@ function New-CodexUserLevelDurableCapabilityReadinessRecord {
     $InstallState = if ($Installed) { 'installed' } else { 'not_installed' }
   }
 
-  $ready = ($Installed -and $Enabled -and $Selected)
+  $ready = ($Installed -and $Enabled -and $Selected -and $OperationalReady)
   $dedupedBlockers = @()
   foreach ($blocker in @($Blockers)) {
     if (-not [string]::IsNullOrWhiteSpace([string]$blocker) -and [string]$blocker -notin $dedupedBlockers) {
@@ -2500,6 +2833,9 @@ function New-CodexUserLevelDurableCapabilityReadinessRecord {
     enabled = $Enabled
     selected = $Selected
     ready = $ready
+    runtime_backend = $RuntimeBackend
+    preflight_passed = $PreflightPassed
+    operational_ready = $OperationalReady
     user_level_selected = $UserLevelSelected
     repo_state_selected = $RepoStateSelected
     required_helpers = @($RequiredHelpers)
@@ -2527,6 +2863,10 @@ function Get-CodexUserLevelDurableCapabilityReadiness {
   if (-not $nativeInstalled) { $nativeBlockers += 'native_omx_helpers_not_installed' }
   if (-not $nativeEnabled) { $nativeBlockers += 'oh_my_codex_disabled' }
   if (-not $nativeSelected) { $nativeBlockers += 'native_omx_not_selected' }
+  $nativePreflight = Get-CodexUserLevelNativeOmxOperationalPreflight
+  foreach ($blocker in @($nativePreflight.blockers)) {
+    $nativeBlockers += [string]$blocker
+  }
 
   $langGraphRuntime = $Status.langgraph_runtime
   $langGraphInstalled = ([string]$Status.langgraph_install_state -eq 'installed')
@@ -2551,6 +2891,9 @@ function Get-CodexUserLevelDurableCapabilityReadiness {
       -UserLevelSelected $nativeUserLevelSelected `
       -RepoStateSelected ($RepoStateNativeSelected -or [string]$RepoStateBackendFamily -eq 'native_omx') `
       -RequiredHelpers $nativeHelpers `
+      -RuntimeBackend ([string]$nativePreflight.runtime_backend) `
+      -PreflightPassed ([bool]$nativePreflight.preflight_passed) `
+      -OperationalReady ([bool]$nativePreflight.operational_ready) `
       -Blockers $nativeBlockers)
     langgraph = (New-CodexUserLevelDurableCapabilityReadinessRecord `
       -Name 'langgraph' `
@@ -2561,6 +2904,9 @@ function Get-CodexUserLevelDurableCapabilityReadiness {
       -RepoStateSelected ($RepoStateLangGraphSelected -or [string]$RepoStateBackendFamily -eq 'langgraph') `
       -InstallState ([string]$Status.langgraph_install_state) `
       -RequiredHelpers @('omx-langgraph-inspect.ps1', 'omx-langgraph-resume.ps1', 'codex-durable-state-status.ps1') `
+      -RuntimeBackend 'langgraph' `
+      -PreflightPassed ([bool]$langGraphRuntime.ready) `
+      -OperationalReady ([bool]$langGraphRuntime.ready) `
       -Blockers $langGraphBlockers)
     langgraph_runtime = $langGraphRuntime
   }
@@ -2720,6 +3066,21 @@ function Get-CodexUserLevelModelInstructionsFilePath {
   return (Join-Path $stateDirectory 'user-level-team-mode-model-instructions.md')
 }
 
+function ConvertTo-CodexUserLevelManagedModelInstructionsContent {
+  param(
+    [Parameter(Mandatory)]
+    [AllowEmptyString()]
+    [string]$Content
+  )
+
+  $markerLine = '# OPENCLAW-CODEX-USER-LEVEL-TEAM-MODE-MANAGED'
+  if ($Content.StartsWith($markerLine)) {
+    return $Content
+  }
+
+  return ($markerLine + "`n" + $Content)
+}
+
 function Write-CodexUserLevelModelInstructionsFile {
   param(
     [Parameter(Mandatory)]
@@ -2732,7 +3093,8 @@ function Write-CodexUserLevelModelInstructionsFile {
   if (-not (Test-Path -LiteralPath $directory)) {
     New-Item -ItemType Directory -Force -Path $directory | Out-Null
   }
-  Set-Content -LiteralPath $path -Value $Content -Encoding UTF8 -NoNewline
+  $managedContent = ConvertTo-CodexUserLevelManagedModelInstructionsContent -Content $Content
+  Set-Content -LiteralPath $path -Value $managedContent -Encoding UTF8 -NoNewline
   return $path
 }
 
@@ -3567,11 +3929,16 @@ function Get-CodexUserLevelRoutingPolicy {
 
 function Get-CodexUserLevelDeveloperInstructions {
   param(
-    $Status
+    $Status,
+    $NativeSubagentLimits
   )
 
   if ($null -eq $Status) {
     $Status = Get-CodexUserLevelTeamModeStatus
+  }
+
+  if ($null -eq $NativeSubagentLimits) {
+    $NativeSubagentLimits = Get-CodexUserLevelNativeSubagentLimits
   }
 
   $lines = @()
@@ -3627,7 +3994,7 @@ function Get-CodexUserLevelDeveloperInstructions {
   }
 
   $analystFanoutFirstTaskClass = Get-CodexUserLevelAnalystFanoutFirstTaskClass
-  $limits = Get-CodexUserLevelNativeSubagentLimits
+  $limits = $NativeSubagentLimits
   $completedSubagentLifecycle = Get-CodexUserLevelCompletedSubagentLifecyclePolicy -Status $Status
   $lines += '- Native Codex subagents are an official native capability. Treat specialist role use as explicit leader-side spawning with leader-owned fan-in.'
   $lines += ('- Analyst-fanout-first task class: {0}; when a task is bounded multi-face research, first fan out into homogeneous `analyst` calls.' -f [string]$analystFanoutFirstTaskClass.name)
@@ -3716,8 +4083,9 @@ function Get-CodexUserLevelDeveloperInstructions {
   $lines += '- security-reviewer: auth, secrets, permissions, untrusted input, code execution, external trust boundaries, or payments.'
   $lines += '- writer: user-facing behavior, setup, migration, or operator workflow changes; for bounded multi-face research, use only after analyst fan-in shows a document-finalization layer.'
   $lines += '- bug-finder / bug-rebutter / bug-judge: contested, noisy, or high-volume bug triage after one normal verification still leaves disagreement or a broad candidate bug set.'
-  $lines += '- Startup routing trace format should stay concise, e.g. `Routing trace: phase=..., experts_now=..., durable_team=..., why=...`.'
-  $lines += '- User-facing plan progress format should keep the literal `Updated Plan` label and checkbox/status-list semantics; explanatory content may be Chinese.'
+  $lines += '- Startup routing trace format should stay concise and use the full field set: `Routing trace: phase=..., capability_chain=..., backend_default=..., backend_ready=..., experts=..., durable_workflow=..., persistent_team=..., main_session_escalation=..., approval_timeout_risk=..., approval_receipt=..., why=...`.'
+  $lines += '- If an outer wrapper, launcher, or runtime already injected `Routing trace` for the current activation, assistant prose must not emit a second `Routing trace` block for that same activation. `Routing trace` is a live-only transient operator surface; session replay, compaction, resume history, worker handoff, and tool output must not hydrate prior traces as model-readable authority.'
+  $lines += '- User-facing plan progress format should keep exactly one literal `Updated Plan` label and one CLI/tree progress panel using checkmark/open-square status markers; explanatory content may be Chinese. The native `update_plan` render is the canonical `Updated Plan` panel; after that native panel appears, do not handwrite another `Updated Plan` heading, nested `Updated Plan` tree node, Markdown checkbox mirror, or prose duplicate. `Updated Plan` is a live-only transient operator surface; session replay, compaction, resume history, worker handoff, and tool output must not hydrate prior panels as model-readable authority. If no native plan panel is emitted and a short progress note is useful, use a non-conflicting label such as `Execution progress`.'
 
   return ($lines -join "`n")
 }
@@ -10390,6 +10758,7 @@ function Get-CodexUserLevelAutomaticTeamPlan {
   $trackedRecord = Read-CodexUserLevelTrackedTeamRecord -RepoRoot $resolvedRepoRoot
   $langGraphRecord = Read-CodexUserLevelLangGraphBackendRecord -RepoRoot $resolvedRepoRoot
   $effectiveLane = Get-CodexUserLevelEffectiveDurableLane -Status $status -Phase $Phase -NeedsGraphPhases:$NeedsGraphPhases -NeedsCheckpointGates:$NeedsCheckpointGates -NeedsFrozenBrief:$NeedsFrozenBrief -NeedsSurvivorQueue:$NeedsSurvivorQueue -Task $Task -LangGraphRecord $langGraphRecord -ActiveLangGraphSelector $activeLangGraphSelector
+  $nativeOperationalPreflight = Get-CodexUserLevelNativeOmxOperationalPreflight
   $nativeTeamDirectories = @(Get-CodexUserLevelNativeTeamDirectoriesMetadata -RepoRoot $resolvedRepoRoot)
   $nonEmptyUnmanagedNativeTeamDirectories = @($nativeTeamDirectories | Where-Object { (-not [bool]$_.empty) -and ([string]$_.team_name -ne [string]$trackedRecord.team_name) })
   $latestDetectedTeamName = ''
@@ -10531,6 +10900,37 @@ function Get-CodexUserLevelAutomaticTeamPlan {
     }
   }
 
+  $runtimeBackend = 'unknown'
+  $preflightPassed = $false
+  $operationalReady = $false
+  $blockers = @()
+  if ($effectiveLane -eq 'native_omx') {
+    $runtimeBackend = [string]$nativeOperationalPreflight.runtime_backend
+    $preflightPassed = [bool]$nativeOperationalPreflight.preflight_passed
+    $operationalReady = [bool]$nativeOperationalPreflight.operational_ready
+    $blockers = @($nativeOperationalPreflight.blockers | ForEach-Object { [string]$_ })
+  } elseif ($effectiveLane -eq 'langgraph') {
+    $runtimeBackend = 'langgraph'
+    $preflightPassed = [bool]$status.langgraph_ready
+    $operationalReady = [bool]$status.langgraph_ready
+    if (-not [bool]$status.langgraph_ready) {
+      if ([string]$status.langgraph_install_state -ne 'installed') {
+        $blockers += 'langgraph_shared_runtime_not_installed'
+      }
+      if (-not [bool]$status.langgraph_enabled) {
+        $blockers += 'langgraph_disabled'
+      }
+      if (-not [bool]$status.langgraph_selected) {
+        $blockers += 'langgraph_not_selected'
+      }
+      if ($blockers.Count -eq 0) {
+        $blockers += 'blocked:backend_not_ready'
+      }
+    }
+  } else {
+    $blockers = @('blocked:backend_not_ready')
+  }
+
   return [ordered]@{
     task = $Task
     subject = $Subject
@@ -10563,6 +10963,10 @@ function Get-CodexUserLevelAutomaticTeamPlan {
       langgraph = [bool]$status.langgraph_available
     }
     effective_lane = $effectiveLane
+    runtime_backend = $runtimeBackend
+    preflight_passed = $preflightPassed
+    operational_ready = $operationalReady
+    blockers = @($blockers | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Sort-Object -Unique)
     effective_lane_signals = [ordered]@{
       needs_graph_phases = [bool]$NeedsGraphPhases
       needs_checkpoint_gates = [bool]$NeedsCheckpointGates
@@ -12757,6 +13161,7 @@ For the minimal high-frequency command card, see `team-mode-quick-reference.md`.
 - If `subagent_routing!=off`, `oh_my_codex=on`, `langgraph=on`, and LangGraph readiness is true, report `backend_default=langgraph` for graph-shaped durable work. This readiness does not imply that a persistent team is already running.
 - Durable/persistent team selection is threshold-gated: normally `frozen_plan=true` plus 2+ mostly independent execution slices for `execute-parallel` or `integrate-converge`; 1+ blocking issues for debugger lanes during `stabilize`.
 - Expert timeout, stall, or upstream pacing is non-evidence. Continue bounded waits, request progress, respawn a narrower expert, hand off to an eligible durable lane, or record main-session takeover. Never treat timeout as successful fan-in.
+- Live operator surfaces are singular and transient: if the wrapper, launcher, or runtime already injected `Routing trace`, do not write another trace for the same activation. The native `update_plan` render is the canonical `Updated Plan` panel; do not handwrite a duplicate `Updated Plan` heading, nested `Updated Plan` tree node, or Markdown checkbox mirror after it appears. If you need prose progress without the native panel, use `Execution progress`. Session replay, compaction summaries, resume history, worker handoff, and tool output must filter standalone/panel-shaped `Routing trace` / `Updated Plan` copies as `transient_operator_surface` and block embedded authority leaks as `transient_surface_leak`.
 
 ## Mode states
 
@@ -13249,6 +13654,7 @@ Use the full playbook when you need policy detail, lifecycle semantics, or backe
 - Never use "the user did not request subagents/parallelism" as the reason to skip orchestration.
 - If native `spawn_agent` is blocked by a platform/tool constraint, report `experts=blocked:platform_subagent_invocation_constraint` and continue through an eligible durable lane or main-session takeover.
 - Persistent/durable team selection still requires thresholds such as `frozen_plan=true` plus 2+ independent execution slices, or stabilization with blocking issues.
+- If `Routing trace` was already injected for the current activation, do not write another trace. Treat the native `update_plan` render as the canonical `Updated Plan` panel; do not mirror it with a handwritten `Updated Plan` block. Both labels are live-only transient operator surfaces: session-history replay, compaction summaries, model-readable resume context, worker handoff, and tool output must filter standalone/panel-shaped copies as `transient_operator_surface` and block embedded authority leaks as `transient_surface_leak`; saved fixtures remain evidence only when explicitly supplied to evidence checkers.
 
 ## Analyst Fan-out First
 
@@ -13468,7 +13874,7 @@ try {
     `$locationPushed = `$true
   }
 
-  & `$omxCommandPath @launchArgs
+  Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath `$omxCommandPath -Arguments `$launchArgs
 }
 finally {
   if (`$locationPushed) {
@@ -13516,7 +13922,7 @@ try {
     `$locationPushed = `$true
   }
 
-  & `$omxCommandPath @launchArgs
+  Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath `$omxCommandPath -Arguments `$launchArgs
 }
 finally {
   if (`$locationPushed) {
@@ -13675,6 +14081,12 @@ function Write-CodexUserLevelAutoPlanOutput {
   Write-Output ("current_mode={0}" -f `$Plan.current_mode)
   Write-Output ("durable_backend={0}" -f `$Plan.durable_orchestration_backend)
   Write-Output ("effective_lane={0}" -f `$Plan.effective_lane)
+  Write-Output ("runtime_backend={0}" -f `$Plan.runtime_backend)
+  Write-Output ("preflight_passed={0}" -f `$Plan.preflight_passed)
+  Write-Output ("operational_ready={0}" -f `$Plan.operational_ready)
+  foreach (`$blocker in @(`$Plan.blockers)) {
+    Write-Output ("blocker={0}" -f `$blocker)
+  }
   if ([bool]`$Plan.desired_durable_team.required) {
     Write-Output ("desired_team={0}:{1}" -f `$Plan.desired_durable_team.worker_count, `$Plan.desired_durable_team.worker_role)
   }
@@ -13707,6 +14119,33 @@ try {
   `$langGraphResumeScriptPath = Join-Path `$binDirectory 'omx-langgraph-resume.ps1'
   `$langGraphInspectScriptPath = Join-Path `$binDirectory 'omx-langgraph-inspect.ps1'
   `$result = `$null
+  if ([string]`$plan.effective_lane -eq 'native_omx' -and [string]`$plan.decision -in @('launch', 'reuse', 'switch') -and -not [bool]`$plan.operational_ready) {
+    `$result = [ordered]@{
+      applied = `$false
+      applied_decision = 'blocked'
+      backend = 'native_omx'
+      runtime_backend = [string]`$plan.runtime_backend
+      preflight_passed = [bool]`$plan.preflight_passed
+      operational_ready = [bool]`$plan.operational_ready
+      blockers = @(`$plan.blockers)
+      reasons = @(`$plan.reasons)
+      tracked_record_path = [string]`$plan.tracked_record.path
+    }
+    if (`$Json) {
+      [ordered]@{
+        plan = `$plan
+        result = `$result
+      } | ConvertTo-Json -Depth 8
+      return
+    }
+
+    Write-Output ("applied_decision={0}" -f `$result.applied_decision)
+    Write-Output ("runtime_backend={0}" -f `$result.runtime_backend)
+    foreach (`$blocker in @(`$result.blockers)) {
+      Write-Output ("blocker={0}" -f `$blocker)
+    }
+    return
+  }
   switch ([string]`$plan.decision) {
     'launch' {
       if ([string]`$plan.effective_lane -eq 'langgraph') {
@@ -13761,7 +14200,7 @@ try {
       } else {
         `$beforeTeamNames = @(Get-CodexUserLevelTeamDirectoryNames -RepoRoot `$resolvedRepoRoot)
         `$launchArgs = @(`$plan.launch_args | ForEach-Object { [string]`$_ })
-        `$launchOutput = @(& `$omxCommandPath @launchArgs)
+        `$launchOutput = @(Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath `$omxCommandPath -Arguments `$launchArgs)
         `$launchExitCode = if (Test-Path -LiteralPath variable:LASTEXITCODE) { [int]`$LASTEXITCODE } else { 0 }
         if (`$launchExitCode -ne 0) {
           `$result = [ordered]@{
@@ -13797,7 +14236,7 @@ try {
       `$payload = `$plan.create_task_payload
       `$payloadJson = ConvertTo-CodexUserLevelCompressedJson -InputObject `$payload
       `$dispatchArgs = @('team', 'api', 'create-task', '--input', `$payloadJson, '--json')
-      `$dispatchOutput = @(& `$omxCommandPath @dispatchArgs)
+      `$dispatchOutput = @(Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath `$omxCommandPath -Arguments `$dispatchArgs)
       `$dispatchExitCode = if (Test-Path -LiteralPath variable:LASTEXITCODE) { [int]`$LASTEXITCODE } else { 0 }
       `$result = [ordered]@{
         applied = (`$dispatchExitCode -eq 0)
@@ -13840,7 +14279,7 @@ try {
       `$shutdownOutput = @()
       `$shutdownExitCode = 0
       if (`$shutdownArgs.Count -gt 0) {
-        `$shutdownOutput = @(& `$omxCommandPath @shutdownArgs)
+        `$shutdownOutput = @(Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath `$omxCommandPath -Arguments `$shutdownArgs)
         `$shutdownExitCode = if (Test-Path -LiteralPath variable:LASTEXITCODE) { [int]`$LASTEXITCODE } else { 0 }
       }
       if (`$shutdownExitCode -ne 0) {
@@ -13856,9 +14295,9 @@ try {
         break
       }
 
-      `$beforeTeamNames = @(Get-CodexUserLevelTeamDirectoryNames -RepoRoot `$resolvedRepoRoot)
-      `$launchArgs = @(`$plan.launch_args | ForEach-Object { [string]`$_ })
-      `$launchOutput = @(& `$omxCommandPath @launchArgs)
+        `$beforeTeamNames = @(Get-CodexUserLevelTeamDirectoryNames -RepoRoot `$resolvedRepoRoot)
+        `$launchArgs = @(`$plan.launch_args | ForEach-Object { [string]`$_ })
+      `$launchOutput = @(Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath `$omxCommandPath -Arguments `$launchArgs)
       `$launchExitCode = if (Test-Path -LiteralPath variable:LASTEXITCODE) { [int]`$LASTEXITCODE } else { 0 }
       if (`$launchExitCode -ne 0) {
         `$result = [ordered]@{
@@ -13916,7 +14355,7 @@ try {
         `$shutdownOutput = @()
         `$shutdownExitCode = 0
         if (`$shutdownArgs.Count -gt 0) {
-          `$shutdownOutput = @(& `$omxCommandPath @shutdownArgs)
+          `$shutdownOutput = @(Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath `$omxCommandPath -Arguments `$shutdownArgs)
           `$shutdownExitCode = if (Test-Path -LiteralPath variable:LASTEXITCODE) { [int]`$LASTEXITCODE } else { 0 }
         }
         if (`$shutdownExitCode -eq 0) {
@@ -14013,6 +14452,11 @@ try {
     `$locationPushed = `$true
   }
 
+  `$nativeOmxPreflight = Get-CodexUserLevelNativeOmxOperationalPreflight
+  if (-not [bool]`$nativeOmxPreflight.operational_ready) {
+    throw ('native_omx_preflight_failed:{0}' -f (@(`$nativeOmxPreflight.blockers) -join ','))
+  }
+
   `$resolvedTeamName = Resolve-CodexUserLevelTeamName -RequestedTeamName `$TeamName -RepoRoot `$RepoRoot
   `$commandArgs = @()
 
@@ -14062,7 +14506,7 @@ try {
     }
   }
 
-  & `$omxCommandPath @commandArgs
+  Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath `$omxCommandPath -Arguments `$commandArgs
 }
 finally {
   if (`$locationPushed) {
@@ -14125,7 +14569,7 @@ try {
   if ($Json) {
     $commandArgs += '--json'
   }
-  & $omxCommandPath @commandArgs
+  Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath $omxCommandPath -Arguments $commandArgs
 }
 finally {
   if ($locationPushed) { Pop-Location }
@@ -14160,7 +14604,7 @@ try {
   if ($Json) {
     $commandArgs += '--json'
   }
-  & $omxCommandPath @commandArgs
+  Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath $omxCommandPath -Arguments $commandArgs
 }
 finally {
   if ($locationPushed) { Pop-Location }
@@ -14198,7 +14642,7 @@ try {
   if ($Json) {
     $commandArgs += '--json'
   }
-  & $omxCommandPath @commandArgs
+  Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath $omxCommandPath -Arguments $commandArgs
 }
 finally {
   if ($locationPushed) { Pop-Location }
@@ -14241,7 +14685,7 @@ try {
   if ($Json) {
     $commandArgs += '--json'
   }
-  & $omxCommandPath @commandArgs
+  Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath $omxCommandPath -Arguments $commandArgs
 }
 finally {
   if ($locationPushed) { Pop-Location }
@@ -14294,7 +14738,7 @@ try {
   if ($Json) {
     $commandArgs += '--json'
   }
-  & $omxCommandPath @commandArgs
+  Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath $omxCommandPath -Arguments $commandArgs
 }
 finally {
   if ($locationPushed) { Pop-Location }
@@ -14335,7 +14779,7 @@ try {
   if ($Json) {
     $commandArgs += '--json'
   }
-  & $omxCommandPath @commandArgs
+  Invoke-CodexUserLevelNativeOmxLaunchCommand -CommandPath $omxCommandPath -Arguments $commandArgs
 }
 finally {
   if ($locationPushed) { Pop-Location }
@@ -14885,6 +15329,7 @@ $venvsDirectory = Join-Path $targetCodexHome 'venvs'
 $stateDirectory = Join-Path $targetCodexHome 'state'
 $statePath = Join-Path $stateDirectory 'user-level-team-mode.json'
 $nativeSubagentLimitsPath = Join-Path $stateDirectory 'native-subagent-limits.json'
+$modelInstructionsFilePath = Join-Path $stateDirectory 'user-level-team-mode-model-instructions.md'
 $launcherPath = Join-Path $binDirectory '_codex-user-level-team-mode-launcher.ps1'
 $nativeCommandDirectory = Split-Path -Parent $resolvedNativeCodexCommandPath
 $explicitWrappedCodexPs1Path = Join-Path $nativeCommandDirectory 'codex.openclaw.ps1'
@@ -14899,7 +15344,8 @@ $teamPlaybookPath = Join-Path $docsDirectory 'team-mode-playbook.md'
 $teamQuickReferencePath = Join-Path $docsDirectory 'team-mode-quick-reference.md'
 $composeManifestSchemaPath = Join-Path $teamsDirectory 'compose-manifest.schema.json'
 $managedProfileBlock = Get-ManagedProfileBlockContent -LauncherPath $launcherPath -NativeCommandPath $resolvedNativeCodexCommandPath
-$taskkillExeShimRequested = -not [bool]$SkipTaskkillExeShim
+$isWindowsPlatform = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT
+$taskkillExeShimRequested = [bool]$InstallTaskkillExeShim -or ($isWindowsPlatform -and -not [bool]$SkipTaskkillExeShim)
 
 Ensure-Directory -Path $targetCodexHome
 Ensure-Directory -Path $binDirectory
@@ -15035,10 +15481,13 @@ foreach ($asset in $assets) {
 Assert-ManagedAssetWriteAllowed -Assets $assets -ForceWrite:$Force
 
 $backupSnapshot = $null
-$backupPaths = @($assets | ForEach-Object { $_.Path }) + @($statePath, $nativeSubagentLimitsPath) + @($resolvedPowerShellProfilePath)
+$existingAgentTomlPaths = Get-AgentTomlPaths -AgentsDirectory $agentsDirectory
+$backupPaths = @($assets | ForEach-Object { $_.Path }) + $existingAgentTomlPaths + @($statePath, $nativeSubagentLimitsPath, $modelInstructionsFilePath) + @($resolvedPowerShellProfilePath)
+$backupPaths = @($backupPaths | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Select-Object -Unique)
 $backupSnapshot = New-InstallBackupSnapshot -TargetCodexHome $targetCodexHome -Paths $backupPaths
 
 $generatedFiles = @()
+$agentModelNormalization = @()
 $stateStatus = $null
 $nativeSubagentLimitsStatus = $null
 $profileStatus = $null
@@ -15062,7 +15511,7 @@ try {
     compiled = $false
     output_path = (Join-Path $winShimsDirectory 'taskkill.exe')
     compiler_path = ''
-    reason = if ($taskkillExeShimRequested) { '' } else { 'taskkill.exe shim disabled by SkipTaskkillExeShim' }
+    reason = if ($taskkillExeShimRequested) { '' } elseif ($SkipTaskkillExeShim) { 'taskkill.exe shim disabled by SkipTaskkillExeShim' } else { 'taskkill.exe shim disabled on non-Windows platform' }
   }
   if ($taskkillExeShimRequested) {
     $taskkillExeShimCompile = Try-CompileWindowsTaskkillExeShim -SourcePath (Join-Path $winShimsDirectory 'taskkill-shim-source.cs') -OutputPath (Join-Path $winShimsDirectory 'taskkill.exe')
@@ -15076,6 +15525,8 @@ try {
       }
     }
   }
+
+  $agentModelNormalization = Normalize-AgentModelFiles -AgentsDirectory $agentsDirectory
 
   Invoke-TestFailPoint -Name 'after_assets'
 
@@ -15101,6 +15552,18 @@ try {
     $nativeSubagentLimitsStatus = 'created'
   } else {
     $nativeSubagentLimitsStatus = 'preserved'
+  }
+
+
+  $supportScriptPath = Join-Path $binDirectory '_codex-user-level-team-mode.ps1'
+  $script:CodexUserLevelTeamModeScriptRoot = $binDirectory
+  . $supportScriptPath
+  $modelInstructionsContent = Get-CodexUserLevelDeveloperInstructions -Status (Get-CodexUserLevelTeamModeStatus)
+  $modelInstructionsManagedContent = ConvertTo-CodexUserLevelManagedModelInstructionsContent -Content $modelInstructionsContent
+  $modelInstructionsWriteResult = Write-ManagedTextFile -Path $modelInstructionsFilePath -Content $modelInstructionsManagedContent -ForceWrite:$Force
+  $generatedFiles += [ordered]@{
+    path = $modelInstructionsFilePath
+    status = $modelInstructionsWriteResult
   }
 
   Invoke-TestFailPoint -Name 'after_state'
@@ -15146,6 +15609,11 @@ $manifest = [ordered]@{
     max_threads = [int]$currentNativeSubagentLimits['max_threads']
     max_depth = [int]$currentNativeSubagentLimits['max_depth']
     updated_at = [string]$currentNativeSubagentLimits['updated_at']
+  }
+  agent_model_policy = [ordered]@{
+    allowed_models = $Script:AllowedAgentModels
+    default_normalized_model = $Script:DefaultNormalizedAgentModel
+    normalized_files = $agentModelNormalization
   }
   generated_files = $generatedFiles
   startup_binding = [ordered]@{

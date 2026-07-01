@@ -4,7 +4,7 @@
 
 ## Reference Boundary
 
-- `PMP/` 是 PMI PDF 文件的本地私有参考目录；它被 Git 忽略，不能提交进仓库。
+- `PMP/` 是 PMI PDF、EPUB 与 Markdown 笔记的本地私有参考目录；它被 Git 忽略，不能提交进仓库。
 - `PMBOK Guide` 用作项目管理中的 value、principles、tailoring、quality 和 governance 参考。
 - `Process Groups: A Practice Guide` 用作 delivery-gate 参考，覆盖 initiating、planning、executing、monitoring and controlling 和 closing。
 - `Agile Practice Guide` 用作 adaptive delivery 参考，覆盖 uncertainty、MVP slices、feedback loops 和 hybrid work。
@@ -13,11 +13,11 @@
 
 ## 本地 PMP 来源覆盖
 
-本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 2026-05-24T09:22:30+00:00 重新生成，并记录 23 个 PMP 家族来源，覆盖 PDF 每页、EPUB spine item 与 Markdown 全文。仓库只记录以下覆盖摘要与治理映射综合。
+本次刷新只读取本地 `PMP/` 文件。fresh extraction evidence 于 `2026-06-18T18:37:58Z` 在 `.omx/state/langgraph/extraction/business_pmp_20260619/` 重新生成，并记录 23 个 PMP 家族来源：9 个 PDF / 3,035 页、2 个 EPUB / 58 个 spine item、12 个 Markdown 全文笔记，共 3,105 个 PMP 读取单元和 4,330,816 个抽取字符。仓库只记录以下覆盖摘要与治理映射综合。
 
 | 本地参考资料 | 格式 | 覆盖量 | 主要治理用途 |
 | --- | --- | ---: | --- |
-| `PMBOK Guide 8th Edition .pdf` | PDF | 401 页 | 主要价值、绩效域、AI 时代、裁剪与治理叠加层 |
+| `PMBOK® Guide 8th Edition .pdf` | PDF | 401 页 | 主要价值、绩效域、AI 时代、裁剪与治理叠加层 |
 | PMBOK 第 7 版中文 PDF | PDF | 369 页 | 原则、价值交付、系统思维、裁剪与绩效域 |
 | PMBOK 第 6 版中文 PDF | PDF | 812 页并复核低文本页 | 输入 / 工具与技术 / 输出词汇与知识领域补充 |
 | `Process groups _ a practice guide.pdf` | PDF | 390 页 | 启动、规划、执行、监控与控制、收尾交付门模型 |
@@ -29,6 +29,48 @@
 | 中文项目组合管理标准 PDF | PDF | 142 页并复核低文本页 | 项目组合治理中文伴随来源 |
 | `Project Management Offices a Practice Guide.epub` | EPUB | 42 个 spine item | PMO 职能、治理服务、赋能与监督模式 |
 | `PMP_MD/*.md` | Markdown | 12 篇本地文章 | PMBOK 8 与 AI 时代项目管理解读笔记 |
+
+## PMI 官方 Web 新鲜度复核
+
+本次刷新也在 2026-06-18 复核了 PMI 公开 standards 页面，避免把私有本地目录当成唯一新鲜度信号。本地抽取仍是内容证据边界；公开复核只记录当前 catalog metadata。
+
+| PMI 公开来源 | 2026-06-18 复核到的官方目录状态 | 仓库决策 |
+| --- | --- | --- |
+| <https://www.pmi.org/standards/pmbok> | `PMBOK Guide` 已列为第 8 版，408 页，发布日期为 2025 年 11 月，并有 2025 年 12 月 22 日发布的第二次印刷勘误。 | 把 PMBOK 第 8 版作为当前项目管理主叠加层；PMBOK 第 7 版和第 6 版只作为连续性与 I/T/O 补充。 |
+| <https://www.pmi.org/standards/process-groups> | `Process Groups: A Practice Guide` 列为 370 页，发布日期为 2022 年 11 月，并描述五个过程组以及带输入、工具与技术、输出的 49 个过程。 | 用作生命周期层级和交付门的面向执行过程组语法。 |
+| <https://www.pmi.org/standards/agile> | `Agile Practice Guide` 列为 210 页，发布日期为 2017 年 10 月，并有第三次、第四次印刷勘误。 | 在更新的官方敏捷指南被加入本地并重新抽取前，保持为 agile/adaptive 补充。 |
+| <https://www.pmi.org/standards/program-management-fifth-edition> | `The Standard for Program Management - Fifth Edition` 列为 PMI Standard，247 页，发布日期为 2024 年 3 月。 | 将本地第 5 版 EPUB 作为当前项目集级协调来源。 |
+| <https://www.pmi.org/standards/for-portfolio-management> | `The Standard for Portfolio Management - Fourth Edition` 列为 PMI Standard，189 页，发布日期为 2017 年 11 月。 | 保持项目组合治理作为优先级、容量与价值平衡叠加层。 |
+| <https://www.pmi.org/standards/pmo> | `Project Management Offices: A Practice Guide` 列为 PMI Practice Guide，331 页，发布日期为 2025 年 2 月。 | 用作 PMO 治理服务与赋能叠加层，尤其适用于多个倡议需要共享标准或监督时。 |
+
+官方目录页数可能不同于本地抽取页数，因为本地 source package、front matter、印刷/导出格式或 EPUB spine 边界不同。出现差异时，用本地抽取证明本地来源已读取，用 PMI 公开页面记录当前 catalog metadata。
+
+## 按文档类型裁剪 PMI 叠加层矩阵
+
+不同文档类型应使用不同深度的 PMI 叠加层。不要在每份文档里重复所有 PMI 版本；只选择当前决策所需的最小权威。
+
+| 仓库文档或层级 | 主要 PMI 叠加层 | 旧版或伴随来源用途 | 停止条件 |
+| --- | --- | --- | --- |
+| 白皮书 | PMBOK 第 8 版的价值、治理、裁剪与 AI 时代 framing；Process Groups 只作为高层交付纪律 | 除非平台边界依赖，不在叙事中展开 PMBOK 第 6 版 I/T/O 细节 | 到战略 framing 为止，并链接 lifecycle/PMI maps 承接执行细节 |
+| 研究稿 | runtime/governance evidence 优先；只有在把能力发现翻译成受治理执行时才使用 PMI | PMBOK 第 6 版可澄清 I/T/O 词汇；PMBOK 第 7 版可澄清原则；必须标注官方来源与仓库推导的区别 | 当问题变成产品叙事或生命周期数量权威时停止 |
+| 生命周期层级文档 | Process Groups 作为执行语法；PMBOK 第 8 版作为价值/裁剪叠加层 | PMBOK 第 6 版支持详细输入、工具与技术、输出；译本只支持术语澄清 | 一旦该层已有清晰 I/T/O 与控制门，就停止展开旧版 |
+| 北极星计划 | PMBOK 第 8 版和第 7 版的价值/绩效思维；项目组合只用于容量与价值取舍 | Process Groups 只作为运营节奏和证据门 | 在指标战略变成完整项目管理手册前停止 |
+| 裁剪规则 | PMBOK 第 8 版裁剪、Agile 自适应/混合指导、Process Groups gates | PMBOK 第 6 版 I/T/O 语法与旧版用于澄清执行措辞 | 当裁剪结果和升级触发器已经明确时停止 |
+| OpenSpec / implementation plans | Process Groups + 仓库 local-main-first gates | PMBOK 第 6 版 I/T/O 措辞可用于 plan sections；只有协调范围需要时才加入 PMO/项目集/项目组合 | 当 proposal、design、tasks、verification、rollback 与 archive evidence 足够时停止 |
+| 下游一人公司文档 | PMBOK 第 8 版价值/裁剪与 Agile feedback loops | 只有在多倡议、治理服务或容量取舍存在时才使用 PMO/项目集/项目组合叠加 | 在把 enterprise governance 导入单一低风险 owner workflow 前停止 |
+
+## 旧版展开规则
+
+旧版 PMI 与伴随译本只有在带来具体执行收益时才展开：I/T/O 词汇、知识领域连续性、翻译澄清或历史比较。当 PMBOK 第 8 版已经覆盖治理点，并且该文档不是在定义执行语法时，应引用 PMBOK 第 8 版和当前 lifecycle 权威，而不是并列铺开 PMBOK 第 6/7/8 版。
+
+## Agile、项目集、项目组合与 PMO 的进入/退出规则
+
+- Agile guidance 在存在不确定性、反馈循环、MVP 切片或混合规划时进入；它不覆盖 PMBOK 第 8 版作为主要治理叠加层的地位。
+- 项目集治理在多个相关倡议需要协调收益、依赖或 roadmap alignment 时进入。
+- 项目组合治理在多个竞争倡议需要价值、容量、风险或投资取舍时进入。
+- PMO 实践在需要共享治理服务、标准、赋能功能或监督模式时进入。
+- 单一仓库、单一维护者、单一发布切片和低风险本地 workflow 默认不导入项目集、项目组合或 PMO ceremony。
+- 当协调问题已经关闭，剩余工作变成有清晰 owner 和 rollback evidence 的有界项目、阶段或模块时，退出较重叠加层。
 
 ## 最新优先权威规则
 
@@ -161,3 +203,18 @@
 ## Platform Rule
 
 Codex 平台仓库可以定义共享 lifecycle references、templates、checkers 和 role policies。它不得成为下游项目的 repo-local durable truth。下游项目拥有自己的 OpenSpec tree、durable state、release state 和 lessons learned。
+
+## 一人公司 PMI 运行叠加层
+
+对于下游一人公司运营系统，PMI 用于决定执行纪律，而不是引入企业级仪式。
+
+| PMI 来源家族 | 进入触发器 | 一人公司用法 | 退出规则 |
+| --- | --- | --- | --- |
+| PMBOK 第 8 版 | 任何真实项目、offer、release、受治理 Agent 工作流或业务运行循环需要价值与裁剪纪律 | 用价值交付、project canvas、绩效关注点、AI 时代工作、混合交付和裁剪作为主叠加层 | 当循环私有、可逆、低风险且无外部承诺时，退出到轻量 note |
+| Process Groups | 任何执行流产生交付物、承诺、验证、发布、支持或收尾证据 | 按启动 / 规划 / 执行 / 监控与控制 / 收尾写输入 / 工具与技术 / 输出 | 受影响层已有 owner、验证、风险、回滚/停止和学习证据时停止扩展 |
+| Agile Practice Guide | discovery、原型、访谈、MVP、渠道测试或不确定产品/市场工作 | 在冻结预测式交付计划前使用适应式反馈循环 | 触达客户、收入、信任、合规或发布影响前冻结更强控制 |
+| 项目集标准 | 多个相关 initiative 需要协同收益、依赖、顺序或能力增量 | 只有相关 initiative 必须一起管理时，才把 solo operator 路线图视为项目集 | 当工作回到单一有边界项目或模块时退出 |
+| 项目组合标准 | 竞争性投入需要在价值、容量、runway、风险或业务线之间取舍 | 用项目组合思维做优先级和 stop/pivot 决策 | 当只剩一个有清晰 owner 和预算的 active bet 时退出 |
+| PMO 实践指南 | 标准、评审、模板、节奏、赋能或监督成为重复性服务 | 使用 solo PMO / chief-of-staff 服务层，而不是新增部门 | 当一次性循环不再需要共享治理服务时退出 |
+
+运行规则是先局部轻量。扩展真正承载风险的层级、阶段、模块或 release slice；只有耦合变成系统性时，才扩展整个项目。

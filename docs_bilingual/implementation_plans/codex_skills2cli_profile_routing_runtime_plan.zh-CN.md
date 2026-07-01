@@ -1,0 +1,251 @@
+---
+doc_id: codex_skills2cli_profile_routing_runtime_plan
+lang: zh-CN
+canonical: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
+translation_of: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
+status: final
+doc_class: implementation_plan
+change: improve-skills2cli-profile-routing
+created_at: 2026-06-21
+archived-with: 2026-06-22-harden-skills2cli-profile-routing-followup
+---
+
+# Skills2CLI 场景化 Profile 路由 Runtime 计划
+
+> 给 agentic workers：本方案冻结后，Phase B 可以使用 `subagent-driven-development` 或受保护的 durable-team lane。方案冻结包和 live runtime 实现包必须作为两次独立本地 main 集成包处理。除非后续出现明确 apply receipt，否则 profile apply 不在范围内。
+
+**目标：** 在保留 canonical `target_profile` hard-load 语义的前提下，为 Codex plugin skills 管理增加场景入口和 task module 路由层。
+
+**架构：** Phase A 冻结 OpenSpec 契约与双语实施方案。Phase B 扩展 plugin-modules registry、helper 脚本、`skills2cli.py`、checker 与测试。runtime 只做 advisory：可以建议 soft-load 和 hard-load preview candidate，但不得编辑 `config.toml`、plugin cache 或 hard-load profile。
+
+**技术栈：** JSON profile registry、PowerShell plugin-module helper、Python `skills2cli.py`、仓库 checker、OpenSpec、本地 CI 与 local MR review。
+
+---
+
+## 当前状态
+
+<!-- CURRENT_STATUS_START -->
+
+- 基线 Stage A 方案冻结包已在本地 `main` 集成，提交为 `3d08d6e`。
+- 基线 Phase B runtime 实现已在本地 `main` 集成，提交为 `80ec3dd`。
+- 基线 OpenSpec change 已归档到 `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/`。
+- Follow-up Phase A 方案冻结包已在本地 `main` 集成，提交为 `6919f0b`。
+- Follow-up Phase B runtime 实现已集成到本地 `main`：`cfd6376` 包含 runtime hardening，`e1844fb` 修复 archive ledger，`04b8686` 归档 follow-up OpenSpec change，`bf8b380` 记录用户级 install-sync 证据。
+- Follow-up change `harden-skills2cli-profile-routing-followup` 已归档到 `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/`，stable spec 已提升到 `openspec/specs/codex-user-level-plugin-modules-profile-helper/`。
+- Runtime 仍保持 advisory 与 preview-only：不执行 profile apply，不修改 `config.toml`，不编辑 plugin cache，也不进行远程发布。
+- 用户级 live runtime 安装产物已在 2026-06-22 同步：`skills2cli.py`、`skills2cli_profile_registry_contract.py` 与 `profiles.json` 在已安装的用户级 `skills2cli` helper 和已安装的 `plugin-modules` skill registry 副本中均与仓库源保持一致。
+- installed-artifact drift 当前为 clean：`tools/check_skills2cli_profile_routing.py --root . --json` 对 `skills2cli.py`、profile registry contract module、`profiles.json` 以及已安装的 `plugin-modules` registry 副本均报告 `hash_equal=true`。
+- `codex_skills_usage_audit` evidence 仅作为 recall/rerank advisory input；不授权 profile apply。
+- 远程发布未授权。
+
+<!-- CURRENT_STATUS_END -->
+
+## 1. 输入与设计原则
+
+本计划使用三个输入：
+
+1. 本地参考视频文件名中的四项原则：场景化描述、分层路由、负样本边界、召回重排机制，用于提升 Agent skill 命中率。
+2. `codex_skills_usage_audit` 证据模型：strong evidence 可作为 routing 与 review 输入，但不授权 profile apply。
+3. 当前 `target_profile` registry：`core-dev`、`web-saas`、`company-ops`、`market-research`、`customer-comms`、`creative-content`、`pyside6-gui` 和 `full` 继续保持兼容 ID。
+
+## 1.1 四原则可追溯矩阵
+
+| 原则 | 冻结契约 | OpenSpec surface | Phase B 证据目标 |
+| --- | --- | --- | --- |
+| 场景化描述 | `scene_description` 为主字段，`scenario_description` 保持兼容 alias。 | `Scenario-based profile routing metadata` 要求 profiles、scenario profiles 与 task modules 具备正向场景证据。 | Registry checker 在缺少场景文本加 `route_when` 或 `positive_examples` 时 fail closed。 |
+| 分层路由 | canonical profile -> scenario profile -> `profile.task_module` -> skill/plugin hints。 | `Task modules provide layered routing` 与 `Scenario profiles resolve to canonical target profiles`。 | `load_module.ps1` 报告 `entry_kind`、`target_profile`、`task_module`；`skills2cli profile suggest` 报告 profile 与 module matches。 |
+| 负样本边界 | 普通 route 必须有 negative examples 与 excluded-candidate evidence。 | `Scenario-based profile routing metadata` 与 `Profile suggestion matrix covers ordinary profiles and explicit full troubleshooting`。 | Suggest output 报告 negative-match 或 eligibility reasons；普通 rows 不选择 `full`。 |
+| 召回/重排 | Recall 与 rerank 分离；audit evidence 可 boost、warning pressure 可 penalty，但 safety gates 优先。 | `Recall/rerank is explainable and fail-closed`。 | Suggest output 输出脱敏 rank factors 与 evidence source labels，不包含 raw transcripts 或 private paths。 |
+
+## 2. 非目标与安全边界
+
+- Phase B 不重命名现有 `target_profile` ID，只新增 alias 与场景 metadata。
+- 不自动 apply 任何 hard-load profile。
+- 不修改 `C:\Users\lenovo\.codex\config.toml`。
+- 不批量编辑 plugin cache 文件或 vendor `SKILL.md` 文件。
+- 不让 `full` 成为普通任务 top-1 suggestion。
+- 不把 profile/helper invocation 当成 native expert evidence。
+- 本实施流程不推送 GitLab/GitHub。
+
+## 2.1 统一安全边界矩阵
+
+| 边界 | 允许 | 禁止 | Phase A 证据 | Phase B enforcement target |
+| --- | --- | --- | --- | --- |
+| Advisory-only routing | 生成 suggestions、soft-load guidance 与 hard-load previews。 | 自动 apply profile。 | Proposal/design/spec 说明 no profile apply。 | Output flags 与 fixture hashes 证明 no apply。 |
+| Config immutability | 读取 fixture 或 configured paths 以报告 drift。 | 修改 `C:\Users\lenovo\.codex\config.toml`。 | Non-goal 与 management constraints。 | No-auto-apply tests 在前后 snapshot config。 |
+| Plugin-cache immutability | 读取 reports 所需 metadata。 | 编辑 plugin cache 或 vendor `SKILL.md`。 | Non-goal 与 management constraints。 | No-auto-apply tests snapshot plugin-cache markers。 |
+| Remote-publication boundary | gates 通过后做本地 commits 与本地 `main` 集成。 | push GitLab/GitHub、开/合 MR 或修改 remote refs。 | 本方案声明远程发布未授权。 | 除非后续用户消息点名远端动作，否则不使用 publication helper。 |
+| `full` eligibility | 显式 all-plugin troubleshooting 可使用 `full`。 | 让宽泛普通任务选择 `full` top-1。 | Delta spec 定义 explicit-only gate。 | Suggest matrix 在 `explicit_full_request=false` 时要求 `excluded_candidates`。 |
+| Task-module activation | Soft-load `profile.task_module` guidance。 | 把 task modules 当成 hard-load targets。 | Delta spec 定义一等 soft-load-only identity。 | `set_plugin_profile.ps1` 拒绝 scenario/task-module inputs。 |
+| Expert-evidence boundary | 把 skills/profile helpers 用作 procedural context。 | 把 skill/profile invocation 当成 native subagent evidence。 | Non-goal 与 management constraints。 | Boundary checker 与 output flags 保持区分。 |
+| Installed artifact drift | 报告 installed helper artifacts drift。 | 把 user-level installed copies 当成 source of truth。 | Delta spec 命名 required artifact surface。 | Checker 报告 `skills2cli.py`、contract module 与 `profiles.json` 的 repo/installed paths。 |
+
+## 3. 目标模型
+
+registry 必须表达四层：
+
+1. **canonical top-level profile**：现有 `target_profile` hard-load ID，供 `set_plugin_profile.ps1` 与 audit candidate 使用。
+2. **scenario profile**：新的 recommendation entrypoint，解析到 canonical `target_profile` 和默认 task modules。
+3. **task module**：profile 内部的任务能力块，例如 `web-saas.mobile-app` 或 `core-dev.security-review`。
+4. **skill/plugin hints**：可被 soft-load 的 plugin family 与 `SKILL.md` reference。
+
+每个 top-level profile 和每个 task module 都必须定义：
+
+- `scene_description` 作为主场景描述字段，同时保留 `scenario_description` 作为兼容别名；
+- 正向 routing examples 或 `route_when` terms；
+- 用于排除误命中的 negative examples；
+- load policy：`default-candidate`、`hard-load-preview`、`soft-load`、`repo-local-only` 或 `troubleshooting-only`；
+- 适用时提供 plugin hints 与 skill document hints；
+- ranking signal 说明，解释 audit evidence 与 warning pressure 如何影响排序。
+
+## 3.1 兼容性约束
+
+- audit candidate 和 hard-load preview 中的 `target_profile` 继续表示现有 canonical profile ID。
+- `scenario_profiles` 是新的 recommendation entry layer，不替代 canonical `modules`。
+- `task_modules` 可以嵌入 profile 下，并由 runtime 按 `profile.task_module` 解析。
+- `set_plugin_profile.ps1` 只接受 canonical top-level profile；scenario 或 task-module 输入必须 fail closed。
+- `load_module.ps1` 可以接受 canonical profile、scenario profile 或 `profile.task_module`，但输出必须显式报告 `entry_kind`、`target_profile` 和 `task_module`。
+
+## 3.2 Phase boundary and package split
+
+| Package | 允许写入范围 | 禁止范围 | 退出条件 |
+| --- | --- | --- | --- |
+| Follow-up Phase A plan-freeze | `openspec/changes/harden-skills2cli-profile-routing-followup/**`、本双语 plan、本地 receipts。 | Runtime code、`profiles.json`、helper scripts、checkers、tests、user-level installed copies、`config.toml`、plugin cache、remote refs。 | Delta spec validate 通过，plan matrices 存在，pre-commit/archive review 通过，local gate 与 local MR review 通过，然后由 local-main helper 集成。 |
+| Follow-up Phase B runtime hardening | Registry、runtime、helper scripts、checkers、tests、CI manifest、install-source metadata，以及同一个 active OpenSpec change。 | Profile apply、plugin-cache edits、`config.toml` edits、remote publication、无关 worktrees。 | Focused tests、representative suggestions、OpenSpec guard、local gate、local MR review 通过；随后 archive change 并集成本地 `main`。 |
+
+Phase B 只有在 Phase A 冻结、且至少两个独立写入切片具备明确 ownership 后，才可以使用 LangGraph durable checkpoint 或 persistent-team lane。当前 main Codex CLI session 仍是 leader，并负责 fan-in。
+
+## 4. 顶层 profile 矩阵
+
+| 现有 ID | 场景 alias | 预期 task modules |
+| --- | --- | --- |
+| `core-dev` | `repo-dev` | `repo-governance`, `code-review`, `security-review`, `openai-dev`, `docs-artifacts`, `browser-verification` |
+| `web-saas` | `web-product` | `frontend-build`, `deploy-runtime`, `db-backend`, `payments`, `observability`, `mobile-app`, `design-implementation`, `browser-verification` |
+| `company-ops` | `ops-knowledge` | `mail-calendar`, `docs-sheets-slides`, `knowledge-capture`, `crm-workflow`, `team-comms`, `meeting-intel`, `issue-planning` |
+| `market-research` | `research-analysis` | `company-research`, `news-library`, `paper-citation`, `model-dataset-inspection`, `science-visuals`, `report-artifacts` |
+| `customer-comms` | `customer-comms` | `messaging`, `email-delivery`, `support-comms`, `payment-comms` |
+| `creative-content` | `design-media` | `design-generation`, `design-implementation`, `slides-docs`, `video-motion`, `brand-assets`, `media-assets` |
+| `pyside6-gui` | `repo-local-gui` | `qt-gui-dev`, `gui-preview-apply`, `gui-packaging-preflight` |
+| `full` | `troubleshooting` | 无普通 task module；仅用于 broad discovery 排障 |
+
+Phase B registry 必须确保原先 only-`full` 的插件拥有非 `full` task-module 归属：
+
+- `BioRender` -> `market-research.science-visuals`；
+- `ChatGPT Apps` -> `core-dev.openai-dev`，必要时新增 `core-dev.chatgpt-apps`；
+- `Cloudinary` -> `creative-content.media-assets`；
+- `Expo` -> `web-saas.mobile-app`；
+- `Fireflies` -> `company-ops.meeting-intel`；
+- `Linear` -> `company-ops.issue-planning`；
+- `Temporal` -> `core-dev.workflow-orchestration`，或在证据更偏 Web 工作流时归入 `web-saas.workflow-orchestration`。
+
+## 5. Runtime 行为
+
+`skills2cli.py profile suggest --query <text> --json` 必须：
+
+1. 使用场景文本和 `route_when` terms 给 top-level profiles 评分；
+2. 对命中 `negative_examples` 的 profile 做排除或降权；
+3. 在保留的 profiles 内继续给 task modules 评分；
+4. 可用时用 `codex_skills_usage_audit` strong evidence 做 advisory boost；
+5. 对 oversized 或 troubleshooting-only profile 施加 warning-pressure penalty；
+6. 返回紧凑且脱敏的 JSON，包含 selected profile、task modules、excluded candidates、soft-load commands、可选 hard-load preview command 与解释文本。
+
+`load_module.ps1` 必须接受 top-level module 和 `profile.task_module` 名称。task-module load 只返回该 module 的 focused hints。
+
+`list_module.ps1` 必须展示 top-level modules，并可选择展示 nested task modules。
+
+`set_plugin_profile.ps1` 保持 top-level only。若传入 task-module ID，必须 fail closed，并解释 task modules 只是 soft-load guidance，hard-load 仅适用于 top-level profiles。
+
+## 6. Checker 与测试
+
+新增或扩展 checker，使仓库在以下场景 fail closed：
+
+- top-level profile 缺少场景描述、route terms、negative examples、ranking signals 或 task modules；
+- task module 缺少正向 examples、negative examples、load policy、plugin hints 或 routing explanation fields；
+- known plugin 只能通过 `full` 到达且没有明确 allowlist reason；
+- 普通 profile suggestion 返回 `full` 作为 top-1；
+- user-level installed plugin-modules registry 与 repo source 存在差异但未报告 drift；
+- profile suggestion 输出缺少解释、soft/hard boundary 或 excluded-candidate evidence；
+- installed `skills2cli` wrapper 只通过 `--help`，但无法执行真实 `profile suggest` smoke，包括 installed helper directory 缺少 shared profile-routing contract module 的情况；
+- 输出将 `mutates_config`、`edits_plugin_cache` 或 `profile_apply_performed` 设为 true；
+- 输出把 skill/profile routing 当成 native expert 或 native subagent evidence；
+- 当文案涉及 direct MCP handoff 时绕过 paired `mcp2cli` risk-profile / receipt gate。
+
+代表性 routing tests 必须覆盖：
+
+- GitLab CI 修复加安全审查 -> `core-dev`，包含 `code-review` 与 `security-review`；
+- Expo 移动端构建加 Sentry 观测 -> `web-saas`，包含 `mobile-app` 与 `observability`；
+- Twilio WhatsApp 客户通知 -> `customer-comms`，包含 `messaging`；
+- 会议纪要和 CRM 跟进 -> `company-ops`，包含 `meeting-intel` 或 `crm-workflow`；
+- BioRender 科学图 -> `market-research.science-visuals`；
+- Cloudinary 素材管线 -> `creative-content.media-assets`；
+- 未知 broad troubleshooting 请求 -> 只有当 query 明确要求排障全部插件时，才允许 `full` 成为 top-1。
+
+## 7. Phase A 任务
+
+<!-- TASK_BACKLOG_START -->
+
+- [x] 创建本双语 implementation plan。
+- [x] 创建 OpenSpec change `improve-skills2cli-profile-routing`。
+- [x] 添加 delta spec，覆盖 profile routing、task modules、negative examples、recall/rerank 输出和安全边界。
+- [x] 更新 `codex_skills_usage_audit_plan.md` 与 `.zh-CN.md`，声明 audit evidence 仅作为 advisory routing/rerank 输入。
+- [x] 在 `docs_bilingual/docs_registry.yaml` 登记本双语方案。
+- [x] 运行 plan-level validation 并提交 plan-freeze package。
+- [x] 通过 local-main-first helper 将 Phase A 集成到本地 `main` 并清理 worktree/branch。
+
+## 7.1 Follow-up Phase A acceptance matrix
+
+| Acceptance item | 本地提交前 required evidence | Owner phase | 状态 |
+| --- | --- | --- | --- |
+| Follow-up OpenSpec change exists | `harden-skills2cli-profile-routing-followup` 下存在 proposal、design、tasks、management、`.openspec.yaml`、`.comet.yaml` 与双语 companions。 | Phase A | Required |
+| Delta spec 非空且 strict-valid | `openspec validate harden-skills2cli-profile-routing-followup --strict` 通过。 | Phase A | Required |
+| 四原则可追溯 | 第 1.1 节把场景化描述、分层路由、负样本边界、召回/重排映射到 OpenSpec requirements 与 Phase B evidence。 | Phase A | Required |
+| Safety contract 统一 | 第 2.1 节列出 allowed/forbidden behavior 与 checker targets。 | Phase A | Required |
+| Phase A/B 已分离 | 第 3.2 节说明 plan-freeze-only scope，并禁止 Phase A runtime edits。 | Phase A | Required |
+| Audit linkage 仍为 advisory | 当前状态与安全章节声明 audit evidence 不授权 profile apply。 | Phase A | Required |
+| Local commit readiness | 本地 `main` 集成前，`check_precommit_update_archive.py`、`run_openspec_guard.py`、local gate 与 local MR review 通过。 | Phase A | Required |
+
+## 8. Phase B 任务
+
+- [x] 扩展 `profiles.json`，加入场景 metadata 与 task modules，同时保留现有 profile IDs。
+- [x] 扩展 plugin-modules 脚本，支持 nested `profile.task_module` soft-load 和 top-level-only hard-load。
+- [x] 添加 `skills2cli.py profile suggest`，输出 positive/negative/rerank evidence 与紧凑脱敏结果。
+- [x] 添加 checker 与测试，覆盖 schema、only-`full` coverage、普通任务不走 `full` top-1、installed-copy drift reporting。
+- [x] 如新增 checker/test 文件需要登记，同步更新 CI manifest 与 guard registration。
+- [x] 通过 checker、代表性 suggestions、OpenSpec guard、local gate 和 local MR review 验证 Phase B。
+- [x] runtime validation 通过后 archive OpenSpec change，并准备由 local-main-first helper 集成。
+
+<!-- TASK_BACKLOG_END -->
+
+## 9. 验收标准
+
+- `profiles.json` 为所有非 `full` profile 包含 `scene_description` 与 `scenario_description` 兼容字段以及 task modules。
+- 每个 known plugin 都有非 `full` route，或有明确 allowlist reason。
+- `skills2cli.py profile suggest --query ... --json` 返回确定、脱敏、可解释的 recommendations，并包含 profile-level `plugin_hints`、`skill_doc_hints` 与 focused task-module hints。
+- 普通用户任务不会让 `full` 成为 top-1。
+- Profile suggestion 继续保持 advisory，绝不 apply config。
+- `skills2cli` 聚焦测试、`mcp2cli` risk/receipt 测试、agent/skill/profile 边界测试，以及严格 user-level install/smoke 检查，都属于最终 runtime 验证集合。
+- user-level `skills2cli` installation 必须复制 facade 所需的全部 Python module，包括 `skills2cli_profile_registry_contract.py`；install metadata 与 checker output 必须暴露该 support file，使 simulated/live `profile suggest` smoke 在依赖缺失时 fail closed。
+- shared registry contract module 是 canonical profile IDs、required routing fields、registry/installed-copy paths、`scene_description` compatibility accessor、profile/task hint accessor、plugin coverage collector 与显式 `full` troubleshooting trigger terms 的唯一 Python 共享契约来源。
+- checker-backed routing matrix 必须证明每个普通 top-level profile 的正常任务 query 都不会选择 `full`，同时显式英文与中文 all-plugin troubleshooting query 可以选择 `full`；每个 matrix row 都必须保持 `mutates_config=false`、`edits_plugin_cache=false`、`profile_apply_performed=false` 与 `approval_required_for_apply=true`。
+- `check_skills2cli_profile_routing.py --json` 直接输出 UTF-8 JSON bytes，确保中文 matrix rows 在 Windows 上仍然可解码；checker smoke cases 只做 black-box boundary tests，不复制 runtime scoring logic。
+- 本地 `main` 集成前，OpenSpec validation、repository guard、本地 CI 和 local MR review 均通过。
+
+## 证据索引
+
+<!-- EVIDENCE_INDEX_START -->
+
+- `docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md` - Stage A 冻结实施方案与 runtime 验证契约。
+- `docs_bilingual/docs_registry.yaml` - active 双语方案登记。
+- `openspec/changes/archive/2026-06-21-improve-skills2cli-profile-routing/` - 已归档 OpenSpec change，包含 proposal、design、tasks、management record 与 delta spec。
+- `openspec/changes/archive/2026-06-22-harden-skills2cli-profile-routing-followup/` - 已归档的 follow-up OpenSpec change，以及 hardened routing runtime 的 stable-spec promotion 证据。
+- `docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md` - advisory audit 输入关联；profile apply 仍未授权。
+- Stage A 验证证据：`openspec validate improve-skills2cli-profile-routing --strict`、`tools/run_openspec_guard.py --root . --tool codex --json`、`tools/check_precommit_update_archive.py --root . --json` 与 `tools/check_worktree_task_receipt.py --root . --json` 已在 plan-freeze commit 前通过。
+
+- 收口证据：`skills2cli`、`check_skills2cli_profile_routing` 与 `check_plugin_modules_skill` 的聚焦单测覆盖 `scene_description` 兼容和 profile-level hints；本地 main 集成前重新运行 full gates。
+- 契约硬化包 `harden-skills2cli-profile-routing-contract-20260622` 在 `tools/skills2cli_profile_registry_contract.py` 中集中 Python 侧 registry path、canonical profile IDs、required fields、scene/legacy-description accessor、hint accessor、plugin coverage collector 与显式 `full` trigger aliases；runtime scoring 与 checker black-box smokes 保持分离，并且 user-level installer 现在会把该 contract module 复制到 installed `skills2cli.py` 旁边。
+- profile-suggest checker 现在记录矩阵，覆盖普通 `core-dev`、browser automation、`web-saas`、`customer-comms`、`company-ops`、`market-research`、`creative-content`、`pyside6-gui`，以及显式英文/中文 `full` troubleshooting query，同时保持 preview-only safety flags。
+- 2026-06-22 live runtime install sync 证据：`tools/install_user_level_mcp_skills_cli.py apply --apply --operator-confirmation --skip-upstream-skill-install --json` 刷新了用户级 `skills2cli` 安装产物；该操作没有安装 upstream skills、没有编辑 `config.toml`、没有编辑 plugin cache，也没有 apply profile。
+- 2026-06-22 live plugin-modules install sync 证据：`tools/install-plugin-modules-skill.ps1 -Force` 刷新了已安装的 `plugin-modules` skill registry 副本，并保持 advisory-only profile routing 语义。
+- 2026-06-22 live install smoke 证据：`tools/install_user_level_mcp_skills_cli.py check --require-installed --smoke --json` 返回 `ok=true`、`skills2cli_profile_registry_contract=true`，且 `skills2cli_profile_suggest` smoke 通过。
+- 2026-06-22 drift-clean runtime 证据：`tools/check_skills2cli_profile_routing.py --root . --json` 返回 `ok=true`、无 warning，且 `skills2cli.py`、`skills2cli_profile_registry_contract.py`、`profiles.json` 均无 installed-artifact drift；`tools/check_plugin_modules_skill.py --root . --json` 同样返回 `ok=true`。
+<!-- EVIDENCE_INDEX_END -->

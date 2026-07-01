@@ -65,8 +65,13 @@ REQUIRED_FIXTURES = {
     "conversation_surface_markdown_updated_plan_invalid.json",
     "conversation_surface_prose_only_updated_plan_invalid.json",
     "conversation_surface_routing_trace_no_key_values_invalid.json",
+    "conversation_surface_routing_trace_duplicate_invalid.json",
     "conversation_surface_routing_trace_label_valid.json",
+    "conversation_surface_routing_trace_old_fields_invalid.json",
+    "conversation_surface_updated_plan_duplicate_invalid.json",
+    "conversation_surface_updated_plan_native_plus_handwritten_invalid.json",
     "conversation_surface_updated_plan_checklist_valid.json",
+    "conversation_surface_updated_plan_nested_invalid.json",
     "expert_lifecycle_timeout_pacing_valid.json",
     "multi_slice_without_collaboration_phrase.json",
     "multi_slice_with_collaboration_phrase.json",
@@ -85,8 +90,17 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
         "durable/persistent evidenceguard",
         "LangGraph state release",
         "`Routing trace` is a plain text diagnostic",
+        "exactly one `Routing trace` label",
+        "legacy short fields",
+        "already injected `Routing trace`",
+        "native `update_plan` render is the canonical `Updated Plan` panel",
+        "MUST NOT handwrite a second `Updated Plan` heading",
+        "non-conflicting label such as `Execution progress`",
         "`Updated Plan` is the progress panel",
+        "exactly one user-visible CLI/tree",
         "Markdown checkbox syntax remains implementation-plan-internal",
+        "transient_operator_surface",
+        "transient_surface_leak",
     ],
     "docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md": [
         "tools/check_orchestration_collaboration_evidenceguard.py",
@@ -94,8 +108,17 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
         "durable/persistent evidenceguard",
         "LangGraph state release",
         "`Routing trace` \u662f\u666e\u901a\u6587\u672c\u8bca\u65ad",
+        "\u5fc5\u987b\u53ea\u6709\u4e00\u4e2a `Routing trace` \u6807\u7b7e",
+        "\u65e7\u77ed\u5b57\u6bb5",
+        "\u5df2\u7ecf\u4e3a\u5f53\u524d activation \u6ce8\u5165 `Routing trace`",
+        "Codex \u539f\u751f `update_plan`",
+        "\u4e0d\u5f97\u518d\u624b\u5199\u7b2c\u4e8c\u4e2a `Updated Plan`",
+        "`\u6267\u884c\u8fdb\u5ea6` \u7b49\u4e0d\u51b2\u7a81\u6807\u7b7e",
         "`Updated Plan` \u662f\u8fdb\u5ea6\u9762\u677f",
+        "\u552f\u4e00\u4e00\u4e2a\u7528\u6237\u53ef\u89c1\u7684 CLI/tree",
         "Markdown checkbox syntax",
+        "transient_operator_surface",
+        "transient_surface_leak",
     ],
     "docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md": [
         "tools/check_orchestration_collaboration_evidenceguard.py",
@@ -115,8 +138,16 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
         "durable/persistent evidenceguard",
         "LangGraph state release",
         "`Routing trace` SHALL be a plain text diagnostic",
+        "exactly one visible trace label",
+        "legacy short fields",
+        "already injected `Routing trace`",
+        "native `update_plan` render SHALL be the canonical `Updated Plan` panel",
+        "non-conflicting label such as `Execution progress`",
         "`Updated Plan` SHALL be a user-visible progress panel",
+        "exactly one CLI/tree",
         "Markdown checkbox syntax SHALL remain implementation-plan-internal",
+        "transient_operator_surface",
+        "transient_surface_leak",
         "tools/check_orchestration_collaboration_evidenceguard.py",
     ],
     "openspec/specs/codex-user-level-orchestration-activation-policy/spec.zh-CN.md": [
@@ -126,8 +157,16 @@ REQUIRED_SURFACE_SNIPPETS: dict[str, list[str]] = {
         "LangGraph state release",
         "双语 OpenSpec heading parity",
         "`Routing trace` \u5fc5\u987b\u662f\u666e\u901a\u6587\u672c\u8bca\u65ad",
+        "\u5fc5\u987b\u53ea\u6709\u4e00\u4e2a\u53ef\u89c1 trace \u6807\u7b7e",
+        "\u65e7\u77ed\u5b57\u6bb5",
+        "\u5df2\u7ecf\u4e3a\u5f53\u524d activation \u6ce8\u5165 `Routing trace`",
+        "\u539f\u751f `update_plan` render \u5fc5\u987b\u662f canonical `Updated Plan` \u9762\u677f",
+        "`\u6267\u884c\u8fdb\u5ea6` \u7b49\u4e0d\u51b2\u7a81\u6807\u7b7e",
         "`Updated Plan` \u5fc5\u987b\u662f\u7528\u6237\u53ef\u89c1\u8fdb\u5ea6\u9762\u677f",
+        "\u5fc5\u987b\u53ea\u6709\u4e00\u4e2a CLI/tree",
         "Markdown checkbox syntax",
+        "transient_operator_surface",
+        "transient_surface_leak",
         "tools/check_orchestration_collaboration_evidenceguard.py",
     ],
 }
@@ -204,7 +243,8 @@ COLLABORATION_PHRASES = (
 
 CONVERSATION_SURFACES = {"routing_trace", "updated_plan"}
 ROUTING_TRACE_KEY_VALUE_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)=")
-ROUTING_TRACE_REQUIRED_KEYS = {"phase", "why"}
+ROUTING_TRACE_REQUIRED_KEYS = set(ROUTE_FIELDS)
+ROUTING_TRACE_FORBIDDEN_KEYS = {"experts_now", "durable_team"}
 ROUTING_TRACE_FORBIDDEN_LABEL_PREFIXES = (
     "\u8def\u7531\u8ddf\u8e2a",
     "\u8def\u7531\u8ffd\u8e2a",
@@ -216,6 +256,8 @@ UPDATED_PLAN_STATUS_MARKERS = (
     "\u2714",
 )
 UPDATED_PLAN_MARKDOWN_CHECKBOX_RE = re.compile(r"(?im)^\s*[-*+]\s+\[[ xX]\]\s+")
+LABEL_PREFIX_CHARS = r"\s*(?:[\u2022\u2514\u251c\u2502>+\-*]+\s*)*"
+
 
 
 def utc_now() -> str:
@@ -676,24 +718,45 @@ def first_nonempty_line(text: str) -> str:
     return ""
 
 
+def strip_label_prefix(line: str) -> str:
+    return re.sub(rf"^{LABEL_PREFIX_CHARS}", "", line.strip())
+
+
+def starts_with_label(line: str, label: str) -> bool:
+    return strip_label_prefix(line).startswith(label)
+
+
+def label_line_count(text: str, label: str) -> int:
+    pattern = re.compile(rf"(?im)^{LABEL_PREFIX_CHARS}{re.escape(label)}\b")
+    return len(pattern.findall(text))
+
+
 def conversation_surface_issues(surface: str, text: str) -> list[str]:
     issues: list[str] = []
     first_line = first_nonempty_line(text)
     if surface == "routing_trace":
-        if not first_line.startswith("Routing trace"):
+        if not starts_with_label(first_line, "Routing trace"):
             issues.append("routing trace surface must start with the literal `Routing trace` label.")
-        if any(first_line.startswith(prefix) for prefix in ROUTING_TRACE_FORBIDDEN_LABEL_PREFIXES):
+        if label_line_count(text, "Routing trace") > 1:
+            issues.append("routing trace surface must contain exactly one `Routing trace` label, not duplicate trace panels.")
+        if any(strip_label_prefix(first_line).startswith(prefix) for prefix in ROUTING_TRACE_FORBIDDEN_LABEL_PREFIXES):
             issues.append("routing trace surface must not replace `Routing trace` with a localized label.")
         route_keys = {match.group(1) for match in ROUTING_TRACE_KEY_VALUE_RE.finditer(text)}
         if not route_keys:
             issues.append("routing trace surface must remain a plain text diagnostic with key=value fields.")
+        for forbidden_key in sorted(ROUTING_TRACE_FORBIDDEN_KEYS & route_keys):
+            issues.append(
+                f"routing trace surface must not use legacy short field `{forbidden_key}=...`; use the full current field set."
+            )
         for required_key in sorted(ROUTING_TRACE_REQUIRED_KEYS - route_keys):
             issues.append(f"routing trace surface must include `{required_key}=...` key=value evidence.")
         return issues
     if surface == "updated_plan":
-        if not first_line.startswith("Updated Plan"):
+        if not starts_with_label(first_line, "Updated Plan"):
             issues.append("updated plan surface must start with the literal `Updated Plan` label.")
-        if any(first_line.startswith(prefix) for prefix in UPDATED_PLAN_FORBIDDEN_LABEL_PREFIXES):
+        if label_line_count(text, "Updated Plan") > 1:
+            issues.append("updated plan surface must contain exactly one `Updated Plan` label, not duplicate, nested, or native-plus-handwritten panels.")
+        if any(strip_label_prefix(first_line).startswith(prefix) for prefix in UPDATED_PLAN_FORBIDDEN_LABEL_PREFIXES):
             issues.append("updated plan surface must not replace `Updated Plan` with a localized label.")
         if UPDATED_PLAN_MARKDOWN_CHECKBOX_RE.search(text):
             issues.append(

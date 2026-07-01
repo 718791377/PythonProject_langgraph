@@ -1,3 +1,16 @@
+## 2026-06-18 Windows native OMX runtime correction
+
+本中文 companion 与英文主版对齐：P6 不再被视为已经证明真实 Windows durable-team 运行能力的完成项，而是重新打开为 `fix-omx-windows-native-team-runtime-20260618` 的 Stage B runtime target。
+
+冻结口径：
+
+- `native_omx` 是 worker-centric durable backend family，不是 `tmux` 同义词。
+- `tmux` 只是 Unix/tmux implementation backend。
+- Windows 默认 runtime backend 是 `windows_prompt_process_controller`，除非显式请求 Unix/tmux backend。
+- capability switches、backend family、task-flow effective lane、operational ability 必须分层。
+- readiness/selected 不能当作 launchability。
+- Stage B 必须输出 `runtime_backend`、`preflight_passed`、`operational_ready`、`blockers`，并证明或 fail closed 到真实 Windows 运行态。
+
 ---
 doc_id: codex_oh_my_codex_user_level_team_mode_plan
 lang: zh-CN
@@ -576,6 +589,24 @@ omx update
 这才叫：
 
 - **官方更新 + 差异检查 + 本地补丁重放**
+
+### C.9 2026-06-24 Windows npm EPERM update preflight confirmation (zh-CN companion)
+
+This companion note records the same Stage A governance decision as the English primary: Windows official updates that run `npm install -g @openai/codex oh-my-codex` must treat a live `codex.exe` package-binary lock as a preflight risk before npm mutates the global install tree.
+
+Required runtime behavior:
+
+- Before the official update, collect Windows Codex process inventory and npm global-root evidence, then emit `windows_codex_lock_preflight`.
+- Fail closed by default when an active Codex binary lock risk is detected; recommend closing Codex terminals or processes before retrying.
+- Continue under a known lock only when the operator explicitly passes `-AllowLockedCodexUpdate`.
+- After update, classify cleanup-warning lines as `windows_file_lock_eperm` only when npm exits `0` and the warning matches cleanup / `EPERM` / `unlink` / `codex.exe`.
+- Never mask non-zero npm install failures and never auto-delete `@openai/.codex-*` staging directories; report leftover candidates for manual review.
+
+Implementation and validation targets:
+
+- Runtime template: `tools/codex-official-update-patch-replay-template.ps1`
+- Regression test: `test/codex-official-update-patch-replay-template.test.ps1`
+- OpenSpec change: `prevent-codex-npm-eperm-cleanup-warning-20260624`
 
 ## 24. Expert Fan-Out 与 Stalled Subagent 处理
 

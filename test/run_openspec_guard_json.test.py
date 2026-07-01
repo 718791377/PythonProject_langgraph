@@ -25,6 +25,11 @@ GUARD_STEPS = [
     ("check_document_governance_rules", "check_document_governance_rules.py", "governance"),
     ("check_document_pair_policy", "check_document_pair_policy.py", "document_pair_policy"),
     ("check_implementation_plan_rules", "check_implementation_plan_rules.py", "implementation_plan"),
+    ("check_embedded_codex_governance_alignment", "check_embedded_codex_governance_alignment.py", "embedded_codex_governance_alignment"),
+    ("check_embedded_codex_startup_kits", "check_embedded_codex_startup_kits.py", "embedded_codex_startup_kits"),
+    ("check_codex_one_person_next_supplement_sequence", "check_codex_one_person_next_supplement_sequence.py", "codex_one_person_next_supplement_sequence"),
+    ("check_codex_one_person_operational_runtime_pack", "check_codex_one_person_operational_runtime_pack.py", "codex_one_person_operational_runtime_pack"),
+    ("check_codex_one_person_operational_instance_pack", "check_codex_one_person_operational_instance_pack.py", "codex_one_person_operational_instance_pack"),
     ("check_git_commit_language", "check_git_commit_language.py", "git_commit_language"),
     ("check_local_flow_scripted_enforcement", "check_local_flow_scripted_enforcement.py", "local_flow_scripted_enforcement"),
     ("check_name_clarity_rules", "check_name_clarity_rules.py", "name_clarity_rules"),
@@ -34,6 +39,24 @@ GUARD_STEPS = [
     ("check_spec_kit_authority_guard", "check_spec_kit_authority_guard.py", "spec_kit_authority_guard"),
     ("check_precommit_update_archive", "check_precommit_update_archive.py", "precommit_update_archive"),
     ("check_skills_audit_output_retention", "check_skills_audit_output_retention.py", "skills_audit_output_retention"),
+    ("check_skills_audit_final_review_state", "check_skills_audit_final_review_state.py", "skills_audit_final_review_state"),
+    (
+        "check_skills_audit_final_review_precheck",
+        "check_skills_audit_final_review_precheck.py",
+        "skills_audit_final_review_precheck",
+    ),
+    (
+        "check_skills_audit_human_review_decision_record",
+        "check_skills_audit_human_review_decision_record.py",
+        "skills_audit_human_review_decision_record",
+    ),
+    ("check_skills_audit_cadence_contract", "check_skills_audit_cadence_contract.py", "skills_audit_cadence_contract"),
+    (
+        "check_skills_audit_frontmatter_resolution",
+        "check_skills_audit_frontmatter_resolution.py",
+        "skills_audit_frontmatter_resolution",
+    ),
+    ("check_skills_audit_zh_evidence_encoding", "check_skills_audit_zh_evidence_encoding.py", "skills_audit_zh_evidence_encoding"),
     ("check_openspec_code_archive_evidence", "check_openspec_code_archive_evidence.py", "openspec_code_archive_evidence"),
     ("check_openspec_comet_superpowers_policy", "check_openspec_comet_superpowers_policy.py", "openspec_comet_superpowers_policy"),
     ("check_comet_superpowers_visibility", "check_comet_superpowers_visibility.py", "comet_superpowers_visibility"),
@@ -47,6 +70,19 @@ GUARD_STEPS = [
     ("stop_slop_caveman_smoke_receipts", "check_stop_slop_caveman_smoke_receipts.py", "stop_slop_caveman_smoke_receipts"),
     ("check_gstack_codex_delivery_loop", "check_gstack_codex_delivery_loop.py", "gstack_codex_delivery_loop"),
     ("check_user_level_mcp_skills_cli_install", "check_user_level_mcp_skills_cli_install.py", "user_level_mcp_skills_cli_install"),
+    (
+        "check_user_level_cloakbrowser_academic_runtime",
+        "check_user_level_cloakbrowser_academic_runtime.py",
+        "user_level_cloakbrowser_academic_runtime",
+    ),
+    ("check_reference6_capability_install", "check_reference6_capability_install.py", "reference6_capability_install"),
+    ("check_reference7_capability_install", "check_reference7_capability_install.py", "reference7_capability_install"),
+    ("check_reference8_capability_install", "check_reference8_capability_install.py", "reference8_capability_install"),
+    (
+        "check_reference_recursive_capability_install",
+        "check_reference_recursive_capability_install.py",
+        "reference_recursive_capability_install",
+    ),
     ("check_local_mirrored_ci_gate", "check_local_mirrored_ci_gate.py", "local_mirrored_ci_gate"),
     ("check_remote_publication_approval_policy", "check_remote_publication_approval_policy.py", "remote_publication_approval_policy"),
     ("check_role_routing_directive_evidence", "check_role_routing_directive_evidence.py", "role_routing_directive_evidence"),
@@ -67,6 +103,7 @@ GUARD_STEPS = [
         "launcher_payload_context_boundary",
     ),
     ("check_plugin_modules_skill", "check_plugin_modules_skill.py", "plugin_modules_skill"),
+    ("check_skills2cli_profile_routing", "check_skills2cli_profile_routing.py", "skills2cli_profile_routing"),
     ("check_pyside6_shared_runtime_contract", "check_pyside6_shared_runtime_contract.py", "pyside6_shared_runtime_contract"),
     ("check_pyside6_gui_template_contract", "check_pyside6_gui_template_contract.py", "pyside6_gui_template_contract"),
     ("check_pyside6_gui_preview_helper_contract", "check_pyside6_gui_preview_helper_contract.py", "pyside6_gui_preview_helper_contract"),
@@ -78,6 +115,8 @@ GUARD_STEPS = [
     ("check_durable_routing_smoke_gate_template", "check_durable_routing_smoke_gate_template.py", "durable_routing_smoke_gate_template"),
     ("check_durable_routing_smoke_receipts", "check_durable_routing_smoke_receipts.py", "durable_routing_smoke_receipts"),
     ("check_r5_active_candidate_receipts", "check_r5_active_candidate_receipts.py", "r5_active_candidate_receipts"),
+    ("check_r6_live_runtime_receipts", "check_r6_live_runtime_receipts.py", "r6_live_runtime_receipts"),
+    ("check_multi_plan_family_r6_live_runtime", "check_multi_plan_family_r6_live_runtime.py", "multi_plan_family_r6_live_runtime"),
     ("check_codex_native_rollback_release_gate_template", "check_codex_native_rollback_release_gate_template.py", "codex_native_rollback_release_gate_template"),
     ("check_worktree_session_hygiene", "check_worktree_session_hygiene.py", "worktree_session_hygiene"),
     ("check_worktree_task_receipt", "check_worktree_task_receipt.py", "worktree_task_receipt"),
@@ -177,12 +216,23 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["steps_passed"], len(GUARD_STEPS))
         self.assertEqual([step["step"] for step in payload["steps"]], [step_name for step_name, _script, _check in GUARD_STEPS])
         self.assertEqual(payload["steps"][3]["step"], "check_document_pair_policy")
-        self.assertEqual(payload["steps"][5]["step"], "check_git_commit_language")
-        self.assertEqual(payload["steps"][6]["step"], "check_local_flow_scripted_enforcement")
-        self.assertEqual(payload["steps"][9]["step"], "check_startup_instruction_mojibake")
-        self.assertEqual(payload["steps"][11]["step"], "check_spec_kit_authority_guard")
-        self.assertEqual(payload["steps"][12]["step"], "check_precommit_update_archive")
-        self.assertEqual(payload["steps"][13]["step"], "check_skills_audit_output_retention")
+        self.assertEqual(payload["steps"][5]["step"], "check_embedded_codex_governance_alignment")
+        self.assertEqual(payload["steps"][6]["step"], "check_embedded_codex_startup_kits")
+        self.assertEqual(payload["steps"][7]["step"], "check_codex_one_person_next_supplement_sequence")
+        self.assertEqual(payload["steps"][8]["step"], "check_codex_one_person_operational_runtime_pack")
+        self.assertEqual(payload["steps"][9]["step"], "check_codex_one_person_operational_instance_pack")
+        self.assertEqual(payload["steps"][10]["step"], "check_git_commit_language")
+        self.assertEqual(payload["steps"][11]["step"], "check_local_flow_scripted_enforcement")
+        self.assertEqual(payload["steps"][14]["step"], "check_startup_instruction_mojibake")
+        self.assertEqual(payload["steps"][16]["step"], "check_spec_kit_authority_guard")
+        self.assertEqual(payload["steps"][17]["step"], "check_precommit_update_archive")
+        self.assertEqual(payload["steps"][18]["step"], "check_skills_audit_output_retention")
+        self.assertEqual(payload["steps"][19]["step"], "check_skills_audit_final_review_state")
+        self.assertEqual(payload["steps"][20]["step"], "check_skills_audit_final_review_precheck")
+        self.assertEqual(payload["steps"][21]["step"], "check_skills_audit_human_review_decision_record")
+        self.assertEqual(payload["steps"][22]["step"], "check_skills_audit_cadence_contract")
+        self.assertEqual(payload["steps"][23]["step"], "check_skills_audit_frontmatter_resolution")
+        self.assertEqual(payload["steps"][24]["step"], "check_skills_audit_zh_evidence_encoding")
         self.assertIn("check_openspec_code_archive_evidence", [step["step"] for step in payload["steps"]])
         self.assertIn("check_openspec_comet_superpowers_policy", [step["step"] for step in payload["steps"]])
         self.assertIn("check_comet_superpowers_visibility", [step["step"] for step in payload["steps"]])
@@ -194,7 +244,14 @@ class RunOpenSpecGuardJsonTest(unittest.TestCase):
         self.assertIn("stop_slop_caveman_response_density", [step["step"] for step in payload["steps"]])
         self.assertIn("stop_slop_caveman_smoke_receipts", [step["step"] for step in payload["steps"]])
         self.assertIn("check_gstack_codex_delivery_loop", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_user_level_cloakbrowser_academic_runtime", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_reference6_capability_install", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_reference7_capability_install", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_reference8_capability_install", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_reference_recursive_capability_install", [step["step"] for step in payload["steps"]])
         self.assertIn("check_launcher_payload_context_boundary", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_skills2cli_profile_routing", [step["step"] for step in payload["steps"]])
+        self.assertIn("check_multi_plan_family_r6_live_runtime", [step["step"] for step in payload["steps"]])
 
     def test_guard_json_reports_failed_step(self) -> None:
         root = self.make_root("guard-json-fail")

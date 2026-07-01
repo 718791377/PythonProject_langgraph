@@ -6,16 +6,24 @@ translation_of: docs_bilingual/implementation_plans/codex_skills_usage_audit_pla
 status: active
 doc_class: implementation_plan
 created_at: 2026-05-16
-last_reviewed: 2026-05-27
-plan_readiness: active-monitoring
-implementation_lane: audit_only_profile_decision_support
+last_reviewed: 2026-06-21
+plan_readiness: profile-applied-monitoring
+implementation_lane: profile_applied_monitoring_support
 related_docs:
   - docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.zh-CN.md
   - docs_bilingual/governance/codex_user_level_orchestration_activation_policy.zh-CN.md
   - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md
 runtime_sources:
+  - docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.zh-CN.md
   - tools/audit_codex_skills_usage.py
+  - tools/skills2cli.py
   - tools/check_skills_audit_output_retention.py
+  - tools/check_skills_audit_final_review_state.py
+  - tools/check_skills_audit_final_review_precheck.py
+  - tools/check_skills_audit_human_review_decision_record.py
+  - tools/check_skills_audit_cadence_contract.py
+  - tools/check_skills_audit_frontmatter_resolution.py
+  - tools/check_skills_audit_zh_evidence_encoding.py
   - tools/check_precommit_update_archive.py
 ---
 # Codex Skills Usage Audit 计划
@@ -26,15 +34,19 @@ runtime_sources:
 
 **Architecture：** 仓库内 Python 审计脚本读取用户级 Codex sessions、runtime logs、用户级 plugin 状态、profile registries、manual notes 与仓库 gate 输出；生成本地 JSON 报告、脱敏 Markdown 摘要、preview-only candidate records 与 embedded field contracts。Retention 与 pre-commit gate 防止原始审计产物或不完整报告成为提交证据。
 
-**Tech Stack：** Python audit CLI、JSON report schema、sanitized Markdown renderer、SQLite runtime-log reader、Codex session JSONL reader、profile registry reader、manual-note parser、privacy redactor、output-retention checker、pre-commit update/archive checker、CI manifest、OpenSpec guard。
+**Tech Stack：** Python audit CLI、JSON report schema、sanitized Markdown renderer、SQLite runtime-log reader、Codex session JSONL reader、profile registry reader、manual-note parser、privacy redactor、output-retention checker、最终复核状态/预检查/决策记录 checker、pre-commit update/archive checker、CI manifest、OpenSpec guard。
 
 ---
 
 ## 0. 复核结论
 
-本方案状态为 active，并继续保持 audit-only。本次 Comet 结构重构不授权 hard-load/profile apply，也不改变实施边界：现有脚本、checker、report contract、retention 与 candidate-preview 规则仍是执行层 source of truth。本次重构将治理原则、运行时/数据源架构、CLI 契约、字段契约、实施切片、任务级 backlog、本地集成、验收证据和长期监控事项拆开，便于后续按 /comet 方式执行与复核。
+关联路由方案：`codex_skills2cli_profile_routing_runtime_plan.zh-CN.md` 使用本审计方案的 strong evidence、warning pressure 与 final-review state 作为 profile routing 与 rerank 的 advisory 输入。该关联不授权 profile apply，也不改变 audit candidate 中 `target_profile` 的语义：它仍然表示 canonical hard-load profile ID。
+
+本方案状态为 active；30 天审计、最终人工复核、preview-only candidate 与一次授权的 core-dev profile apply 已完成，后续仅保持 post-apply monitoring / rollback support。本次 Comet 结构重构自身不授权 hard-load/profile apply；后续已由单独用户授权完成 core-dev apply。现有脚本、checker、report contract、retention、candidate-preview 与 approved-to-apply receipt 规则仍是执行层 source of truth。本次重构将治理原则、运行时/数据源架构、CLI 契约、字段契约、实施切片、任务级 backlog、本地集成、验收证据和长期监控事项拆开，便于后续按 /comet 方式执行与复核。
 
 `soft-load` 后 Codex 启动阶段 warning 消失，是启动压力改善的有用证据，但不能证明 live-turn skills-budget warning 不会再次出现。会话中 warning 必须通过审计脚本 triage，而不是删除 plugin cache 或过早收缩默认 profile。
+
+节奏定稿：原始 30 天观察窗口锁定为 2026-05-16 至 2026-06-15。标准计划内审计运行次数为 Day 0 baseline 1 次、每 7 天 weekly evidence 4 次、Day 30 final evidence 1 次。Warning triage 是事件触发流程，不设固定重复次数。2026-06-15 之后的任何新增运行都只属于 post-final monitoring evidence，不得延长原始审计窗口，也不得授权 profile apply。
 
 完整性复核：
 
@@ -167,7 +179,12 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 运行时职责：
 
 - `tools/audit_codex_skills_usage.py` 负责收集证据并输出 JSON/Markdown 报告。
+- `tools/skills2cli.py audit warnings` 提供紧凑、脱敏的前台 warning triage，同时读取 session JSONL 与 `logs_2.sqlite`；它是只读 helper，不修改 Codex config、plugin cache、hard-load profiles 或 skill bodies。
 - `tools/check_skills_audit_output_retention.py` 证明原始 audit artifacts 保持 local-only。
+- `tools/check_skills_audit_final_review_state.py` 以只读方式验证最终人工复核、关闭、候选与 apply 门禁状态，不修改 config 或 profiles。
+- `tools/check_skills_audit_final_review_precheck.py` 验证 final-summary noise 与 manual-conflict 项的机器级预检查证据，同时保持 human-review、candidate 与 profile-apply gate 关闭。
+- `tools/check_skills_audit_human_review_decision_record.py` 验证未来可选人工复核决策记录：没有记录时仍是合法 pending 状态；存在记录时必须且只能有一个允许 outcome；review 前出现 candidate artifact 会被阻断；preview-only candidate 决策必须包含 `target_profile`、candidate/rollback/validation 复核说明；没有后续 receipt 前 profile apply 仍未授权；raw path、secret、transcript、log excerpt 不得留存。
+- `tools/check_skills_audit_cadence_contract.py` 验证已锁定的重复次数、weekly 频率、原始结束日期、事件触发 warning-triage 规则和 post-final monitoring-only 边界。
 - `tools/check_precommit_update_archive.py` 证明本地提交前已检查 existing-file update review 与 OpenSpec archive gates。
 - `tools/run_openspec_guard.py` 聚合仓库级 guard 证据。
 - `test/` 下测试与 `tools/ci/ci_test_manifest.json` 条目保证 audit 行为可复现。
@@ -180,8 +197,8 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 
 默认数据源：
 
-- `C:\Users\lenovo\.codex\sessions/**/*.jsonl` - 会话 transcript，用于识别显式 skill 声明与 SKILL.md 读取。
-- `C:\Users\lenovo\.codex\logs_2.sqlite` - runtime 日志库，用于统计 skills budget warning。
+- `C:\Users\lenovo\.codex\sessions/**/*.jsonl` - 会话 transcript，用于识别显式 skill 声明、SKILL.md 读取，以及紧凑 `skills2cli` triage 所需的前台 warning 文本。
+- `C:\Users\lenovo\.codex\logs_2.sqlite` - runtime 日志库，用于统计 skills budget warning；`skills2cli audit warnings` 将它作为第二个脱敏来源读取，避免 live-turn warning 只出现在 runtime 日志时被漏掉。
 - `C:\Users\lenovo\.codex\config.toml` - 用户级 plugin enabled 状态来源，仅用于 audit-only 报告。
 - `C:\Users\lenovo\.codex\skills\plugin-modules\references\profiles.json` - 模块 registry，用于按 profile 聚合 plugin evidence。
 
@@ -192,6 +209,18 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 ```
 
 基线记录当前 enabled plugins、profile modules、warning counter 与 inventory summary。基线不修改 `config.toml`。
+
+
+规范化审计节奏契约：
+
+| 事项 | 锁定值 | 执行含义 |
+| --- | --- | --- |
+| 观察窗口 | `2026-05-16` 至 `2026-06-15` | 原始 30 天审计窗口已经关闭，后续 monitoring run 不得延长该窗口。 |
+| 计划内重复次数 | 总计 `6` 次计划内审计运行 | Day 0 baseline 1 次、weekly evidence 4 次、Day 30 final evidence 1 次。 |
+| 计划内重复频率 | Day 0 运行 1 次，之后每 7 天运行 weekly evidence，Day 30 再运行 1 次 | Weekly evidence 日期为 2026-05-23、2026-05-30、2026-06-06、2026-06-13；final evidence 日期为 2026-06-15。 |
+| Warning triage 频率 | 仅事件触发 | 只有出现新的 `2% skills context budget` warning 后，才运行窄窗口 triage；不设固定重复次数。 |
+| Post-final 运行 | 只作为 monitoring evidence | 2026-06-15 之后的运行只能更新 review-pending evidence 或 warning triage，不能重开 30 天窗口，也不能授权 profile apply。 |
+| Apply 边界 | cadence 本身不授权 apply | profile apply 仍必须等待后续明确 `approved-to-apply` 授权。 |
 
 ```powershell
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 7 --json --output .\.tmp\skills-usage-audit-7d.json
@@ -218,18 +247,24 @@ Monitoring 不是第六个实施阶段，而是控制回路：当 evidence、pri
 - `⚠ Exceeded skills context budget of 2%` 的 stdout fallback；
 - 中文 `使用技能：` 与英文 `Using skill:` 的显式 skill announcement 识别；
 - `logs_2.sqlite` 中 budget warning 的 `omitted_additional_skills` 与 `all_descriptions_removed` 提取；
+- `skills2cli audit warnings --since ... --json` 必须分别报告 `sessions_jsonl` 与 `logs_2.sqlite` 来源，汇总 warning 计数，脱敏私有路径与 secret，暴露当前 `frontmatter_compatibility.invalid_total`，并保持 `raw_log_paths_retained=false` 与 `raw_skill_bodies_retained=false`；
 - `full` profile 中 `plugins: "all_known_plugins"` 不能被拆成单个字符；
 - 脚本在缺少用户级 plugin-modules profile 时，必须回退读取仓库内 `tools/skill_sources/plugin-modules/references/profiles.json`。
 
-为避免一个月 audit 过程中偏离，使用固定节奏。
+为避免一个月 audit 过程中偏离，使用固定节奏。该节奏现在已经锁定为已关闭的原始审计窗口，而不是可无限延长的循环。
 
-| 时间点 | 命令 | 输出文件 | 用途 |
-| --- | --- | --- | --- |
-| 第 0 天 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | 冻结初始 enabled plugins、inventory 和 warning 状态 |
-| 每周 | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | 发现会话中新增 warning 与模块使用趋势 |
-| 漏跑周报补跑 | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | 保留明确的节奏偏离标记，而不是伪造漏跑报告 |
-| 第 30 天 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | 形成是否调整默认 profile 的证据包 |
-| 出现 warning 后 | `--warning-triage --days 1` 或 `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | 定位 warning 是否来自当前会话重打包 |
+| 节奏项 | 日期或触发条件 | 重复次数 | 命令 | 输出文件 | 用途 |
+| --- | --- | ---: | --- | --- | --- |
+| Day 0 baseline | 2026-05-16 | 1 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | 冻结初始 enabled plugins、inventory 和 warning 状态 |
+| Weekly audit | 2026-05-23、2026-05-30、2026-06-06、2026-06-13 | 4 | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | 发现会话中新增 warning 与模块使用趋势 |
+| 漏跑周报补跑 | 仅在漏跑 weekly run 时触发 | 事件触发，不设固定次数 | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | 保留明确的节奏偏离标记，而不是伪造漏跑报告 |
+| Day 30 final audit | 2026-06-15 | 1 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | 形成是否调整默认 profile 的证据包 |
+| Warning triage | 每次新的 `2% skills context budget` warning 之后 | 事件触发，每个新 warning 对应一次窄窗口运行 | `--warning-triage --days 1` 或 `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | 定位 warning 是否来自当前会话重打包 |
+| Final human review | Day 30 summary 已存在之后 | 1 次决策复核 | 复核脱敏 final summary 与 decision template | 如产生决策，只提交脱敏 review record | 选择 `summary-reviewed + closed-no-change`、`summary-reviewed + preview-only candidate` 或 `review-pending + continue monitoring` |
+
+因此，标准计划内审计重复次数固定为 6 次：1 次 baseline、4 次 weekly、1 次 final 30-day run。最终人工复核是单独决策步骤，不是另一轮审计运行。Warning triage 与漏跑补跑属于异常/事件触发路径，不分配固定重复次数。
+
+原始审计结束日期固定为 2026-06-15。该日期之后的运行仅属于 post-final monitoring：可以更新 review-pending evidence 或 warning-triage evidence，但不得移动原始结束日期、重启 30 天计时、标记 summary-reviewed、生成 profile candidate，或在没有后续明确决策时执行 profile apply。
 
 `.tmp/` 报告默认不入 Git；如果需要长期留证，只提交经过脱敏和摘要化的 Markdown 结论，不提交完整 session transcript、token、私有路径或 vendor cache 内容。
 
@@ -505,11 +540,15 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 
 ### Slice 5：长期监控周期
 范围：
-- [ ] 跑真实 30 天观察期、weekly reports、warning triage、final summary review 与可选 preview-only candidate generation。
+- [x] 跑完 2026-05-16 至 2026-06-15 的真实 30 天观察期。
+- [x] 锁定标准重复次数与频率：Day 0 1 次、weekly 4 次、Day 30 1 次，warning triage 仅作为事件触发的一次性窄窗口运行。
+- [ ] 完成最终人工复核，并且仅在明确选择时生成可选 preview-only candidate。
 完成标准：
-- [ ] 进入任何 profile apply 讨论前，final JSON 与 Markdown evidence 已通过 embedded contracts。
+- [x] 已为关闭的 30 天窗口生成 final JSON 与脱敏 Markdown evidence，且通过 embedded contracts。
+- [x] final summary 已明确保持 `human_review_pending`，并追加 `review-pending + continue monitoring` 决策记录与 post-final monitoring evidence。
 测试：
-- [ ] 日历窗口关闭时验证最终观察期证据。
+- [x] 日历窗口关闭时验证最终观察期证据。
+- [x] candidate generation 或 closure 路径被信任前，已验证人工复核决策证据。
 
 ## 12. 任务级执行 Backlog
 
@@ -583,6 +622,8 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 校验 skipped-loading 样本脱敏。
 - [x] 在 Markdown 摘要渲染 warning triage。
 - [x] 在 stdout 渲染 warning triage。
+- [x] `skills2cli audit warnings --since ... --json` 同时汇总 `sessions_jsonl` 与 `logs_2.sqlite` 的只读脱敏 warning 来源。
+- [x] `skills2cli audit warnings` 输出 per-source counts、raw-retention 安全标志，以及两个解释过的 pressure fields：`all_descriptions_removed_count` - 所有 skill descriptions 被移出 model-visible context 的次数；`max_omitted_additional_skills` - warning 文本中观察到的最大 additional-skill omission 数。
 
 ### Task 5：Warning severity
 
@@ -753,6 +794,18 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] Markdown 摘要渲染 missed weekly runs。
 - [x] 支持 7 天周报运行节奏。
 - [x] 支持 30 天决策报告运行节奏。
+- [x] 新增 `tools/check_skills_audit_cadence_contract.py`。
+- [x] 验证标准计划内重复次数：Day 0 baseline 1 次、weekly run 4 次、Day 30 final run 1 次。
+- [x] 验证 weekly evidence 日期：2026-05-23、2026-05-30、2026-06-06、2026-06-13。
+- [x] 验证原始审计结束日期：2026-06-15。
+- [x] 验证 warning triage 是事件触发流程且不设固定重复次数。
+- [x] 验证 post-final 运行只属于 monitoring evidence，不能授权 profile apply。
+- [x] 将 cadence checker 接入 `tools/run_openspec_guard.py`。
+- [x] 将 cadence checker 登记到 `tools/safety_rule_script_backing_registry.json`。
+- [x] 增加 `test/check_skills_audit_cadence_contract.test.py`。
+- [x] 将 cadence 测试登记到 `tools/ci/ci_test_manifest.json`。
+- [x] Guard JSON 聚合测试覆盖 cadence checker。
+- [x] 将 zh-CN evidence encoding checker 接入 `tools/run_openspec_guard.py`、`tools/safety_rule_script_backing_registry.json` 和 `tools/ci/ci_test_manifest.json`。
 - [x] 支持 warning 延迟 triage 恢复路径。
 - [x] 日志不可读时避免把 0 warning 当成无 warning。
 - [x] 隐私脱敏失败时支持暂停并重跑。
@@ -853,6 +906,21 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - [x] 覆盖 skipped-loading triage。
 - [x] 覆盖 warning severity。
 - [x] `tools/ci/ci_test_manifest.json` 已包含相关测试。
+- [x] 增加 `test/check_skills_audit_zh_evidence_encoding.test.py`，覆盖当前清洁证据通过、legacy warning-only、当前问号占位 fail、replacement character fail、active-current mojibake fail、已修改 legacy fail 与非目标 Markdown 不受影响。
+
+
+### Task 17：真实观察期与最终复核节奏
+
+- [x] 完成真实 30 天 usage audit 观察期：2026-05-16 至 2026-06-15。
+- [x] 固定标准计划内重复次数：Day 0 baseline 1 次、weekly audit 4 次、Day 30 final audit 1 次。
+- [x] 固定标准频率：审计期内每 7 天运行一次 weekly `--days 7`，第 30 天运行一次 final `--days 30`。
+- [x] 固定原始审计结束日期：2026-06-15。
+- [x] 明确 warning triage 是事件触发流程，不设固定次数；每次新的 warning 只运行一次窄窗口 triage。
+- [x] 明确 2026-06-15 之后的运行属于 post-final monitoring，不得延长原始 30 天审计窗口。
+- [x] 生成最终 30 天 evidence package，并以脱敏 Markdown 长期留证。
+- [x] 人工复核最终 30 天 evidence package。
+- [x] 已明确记录早期决策结果：`review-pending + continue monitoring`。
+- [x] 已选择 candidate 路径，明确 `target_profile=core-dev`，并生成 preview-only candidate。
 
 ## 13. 本地集成顺序
 
@@ -881,14 +949,22 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 - 脚本能力边界：可靠覆盖项、人工复核需求与增强触发条件；
 - apply 建议，但不自动 apply。
 - `tools/check_skills_audit_output_retention.py` 的输出留存状态，证明 `.tmp/` artifact 与原始 Skills usage JSON 没有被保留进 Git。
+- `tools/check_skills_audit_final_review_state.py` 的最终复核状态，证明当前审计仍处于 `review-pending + continue monitoring`、`summary-reviewed + closed-no-change` 或 `summary-reviewed + preview-only candidate` 中的哪一种，同时在后续明确 `approved-to-apply` receipt 前保持 profile apply 被阻断。
+- `tools/check_skills_audit_final_review_precheck.py` 的最终复核预检查状态，证明 noise/manual-conflict 脚本级预检查有证据支撑，同时不标记 summary reviewed、不生成 candidates、不 apply profiles。
+- `tools/check_skills_audit_human_review_decision_record.py` 的人工复核决策记录状态，证明缺少 decision record 时仍保持 pending，存在 record 时只能有一个允许 outcome，reviewed decision 前 candidate artifacts 被阻断，preview-only candidate 带有 `target_profile` 与复核说明，且 raw paths/secrets/transcripts/log excerpts 未被留存。
+- `tools/check_skills_audit_cadence_contract.py` 的 cadence contract 状态，证明原始观察窗口仍为 2026-05-16 至 2026-06-15，计划内审计运行仍固定为 6 次，weekly evidence 日期保持固定，warning triage 仍为事件触发，post-final 运行仍只属于 monitoring evidence。
 - `tools/check_precommit_update_archive.py` 的提交前更新/归档状态，证明本轮提交前既有文件更新复核与 OpenSpec 归档门禁已经通过。
 - 默认人类可读 stdout 也必须渲染 audit state、audit state blockers、enabled plugins 已匹配/未匹配摘要、current profile 推断、inventory summary、log evidence 可用性、budget warning 最近样本数量、有界脱敏 budget-warning 样本摘录与 7 天计数、warning severity 等级、原因与处理动作、all-descriptions-removed / omitted-additional-skills 压力指标、audit-only safety 的 `audit_only` / `mutates_config` / `edits_plugin_cache` / `hard_load_apply_performed` 标志、runtime path privacy 的 `raw_paths_retained=false`、占位符路径与 `privacy_policy`、cadence review 的 late-run / missed-weekly-runs / weekly-report-review 状态、warning triage 状态、warning triage 窗口策略、warning/skipped-loading 计数、脱敏 skipped-loading 样本摘录、skipped-loading 复核动作、warning triage 后续动作建议与 blockers、explicit skill 使用总数与唯一 skill 数、SKILL.md 读取次数、profile helper 调用次数、`noise_review` 状态、剔除噪声 token 数、`raw_noise_tokens_retained=false`、`max_noise_token_length` 与 `token_privacy_policy`、`manual_evidence` 文件请求/读取数、有效/无效记录数、`raw_notes_retained=false`、`source_paths_retained=false`、`max_path_length`、人工记录隐私策略与来源路径隐私策略、`manual_evidence.conflict_review` 状态、冲突/例外数量、是否需要处置与处置说明、脚本能力边界计数、stable tool-call alias registry 的 policy/evidence level/strong-evidence 禁止标志、alias target 数量和有界 target 摘要、decision recommendation 的 advisory-only / profile-apply 禁止标志、四个决策分桶计数与有界分桶样本、recommendations 条数与前几条建议、字段契约状态/passed/blocker/含 `warning_severity` 的违规分组计数、输出留存门禁状态/checker/violation/local-only 细节和提交前更新/归档门禁状态/checker/提交前标志/既有文件更新复核/OpenSpec 归档复核/变更计数细节，确保非 JSON 运行也能安全复核。
 - `test/audit_codex_skills_usage.test.py` 必须覆盖 stdout 编码、warning 解析、warning-triage 标记与窄窗口阻断、warning-triage Markdown 输出、cadence-review 字段契约与 Markdown 输出、中文 announcement、repo profile fallback、`all_known_plugins` 展开、脱敏日志 excerpt redaction marker 完整性、脱敏人工记录摄取、无效人工记录校验、人工记录来源路径隐私、报告字段契约校验、缺失/过期内嵌字段契约的候选门禁阻断、source-report 路径候选门禁阻断、source-report privacy 脱敏、审计 closure-state 门禁与 Markdown blocker 输出、preview-only 候选记录生成、30 天/summary-reviewed 候选门禁阻断、候选记录 rollback/validation 字段、不安全或不完整候选记录的 `candidate_record_contract` 阻断，以及候选 Markdown 不执行清单。
+- 回归测试还必须覆盖 `skills2cli audit warnings --since ... --json` 的双来源汇总、当前 frontmatter compatibility 摘要、旧 session 文件 mtime 过滤、private path/secret 脱敏、`raw_log_paths_retained=false` 与 `raw_skill_bodies_retained=false`。
 - 回归测试还必须覆盖 explicit skill 误报 token 的路径/secret 脱敏、长度截断，以及 `noise_review` 字段契约阻断未脱敏或缺少隐私字段的报告，并覆盖 `script_capability_boundaries` 字段契约阻断缺失或空边界列表的报告。
 - 回归测试还必须覆盖 `decision_recommendation` 字段契约阻断缺失或非 advisory 状态、允许 profile apply、分桶不完整、分桶元素非字符串以及 `bucket_counts` 过期的报告。
 - 回归测试还必须覆盖 `module_evidence` 行契约阻断字段缺失/类型错误、plugin 元素非字符串、strong 计数为负或过期、mapped-tool 证据被计为强证据、跨项目效用未要求人工复核以及 recommendation 不在允许列表中的报告。
 - 回归测试还必须覆盖 `module_evidence` recommendation 与阈值不一致的报告，防止旧行把与强/弱证据计数矛盾的按需、dormant 或候选建议带入决策。
 - 回归测试还必须覆盖输出留存门禁：强制加入 Git 的 `.tmp/` 原始报告、位于 `.tmp/` 之外的原始 `skills-usage-*.json` 报告必须被阻断，脱敏 Markdown 摘要必须允许。
+- 回归测试还必须覆盖最终复核状态 checker：允许 pending continuation 在无 candidate/apply 时继续，阻断 `summary-reviewed` 前出现 candidate artifacts，要求 reviewed summary 带显式 outcome，并保持 profile apply 未授权。
+- 回归测试还必须覆盖人工复核决策记录 checker：没有 record 是合法 pending 状态，decision record 前出现 candidate artifacts 被阻断，pending/closed/preview-only 三类 outcome 都被校验，preview-only candidate 必须有 `target_profile` 与复核说明，raw paths/secrets/transcripts/log excerpts 被阻断，多个 active decision records fail closed。
+- 回归测试还必须覆盖 cadence contract checker：锁定的 6 次运行节奏应通过，缺少固定重复次数说明应失败，错误 final end date 应失败，缺少 post-final monitoring-only 证据应失败。
 - 回归测试还必须覆盖提交前更新/归档门禁：报告必须嵌入 `precommit_update_archive` 状态，字段契约必须阻断缺失、未通过或未启用既有文件更新复核 / OpenSpec 归档门禁的报告，脱敏 Markdown 摘要必须渲染该门禁状态。
 - 回归测试还必须覆盖 `output_retention` 字段契约阻断缺失或未通过的留存状态，并要求脱敏 Markdown 摘要渲染输出留存状态与长期证据格式。
 - 回归测试还必须覆盖 `manual_evidence.conflict_review` 字段契约阻断，以及人工例外 / 已批准 hard-load 例外记录在脱敏 Markdown 摘要中的渲染。
@@ -928,27 +1004,90 @@ usage audit 会读取用户级 Codex 会话、日志和配置状态，因此必�
 
 ## 17. 当前未闭环监控事项
 
-当前未闭环事项
+原始 30 天审计窗口已经关闭。下面将已完成的日历观察事项与仍需处理的 post-final review / monitoring 事项分开记录。
 
-- [ ] 按真实日历完成完整 30 天 usage audit 观察期。
-- [ ] 在审计期内持续生成本地 7 天周报证据。
-- [ ] 会话中再次出现 `2% skills context budget` warning 后运行窄窗口 warning triage。
-- [ ] 对新的 warning triage 结果做人工复核。
-- [ ] 对新的 skipped-loading 样本做来源复核。
-- [ ] 在 30 天期满后生成最终 JSON 报告。
-- [ ] 在 30 天期满后生成最终脱敏 Markdown 摘要。
-- [ ] 人工复核最终 30 天摘要。
-- [ ] 将最终摘要标记为 `summary-reviewed`。
-- [ ] 处理最终摘要中的噪声误报。
-- [ ] 处理最终摘要中的人工冲突或例外。
-- [ ] 判断本轮审计是否进入 `closed-no-change`。
-- [ ] 如果证据支持变更，生成 profile apply candidate。
-- [ ] 为 candidate 指定明确 `target_profile`。
-- [ ] 生成 candidate JSON preview。
-- [ ] 生成 candidate Markdown preview。
-- [ ] 复核 candidate rollback path。
-- [ ] 复核 candidate validation plan。
-- [ ] 获得明确 `approved-to-apply` 授权前不执行 profile apply。
-- [ ] 如未来获授权执行 profile apply，保存 apply 前后脱敏 diff。
+- [x] 完成真实 30 天 usage audit 观察期：2026-05-16 至 2026-06-15。
+- [x] 在审计期内生成本地 7 天周报证据。
+- [x] 在 30 天期满后生成最终 JSON 报告，并将原始 JSON 仅保留在本地 `.tmp/`。
+- [x] 在 30 天期满后生成最终脱敏 Markdown 摘要。
+- [x] 将原始审计结束日期锁定为 2026-06-15。
+- [x] 将标准计划内运行次数锁定为 6 次：Day 0 baseline 1 次、weekly run 4 次、Day 30 final run 1 次。
+- [x] 记录 warning triage 是事件触发流程，不设固定重复次数。
+- [x] 脚本化最终复核状态 checker 已验证当前 pending/closed/candidate/apply-gate 状态。
+- [x] 脚本化最终复核预检查 checker 已验证 noise/manual-conflict 机器证据，同时保持 final human-review 与 apply gate 未关闭。
+- [x] 脚本化人工复核决策记录 checker 已验证未来可选 decision record，同时保持当前 pending 状态与 apply gate 未关闭。
+- [x] 脚本化 cadence contract checker 已验证重复次数、weekly 节奏、结束日期、warning-triage 频率与 post-final 边界。
+- [x] 新增 `tools/check_skills_audit_zh_evidence_encoding.py`，对当前、未来、已修改或明确保护的 skills audit zh-CN 证据执行 UTF-8 / 乱码 fail-closed 检查，并将未修改的历史 legacy 乱码证据降级为 warning-only。
+- [x] 人工复核最终 30 天摘要。
+- [x] 已明确记录早期 `review-pending + continue monitoring`，随后更新为 `summary-reviewed + preview-only candidate`。
+- [x] 收口 `reference_files/10.md` 中 invalid `SKILL.md` runtime repair loop：post-repair audit 报告 `invalid_total=0`。
+- [x] 增加 frontmatter-resolution checker，把 `reference_files/10.md` 历史 invalid `SKILL.md` warning 标记与当前 `invalid_total=0` 证据桥接起来。
+- [ ] 2026-06-23：按“不修改用户级 plugin cache”的用户决定调整 frontmatter-resolution checker。repo/user/system invalid frontmatter 继续阻断；bundle-managed plugin-cache invalid frontmatter 在没有单独 vendor-cache 修复授权时只作为 warning-only 报告，并保持 `edits_plugin_cache=false`。该项将在 `project_expert_lens_agent_toml_schema_compatibility_plan` 的 Stage B 中落地。
+- [x] 收口 `mcp2cli` / `skills2cli` R3/R4 user-level runtime evidence loop：install/update receipts、smoke receipts 与 rollback pointer 均已存在。
+- [x] 处理最终摘要中的噪声误报：机器预检查通过，噪声 token 不计入强证据。
+- [x] 处理最终摘要中的人工冲突或例外：当前记录为 no_manual_conflict_or_exception_notes。
+- [x] 判断本轮审计不进入 `closed-no-change`，而是进入 `closed-with-candidate`。
+- [x] 证据支持变更，已生成 profile apply candidate。
+- [x] 为 candidate 指定明确 `target_profile=core-dev`。
+- [x] 生成 candidate JSON preview。
+- [x] 生成 candidate Markdown preview。
+- [x] 复核 candidate rollback path。
+- [x] 复核 candidate validation plan。
+- [x] 增加 `skills2cli audit warnings` 作为 post-final 紧凑只读 warning 来源，同时覆盖 session JSONL 与 `logs_2.sqlite`。
+- [x] 在 `skills2cli audit warnings` 中增加当前 frontmatter compatibility 摘要与旧 session 文件 mtime 过滤。
+- [ ] post-final 阶段每次新的 `2% skills context budget` warning 后运行窄窗口 warning triage。
+- [ ] 对新的 post-final warning triage 结果做人工复核。
+- [ ] 对新的 post-final skipped-loading 样本做来源复核。
+- [x] 已遵守：获得明确 `approved-to-apply` 授权前未执行 profile apply。
+- [x] 已获授权执行 profile apply，并保存 apply 结果、备份路径与 post-apply preview 证据。
 - [ ] 如 apply 后 warning 仍出现，按 rollback path 回滚。
 - [ ] 如 apply 后关键能力缺失，按 rollback path 回滚。
+
+## 18. 颗粒度完成清单
+
+只有同时满足以下条件，本方案才算达到足够颗粒度：
+
+- 说明 warning 为什么可能出现在 live turn，而不只出现在启动阶段；
+- 区分 soft-load、hard-load/profile apply 与 plugin cache edit；
+- 定义强/中/弱证据边界；
+- 定义 7 天、30 天和 warning-triage 节奏；
+- 要求 `--warning-triage` 使用 `--days 1` 或 `--since`，记录顶层 `warning_triage` 字段，并阻断过宽窗口 triage 报告；
+- 定义 JSON 报告字段契约，要求脚本暴露 `field_contract`，并在 candidate generation 时阻断不完整、缺少契约或过期契约的报告；
+- 校验决策关键 `audit_state` 嵌套字段，包括允许状态值、原因、下一步动作、profile apply 禁止标志和 blocker list 形状；
+- 在脱敏 Markdown 摘要中渲染 audit-state next action、profile-apply allowance 与 blocker 列表；
+- 校验决策关键 `log_evidence` 嵌套字段，包括非负 budget-warning 计数、最近 budget-warning 样本计数，以及不保留原始路径、secret、cookie、access token 或独立 token 的有界脱敏样本摘录；
+- 校验决策关键 `warning_severity` 嵌套字段，包括必需 `level` / `reason` / `recommended_action`、允许的 `unknown` / `high` / `medium` / `none` 等级，以及不保留原始路径、secret、cookie、access token 或独立 token 的脱敏 reason/action 文本；
+- 默认人类可读 stdout 与脱敏 Markdown 摘要渲染 `field_contract` passed 状态、blocker 数量、required/missing/invalid-type 字段计数、embedded-contract 要求，以及包含 `warning_severity` 的嵌套 violation-group 计数，使复核者不依赖原始 JSON 也能定位契约缺口；
+- 校验决策关键 `warning_triage` 嵌套字段，包括允许状态、仅字符串且已知的 blocker 值、blocked/blocker 一致性、固定窄窗口策略、非负 warning/skipped-loading 计数、脱敏 skipped-loading 样本摘录、skipped-loading 来源复核值与 recommended action；
+- 校验决策关键 `cadence_review` 嵌套字段，并在脱敏 Markdown 摘要中渲染 late-run 与 missed-weekly-run 状态；
+- 校验决策关键 `module_evidence` 行字段，包括字符串 plugin 列表、非负 strong/weak 计数、strong-total 一致性、mapped-tool 中证据策略、人工 cross-project 复核、允许的 advisory recommendations 与 recommendation-threshold 一致性；
+- 校验决策关键 `decision_recommendation` 嵌套字段，包括 advisory-only 状态、profile-apply 禁止标志、必需 bucket 名称、bucket entry 必须为字符串，以及 bucket-count 一致性；
+- 校验决策关键 `output_retention` 嵌套字段，包括 checker identity、`.tmp/` local-only 策略、raw audit JSON local-only 策略、sanitized Markdown 长期证据格式和 violation count；
+- 校验决策关键 `precommit_update_archive` 嵌套字段，包括 checker identity、pre-commit gate flag、existing-file update review、completed OpenSpec archive gate、error count、warning count、changed path count 与 active change review count；
+- 定义 missed run、delayed warning triage、unreadable logs、privacy sanitization 与 urgent exceptions 的恢复规则；
+- 定义最终 30 天决策摘要模板；
+- 定义 medium evidence、urgent exceptions 与 removed false positives 的人工记录格式；
+- 在任何 post-audit hard-load/profile apply 之前定义 candidate change gate 与 rollback path；
+- 要求 candidate generation 始终绑定 JSON report path 与脱敏 Markdown summary path；
+- 要求 candidate generation 只接受 `summary-reviewed`、`apply-candidate` 或 `closed-with-candidate` audit state，并阻断 not-ready 或 `closed-no-change` 状态；
+- 要求 candidate `source_reports` 在写入 candidate JSON 或 Markdown 前通过 privacy contract；
+- 要求生成的 candidate JSON 与 Markdown 暴露 passing `candidate_record_contract`，覆盖 preview-only 安全标志、gate shape、rollback path、validation-plan 完整性、sanitization 与 source-report privacy；candidate Markdown 必须显示非 JSON 复核所需的同一组有界 contract counts 与 blocker 细节；
+- 定义 audit data source 的数据最小化、脱敏、留存与不外发边界；
+- 定义审计脚本能力边界、已知限制与触发脚本增强的条件；
+- 在 JSON 字段契约与脱敏 Markdown 摘要中暴露这些脚本能力边界；
+- 定义审计运行状态机、停止条件，以及 audit closure 与 profile apply candidate changes 之间的边界；
+- 通过 audit-only 脚本标志暴露 planned-state 记录，并在 Day 0 baseline 存在前阻断 profile-apply candidate；
+- 通过 audit-only 脚本标志暴露 paused-state 记录，并在 paused 状态阻断 profile-apply candidate；
+- 仅当 reviewed 30-day summary 仍绑定 JSON 与 Markdown source-report paths 时，才暴露 `summary-reviewed` 脚本状态；
+- 通过显式 audit-only 脚本标志暴露 closure-state 记录，并报告 blocked closure reasons，而不是静默关闭；
+- 定义 frequent、low-frequency 与 no-strong-evidence 情况的阈值；
+- 声明 explicit-skill false-positive noise 不得进入 strong evidence；
+- 定义 warning severity 与处理动作；
+- 声明 `.tmp/` output 默认不提交，长期证据必须脱敏；
+- 要求 `tools/check_skills_audit_output_retention.py` 阻断 `.tmp/` artifacts 和 raw `skills-usage-*.json` reports 进入 Git，同时允许脱敏 Markdown 摘要；
+- 要求 `tools/check_skills_audit_final_review_state.py` 在未来 continuation、closure 或 candidate decision 前验证最终复核、关闭、candidate 与 apply-gate 状态；
+- 要求 `tools/check_skills_audit_human_review_decision_record.py` 在信任 closure 或 candidate decision 前验证可选人工复核决策记录、精确 outcome 选择、preview-only `target_profile` / 复核说明、apply 授权分离与 raw-retention 阻断；
+- 要求 `tools/check_skills_audit_zh_evidence_encoding.py` 在 guard/CI 中 fail closed：当前、未来、已修改或明确保护的 zh-CN 证据不得包含 invalid UTF-8、`\ufffd`、`???` 连续占位或高信号 mojibake 哨兵，且未修改历史 legacy 问题只作 warning-only；
+- 要求 `tools/check_precommit_update_archive.py` 状态进入 audit JSON 字段契约与 Markdown 摘要，阻断未检查 existing-file update review 或已完成 OpenSpec changes 未归档的报告；
+- 声明 regression-test、OpenSpec guard 与 CI manifest 要求；
+- 声明远端发布仍需 GitLab/GitHub 授权门禁。

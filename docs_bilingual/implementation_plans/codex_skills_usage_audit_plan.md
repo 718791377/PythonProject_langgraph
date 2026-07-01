@@ -6,16 +6,24 @@ translation: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.z
 status: active
 doc_class: implementation_plan
 created_at: 2026-05-16
-last_reviewed: 2026-05-27
-plan_readiness: active-monitoring
-implementation_lane: audit_only_profile_decision_support
+last_reviewed: 2026-06-21
+plan_readiness: profile-applied-monitoring
+implementation_lane: profile_applied_monitoring_support
 related_docs:
   - docs_bilingual/implementation_plans/codex_user_level_skills_governance_and_profiles_plan.md
   - docs_bilingual/governance/codex_user_level_orchestration_activation_policy.md
   - docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md
 runtime_sources:
+  - docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
   - tools/audit_codex_skills_usage.py
+  - tools/skills2cli.py
   - tools/check_skills_audit_output_retention.py
+  - tools/check_skills_audit_final_review_state.py
+  - tools/check_skills_audit_final_review_precheck.py
+  - tools/check_skills_audit_human_review_decision_record.py
+  - tools/check_skills_audit_cadence_contract.py
+  - tools/check_skills_audit_frontmatter_resolution.py
+  - tools/check_skills_audit_zh_evidence_encoding.py
   - tools/check_precommit_update_archive.py
 ---
 # Codex Skills Usage Audit Plan
@@ -26,15 +34,20 @@ runtime_sources:
 
 **Architecture:** A repo-local Python audit script reads user-level Codex sessions, runtime logs, user-level plugin state, profile registries, manual notes, and repository guard outputs. It emits local JSON reports, sanitized Markdown summaries, preview-only candidate records, and embedded field contracts. Retention and pre-commit gates prevent raw audit artifacts or incomplete reports from becoming commit evidence.
 
-**Tech Stack:** Python audit CLI, JSON report schema, sanitized Markdown renderer, SQLite runtime-log reader, Codex session JSONL reader, profile registry reader, manual-note parser, privacy redactor, output-retention checker, pre-commit update/archive checker, CI manifest, OpenSpec guard.
+**Tech Stack:** Python audit CLI, JSON report schema, sanitized Markdown renderer, SQLite runtime-log reader, Codex session JSONL reader, profile registry reader, manual-note parser, privacy redactor, output-retention checker, final-review state/precheck/decision-record checkers, pre-commit update/archive checker, CI manifest, OpenSpec guard.
 
 ---
 
 ## 0. Review conclusion
 
-The plan is active and remains audit-only. This Comet-style refactor does not authorize a hard-load/profile apply and does not change the implementation boundary: existing script, checker, report-contract, retention, and candidate-preview rules remain the source of truth for execution. The refactor makes the plan easier to execute by separating governance principles, runtime/data-source architecture, CLI contracts, field contracts, implementation slices, task-level backlog, local integration, acceptance evidence, and long-running monitoring items.
+Related routing plan: `codex_skills2cli_profile_routing_runtime_plan.md` uses this audit plan's strong evidence, warning pressure, and final-review state as advisory inputs for profile routing and reranking. This linkage does not authorize profile apply and does not change `target_profile` semantics in audit candidates: it remains a canonical hard-load profile ID.
+
+
+This plan remains active; the 30-day audit, final human review, preview-only candidate, and one authorized core-dev profile apply are complete. Follow-up work is post-apply monitoring and rollback support only. This Comet structure refactor itself did not authorize hard-load/profile apply; a later explicit user authorization completed the core-dev apply. Existing scripts, checkers, report contracts, retention, candidate-preview, and approved-to-apply receipt rules remain the execution-layer source of truth. The refactor makes the plan easier to execute by separating governance principles, runtime/data-source architecture, CLI contracts, field contracts, implementation slices, task-level backlog, local integration, acceptance evidence, and long-running monitoring items.
 
 A clean Codex startup after `soft-load` is useful evidence that startup pressure improved, but it is not proof that live-turn skills-budget warnings cannot reappear. Live warnings must be triaged through the audit script, not by deleting plugin cache or prematurely shrinking the default profile.
+
+Cadence finalization: the original 30-day observation window is locked to 2026-05-16 through 2026-06-15. The standard scheduled audit run count is Day 0 baseline once, weekly 7-day evidence four times, and Day 30 final evidence once. Warning triage is event-driven and has no fixed repeat count. After 2026-06-15, any additional runs are post-final monitoring evidence and must not extend the original audit window or authorize profile apply.
 
 Completeness review:
 
@@ -167,7 +180,12 @@ After 30 days, decide using the following rules. All thresholds are based primar
 Runtime responsibilities:
 
 - `tools/audit_codex_skills_usage.py` collects evidence and emits JSON/Markdown reports.
+- `tools/skills2cli.py audit warnings` provides compact, sanitized foreground warning triage over both session JSONL and `logs_2.sqlite`; it is read-only and does not mutate Codex config, plugin cache, hard-load profiles, or skill bodies.
 - `tools/check_skills_audit_output_retention.py` proves raw audit artifacts stay local-only.
+- `tools/check_skills_audit_final_review_state.py` verifies the final human-review, closure, candidate, and apply-gate state without mutating config or profiles.
+- `tools/check_skills_audit_final_review_precheck.py` verifies machine-level precheck evidence for final-summary noise and manual-conflict items while keeping human-review, candidate, and profile-apply gates closed.
+- `tools/check_skills_audit_human_review_decision_record.py` verifies optional future human-review decision records: no record is a valid pending state, exactly one allowed outcome is required when a record exists, candidate artifacts before review are blocked, preview-only candidate decisions require `target_profile` plus rollback/validation/candidate-review notes, profile apply remains unauthorized unless a later receipt exists, and raw paths/secrets/transcripts/log excerpts are rejected.
+- `tools/check_skills_audit_cadence_contract.py` verifies the locked repeat count, weekly frequency, original end date, event-triggered warning-triage rule, and post-final monitoring-only boundary.
 - `tools/check_precommit_update_archive.py` proves existing-file update review and OpenSpec archive gates were checked before local commits.
 - `tools/run_openspec_guard.py` aggregates repository-level guard evidence.
 - Tests under `test/` and entries in `tools/ci/ci_test_manifest.json` keep the audit behavior reproducible.
@@ -180,8 +198,8 @@ The audit helper is evidence collection, not an apply engine. It can prepare pre
 
 Default sources:
 
-- `C:\Users\lenovo\.codex\sessions/**/*.jsonl` - session transcripts used to detect explicit skill announcements and SKILL.md reads.
-- `C:\Users\lenovo\.codex\logs_2.sqlite` - runtime log database used to count skills-budget warnings.
+- `C:\Users\lenovo\.codex\sessions/**/*.jsonl` - session transcripts used to detect explicit skill announcements, SKILL.md reads, and foreground warning text for compact `skills2cli` triage.
+- `C:\Users\lenovo\.codex\logs_2.sqlite` - runtime log database used to count skills-budget warnings; `skills2cli audit warnings` now reads it as a second sanitized source so live-turn warnings are not missed when they appear only in runtime logs.
 - `C:\Users\lenovo\.codex\config.toml` - user-level plugin enabled-state source for audit-only reporting.
 - `C:\Users\lenovo\.codex\skills\plugin-modules\references\profiles.json` - module registry used to aggregate plugin evidence by profile.
 
@@ -192,6 +210,18 @@ Default sources:
 ```
 
 The baseline records enabled plugins, profile modules, warning counters, and inventory summary. It does not mutate `config.toml`.
+
+
+Canonical cadence contract:
+
+| Item | Locked value | Execution meaning |
+| --- | --- | --- |
+| Observation window | `2026-05-16` through `2026-06-15` | The original 30-day audit window is closed and must not be extended by later monitoring runs. |
+| Scheduled repeat count | `6` total scheduled audit runs | 1 Day 0 baseline, 4 weekly evidence runs, and 1 Day 30 final evidence run. |
+| Scheduled frequency | Day 0 once, then every 7 days for weekly evidence, then Day 30 once | Weekly evidence dates are 2026-05-23, 2026-05-30, 2026-06-06, and 2026-06-13; final evidence is 2026-06-15. |
+| Warning triage frequency | Event-triggered only | Run a narrow-window triage only after a new `2% skills context budget` warning; no fixed repeat count. |
+| Post-final runs | Monitoring evidence only | Runs after 2026-06-15 can update review-pending evidence or warning triage, but cannot reopen the 30-day window or authorize profile apply. |
+| Apply boundary | Not authorized by cadence | Profile apply still requires a later explicit `approved-to-apply` authorization. |
 
 ```powershell
 .\.venv\Scripts\python.exe .\tools\audit_codex_skills_usage.py --root . --days 7 --json --output .\.tmp\skills-usage-audit-7d.json
@@ -218,18 +248,24 @@ Regression tests must cover:
 - stdout fallback for `[WARNING] Exceeded skills context budget of 2%`;
 - explicit skill-announcement detection for Chinese `Chinese skill announcement prefix` and English `Using skill:`;
 - extraction of `omitted_additional_skills` and `all_descriptions_removed` from `logs_2.sqlite` budget warnings;
+- `skills2cli audit warnings --since ... --json` must report separate `sessions_jsonl` and `logs_2.sqlite` sources, aggregate counts, redact private paths/secrets, expose current `frontmatter_compatibility.invalid_total`, and keep `raw_log_paths_retained=false` plus `raw_skill_bodies_retained=false`;
 - `plugins: "all_known_plugins"` in the `full` profile must not be split into individual characters;
 - the script must fall back to `tools/skill_sources/plugin-modules/references/profiles.json` when the user-level plugin-modules profile is absent.
 
-Use a fixed cadence so the one-month audit does not drift.
+Use a fixed cadence so the one-month audit does not drift. This cadence is now locked as a completed original audit window, not an open-ended loop.
 
-| Time | Command | Output file | Purpose |
-| --- | --- | --- | --- |
-| Day 0 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | Freeze initial enabled plugins, inventory, and warning state |
-| Weekly | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | Detect new live-session warnings and module trends |
-| Late weekly recovery | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | Preserve an explicit cadence-drift marker instead of fabricating the missed run |
-| Day 30 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | Build the evidence package for default-profile decisions |
-| After a warning | `--warning-triage --days 1` or `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | Locate whether the warning came from current-session repacking |
+| Cadence item | Date or trigger | Repeat count | Command | Output file | Purpose |
+| --- | --- | ---: | --- | --- | --- |
+| Day 0 baseline | 2026-05-16 | 1 | `--days 0 --baseline` | `.tmp/skills-usage-baseline-YYYY-MM-DD.json` | Freeze initial enabled plugins, inventory, and warning state |
+| Weekly audit | 2026-05-23, 2026-05-30, 2026-06-06, 2026-06-13 | 4 | `--days 7` | `.tmp/skills-usage-audit-7d-YYYY-MM-DD.json` | Detect new live-session warnings and module trends |
+| Late weekly recovery | Only when a weekly run is missed | Event-driven, no fixed count | `--days 7 --late-run --missed-weekly-runs N` | `.tmp/skills-usage-audit-7d-late-YYYY-MM-DD.json` | Preserve an explicit cadence-drift marker instead of fabricating the missed run |
+| Day 30 final audit | 2026-06-15 | 1 | `--days 30` | `.tmp/skills-usage-audit-30d-YYYY-MM-DD.json` | Build the evidence package for default-profile decisions |
+| Warning triage | After each new `2% skills context budget` warning | Event-driven, one narrow run per new warning | `--warning-triage --days 1` or `--warning-triage --since` | `.tmp/skills-usage-warning-triage-YYYY-MM-DD.json` | Locate whether the warning came from current-session repacking |
+| Final human review | After the Day 30 summary exists | 1 decision review | Review sanitized final summary and decision template | Tracked sanitized review record if a decision is made | Choose `summary-reviewed + closed-no-change`, `summary-reviewed + preview-only candidate`, or `review-pending + continue monitoring` |
+
+Standard scheduled audit repeats are therefore fixed at 6 runs total: 1 baseline, 4 weekly runs, and 1 final 30-day run. The final human review is a separate decision step, not another audit run. Warning triage and late recovery are exception/event-triggered paths and are not assigned a fixed repeat count.
+
+The original audit end date is 2026-06-15. Runs after that date are post-final monitoring only: they may update review-pending evidence or warning-triage evidence, but they must not move the original end date, restart the 30-day clock, mark the summary reviewed, generate a profile candidate, or apply a profile without an explicit later decision.
 
 Reports under `.tmp/` are not committed by default. If long-term evidence is needed, commit only a sanitized Markdown summary, not full session transcripts, tokens, private paths, or vendor cache content.
 
@@ -499,15 +535,19 @@ Tests:
 
 ### Slice 5: Long-running monitoring cycle
 Scope:
-- [ ] Run the real 30-day observation window, weekly reports, warning triage, final summary review, and optional preview-only candidate generation.
+- [x] Run the real 30-day observation window from 2026-05-16 through 2026-06-15.
+- [x] Lock the standard repeat count and frequency: Day 0 once, weekly four times, Day 30 once, and warning triage as event-driven one-off runs.
+- [ ] Complete final human review and, only if explicitly chosen, optional preview-only candidate generation.
 Completion criteria:
-- [ ] Final JSON and Markdown evidence pass the embedded contracts before any profile apply discussion.
+- [x] Final JSON and sanitized Markdown evidence exist for the closed 30-day window and pass embedded contracts.
+- [x] Final summary is explicitly kept in `human_review_pending` with a `review-pending + continue monitoring` decision record and post-final monitoring evidence.
 Tests:
-- [ ] Final observation-window evidence is verified when the calendar window closes.
+- [x] Final observation-window evidence is verified when the calendar window closes.
+- [x] Human-review decision evidence is verified before any candidate generation or closure path is trusted.
 
 ## 12. Task-level execution backlog
 
-The detailed implementation work is complete except for the real calendar monitoring cycle. Concrete work items:
+The detailed implementation work is complete except for final human review and any optional preview-only candidate. Concrete work items:
 
 - [x] Audit CLI foundation.
 - [x] Skills usage evidence collection.
@@ -525,8 +565,16 @@ The detailed implementation work is complete except for the real calendar monito
 - [x] Output-retention gate.
 - [x] Pre-commit update/archive gate.
 - [x] Tests and CI coverage.
-- [ ] Real 30-day usage audit observation window.
-- [ ] Final reviewed 30-day evidence package.
+- [x] `tools/check_skills_audit_zh_evidence_encoding.py` implemented and registered in OpenSpec guard, safety-rule backing, and CI manifest.
+- [x] Real 30-day usage audit observation window: 2026-05-16 through 2026-06-15.
+- [x] Standard scheduled repeat count fixed: 1 Day 0 baseline, 4 weekly runs, and 1 Day 30 final run.
+- [x] Standard scheduled frequency fixed: weekly `--days 7` during the audit, Day 30 final once, and warning triage only after new warnings.
+- [x] Original audit end date fixed: 2026-06-15.
+- [x] Script-backed cadence contract checker verifies the fixed repeat count, frequency, end date, event-triggered warning triage, and post-final monitoring boundary.
+- [x] Script-backed zh-CN evidence encoding checker verifies current, future, changed, or explicitly protected Skills audit zh-CN evidence and reports untouched historical mojibake as warning-only.
+- [x] Final 30-day evidence package generated and retained as sanitized Markdown evidence.
+- [ ] Final human review of the 30-day evidence package.
+- [x] Explicit current decision outcome recorded: `review-pending + continue monitoring`.
 - [ ] Optional preview-only profile candidate after explicit target-profile review.
 
 ## 13. Local integration order
@@ -556,14 +604,25 @@ Each audit run must report:
 - script capability boundaries, including reliable coverage, human-review needs, and enhancement triggers;
 - recommendations, without applying them automatically.
 - output retention status from `tools/check_skills_audit_output_retention.py`, proving `.tmp/` artifacts and raw Skills usage JSON are not retained in Git.
+- final review state from `tools/check_skills_audit_final_review_state.py`, proving whether the audit is still `review-pending + continue monitoring`, `summary-reviewed + closed-no-change`, or `summary-reviewed + preview-only candidate`, while keeping profile apply blocked until a later explicit `approved-to-apply` receipt.
+- final review precheck state from `tools/check_skills_audit_final_review_precheck.py`, proving noise/manual-conflict script-level prechecks are evidence-backed without marking the summary reviewed, generating candidates, or applying profiles.
+- human-review decision-record state from `tools/check_skills_audit_human_review_decision_record.py`, proving a missing decision record remains pending, a present record has exactly one allowed outcome, candidate artifacts are blocked before the reviewed decision, preview-only candidate records include `target_profile` and review notes, and raw paths/secrets/transcripts/log excerpts are not retained.
+- cadence contract state from `tools/check_skills_audit_cadence_contract.py`, proving the original observation window remains 2026-05-16 through 2026-06-15, planned audit repeats remain 6 total runs, weekly evidence dates remain fixed, warning triage remains event-triggered, and post-final runs remain monitoring-only.
+- frontmatter-resolution state from `tools/check_skills_audit_frontmatter_resolution.py`, proving historical invalid `SKILL.md` skipped-loading warnings are bridged to the current frontmatter inventory, current repo/user/system `blocking_invalid_total=0`, and any bundle-managed plugin-cache invalid frontmatter is warning-only unless the user explicitly authorizes vendor-cache repair. The checker must still prove it did not mutate config, plugin cache, skill bodies, or profiles.
+- zh-CN evidence encoding state from `tools/check_skills_audit_zh_evidence_encoding.py`, proving current, future, changed, or explicitly protected Skills usage audit zh-CN evidence is valid UTF-8 and does not retain replacement characters, placeholder question-mark runs, or high-signal mojibake markers; untouched legacy evidence remains warning-only.
 - pre-commit update/archive status from `tools/check_precommit_update_archive.py`, proving existing-file update review and OpenSpec archive gates have passed before local commit.
-- default human stdout must also render the audit state, enabled-plugin matched/unmatched summary, current-profile inference, inventory summary, log-evidence availability, recent budget-warning sample count, bounded sanitized budget-warning sample excerpts, and 7-day counts, warning-severity level, reason, and action, all-descriptions-removed / omitted-additional-skills pressure metrics, cadence review late-run / missed-weekly-runs / weekly-report-review state, warning triage status, warning triage window policy, warning/skipped-loading counts, sanitized skipped-loading sample excerpts, skipped-loading review action, warning triage recommended action and blockers, explicit-skill total and unique-skill counts, SKILL.md read count, profile helper call count, script capability boundary counts, decision recommendation, recommendation count plus the first few recommendations, field-contract status and violation groups including `warning_severity`, output-retention gate, and pre-commit update/archive gate, so a non-JSON run is still safe to review.
+- default human stdout must also render the audit state, enabled-plugin matched/unmatched summary, current-profile inference, inventory summary, frontmatter-compatibility summary and safety flags, log-evidence availability, recent budget-warning sample count, bounded sanitized budget-warning sample excerpts, and 7-day counts, warning-severity level, reason, and action, all-descriptions-removed / omitted-additional-skills pressure metrics, cadence review late-run / missed-weekly-runs / weekly-report-review state, warning triage status, warning triage window policy, warning/skipped-loading counts, sanitized skipped-loading sample excerpts, skipped-loading review action, warning triage frontmatter resolution, warning triage recommended action and blockers, explicit-skill total and unique-skill counts, SKILL.md read count, profile helper call count, script capability boundary counts, decision recommendation, recommendation count plus the first few recommendations, field-contract status and violation groups including `warning_severity`, output-retention gate, and pre-commit update/archive gate, so a non-JSON run is still safe to review.
 - `test/audit_codex_skills_usage.test.py` must cover stdout encoding, warning parsing, warning-triage marker and narrow-window blocking, warning-triage Markdown output, cadence-review field-contract and Markdown output, Chinese announcements, repo profile fallback, `all_known_plugins` expansion, sanitized log-excerpt redaction marker integrity, sanitized manual-note ingestion, invalid manual-note validation, manual-note source-path privacy, report field-contract validation, missing/stale embedded field-contract candidate-gate blocking, source-report-path candidate-gate blocking, source-report privacy sanitization, audit closure-state gates and Markdown blocker output, preview-only candidate generation, 30-day/summary-reviewed candidate gate blocking, candidate rollback/validation fields, candidate-record contract failures for unsafe or incomplete candidate records, and candidate Markdown non-action text.
 - Regression tests must also cover explicit-skill false-positive token path/secret redaction, length truncation, `noise_review` field-contract blocking for unsanitized or missing privacy fields, and `script_capability_boundaries` field-contract blocking for missing or empty boundary lists and missing or unsafe stable tool-call alias registry fields.
 - Regression tests must cover `decision_recommendation` field-contract blocking for missing or non-advisory status, profile-apply allowance, incomplete bucket lists, non-string bucket entries, and stale `bucket_counts`.
 - Regression tests must cover `module_evidence` row-contract blocking for missing/wrong-typed fields, non-string plugin entries, negative or stale strong counts, mapped-tool evidence being counted as strong, non-manual cross-project utility, and unsupported recommendations.
 - Regression tests must cover `module_evidence` recommendation-threshold mismatches so stale rows cannot claim an on-demand, dormant, or candidate recommendation that contradicts their strong/weak evidence counts.
 - Regression tests must cover output-retention blocking for forced `.tmp/` raw reports, raw `skills-usage-*.json` reports outside `.tmp/`, and allowed sanitized Markdown summaries.
+- Regression tests must cover the final review state checker: pending continuation is allowed without candidate/apply, candidate artifacts before `summary-reviewed` are blocked, reviewed summaries require an explicit outcome, and profile apply remains unauthorized.
+- Regression tests must cover the human-review decision-record checker: no record is a valid pending state, candidate artifacts before a decision record are blocked, pending/closed/preview-only outcomes are validated, preview-only candidate decisions require `target_profile` plus review notes, raw paths/secrets/transcripts/log excerpts are blocked, and multiple active decision records fail closed.
+- Regression tests must cover the cadence contract checker: locked 6-run cadence passes, missing repeat-count language fails, wrong final end date fails, and missing post-final monitoring-only evidence fails.
+- Regression tests must cover the frontmatter-resolution checker: historical `reference_files/10.md` warning markers plus current repo/user/system `blocking_invalid_total=0` pass, current repo/user/system invalid frontmatter fails closed, plugin-cache invalid frontmatter is reported as warning-only without plugin-cache mutation, and missing historical markers fail closed.
+- Regression tests must cover the zh-CN evidence encoding checker: clean current evidence passes, untouched legacy mojibake warns only, current `???` fails, `\ufffd` fails, active-current mojibake fails, edited legacy target files fail, and non-target Markdown remains unaffected.
 - Regression tests must cover the pre-commit update/archive gate: reports must embed `precommit_update_archive`, field contracts must block missing, non-passing, or disabled existing-file update / OpenSpec archive gate status, and sanitized Markdown summaries must render the gate status.
 - Regression tests must cover `output_retention` field-contract blocking for missing or non-passing retention status, and the sanitized Markdown summary must render the output-retention status and long-term evidence format.
 - Regression tests must cover `manual_evidence.conflict_review` field-contract blocking plus sanitized Markdown rendering for manual exception / approved hard-load exception notes.
@@ -603,26 +662,40 @@ Each human report review must also check false-positive noise:
 
 ## 17. Current open monitoring items
 
-- [ ] Complete the real 30-day usage audit observation window.
-- [ ] Generate local 7-day weekly evidence during the audit window.
-- [ ] Run narrow-window warning triage after any new `2% skills context budget` warning.
-- [ ] Manually review each new warning triage result.
-- [ ] Manually review each new skipped-loading source sample.
-- [ ] Generate the final 30-day JSON report after the window ends.
-- [ ] Generate the final sanitized Markdown summary after the window ends.
+The original 30-day audit window is closed. These items now distinguish completed calendar-observation work from post-final review and monitoring work.
+
+- [x] Complete the real 30-day usage audit observation window: 2026-05-16 through 2026-06-15.
+- [x] Generate local 7-day weekly evidence during the audit window.
+- [x] Generate the final 30-day JSON report after the window ends, retained local-only under `.tmp/`.
+- [x] Generate the final sanitized Markdown summary after the window ends.
+- [x] Lock the original audit end date to 2026-06-15.
+- [x] Lock the fixed standard run count to 6 scheduled audit runs: 1 Day 0 baseline, 4 weekly runs, and 1 Day 30 final run.
+- [x] Record that warning triage is event-triggered and has no fixed repeat count.
+- [x] Script-backed final review state checker verifies the current pending/closed/candidate/apply-gate state.
+- [x] Script-backed final review precheck checker verifies noise/manual-conflict machine evidence while preserving final human-review and apply gates.
+- [x] Script-backed human-review decision-record checker verifies future optional decision records while preserving the current pending state and apply gate.
+- [x] Script-backed cadence contract checker verifies the repeat count, weekly cadence, end date, warning-triage frequency, and post-final boundary.
+- [x] Script-backed frontmatter-resolution checker bridges `reference_files/10.md` historical invalid `SKILL.md` warning markers to current `invalid_total=0` evidence.
 - [ ] Manually review the final 30-day summary.
-- [ ] Mark the final summary as `summary-reviewed`.
+- [x] Explicitly record `review-pending + continue monitoring` while keeping the final summary `human_review_pending`.
+- [x] Close the `reference_files/10.md` invalid `SKILL.md` runtime repair loop: post-repair audit reports `invalid_total=0`.
+- [x] Close the `mcp2cli` / `skills2cli` R3/R4 user-level runtime evidence loop: install/update receipts, smoke receipts, and rollback pointer exist.
 - [ ] Resolve final-summary noise false positives.
 - [ ] Resolve final-summary manual conflicts or exceptions.
-- [ ] Decide whether this audit closes as `closed-no-change`.
-- [ ] If evidence supports a change, generate a profile apply candidate.
-- [ ] Specify an explicit `target_profile` for the candidate.
-- [ ] Generate candidate JSON preview.
-- [ ] Generate candidate Markdown preview.
-- [ ] Review candidate rollback path.
-- [ ] Review candidate validation plan.
-- [ ] Do not run profile apply before explicit `approved-to-apply` authorization.
-- [ ] If profile apply is authorized later, save sanitized before/after diffs.
+- [x] Decided this audit does not close as `closed-no-change`; it closes as `closed-with-candidate`.
+- [x] Evidence supported a change; generated a profile apply candidate.
+- [x] Specified explicit `target_profile=core-dev` for the candidate.
+- [x] Generated candidate JSON preview.
+- [x] Generated candidate Markdown preview.
+- [x] Reviewed candidate rollback path.
+- [x] Reviewed candidate validation plan.
+- [x] Add `skills2cli audit warnings` as a compact read-only post-final warning source over session JSONL and `logs_2.sqlite`.
+- [x] Add current frontmatter compatibility summary and mtime-bounded session scanning to `skills2cli audit warnings`.
+- [ ] Run narrow-window warning triage after each new post-final `2% skills context budget` warning.
+- [ ] Manually review each new post-final warning triage result.
+- [ ] Manually review each new post-final skipped-loading source sample.
+- [x] Complied: did not run profile apply before explicit `approved-to-apply` authorization.
+- [x] Profile apply was authorized; saved apply result, backup path, and post-apply preview evidence.
 - [ ] If warnings persist after apply, roll back through the rollback path.
 - [ ] If critical capability is missing after apply, roll back through the rollback path.
 
@@ -668,6 +741,10 @@ This plan is granular enough only when all of the following are true:
 - it defines warning severity and handling actions;
 - it states that `.tmp/` output is not committed by default and long-term evidence must be sanitized;
 - it requires `tools/check_skills_audit_output_retention.py` to block `.tmp/` artifacts and raw `skills-usage-*.json` reports from Git while allowing sanitized Markdown summaries;
+- it requires `tools/check_skills_audit_final_review_state.py` to verify final review, closure, candidate, and apply-gate state before future continuation, closure, or candidate decisions;
+- it requires `tools/check_skills_audit_human_review_decision_record.py` to validate optional human-review decision records, exact outcome selection, preview-only target-profile/review-note evidence, apply-authorization separation, and raw-retention blocking before closure or candidate decisions are trusted;
+- it requires `tools/check_skills_audit_zh_evidence_encoding.py` to fail closed on invalid UTF-8, `\ufffd`, repeated question-mark placeholders, and high-signal mojibake markers in current, future, changed, or explicitly protected zh-CN evidence while keeping untouched historical legacy findings warning-only;
+- it requires `tools/check_skills_audit_cadence_contract.py` to verify the fixed repeat count, weekly cadence, original end date, event-triggered warning triage, and post-final monitoring boundary;
 - it requires `tools/check_precommit_update_archive.py` status to enter the audit JSON field contract and Markdown summary, blocking reports where existing-file update review was not checked or completed OpenSpec changes were not archived before commit;
 - it states regression-test, OpenSpec guard, and CI manifest requirements;
 - it states that remote publication still requires GitLab/GitHub authorization gates.

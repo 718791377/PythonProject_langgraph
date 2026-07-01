@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-17
+x_change_class: tooling-confirmation
+x_archive_deferred_reason: "Stage 1 freezes the confirmation plan; Stage 2 must implement and verify live runtime gaps before archive."
+x_archive_follow_up: "After Stage 2 local-main integration, archive the confirmation change and promote stable reusable document-tooling runtime requirements."

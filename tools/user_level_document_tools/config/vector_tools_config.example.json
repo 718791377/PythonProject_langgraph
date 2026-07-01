@@ -1,0 +1,26 @@
+{
+  "embedding": {
+    "provider": "openai-compatible",
+    "baseURL": "http://127.0.0.1:8013/v1",
+    "apiKey": "<local-or-env-token>",
+    "model": "<embedding-model>",
+    "dimensions": 1024
+  },
+  "stores": {
+    "vector": {
+      "provider": "lancedb",
+      "dbPath": "<consumer-project>/.local/vector/lancedb",
+      "targetTable": "authority_chunks"
+    },
+    "metadata": {
+      "provider": "sqlite",
+      "dbPath": "<consumer-project>/.local/vector/vector-meta.sqlite"
+    },
+    "manifest": {
+      "path": "<consumer-project>/.local/vector/chunks.jsonl"
+    }
+  },
+  "runtime": {
+    "reportsRoot": "<consumer-project>/.local/vector/reports"
+  }
+}

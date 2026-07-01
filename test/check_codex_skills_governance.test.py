@@ -203,6 +203,37 @@ class CodexSkillsGovernanceCheckTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["errors"], 0)
         self.assertTrue(any("Plugin duplicate skill name `Chrome`" in item for item in payload["warnings"]))
 
+    def test_fails_for_repo_or_user_codex_frontmatter_incompatibility(self) -> None:
+        root = self.make_root("skills-gov-codex-incompat")
+        self.write_minimal_docs(root)
+        self.write_skill(root, ".codex/skills/too-long/SKILL.md", "x" * 65, "Short repo")
+        user_root = root / "user-skills"
+        self.write_file(user_root, "missing-desc/SKILL.md", "---\nname: missing-desc\n---\nBody\n")
+
+        result = self.run_check(root, user_root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        self.assertTrue(any("name_too_long" in error for error in payload["errors"]))
+        self.assertTrue(any("missing_description" in error for error in payload["errors"]))
+
+    def test_plugin_codex_frontmatter_incompatibility_is_report_only(self) -> None:
+        root = self.make_root("skills-gov-plugin-incompat")
+        self.write_minimal_docs(root)
+        plugin_root = root / "plugin-cache"
+        self.write_skill(
+            plugin_root,
+            "openai-curated/twilio/hash/skills/twilio-enterprise-knowledge/SKILL.md",
+            "twilio-enterprise-knowledge",
+            "D" * 1030,
+        )
+
+        result = self.run_check(root, include_plugins=True, plugin_cache_root=plugin_root)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["errors"], 0)
+        self.assertTrue(any("description_too_long" in warning for warning in payload["warnings"]))
+
 
 if __name__ == "__main__":
     unittest.main()

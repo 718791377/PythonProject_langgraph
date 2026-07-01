@@ -117,6 +117,47 @@ class OrchestrationTraceEvidenceCheckTest(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertTrue(any("subagent:off" in error for error in payload["errors"]), payload["errors"])
 
+    def test_modern_capability_chain_alias_passes(self) -> None:
+        root = self.make_root("trace-chain-alias")
+        path = self.write_trace(
+            root,
+            VALID_TRACE.replace(
+                "capability_chain=subagent:auto > omx:on > langgraph:on",
+                "capability_chain=subagent_routing:auto > oh_my_codex:on > langgraph:on",
+            ),
+        )
+
+        payload = module.run_check(path)
+
+        self.assertTrue(payload["ok"], payload["errors"])
+
+    def test_duplicate_routing_trace_label_fails(self) -> None:
+        root = self.make_root("trace-duplicate-label")
+        path = self.write_trace(root, VALID_TRACE + "\nRouting trace: phase=duplicate, why=duplicate\n")
+
+        payload = module.run_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("exactly one" in error for error in payload["errors"]), payload["errors"])
+
+    def test_native_prefixed_duplicate_routing_trace_label_fails(self) -> None:
+        root = self.make_root("trace-native-prefixed-duplicate-label")
+        path = self.write_trace(root, "\u2022 " + VALID_TRACE + "\n\u2514 Routing trace: phase=duplicate, why=duplicate\n")
+
+        payload = module.run_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("exactly one" in error for error in payload["errors"]), payload["errors"])
+
+    def test_legacy_short_routing_fields_fail(self) -> None:
+        root = self.make_root("trace-legacy-fields")
+        path = self.write_trace(root, VALID_TRACE + "\nexperts_now=main durable_team=not_selected\n")
+
+        payload = module.run_check(path)
+
+        self.assertFalse(payload["ok"])
+        self.assertTrue(any("legacy short field" in error for error in payload["errors"]), payload["errors"])
+
     def test_ready_langgraph_chain_requires_langgraph_default(self) -> None:
         root = self.make_root("trace-default")
         path = self.write_trace(root, VALID_TRACE.replace("backend_default=langgraph", "backend_default=native_omx"))

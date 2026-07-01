@@ -17,6 +17,12 @@ status: draft
 > - 项目级部分负责说明每个仓库如何承接 repo-local 源码、repo-local durable state、OpenSpec、项目文档、测试与例外规则。
 > - 稳定用户级规则应以下列治理文档为准：`docs_bilingual/governance/`；当前仓库的结构性落地与多文件改动仍应进入 OpenSpec。
 
+## 0. 2026-06-15 持久化团队文档族同步检查点
+
+本文参与核心 `codex_cli_personal_production_durable_team` 文档族同步。当前同步文档族包括：白皮书、治理研究稿、MRD、北极星计划、实施方案、playbook、生命周期地图和 OpenSpec 规格。共享规则是：10 层模型是运行时/治理能力核心，12 层模型是产品/商业生命周期规划框架。
+
+证据边界：2026 年 6 月 source refresh 的已提交证据是归档 OpenSpec change、验证报告和已更新的综合文档。`.omx/state/langgraph/extraction/` 下的 raw extraction streams 是被忽略的本地 artifacts，clean worktree 中可能不存在。因此，本文不得声称 raw extraction cache 是冷启动理解的必备条件，也不得把任何 draft 文档当成 durable 或 persistent team 当前正在运行的 runtime evidence。
+
 ## 1. 文档定位与目标
 
 本方案定义在以下**目标假设基线**下，如何为 `Codex CLI` 建设“个人开发者可长期维护的生产级持久化团队”，并把它落实成一套可由所有 `PyCharm / Codex CLI` 项目共用的长期方案：

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PPT Slide PNG Review</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Local/offline tool</p>
+      <h1>PPT Slide PNG Review</h1>
+      <p class="lede">Load exported slide PNGs, draw issue rectangles, and import/export review JSON without any network dependency.</p>
+    </div>
+    <div class="header-actions" aria-label="Review file actions">
+      <label class="button primary" for="slide-files">Load slide PNGs</label>
+      <input id="slide-files" type="file" accept="image/png" multiple>
+      <label class="button" for="import-json">Import JSON</label>
+      <input id="import-json" type="file" accept="application/json,.json">
+      <button id="export-json" type="button">Export JSON</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="sidebar" aria-label="Slides">
+      <div class="panel-heading">
+        <h2>Slides</h2>
+        <span id="slide-count" class="badge">0 loaded</span>
+      </div>
+      <ol id="thumbnail-list" class="thumbnail-list" aria-live="polite"></ol>
+      <p id="empty-slides" class="empty-state">Choose one or more PNG files exported from a PPT deck.</p>
+    </aside>
+
+    <section class="viewer-panel" aria-label="Selected slide image and overlay">
+      <div class="viewer-toolbar">
+        <div>
+          <h2 id="active-slide-title">No slide selected</h2>
+          <p id="active-slide-meta">Load PNGs to begin review.</p>
+        </div>
+        <div class="toolbar-actions">
+          <button id="fit-slide" type="button">Fit</button>
+          <button id="actual-size" type="button">100%</button>
+        </div>
+      </div>
+
+      <div id="slide-stage" class="slide-stage" tabindex="0" aria-label="Slide canvas. Drag to create a rectangle finding.">
+        <div id="slide-placeholder" class="slide-placeholder">No slide image loaded</div>
+        <img id="slide-image" alt="Selected PPT slide">
+        <svg id="overlay-svg" class="overlay-svg" aria-label="Finding rectangle overlay">
+          <g id="overlay-rectangles"></g>
+        </svg>
+      </div>
+      <p class="hint">Drag on the large slide to create a finding. Select a rectangle or finding row to edit it.</p>
+    </section>
+
+    <aside class="review-panel" aria-label="Finding details">
+      <div class="panel-heading">
+        <h2>Finding</h2>
+        <span id="finding-count" class="badge">0 findings</span>
+      </div>
+
+      <form id="review-form" class="review-form">
+        <label>
+          Severity
+          <select id="severity" name="severity">
+            <option value="info">Info</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </label>
+        <label>
+          Category
+          <input id="category" name="category" type="text" list="category-options" placeholder="layout, typo, image, chart...">
+          <datalist id="category-options">
+            <option value="layout"></option>
+            <option value="typography"></option>
+            <option value="image-quality"></option>
+            <option value="chart-data"></option>
+            <option value="overflow"></option>
+          </datalist>
+        </label>
+        <label>
+          Comment
+          <textarea id="comment" name="comment" rows="5" placeholder="What is wrong on this slide?"></textarea>
+        </label>
+        <label>
+          Suggested fix
+          <textarea id="suggested_fix" name="suggested_fix" rows="5" placeholder="How should this be corrected?"></textarea>
+        </label>
+        <div class="form-actions">
+          <button id="save-finding" type="submit">Save finding</button>
+          <button id="delete-finding" type="button" class="danger">Delete</button>
+        </div>
+      </form>
+
+      <div class="panel-heading compact">
+        <h3>Slide findings</h3>
+        <button id="clear-slide-findings" type="button" class="link-button">Clear slide</button>
+      </div>
+      <ol id="finding-list" class="finding-list" aria-live="polite"></ol>
+      <p id="empty-findings" class="empty-state">No findings for this slide yet.</p>
+    </aside>
+  </main>
+
+  <footer class="app-footer">
+    <span>Runs entirely in the browser. Images stay local unless you export and share the JSON.</span>
+    <span id="status-line" role="status">Ready.</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

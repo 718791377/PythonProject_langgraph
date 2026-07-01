@@ -1,0 +1,387 @@
+{
+  "blocked_completion_protocol": {
+    "missing_codex_adapter": "blocked_until_adapter_surface_exists",
+    "missing_external_runtime": "record_provision_receipt_with_fill_command_and_resume_step; do_not_mark_live_executed",
+    "missing_template_sync": "rerun_apply_with_sync_templates"
+  },
+  "capabilities": [
+    {
+      "codex_adapter_strategy": "codex_skill_adapter_with_external_desktop_probe",
+      "external_probe": {
+        "allow_provision_recorded": true,
+        "env_keys": [
+          "VISIO_EXE"
+        ],
+        "fill_command": "Install Microsoft Visio or set VISIO_EXE to the Visio executable path, then rerun Reference 8 smoke.",
+        "probe_kind": "visio_executable_or_com_probe",
+        "redacted_verification_command": "python tools/reference8_capability_install.py smoke --capability codex-visio-paper-figure-skill --json",
+        "resume_step": "After Visio is installed/licensed, rerun Reference 8 apply and strict checker."
+      },
+      "id": "codex-visio-paper-figure-skill",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [
+          "VISIO_EXE optional executable path"
+        ],
+        "live_runtime_target": "codex-home:skills/codex-visio-paper-figure-skill/SKILL.md plus optional VISIO_EXE probe",
+        "live_smoke_kind": "codex_visio_paper_figure_skill_adapter_or_provision_probe",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Codex skill adapter for paper/Visio figure workflows with explicit desktop provision evidence.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [
+        "project_template_general_2"
+      ],
+      "source_url": "https://github.com/pengjunchi0/codex-visio-paper-figure-skill",
+      "target_layer": "user_level",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_runtime_wrapper_adapter",
+      "id": "fireworks-tech-graph",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "general-template:template_assets/reference8-active/adapters/fireworks-tech-graph.md",
+        "live_smoke_kind": "fireworks_tech_graph_svg_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Technical graph fixture generator for reusable project templates.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/yizhiyanhua-ai/fireworks-tech-graph",
+      "target_layer": "project_template_general",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "dedupe_to_reference6_codex_adapter",
+      "id": "open-design-ref8",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "dedupe_live_receipt_required": true,
+        "live_runtime_target": "codex-home:state/reference6-capability-install/receipts/open-design-smoke.json",
+        "live_smoke_kind": "reference6_open_design_dedupe_live_receipt_validation",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Duplicate Reference 6 open-design source; validates the existing strict Reference 6 live receipt.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/nexu-io/open-design",
+      "target_layer": "project_template_general",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_node_runtime_wrapper_adapter",
+      "id": "remotion",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "general-template:template_assets/reference8-active/adapters/remotion.md",
+        "live_smoke_kind": "remotion_tiny_render_manifest_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Remotion wrapper records a deterministic render manifest/frame placeholder without requiring a raw upstream install.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/remotion-dev/remotion",
+      "target_layer": "project_template_general",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_inert_template_adapter_with_cae_provision_probe",
+      "external_probe": {
+        "allow_provision_recorded": true,
+        "env_keys": [
+          "CAE_AGENT_HUB_ROOT",
+          "CAE_EXECUTABLE"
+        ],
+        "fill_command": "Set CAE_AGENT_HUB_ROOT or CAE_EXECUTABLE after installing/owning the CAE runtime, then rerun Reference 8 smoke.",
+        "probe_kind": "cae_runtime_or_project_root_probe",
+        "redacted_verification_command": "python tools/reference8_capability_install.py smoke --capability cae-agent-hub --json",
+        "resume_step": "After a licensed CAE executable/project root exists, rerun Reference 8 apply and strict checker."
+      },
+      "id": "cae-agent-hub",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [
+          "CAE_AGENT_HUB_ROOT or CAE_EXECUTABLE optional path"
+        ],
+        "live_runtime_target": "general2-template:template_assets/inert-samples/reference8/adapters/cae-agent-hub.md plus CAE runtime probe",
+        "live_smoke_kind": "cae_agent_hub_inert_adapter_or_provision_probe",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Heavy CAE workflows stay inert unless a generated project provides owned CAE runtime evidence.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/Cai-aa/CAE-Agent-Hub/tree/main",
+      "target_layer": "project_template_general_2",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_inert_mcp_boundary_adapter_with_ansys_probe",
+      "external_probe": {
+        "allow_provision_recorded": true,
+        "env_keys": [
+          "ANSYS_MCP_SERVER_CMD",
+          "ANSYS_ROOT",
+          "AWP_ROOT242",
+          "AWP_ROOT241"
+        ],
+        "fill_command": "Set ANSYS_MCP_SERVER_CMD or an ANSYS/AWP root after installing Ansys and the MCP server, then rerun Reference 8 smoke.",
+        "probe_kind": "ansys_runtime_or_mcp_command_probe",
+        "redacted_verification_command": "python tools/reference8_capability_install.py smoke --capability ansys-mcp-server --json",
+        "resume_step": "After Ansys/MCP runtime is available, rerun Reference 8 apply and strict checker."
+      },
+      "id": "ansys-mcp-server",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [
+          "ANSYS_MCP_SERVER_CMD or ANSYS_ROOT/AWP_ROOT optional path"
+        ],
+        "live_runtime_target": "general2-template:template_assets/inert-samples/reference8/adapters/ansys-mcp-server.md plus Ansys/MCP probe",
+        "live_smoke_kind": "ansys_mcp_server_inert_adapter_or_provision_probe",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Ansys MCP boundary sample remains inert until a generated project owns Ansys licensing and MCP launch evidence.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/knewnothing-git/ansys-mcp-server",
+      "target_layer": "project_template_general_2",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_skill_adapter",
+      "id": "planning-with-files",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "codex-home:skills/planning-with-files/SKILL.md",
+        "live_smoke_kind": "planning_with_files_codex_state_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Plan-from-files Codex skill fixture.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/OthmanAdi/planning-with-files",
+      "target_layer": "user_level",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_plugin_boundary_runtime_wrapper_adapter",
+      "id": "compound-engineering-plugin",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "general-template:template_assets/reference8-active/adapters/compound-engineering-plugin.md",
+        "live_smoke_kind": "compound_engineering_plugin_plan_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Engineering plugin boundary wrapper for generated project plans.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/EveryInc/compound-engineering-plugin",
+      "target_layer": "project_template_general",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_skill_adapter",
+      "id": "pm-skills",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "codex-home:skills/pm-skills/SKILL.md",
+        "live_smoke_kind": "pm_skills_roadmap_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Project-management skill adapter for roadmap/task/spec artifacts.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/phuryn/pm-skills",
+      "target_layer": "user_level",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_skill_collection_adapter",
+      "id": "scientific-agent-skills",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "codex-home:skills/scientific-agent-skills/SKILL.md",
+        "live_smoke_kind": "scientific_agent_skills_workflow_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Scientific workflow skill collection adapter.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "target_layer": "user_level",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_agent_pack_adapter",
+      "id": "agency-agents-zh",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "codex-home:agents/agency-agents-zh.toml",
+        "live_smoke_kind": "agency_agents_zh_toml_schema_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Chinese agency-agent pack represented as Codex-native TOML definitions.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/jnMetaCode/agency-agents-zh",
+      "target_layer": "user_level",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_multimodal_document_skill_adapter",
+      "id": "understand-anything",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "codex-home:skills/understand-anything/SKILL.md plus general-template adapter",
+        "live_smoke_kind": "understand_anything_document_hash_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Multimodal/document understanding adapter with redacted content hashes.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [
+        "project_template_general"
+      ],
+      "source_url": "https://github.com/Egonex-AI/Understand-Anything",
+      "target_layer": "user_level",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_vector_search_runtime_wrapper_adapter",
+      "id": "zvec",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "general-template:template_assets/reference8-active/adapters/zvec.md",
+        "live_smoke_kind": "zvec_vector_index_query_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Vector/search wrapper fixture for reusable project templates.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/alibaba/zvec",
+      "target_layer": "project_template_general",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_redacted_reference_index_inert_adapter",
+      "id": "system-prompts-and-models-of-ai-tools",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "general2-template:template_assets/inert-samples/reference8/adapters/system-prompts-and-models-of-ai-tools.md",
+        "live_smoke_kind": "system_prompts_redacted_metadata_index_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Metadata-only redacted reference index; do not copy restricted prompt bodies or secrets.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [],
+      "source_url": "https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools",
+      "target_layer": "project_template_general_2",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_document_conversion_runtime_wrapper_adapter",
+      "id": "markitdown",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "codex-home:skills/markitdown/SKILL.md plus general-template adapter",
+        "live_smoke_kind": "markitdown_tiny_conversion_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Markdown conversion adapter with tiny deterministic fixture.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [
+        "project_template_general"
+      ],
+      "source_url": "https://github.com/microsoft/markitdown",
+      "target_layer": "user_level",
+      "upstream_is_codex_native": false
+    },
+    {
+      "codex_adapter_strategy": "codex_context_budget_analyzer_adapter",
+      "id": "headroom",
+      "live_runtime": {
+        "codex_adapter_required": true,
+        "credential_gate": [],
+        "live_runtime_target": "codex-home:skills/headroom/SKILL.md plus general-template adapter",
+        "live_smoke_kind": "headroom_context_budget_report_fixture",
+        "raw_upstream_install_only_counts": false,
+        "source_reference_only_counts": false
+      },
+      "notes": "Context-budget analyzer adapter with deterministic report fixture.",
+      "raw_upstream_live_executed_allowed": false,
+      "requires_codex_adapter_before_live_executed": true,
+      "secondary_template_layers": [
+        "project_template_general"
+      ],
+      "source_url": "https://github.com/chopratejas/headroom",
+      "target_layer": "user_level",
+      "upstream_is_codex_native": false
+    }
+  ],
+  "dedupe": {
+    "open-design-ref8": "reference6:open-design"
+  },
+  "generated_policy": {
+    "all_non_codex_upstreams_require_codex_fork_or_adapter": true,
+    "browserbase_policy": "disabled_by_user_not_part_of_reference8",
+    "codex_config_policy": {
+      "copy_secret_values": false,
+      "mutate_config_toml": false,
+      "reuse_mode": "env_key_name_only"
+    },
+    "expected_layer_counts": {
+      "project_template_general": 5,
+      "project_template_general_2": 3,
+      "user_level": 8
+    },
+    "external_missing_may_be_provision_recorded_without_live_executed_claim": true,
+    "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+    "raw_upstream_install_counts_as_codex_live_executed": false,
+    "remote_publication_allowed": false,
+    "source_reference_only_counts_as_codex_live_executed": false
+  },
+  "manifest_id": "reference8_capability_sources",
+  "schema_version": 1,
+  "source_file": "reference_files/8.md"
+}

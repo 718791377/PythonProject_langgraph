@@ -1,6 +1,20 @@
+---
+doc_id: one_person_company_inventory_map
+lang: zh-CN
+doc_class: product_lifecycle
+status: draft
+canonical_path: docs_bilingual/product_lifecycle/one_person_company_inventory_map.md
+zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md
+translation_of: docs_bilingual/product_lifecycle/one_person_company_inventory_map.md
+---
+
 # 一人公司清单地图
 
-本文是下游一人公司操作系统目标的简明规范清单。
+本文是下游一人公司操作系统目标的简明规范清单。叙事型白皮书见 `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.zh-CN.md`。专属北极星见 `docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.zh-CN.md`。
+
+## Fresh Source Evidence
+
+本地图以 Stage B fresh extraction 运行 `one-person-company-pmi-refresh-stageb-20260619`（`2026-06-18T18:37:58Z`）作为 `Business Management/` 与 `PMP/` 的当前证据边界。精确清单数量来自 `Business Management/` 下本地一人公司架构笔记全文读取（manifest 中 18,544 字符）。Business Management 来源解释一人公司运营原则；PMP 来源提供过程组、PMO、项目集、项目组合、敏捷与裁剪纪律。当前生命周期 Markdown 文件也通过 `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` 作为全文文档重新读取（26 个文件、310,349 个字符，全部 `ok`）。
 
 ## 规范清单
 
@@ -24,22 +38,22 @@
 | PMP 源 | 过程组运行门 | 它们提供统一 gate 模型，用来驱动商业工作的规划、执行、控制和收尾 |
 | `docs_bilingual/product_lifecycle/` 既有文档 | 平台到项目的边界对齐 | 它们保证本目标被定位为下游业务架构，而不是平台仓库的持久真相 |
 
-## 12 个主干层级
+## 12 个主干层级与 I/T/O
 
-| # | 层级 | 核心问题 | 主要 owner 面 |
-| ---: | --- | --- | --- |
-| 0 | 认知叙事 | 为什么公司应该存在 | 公司 thesis 与愿景 |
-| 1 | 商业 | 如何赚钱并保持可持续 | 商业模式与财务模型 |
-| 2 | 市场 | 哪些用户和细分最重要 | 市场地图与用户分层 |
-| 3 | 战略 | 狭窄胜利条件是什么 | 战略与年度计划 |
-| 4 | 指标 | 什么证据决定下一步 | 北极星、漏斗、埋点 |
-| 5 | 产品 | 到底卖什么、交付什么 | offer、PRD、服务蓝图 |
-| 6 | 技术 | 哪些自动化和系统支撑交付 | 技术栈与自动化地图 |
-| 7 | 组织 | 创始人、Agent、合作方如何分工 | 角色图与 Agent 治理 |
-| 8 | 执行 | 当前如何把事做出来 | 季度计划与交付计划 |
-| 9 | 增长 | 需求如何形成复利 | 增长模型与渠道地图 |
-| 10 | 运营 | 交付、支持、续费如何保持稳定 | 运营手册与客户成功 |
-| 11 | 复盘 | 学习如何更新公司系统 | 月复盘与学习日志 |
+| # | 层级 | 核心问题 | 输入 | 工具与技术 | 输出 |
+| ---: | --- | --- | --- | --- | --- |
+| 0 | 认知叙事 | 公司为什么应该存在？ | 创始人 thesis、客户痛点、个人约束 | 叙事写作、战略诊断、非目标 framing | 公司 thesis、愿景、非目标 |
+| 1 | 商业 | 如何赚钱并保持可持续？ | offer、成本、定价、runway | 商业模式设计、单位经济、现金流复核 | 商业模式、财务模型、现金流 |
+| 2 | 市场 | 哪些用户和细分最重要？ | 访谈、替代方案、渠道、竞争对手 | 分层、定位、访谈综合 | 市场地图、用户细分、研究仓库 |
+| 3 | 战略 | 狭窄胜利条件是什么？ | 叙事、商业模式、市场证据 | 战略内核、取舍复核、规划节奏 | 战略、年度计划、季度计划 |
+| 4 | 指标 | 什么证据决定下一步？ | 北极星候选、漏斗、财务/支持信号 | OMTM、OKR、tracking plan、护栏设计 | 北极星、指标契约、实验日志 |
+| 5 | 产品 | 到底卖什么、交付什么？ | 客户任务、offer 承诺、验收证据 | 产品发现、PRD、服务蓝图、MVP 切片 | offer、PRD、服务蓝图、路线图 |
+| 6 | 技术 | 哪些自动化和系统支持交付？ | 产品承诺、数据/安全需求、支持负载 | 架构审查、自动化映射、供应商复核 | 技术栈、自动化地图、依赖地图 |
+| 7 | 组织 | 创始人、Agent、合作方如何分工？ | 角色负载、Agent 候选、权限 | 责任映射、Agent 治理、审批门 | 角色图、Agent 治理、权限 |
+| 8 | 执行 | 当前如何把事做出来？ | 已批准计划、容量、风险、验证计划 | 过程组、工作切片、Kanban/周期 planning | 交付计划、验证证据、发布候选 |
+| 9 | 增长 | 需求如何形成复利？ | 细分证据、渠道信号、内容资产 | 渠道测试、增长循环设计、销售手册迭代 | 增长模型、渠道地图、销售手册 |
+| 10 | 运营 | 履约、支持、留存如何稳定？ | 客户承诺、支持工单、SLA 需求 | 运营手册、支持分流、客户成功复核 | 运营手册、支持政策、FAQ |
+| 11 | 复盘 | 学习如何更新公司系统？ | 指标、决策、事故、反馈 | 月复盘、经验综合、下周期优先级排序 | 月复盘、学习日志、政策更新 |
 
 ## 5 个部门与 30 个责任域
 
@@ -100,13 +114,13 @@
 
 | 文档族 | 数量 | 规范文档 |
 | --- | ---: | --- |
-| 公司战略 | 6 | `company-thesis.md`、`vision.md`、`strategy.md`、`annual-plan.md`、`quarterly-plan.md`、`decision-log.md` |
+| 公司战略 | 6 | `thesis.md`、`vision.md`、`strategy.md`、`annual-plan.md`、`quarterly-plan.md`、`decision-log.md` |
 | 商业与财务 | 6 | `business-model.md`、`offer.md`、`pricing.md`、`unit-economics.md`、`finance-model.md`、`cashflow.md` |
 | 市场与用户 | 6 | `market-map.md`、`user-segments.md`、`competitor-analysis.md`、`alternative-solutions.md`、`research-repository.md`、`interview-guide.md` |
 | 产品与服务 | 6 | `product-strategy.md`、`prd.md`、`service-blueprint.md`、`onboarding.md`、`customer-journey.md`、`roadmap.md` |
-| 指标与数据 | 6 | `metrics.yaml`、`north-star.md`、`funnel-dashboard.md`、`tracking-plan.md`、`data-dictionary.md`、`experiment-log.md` |
+| 指标与数据 | 6 | `metrics.md`、`north-star.md`、`funnel-dashboard.md`、`tracking-plan.md`、`data-dictionary.md`、`experiment-log.md` |
 | 增长与销售 | 6 | `growth-model.md`、`channel-map.md`、`sales-playbook.md`、`landing-page.md`、`email-sequences.md`、`content-calendar.md` |
-| 运营与客户成功 | 6 | `ops-playbook.md`、`customer-success-playbook.md`、`support-policy.md`、`faq.md`、`refund-policy.md`、`feedback-triage.md` |
+| 运营与客户成功 | 6 | `ops-playbook.md`、`customer-success-playbook.md`、`support-playbook.md`、`faq.md`、`refund-policy.md`、`feedback-triage.md` |
 | 技术与自动化 | 6 | `tech-stack.md`、`automation-map.md`、`tool-stack.md`、`vendor-register.md`、`api-dependency-map.md`、`backup-restore.md` |
 | 治理与风险 | 6 | `legal-checklist.md`、`terms-of-service.md`、`privacy-policy.md`、`contract-template.md`、`risk-register.md`、`compliance-checklist.md` |
 | Agent 与知识 | 6 | `agent-governance.md`、`agent-role-map.md`、`agent-permissions.md`、`human-review-checklist.md`、`monthly-review.md`、`learning-log.md` |
@@ -151,7 +165,7 @@
 
 ## 12 个最小启动文档
 
-1. `company-thesis.md` - 说明公司为什么存在，以及正在验证什么核心信念。
+1. `thesis.md` - 说明公司为什么存在，以及正在验证什么核心信念。
 2. `business-model.md` - 定义公司如何创造、交付并获取价值。
 3. `offer.md` - 描述第一个付费或已验证 offer。
 4. `pricing.md` - 记录定价逻辑、套餐和折扣边界。
@@ -159,10 +173,22 @@
 6. `growth-model.md` - 解释第一条需求与采用增长循环。
 7. `finance-model.md` - 跟踪成本、现金流假设和 runway 约束。
 8. `ops-playbook.md` - 定义交付、支持和运行节奏。
-9. `metrics.yaml` - 提供机器可读指标契约。
+9. `metrics.md` - 提供机器可读指标契约。
 10. `risk-register.md` - 记录风险、触发器、响应和 owner。
 11. `agent-governance.md` - 定义 AI Agent 角色、权限和人工评审。
 12. `monthly-review.md` - 沉淀学习、决策和下一周期更新。
+
+
+## 分层级输入、工具与技术、输出
+
+一人公司可以保持轻量，但每个被激活的层级仍需要显式 I/T/O 循环，确保商业工作可检查。
+
+| 层级组 | 输入 | 工具与技术 | 输出 |
+| --- | --- | --- | --- |
+| 0-2 叙事、商业、市场 | 用户问题、来源证据、stakeholder 信号、市场/采用假设 | 战略诊断、PR/FAQ、访谈综合、定位、启动门 | 白皮书更新、商业边界、市场/采用假设、初始风险 |
+| 3-5 战略、指标、产品 | 北极星、OKR、生命周期裁剪决定、机会证据 | 指导方针设计、OMTM/护栏设计、产品发现、规划门 | 战略计划、指标契约、PRD 或发布切片 brief、验收标准 |
+| 6-8 技术、组织、执行 | 架构约束、角色/Agent map、实施计划、worktree ownership | 架构审查、威胁/风险审查、OpenSpec、subagent/durable-team 阈值检查、执行门 | 技术设计、责任矩阵、已提交变更、验证证据 |
+| 9-11 增长、运营、复盘 | 发布证据、使用/采用信号、事故、经验教训 | 监控与控制、项目组合 review、PMO 式治理服务、收尾门 | 发布说明、运行手册、复盘、归档与下一周期决定 |
 
 ## 过程组运行门
 
@@ -177,3 +203,28 @@
 ## 使用规则
 
 当下游业务项目需要一个规范操作系统目标时，使用本地图。先从 12 个最小启动文档开始，只有在客户证据、收入暴露、交付复杂度或治理风险要求更深覆盖时，再扩展到 60 文档系统。
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- One-person company boundary: the one-person company owns business truth for customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, and business learning; embedded Codex supplies execution evidence and automation support.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

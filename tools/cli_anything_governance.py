@@ -36,7 +36,7 @@ DEFAULT_RECEIPT_DIR = Path(
         str(Path.home() / ".codex" / "state" / "tool-updates"),
     )
 )
-ALLOWED_STATUSES = {"reference-only", "on-demand", "disabled"}
+ALLOWED_STATUSES = {"reference-only", "on-demand", "disabled", "installed-user-level"}
 UNPINNED_REFS = {"", "latest", "head", "main", "master", "trunk"}
 REQUIRED_RECEIPT_FIELDS = {
     "schema_version",
@@ -56,9 +56,14 @@ REQUIRED_RECEIPT_FIELDS = {
     "last_updated_at",
     "adapter_generation_only",
     "hard_loads_skills",
+    "install_performed",
+    "network_fetch_performed",
+    "user_level_config_mutated",
+    "wxwork_cli_installed",
+    "wxwork_cli_controlled",
 }
 
-WINDOWS_PATH_RE = re.compile(r"[A-Za-z]:[\\/][^\s\"'<>|?]+")
+WINDOWS_PATH_RE = re.compile(r"(?<![A-Za-z])\b[A-Za-z]:[\\/][^\s\"'<>|?]+")
 UNC_PATH_RE = re.compile(r"\\\\[^\s\"'<>|?]+(?:\\[^\s\"'<>|?]+)+")
 POSIX_PRIVATE_PATH_RE = re.compile(r"(?<![\w.-])/(?:Users|home|private|var|tmp|mnt|Volumes|builds)/[^\s\"'<>|?]+")
 SECRET_RE = re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|secret|cookie|password)\s*[:=]\s*([^\s,;\"']+)")
@@ -94,6 +99,8 @@ def is_pinned_ref(value: Any) -> bool:
         return False
     if normalized.startswith(("refs/heads/", "origin/", "remotes/")):
         return False
+    if re.search(r"[@:/](?:latest|head|main|master|trunk)(?:[;,\s]|$)", normalized):
+        return False
     return True
 
 
@@ -122,6 +129,11 @@ def receipt_summary(receipt: dict[str, Any]) -> dict[str, Any]:
         "rollback_pointer_hash": stable_hash(receipt.get("rollback_pointer")),
         "adapter_generation_only": receipt.get("adapter_generation_only"),
         "hard_loads_skills": receipt.get("hard_loads_skills"),
+        "install_performed": receipt.get("install_performed"),
+        "network_fetch_performed": receipt.get("network_fetch_performed"),
+        "user_level_config_mutated": receipt.get("user_level_config_mutated"),
+        "wxwork_cli_installed": receipt.get("wxwork_cli_installed"),
+        "wxwork_cli_controlled": receipt.get("wxwork_cli_controlled"),
         "last_updated_at": receipt.get("last_updated_at"),
         "receipt_id": receipt.get("receipt_id", ""),
     }
@@ -153,7 +165,7 @@ def validate_receipt(receipt: dict[str, Any]) -> list[str]:
     if receipt.get("owner_lane") != OWNER_LANE:
         blockers.append("owner_lane_must_be_cli_anything")
     if receipt.get("status") not in ALLOWED_STATUSES:
-        blockers.append("status_must_remain_reference_only_on_demand_or_disabled")
+        blockers.append("status_must_remain_reference_only_on_demand_disabled_or_installed_user_level")
     if receipt.get("source_url") not in EXPECTED_SOURCE_URLS:
         blockers.append("source_url_must_match_expected_cli_anything_source")
     if not is_pinned_ref(receipt.get("pinned_ref")):
@@ -177,6 +189,23 @@ def validate_receipt(receipt: dict[str, Any]) -> list[str]:
         blockers.append("adapter_generation_only_must_be_true")
     if receipt.get("hard_loads_skills") is not False:
         blockers.append("hard_load_skills_must_be_false")
+    if receipt.get("wxwork_cli_installed") is not False:
+        blockers.append("wxwork_cli_installed_must_be_false_in_cli_anything_lane")
+    if receipt.get("wxwork_cli_controlled") is not False:
+        blockers.append("wxwork_cli_controlled_must_be_false_in_cli_anything_lane")
+    if receipt.get("status") == "installed-user-level":
+        if receipt.get("install_performed") is not True:
+            blockers.append("installed_user_level_install_performed_must_be_true")
+        for field, label in (
+            ("install_path", "install_path"),
+            ("wrapper_path", "wrapper_path"),
+            ("state_path", "state_path"),
+        ):
+            value = receipt.get(field)
+            if not isinstance(value, str) or not value.strip():
+                continue
+            if not Path(value).exists():
+                blockers.append(f"installed_user_level_{label}_must_exist")
     return blockers
 
 
@@ -192,6 +221,9 @@ def build_receipt(
     rollback_pointer: Any,
     status: str,
     hard_load_skills: bool,
+    install_performed: bool = False,
+    network_fetch_performed: bool = False,
+    user_level_config_mutated: bool = False,
     updater_command: str | None = None,
     previous_receipt_id: str | None = None,
 ) -> dict[str, Any]:
@@ -217,9 +249,11 @@ def build_receipt(
         "last_updated_at": timestamp,
         "adapter_generation_only": True,
         "hard_loads_skills": bool(hard_load_skills),
-        "install_performed": False,
-        "network_fetch_performed": False,
-        "user_level_config_mutated": False,
+        "install_performed": bool(install_performed),
+        "network_fetch_performed": bool(network_fetch_performed),
+        "user_level_config_mutated": bool(user_level_config_mutated),
+        "wxwork_cli_installed": False,
+        "wxwork_cli_controlled": False,
         "previous_receipt_id": previous_receipt_id or "",
     }
     receipt["receipt_id"] = stable_hash(
@@ -244,15 +278,21 @@ def write_receipt(receipt_dir: Path, receipt: dict[str, Any], filename: str) -> 
     return path
 
 
-def safety_payload() -> dict[str, Any]:
+def safety_payload(receipt: dict[str, Any] | None = None) -> dict[str, Any]:
+    installs_cli_anything = bool(receipt and receipt.get("install_performed") is True)
+    network_fetch_performed = bool(receipt and receipt.get("network_fetch_performed") is True)
+    user_level_config_mutated = bool(receipt and receipt.get("user_level_config_mutated") is True)
     return {
         "governance_receipt_only": True,
         "adapter_generation_boundary_only": True,
-        "installs_cli_anything": False,
+        "installs_cli_anything": installs_cli_anything,
+        "installs_wxwork_cli": False,
+        "controls_wxwork": False,
         "updates_cli_anything": False,
         "runs_cli_anything": False,
-        "network_fetch_performed": False,
+        "network_fetch_performed": network_fetch_performed,
         "mutates_user_level_codex_config": False,
+        "user_level_config_mutated": user_level_config_mutated,
         "hard_loads_skills": False,
         "raw_private_paths_in_output": False,
         "rollback_ready_receipt_required": True,
@@ -281,7 +321,7 @@ def command_validate(args: argparse.Namespace) -> dict[str, Any]:
         "receipt_path_hash": stable_hash(args.receipt),
         "summary": receipt_summary(receipt),
         "blockers": blockers,
-        "safety": safety_payload(),
+        "safety": safety_payload(receipt),
     }
 
 
@@ -297,6 +337,9 @@ def command_install_record(args: argparse.Namespace) -> dict[str, Any]:
         rollback_pointer=args.rollback_pointer,
         status=args.status,
         hard_load_skills=args.hard_load_skills,
+        install_performed=args.install_performed,
+        network_fetch_performed=args.network_fetch_performed,
+        user_level_config_mutated=args.user_level_config_mutated,
     )
     blockers = validate_receipt(receipt)
     if blockers:
@@ -307,7 +350,7 @@ def command_install_record(args: argparse.Namespace) -> dict[str, Any]:
             "action": "install-record",
             "receipt_written": False,
             "blockers": blockers,
-            "safety": safety_payload(),
+            "safety": safety_payload(receipt),
         }
     path = write_receipt(Path(args.receipt_dir or DEFAULT_RECEIPT_DIR), receipt, "cli-anything.lock.json")
     return {
@@ -319,7 +362,7 @@ def command_install_record(args: argparse.Namespace) -> dict[str, Any]:
         "receipt_path_hash": stable_hash(path),
         "summary": receipt_summary(receipt),
         "blockers": [],
-        "safety": safety_payload(),
+        "safety": safety_payload(receipt),
     }
 
 
@@ -468,6 +511,9 @@ def main(argv: list[str] | None = None) -> int:
     install.add_argument("--rollback-pointer", required=True)
     install.add_argument("--status", default="reference-only")
     install.add_argument("--hard-load-skills", action="store_true")
+    install.add_argument("--install-performed", action="store_true")
+    install.add_argument("--network-fetch-performed", action="store_true")
+    install.add_argument("--user-level-config-mutated", action="store_true")
     install.add_argument("--json", action="store_true")
 
     update_plan = sub.add_parser("update-plan", help="Plan a pinned update and rollback pointer without fetching or switching pins.")

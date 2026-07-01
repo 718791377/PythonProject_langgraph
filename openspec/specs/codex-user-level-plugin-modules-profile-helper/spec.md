@@ -1,7 +1,7 @@
 # codex-user-level-plugin-modules-profile-helper Specification
 
 ## Purpose
-Define the user-level `plugin-modules` skill and profile helper contract for task-scoped plugin soft-loading, backup-protected hard-load profile switching, and explicit installation into the Codex user skills directory.
+Define the user-level `plugin-modules` skill and profile helper contract for task-scoped plugin soft-loading, backup-protected hard-load profile switching, advisory Skills2CLI profile suggestions, scenario/task-module routing, and explicit installation into the Codex user skills directory.
 ## Requirements
 ### Requirement: Plugin modules skill SHALL provide a unified module entrypoint
 
@@ -24,7 +24,7 @@ The skill SHALL expose a concise metadata description and SHALL route the operat
 
 ### Requirement: Plugin modules registry SHALL define task-scoped module families
 
-The plugin modules skill SHALL include a JSON registry defining the initial module families `core-dev`, `web-saas`, `company-ops`, `market-research`, `customer-comms`, `creative-content`, and `full`.
+The plugin modules skill SHALL include a JSON registry defining the initial module families `core-dev`, `web-saas`, `company-ops`, `market-research`, `customer-comms`, `creative-content`, `pyside6-gui`, and `full`.
 
 Each module SHALL define a description, plugin family list, soft-load skill document hints, and hard-load plugin enablement behavior.
 
@@ -78,3 +78,254 @@ Hard-load mode SHALL edit only `[plugins."..."] enabled` values and SHALL preser
 - **WHEN** `set_plugin_profile.ps1 -RestoreLatest -Apply` runs
 - **THEN** it SHALL restore the latest plugin-modules profile backup to `config.toml`
 - **AND** it SHALL print restart/resume instructions
+
+### Requirement: Scenario-based profile routing metadata
+
+The plugin-modules profile registry SHALL preserve existing top-level canonical profile IDs while allowing each non-`full` profile, each scenario profile, and each task module to declare scenario routing metadata. The primary field name SHALL be `scene_description`; `scenario_description` MAY be retained as a compatibility alias for existing consumers.
+
+Each routable entry SHALL fail closed unless it has at least one non-empty positive scenario source: `scene_description` plus either `route_when` or `positive_examples`. Negative examples are mandatory for ordinary routing entries and SHALL be used as exclusion or penalty evidence during suggestion.
+
+#### Scenario: Non-full profile declares routing fields
+
+- **GIVEN** a non-`full` top-level profile exists in `profiles.json`
+- **WHEN** the profile routing checker validates the registry
+- **THEN** the profile has `scene_description`, the compatibility alias `scenario_description`, positive routing terms or examples, negative examples, ranking signal notes, and at least one task module unless explicitly marked repo-local-only with a justified exception.
+
+#### Scenario: Positive scenario quality fails closed
+
+- **GIVEN** a top-level profile, scenario profile, or task module has no non-empty `scene_description` and no `route_when` or `positive_examples`
+- **WHEN** `check_skills2cli_profile_routing.py --json` validates the registry
+- **THEN** the checker fails and reports the qualified entry name and the missing positive scenario evidence.
+
+### Requirement: Task modules provide layered routing
+
+The profile registry SHALL support task modules below top-level profiles so current-session soft-load can target a focused capability block. A task module's canonical logical identifier SHALL be `qualified_name=<profile>.<task_module>`. The local task-module name SHALL be valid only within its owning top-level profile.
+
+Task modules SHALL be soft-load guidance only. They SHALL NOT define independent hard-load behavior, SHALL NOT be accepted as hard-load targets, and SHALL inherit parent hints only when an explicit inheritance marker is present.
+
+#### Scenario: Task module can be soft-loaded
+
+- **GIVEN** a registry entry defines `web-saas.mobile-app`
+- **WHEN** `load_module.ps1 web-saas.mobile-app -Json` is executed
+- **THEN** the output contains the task module's focused plugin hints, skill document hints, load policy, routing explanation, `entry_kind=task_module`, `target_profile=web-saas`, and `task_module=mobile-app`.
+
+#### Scenario: Task module identity is first class
+
+- **GIVEN** two top-level profiles both define a local task module named `browser-verification`
+- **WHEN** the registry contract collects task-module routes
+- **THEN** each module is reported by its unique `qualified_name` and no route is keyed only by the local task-module name.
+
+### Requirement: Hard-load remains top-level only
+
+The hard-load profile helper SHALL fail closed when a nested task module or scenario profile is provided as a hard-load target.
+
+#### Scenario: Nested module hard-load is rejected
+
+- **GIVEN** `web-saas.mobile-app` is a task module
+- **WHEN** `set_plugin_profile.ps1 web-saas.mobile-app -Json` is executed
+- **THEN** the command reports that task modules are soft-load guidance only and hard-load applies only to top-level profiles.
+
+#### Scenario: Scenario profile hard-load is rejected
+
+- **GIVEN** `repo-dev` is a scenario alias that resolves to `core-dev`
+- **WHEN** `set_plugin_profile.ps1 repo-dev -Json` is executed
+- **THEN** the command fails closed and reports the canonical preview command for `core-dev` instead of applying or previewing a scenario alias as an independent profile.
+
+### Requirement: Profile suggestion is advisory and explainable
+
+`skills2cli.py` SHALL provide an advisory profile suggestion command that explains profile matches, task module matches, excluded candidates, and soft/hard-load boundaries without mutating configuration.
+
+Suggestion output SHALL include behavior evidence flags showing `mutates_config=false`, `edits_plugin_cache=false`, `profile_apply_performed=false`, and `approval_required_for_apply=true`. These flags SHALL be backed by tests that snapshot relevant config/cache state before and after representative suggestion and soft-load commands.
+
+#### Scenario: Ordinary task does not select full
+
+- **GIVEN** the query is `Expo mobile build and Sentry observability`
+- **WHEN** `skills2cli.py profile suggest --query ... --json` is executed
+- **THEN** the top recommendation is not `full`, includes `web-saas`, includes profile-level `plugin_hints` and `skill_doc_hints`, includes `mobile-app` and `observability` task modules, and reports `mutates_config=false`.
+
+#### Scenario: Suggestion and soft-load do not apply profiles
+
+- **GIVEN** a test fixture contains a user-level `config.toml` and plugin cache marker files
+- **WHEN** `skills2cli.py profile suggest --query ... --json` and `load_module.ps1 core-dev.security-review -Json` run against the fixture
+- **THEN** the fixture hashes are unchanged and the outputs report that no profile apply, config edit, or plugin-cache edit occurred.
+
+### Requirement: Known plugins are not reachable only through full
+
+The registry checker SHALL fail when a known plugin is reachable only through `full` without an explicit allowlist reason.
+
+#### Scenario: Former only-full plugins have task routes
+
+- **GIVEN** the known plugin list includes BioRender, ChatGPT Apps, Cloudinary, Expo, Fireflies, Linear, and Temporal
+- **WHEN** the profile routing checker validates the registry
+- **THEN** each plugin has a non-`full` top-level profile or task-module route, unless an explicit allowlist reason says it is troubleshooting-only.
+
+### Requirement: Shared profile-routing contract remains centralized and bounded
+
+The Python runtime and checker surfaces SHALL share stable registry paths, canonical profile IDs, required routing-field names, profile/task hint accessors, plugin-coverage collection, and explicit `full` troubleshooting trigger aliases through one shared contract module. That contract module SHALL NOT own scoring behavior, runtime ranking weights, or the checker black-box smoke matrix.
+
+The shared contract SHALL define orthogonal fields for `routing_scope`, `activation_scope`, `governance_scope`, and `evidence_scope`. Compatibility `load_policy` values SHALL map consistently to these orthogonal fields.
+
+#### Scenario: Contract module does not couple scoring to checker smoke
+
+- **GIVEN** the shared contract module is imported by `skills2cli.py`, `check_skills2cli_profile_routing.py`, and `check_plugin_modules_skill.py`
+- **WHEN** profile suggestion scoring or checker smoke cases are changed
+- **THEN** stable schema/path/accessor constants may be reused, but runtime scoring and checker expected examples remain separately reviewable.
+
+#### Scenario: Orthogonal routing fields are present
+
+- **GIVEN** a profile or task module declares compatibility `load_policy`
+- **WHEN** the registry checker validates the entry
+- **THEN** the entry also declares `routing_scope`, `activation_scope`, `governance_scope`, and `evidence_scope`, and the checker verifies the compatibility mapping.
+
+#### Scenario: Installed skills2cli carries the shared contract module
+
+- **GIVEN** the user-level `skills2cli` facade is installed or simulated under `CODEX_HOME/tools/skills2cli`
+- **WHEN** the generated `skills2cli` wrapper runs `profile suggest --query ... --json`
+- **THEN** the installed helper directory contains `skills2cli_profile_registry_contract.py`, install metadata lists it as a support file, and install checks report the support file presence so the smoke fails closed if it is missing.
+
+### Requirement: Profile suggestion matrix covers ordinary profiles and explicit full troubleshooting
+
+The profile routing checker SHALL run a black-box `skills2cli.py profile suggest` matrix that covers every ordinary profile family and explicit all-plugin troubleshooting requests. Matrix rows SHALL preserve preview-only safety flags and ordinary rows SHALL NOT select `full` as top recommendation.
+
+`full` and the `troubleshooting` scenario SHALL be explicit-only. When `explicit_full_request=false`, `full` SHALL be absent from selected recommendations and SHALL appear only in `excluded_candidates` with an eligibility reason. When `explicit_full_request=true`, selecting `full` SHALL include `why_full_selected` with one of `explicit_all_plugins`, `explicit_broad_discovery`, or `explicit_missing_plugin_capability`.
+
+#### Scenario: Matrix distinguishes ordinary routing from explicit full
+
+- **GIVEN** the matrix includes ordinary tasks for repository development, browser verification, web/SaaS, customer communications, company operations, market research, creative content, and PySide6 GUI work
+- **WHEN** the checker runs the profile suggestion matrix
+- **THEN** ordinary rows select non-`full` target profiles, explicit English or Chinese all-plugin troubleshooting rows may select `full`, and every row reports `mutates_config=false`, `edits_plugin_cache=false`, `profile_apply_performed=false`, and `approval_required_for_apply=true`.
+
+#### Scenario: Full is excluded unless explicitly requested
+
+- **GIVEN** a query has broad wording but does not explicitly ask for all plugins, full profile, or missing-plugin troubleshooting
+- **WHEN** `skills2cli.py profile suggest --query ... --json` runs
+- **THEN** `full` is not selected, `explicit_full_request=false`, and `excluded_candidates` includes `full` with an explicit-only eligibility reason.
+
+### Requirement: Recall/rerank is explainable and fail-closed
+
+Profile suggestion SHALL separate recall from rerank. Recall MAY collect candidate top-level profiles, scenario profiles, and task modules from scenario fields, query terms, repository/task context, and audit strong evidence. Rerank MAY boost candidates with strong audit evidence and MAY penalize oversized or warning-pressure-heavy candidates, but it SHALL NOT override hard safety gates such as explicit-only `full` eligibility or profile apply approval.
+
+#### Scenario: Rerank cannot bypass eligibility
+
+- **GIVEN** audit evidence or broad plugin coverage would otherwise boost `full`
+- **WHEN** `explicit_full_request=false`
+- **THEN** rerank keeps `full` excluded, records the warning-pressure or eligibility reason, and selects the highest-ranked eligible non-`full` profile.
+
+#### Scenario: Rerank evidence is visible
+
+- **GIVEN** a candidate profile receives audit-evidence boost or warning-pressure penalty
+- **WHEN** `skills2cli.py profile suggest --query ... --json` runs
+- **THEN** the output includes sanitized evidence source labels, rank factors, excluded candidates when applicable, and no raw transcript or private path content.
+
+### Requirement: Checker JSON output is UTF-8 stable
+
+Profile-routing checkers that emit JSON SHALL write UTF-8 bytes directly so Chinese queries and evidence text are machine-readable on Windows terminals without relying on the process default console encoding.
+
+#### Scenario: Chinese full troubleshooting matrix row is JSON-decodable
+
+- **GIVEN** the profile suggestion matrix includes the Chinese query represented by codepoints `U+6392 U+969C U+6240 U+6709 U+63D2 U+4EF6`
+- **WHEN** `check_skills2cli_profile_routing.py --json` is executed on Windows
+- **THEN** the JSON stream is UTF-8 decodable by downstream tests and includes the Chinese matrix row without mojibake or replacement characters.
+
+### Requirement: Scenario profiles resolve to canonical target profiles
+
+Scenario profiles SHALL be advisory recommendation entries that resolve to an existing canonical `target_profile`; they SHALL NOT replace audit candidate or hard-load target semantics.
+
+#### Scenario: Scenario suggestion preserves target profile semantics
+
+- **GIVEN** a scenario profile recommends security review for repository work
+- **WHEN** `skills2cli.py profile suggest --query ... --json` is executed
+- **THEN** the output includes both a scenario identifier and `target_profile=core-dev`, and reports that profile apply was not performed.
+
+### Requirement: Installed artifact drift reporting covers the full routing surface
+
+The installed-copy checker SHALL report drift for every installed artifact needed by Skills2CLI profile routing, not only `profiles.json`. The report SHALL cover repository and installed copies of `skills2cli.py`, `skills2cli_profile_registry_contract.py`, and `profiles.json`.
+
+#### Scenario: Installed artifact drift is visible
+
+- **GIVEN** an installed user-level `skills2cli` helper is missing `skills2cli_profile_registry_contract.py` or has a different `profiles.json` hash from repo source
+- **WHEN** `check_plugin_modules_skill.py --json` runs with installed-copy reporting enabled
+- **THEN** the output names the drifting artifact, reports repo and installed paths, and does not treat the installed copy as the source of truth.
+
+### Requirement: Hidden skills are discoverable without global restore
+
+`skills2cli` SHALL provide a hidden-skill command surface that can discover standalone user skills moved into the visibility-disabled library without restoring those skills to the default model-visible skill list.
+
+#### Scenario: Hidden library can be indexed
+
+- **GIVEN** `CODEX_HOME/state/skills2cli/visibility-disabled` contains hidden skill directories
+- **WHEN** `skills2cli hidden index --json` is executed
+- **THEN** the output reports hidden skill records with `visibility_state=hidden`
+- **AND** the output reports `global_restore_performed=false`, `mutates_config=false`, `edits_plugin_cache=false`, and `profile_apply_performed=false`.
+
+#### Scenario: Current visible skills and hidden skills are searched together
+
+- **GIVEN** a query matches either a current visible skill or a hidden skill
+- **WHEN** `skills2cli hidden search <query> --json` is executed
+- **THEN** the output returns compact candidates from both sources
+- **AND** each candidate states whether it is `visible` or `hidden`.
+
+### Requirement: Hidden skill soft-load reads exactly one selected skill
+
+`skills2cli hidden load` SHALL read a single selected hidden `SKILL.md` into the command output without moving the skill directory or making it globally visible.
+
+#### Scenario: Hidden load is read-only
+
+- **GIVEN** a hidden skill id resolves to one `SKILL.md`
+- **WHEN** `skills2cli hidden load <hidden_skill_id> --json` is executed
+- **THEN** the output includes that skill body or a bounded chunk
+- **AND** no hidden skill directory is moved to the visible skills directory
+- **AND** the output reports `global_restore_performed=false` and `mutates_config=false`.
+
+#### Scenario: Hidden load records usage evidence
+
+- **GIVEN** `skills2cli hidden load <hidden_skill_id> --json` succeeds
+- **WHEN** the command completes
+- **THEN** a JSONL usage event is appended under `CODEX_HOME/state/skills2cli/usage-events.jsonl`
+- **AND** the event contains a timestamp, event type, hidden skill id, frontmatter name, content hash, byte count, and `raw_paths_retained=false`.
+
+### Requirement: Hidden aliases resolve known task names
+
+The hidden-skill search surface SHALL support deterministic aliases for known task terms that do not match installed skill names exactly.
+
+#### Scenario: Grill-me alias resolves hidden upstream adapter
+
+- **GIVEN** the hidden library contains `mattpocock-skills-skills-productivity-grill-me-skill-md`
+- **WHEN** `skills2cli hidden search grill-me --json` is executed
+- **THEN** that hidden skill is returned as a high-confidence candidate.
+
+#### Scenario: Stop-slop alias resolves AI slop cleaner
+
+- **GIVEN** the hidden library contains `ai-slop-cleaner`
+- **WHEN** `skills2cli hidden search stop-slop --json` is executed
+- **THEN** `ai-slop-cleaner` is returned as an alias candidate
+- **AND** the output explains that `stop-slop` is an alias rather than the installed skill name.
+
+### Requirement: Visibility recommendations are evidence-driven and manual-only
+
+`skills2cli visibility recommend` SHALL classify standalone user skills into promote, demote, and keep-soft-load buckets using usage evidence. Applying recommendations SHALL require an explicit user/operator command and SHALL NOT run automatically.
+
+#### Scenario: Recommendations are generated from usage events
+
+- **GIVEN** hidden skill usage events exist for a selected time window
+- **WHEN** `skills2cli visibility recommend --days 30 --json` is executed
+- **THEN** the output contains promote candidates for high-frequency hidden loads, keep-soft-load candidates for low-frequency hidden loads, and demote candidates for unused visible standalone user skills when evidence is sufficient.
+
+#### Scenario: Apply recommendations requires explicit command
+
+- **GIVEN** a recommendation receipt exists
+- **WHEN** no operator runs `skills2cli visibility apply-recommendations --receipt <id> --apply --operator-confirmation --json`
+- **THEN** no skill directories are moved.
+
+#### Scenario: Apply recommendations is daily-limited and rollback-backed
+
+- **GIVEN** a recommendation receipt exists and the operator invokes `apply-recommendations` with the required apply flags
+- **WHEN** no apply has run on the current local day
+- **THEN** at most three standalone user skills are moved
+- **AND** a rollback receipt is written before moving and updated after each move.
+
+#### Scenario: Second daily apply fails closed
+
+- **GIVEN** `apply-recommendations` has already completed or partially completed on the current local day
+- **WHEN** it is invoked again on the same local day
+- **THEN** it fails closed and moves no additional skills.

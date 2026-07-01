@@ -1,6 +1,20 @@
+---
+doc_id: codex_platform_inventory_map
+lang: zh-CN
+doc_class: product_lifecycle
+status: draft
+canonical_path: docs_bilingual/product_lifecycle/codex_platform_inventory_map.md
+zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_inventory_map.zh-CN.md
+translation_of: docs_bilingual/product_lifecycle/codex_platform_inventory_map.md
+---
+
 # Codex 平台清单地图
 
 本文是本仓库目标 Codex 平台架构的简明规范清单。
+
+## Fresh Source Evidence
+
+本地图以 2026-06-16 fresh extraction 运行 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616`（`2026-06-15T17:33:52Z`）为证据边界。精确清单数量来自对 `Business Management/架构 1：Codex CLI 个人开发者生产级持久化团队.md` 的全文读取（source `S0030`，10,424 字符）。Business Management 来源解释运行原则；PMP 来源提供过程组与裁剪纪律。
 
 ## 规范清单
 
@@ -92,10 +106,10 @@
 | --- | ---: | --- |
 | 战略与商业 | 6 | `vision.md`、`thesis.md`、`business-model.md`、`pricing.md`、`unit-economics.md`、`strategy.md` |
 | 市场与产品 | 6 | `user-segments.md`、`market-map.md`、`research-repository.md`、`product-strategy.md`、`prd.md`、`cli-ux.md` |
-| 指标与数据 | 6 | `metrics.yaml`、`north-star.md`、`tracking-plan.md`、`data-dictionary.md`、`data-quality-checklist.md`、`experiment-log.md` |
+| 指标与数据 | 6 | `metrics.md`、`north-star.md`、`tracking-plan.md`、`data-dictionary.md`、`data-quality-checklist.md`、`experiment-log.md` |
 | 工程与平台 | 6 | `architecture.md`、`adr.md`、`module-boundaries.md`、`tech-stack.md`、`delivery-plan.md`、`observability.md` |
 | 安全与风险 | 6 | `security-policy.md`、`access-control.md`、`privacy-policy.md`、`incident-response.md`、`risk-register.md`、`backup-restore.md` |
-| Agent 治理 | 6 | `agent-role-map.md`、`agent-permissions.md`、`agent-tool-policy.md`、`human-review-checklist.md`、`agent-evaluation.md`、`agent-failure-modes.md` |
+| Agent 治理 | 6 | `agent-role-map.md`、`agent-permissions.md`、`agent-governance.md`、`human-review-checklist.md`、`agent-evaluation.md`、`agent-failure-modes.md` |
 | 增长与运营 | 6 | `growth-model.md`、`docs-plan.md`、`support-playbook.md`、`faq.md`、`trust-page.md`、`changelog.md` |
 | 复盘与知识 | 6 | `decision-log.md`、`weekly-review.md`、`monthly-review.md`、`postmortem.md`、`learning-log.md`、`template-library.md` |
 
@@ -131,6 +145,18 @@
 11. Secure by Design
 12. The Staff Engineer's Path
 
+
+## 分层级输入、工具与技术、输出
+
+12 个主干层级都可以轻量或完整运行，但涉及执行的工作必须能写成“输入、工具与技术、输出”。
+
+| 层级组 | 输入 | 工具与技术 | 输出 |
+| --- | --- | --- | --- |
+| 0-2 叙事、商业、市场 | 用户问题、来源证据、stakeholder 信号、市场/采用假设 | 战略诊断、PR/FAQ、访谈综合、定位、启动门 | 白皮书更新、商业边界、市场/采用假设、初始风险 |
+| 3-5 战略、指标、产品 | 北极星、OKR、生命周期裁剪决定、机会证据 | 指导方针设计、OMTM/护栏设计、产品发现、规划门 | 战略计划、指标契约、PRD 或发布切片 brief、验收标准 |
+| 6-8 技术、组织、执行 | 架构约束、角色/Agent map、实施计划、worktree ownership | 架构审查、威胁/风险审查、OpenSpec、subagent/durable-team 阈值检查、执行门 | 技术设计、责任矩阵、已提交变更、验证证据 |
+| 9-11 增长、运营、复盘 | 发布证据、使用/采用信号、事故、经验教训 | 监控与控制、项目组合 review、PMO 式治理服务、收尾门 | 发布说明、运行手册、复盘、归档与下一周期决定 |
+
 ## 过程组运行门
 
 | 过程组 | 输入 | 工具与技术 | 输出 |
@@ -144,3 +170,28 @@
 ## 使用规则
 
 当平台变更需要说明它落在哪个目标架构位置时，使用本地图。一个非平凡切片至少应点名一个受影响层级、一个部门、一个责任域、一个模块组、一个核心文档族，以及任何发生变化的 Agent 边界。
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- Codex boundary: Codex owns execution truth for agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries, while consuming business intent from the one-person company.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

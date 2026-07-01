@@ -10,7 +10,7 @@ ApplicationWindow {
     minimumWidth: 960
     minimumHeight: 600
     visible: true
-    title: "Project MOE Agent Console"
+    title: "Project Expert Lens Agent Console"
 
     property var vm: JSON.parse(viewModelJson || "{}")
     readonly property var banner: vm.top_banner || ({})
@@ -159,6 +159,11 @@ ApplicationWindow {
             row.label || "",
             row.source || "",
             row.token || "",
+            row.directory || "",
+            row.branch || "",
+            row.thread_source || "",
+            row.conversation_title || "",
+            row.conversation_preview || "",
             row.effective_lens_mode || "",
             row.lens_selection_summary || "",
             row.effective_state_explanation || "",
@@ -225,16 +230,16 @@ ApplicationWindow {
             var lens = lenses[i] || ({})
             lensLines += "- " + (lens.id || lens.label || "lens") + ": " + (lens.label || lens.id || "lens") + "\n"
         }
-        return "Project MOE Expert Workbench v2 Handoff Package (draft only; no model execution)\n"
+        return "Project Expert Lens Workbench v2 Handoff Package (draft only; no model execution)\n"
             + "Project: " + (banner.project_root || "Unknown project") + "\n"
             + "Agent: " + (banner.agent_name || "agent") + "\n"
             + "Namespace: " + (banner.state_namespace || "unknown") + "\n"
             + "Handoff target: " + (handoffTarget.id || "main-session") + " (" + (handoffTarget.label || "Main session") + ")\n"
-            + "Selected MOE lenses:\n" + lensLines
+            + "Selected expert lenses:\n" + lensLines
             + "Task template: " + (task.label || task.id || "template") + "\n\n"
             + "Review target / objective:\n" + target + "\n\n"
             + "Instructions:\n" + (task.prompt || "Assess with the selected expert lens and return actionable next steps.") + "\n\n"
-            + "Carrier instructions: main session may use selected MOE lenses directly, paste this package to a subagent, or hand it to a durable-team / langgraph-workflow.\n"
+            + "Carrier instructions: main session may use selected expert lenses directly, paste this package to a subagent, or hand it to a durable-team / langgraph-workflow.\n"
             + "Execution boundary: generate handoff package only; do not start Codex, subagents, durable teams, LangGraph workflows, model APIs, or write project state."
     }
 
@@ -384,7 +389,7 @@ ApplicationWindow {
                 spacing: 14
 
                 Label {
-                    text: "Project MOE"
+                    text: "Project Expert Lens"
                     color: darkMode ? "#f8fafc" : "#0f172a"
                     font.pixelSize: 24
                     font.bold: true
@@ -583,7 +588,7 @@ ApplicationWindow {
                                     model: displayedSessionRows
                                     delegate: Rectangle {
                                         width: ListView.view.width
-                                        height: 58
+                                        height: 210
                                         radius: 12
                                         color: index === root.selectedSessionIndex ? (darkMode ? "#0f766e" : "#ccfbf1") : (index % 2 === 0 ? (darkMode ? "#1f2937" : "#f8fafc") : "transparent")
                                         clip: true
@@ -596,33 +601,54 @@ ApplicationWindow {
                                             anchors.margins: 8
                                             spacing: 2
                                             Label {
-                                                text: modelData.display_id || modelData.session_id || "session"
+                                                text: (modelData.updated_relative || modelData.updated_at || modelData.last_seen_at || "") + "     " + (modelData.conversation_title || modelData.display_id || modelData.session_id || "session")
                                                 Layout.fillWidth: true
                                                 color: darkMode ? "#e5e7eb" : "#0f172a"
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[0] || ("Session:    " + (modelData.visible_session_id || modelData.session_id || "")))
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
                                                 elide: Text.ElideMiddle
                                             }
-                                            RowLayout {
+                                            Label {
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[1] || ("Created:    " + (modelData.created_relative || "") + " - " + (modelData.created_display || modelData.created_at || "")))
                                                 Layout.fillWidth: true
-                                                spacing: 6
-                                                Label {
-                                                    text: modelData.label || "unknown"
-                                                    Layout.fillWidth: true
-                                                    color: darkMode ? "#cbd5e1" : "#475569"
-                                                    elide: Text.ElideRight
-                                                }
-                                                Label {
-                                                    text: modelData.lens_selection_summary || "All lenses"
-                                                    Layout.preferredWidth: 96
-                                                    color: darkMode ? "#cbd5e1" : "#475569"
-                                                    elide: Text.ElideRight
-                                                }
-                                                Label {
-                                                    text: modelData.token || ""
-                                                    Layout.preferredWidth: 32
-                                                    color: (modelData.token || "") === "ok" ? "#14b8a6" : "#f59e0b"
-                                                    elide: Text.ElideRight
-                                                    horizontalAlignment: Text.AlignRight
-                                                }
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[2] || ("Updated:    " + (modelData.updated_relative || "") + " - " + (modelData.updated_display || modelData.updated_at || modelData.last_seen_at || "")))
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[3] || ("Directory:  " + (modelData.directory || "")))
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                                elide: Text.ElideMiddle
+                                            }
+                                            Label {
+                                                text: "| " + (((modelData.session_display_block || {}).lines || [])[4] || ("Branch:     " + (modelData.branch || "unknown"))) + "    | State: " + (modelData.label || "unknown")
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                                elide: Text.ElideRight
+                                            }
+                                            Label {
+                                                text: "| Conversation:"
+                                                Layout.fillWidth: true
+                                                color: darkMode ? "#cbd5e1" : "#475569"
+                                            }
+                                            Label {
+                                                text: "| " + ((((modelData.session_display_block || {}).fields || {}).Conversation) || modelData.conversation_preview || "(no preview)")
+                                                Layout.fillWidth: true
+                                                Layout.fillHeight: true
+                                                color: darkMode ? "#e2e8f0" : "#334155"
+                                                wrapMode: Text.WordWrap
+                                                maximumLineCount: 4
+                                                elide: Text.ElideRight
                                             }
                                         }
                                     }
@@ -644,7 +670,7 @@ ApplicationWindow {
                                 anchors.margins: 14
                                 spacing: 8
                                 Label {
-                                    text: "Session MOE lenses"
+                                    text: "Session expert lenses"
                                     font.pixelSize: 18
                                     font.bold: true
                                     color: darkMode ? "#f8fafc" : "#0f172a"
@@ -749,13 +775,13 @@ ApplicationWindow {
                                     columnSpacing: 8
                                     rowSpacing: 8
                                     Button {
-                                        text: "Enable session MOE"
+                                        text: "Enable session expert lenses"
                                         Layout.fillWidth: true
                                         enabled: sessionRows.length > 0
                                         onClicked: executeSessionAction("session-on", selectedSessionLensIdsJson, selectedSessionCategoryIdsJson)
                                     }
                                     Button {
-                                        text: "Disable session MOE"
+                                        text: "Disable session expert lenses"
                                         Layout.fillWidth: true
                                         enabled: sessionRows.length > 0
                                         onClicked: executeSessionAction("session-off", "[]", "[]")
@@ -852,7 +878,7 @@ ApplicationWindow {
                                     }
                                 }
                                 Label {
-                                    text: "Select one or more MOE lenses; brief only."
+                                    text: "Select one or more expert lenses; brief only."
                                     wrapMode: Text.Wrap
                                     color: darkMode ? "#cbd5e1" : "#475569"
                                     Layout.fillWidth: true
@@ -911,7 +937,7 @@ ApplicationWindow {
                                     textRole: "label"
                                 }
                                 Label {
-                                    text: "main-session / subagent / durable-team / langgraph-workflow"
+                                    text: "main-session / native-experts / subagent / durable-team / persistent-team / langgraph-workflow"
                                     wrapMode: Text.NoWrap
                                     color: darkMode ? "#cbd5e1" : "#475569"
                                     Layout.fillWidth: true
@@ -1086,7 +1112,7 @@ ApplicationWindow {
                     Label { text: "Loading state: " + (((uiStates.loading || {}).message) || "No loading-state message"); color: darkMode ? "#cbd5e1" : "#475569"; wrapMode: Text.Wrap; Layout.fillWidth: true }
                     Label { text: "Empty state: " + (((uiStates.empty || {}).message) || "No empty-state message"); color: darkMode ? "#cbd5e1" : "#475569"; wrapMode: Text.Wrap; Layout.fillWidth: true }
                     Label { text: "Error state: " + (((uiStates.error || {}).message) || "No error-state message"); color: darkMode ? "#cbd5e1" : "#475569"; wrapMode: Text.Wrap; Layout.fillWidth: true }
-                    Label { text: "Help: " + (((uiStates.help || {}).message) || "Use governed Project MOE controls only"); color: darkMode ? "#cbd5e1" : "#475569"; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                    Label { text: "Help: " + (((uiStates.help || {}).message) || "Use governed Project Expert Lens controls only"); color: darkMode ? "#cbd5e1" : "#475569"; wrapMode: Text.Wrap; Layout.fillWidth: true }
                 }
             }
 

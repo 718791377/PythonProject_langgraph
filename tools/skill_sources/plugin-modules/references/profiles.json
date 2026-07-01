@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "name": "plugin-modules",
-  "description": "Task-scoped Codex plugin module profiles for soft-load guidance and hard-load startup profile switching.",
+  "description": "Task-scoped Codex plugin module profiles for scenario routing, soft-load guidance, and hard-load startup profile switching.",
   "known_plugins": [
     "BioRender",
     "Browser",
@@ -41,20 +41,631 @@
     "Vercel",
     "Zotero"
   ],
+  "plugin_config_ids": {
+    "BioRender": [
+      "biorender@openai-curated"
+    ],
+    "Browser": [
+      "browser@openai-bundled",
+      "chrome@openai-bundled"
+    ],
+    "Canva": [
+      "canva@openai-curated"
+    ],
+    "CB Insights": [
+      "cb-insights@openai-curated"
+    ],
+    "ChatGPT Apps": [
+      "chatgpt-apps@openai-curated"
+    ],
+    "Cloudflare": [
+      "cloudflare@openai-curated"
+    ],
+    "Cloudinary": [
+      "cloudinary@openai-curated"
+    ],
+    "CodeRabbit": [
+      "coderabbit@openai-curated"
+    ],
+    "Codex Security": [
+      "codex-security@openai-curated"
+    ],
+    "Documents": [
+      "documents@openai-primary-runtime"
+    ],
+    "Dow Jones Factiva": [
+      "dow-jones-factiva@openai-curated"
+    ],
+    "Expo": [
+      "expo@openai-curated"
+    ],
+    "Figma": [
+      "figma@openai-curated"
+    ],
+    "Fireflies": [
+      "fireflies@openai-curated"
+    ],
+    "GitHub": [
+      "github@openai-curated"
+    ],
+    "Gmail": [
+      "gmail@openai-curated"
+    ],
+    "Google Calendar": [
+      "google-calendar@openai-curated"
+    ],
+    "Google Drive": [
+      "google-drive@openai-curated"
+    ],
+    "HubSpot": [
+      "hubspot@openai-curated"
+    ],
+    "Hugging Face": [
+      "hugging-face@openai-curated"
+    ],
+    "HyperFrames by HeyGen": [
+      "hyperframes@openai-curated"
+    ],
+    "Linear": [
+      "linear@openai-curated"
+    ],
+    "Notion": [
+      "notion@openai-curated"
+    ],
+    "OpenAI Developers": [
+      "openai-developers@openai-curated"
+    ],
+    "PitchBook": [
+      "pitchbook@openai-curated"
+    ],
+    "Presentations": [
+      "presentations@openai-primary-runtime"
+    ],
+    "Readwise": [
+      "readwise@openai-curated"
+    ],
+    "Remotion": [
+      "remotion@openai-curated"
+    ],
+    "Sentry": [
+      "sentry@openai-curated"
+    ],
+    "Slack": [
+      "slack@openai-curated"
+    ],
+    "Spreadsheets": [
+      "spreadsheets@openai-primary-runtime"
+    ],
+    "Stripe": [
+      "stripe@openai-curated"
+    ],
+    "Supabase": [
+      "supabase@openai-curated"
+    ],
+    "Temporal": [
+      "temporal@openai-curated"
+    ],
+    "Twilio Developer Kit": [
+      "twilio-developer-kit@openai-curated"
+    ],
+    "Vercel": [
+      "vercel@openai-curated"
+    ],
+    "Zotero": [
+      "zotero@openai-curated"
+    ]
+  },
+  "managed_extra_plugin_config_ids": [
+    "computer-use@openai-bundled",
+    "pdf@openai-primary-runtime",
+    "sites@openai-bundled",
+    "superpowers@openai-curated",
+    "template-creator@openai-primary-runtime"
+  ],
   "safety": {
     "soft_load_mutates_config": false,
     "hard_load_requires_apply": true,
     "backup_before_config_write": true,
     "config_scope": "Only [plugins.\"...\"] enabled keys may be changed.",
     "restart_required_for_hard_load": true,
-    "do_not_edit_plugin_cache": true
+    "do_not_edit_plugin_cache": true,
+    "profile_suggest_advisory_only": true,
+    "task_modules_hard_load_allowed": false,
+    "scenario_profiles_hard_load_allowed": false
   },
+  "scenario_profiles": {
+    "repo-dev": {
+      "target_profile": "core-dev",
+      "default_task_modules": [
+        "repo-governance",
+        "code-review",
+        "security-review",
+        "openai-dev",
+        "docs-artifacts",
+        "browser-verification"
+      ],
+      "scenario_description": "Daily repository development, code review, CI repair, security review, OpenAI development, browser verification, and docs artifacts.",
+      "route_when": [
+        "repo",
+        "repository",
+        "code",
+        "git",
+        "ci",
+        "test",
+        "security",
+        "review",
+        "openai",
+        "docs",
+        "browser",
+        "devtools"
+      ],
+      "negative_examples": [
+        "customer notification campaign",
+        "market research report",
+        "creative video production"
+      ],
+      "load_policy": "hard-load-preview",
+      "ranking_signals": [
+        "default developer candidate",
+        "boost repo and CI terms",
+        "keep full below focused developer work"
+      ],
+      "scene_description": "Daily repository development, code review, CI repair, security review, OpenAI development, browser verification, and docs artifacts.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
+    },
+    "browser-automation": {
+      "target_profile": "core-dev",
+      "default_task_modules": [
+        "browser-verification"
+      ],
+      "scenario_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification task entry.",
+      "route_when": [
+        "browser",
+        "chrome",
+        "devtools",
+        "cdp",
+        "screenshot",
+        "web verification",
+        "tab"
+      ],
+      "negative_examples": [
+        "design-only Figma generation",
+        "generic all-plugin troubleshooting"
+      ],
+      "load_policy": "soft-load",
+      "ranking_signals": [
+        "boost browser verification task module"
+      ],
+      "scene_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification task entry.",
+      "routing_scope": "task-or-scenario",
+      "activation_scope": "soft-load",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
+    },
+    "web-product": {
+      "target_profile": "web-saas",
+      "default_task_modules": [
+        "frontend-build",
+        "deploy-runtime",
+        "db-backend",
+        "payments",
+        "observability",
+        "mobile-app",
+        "design-implementation",
+        "browser-verification"
+      ],
+      "scenario_description": "Web/SaaS product construction, deployment, backend, payments, observability, mobile, and design implementation.",
+      "route_when": [
+        "web",
+        "saas",
+        "nextjs",
+        "vercel",
+        "cloudflare",
+        "supabase",
+        "stripe",
+        "sentry",
+        "expo",
+        "mobile",
+        "figma",
+        "deploy"
+      ],
+      "negative_examples": [
+        "offline desktop PySide6 GUI only",
+        "legal contract review only"
+      ],
+      "load_policy": "hard-load-preview",
+      "ranking_signals": [
+        "boost web deployment and app platform terms"
+      ],
+      "scene_description": "Web/SaaS product construction, deployment, backend, payments, observability, mobile, and design implementation.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
+    },
+    "ops-knowledge": {
+      "target_profile": "company-ops",
+      "default_task_modules": [
+        "mail-calendar",
+        "docs-sheets-slides",
+        "knowledge-capture",
+        "crm-workflow",
+        "team-comms",
+        "meeting-intel",
+        "issue-planning"
+      ],
+      "scenario_description": "One-person-company operations, email/calendar, knowledge, CRM, meeting intelligence, Slack, and planning.",
+      "route_when": [
+        "gmail",
+        "calendar",
+        "drive",
+        "slack",
+        "notion",
+        "hubspot",
+        "crm",
+        "meeting",
+        "fireflies",
+        "linear",
+        "ops"
+      ],
+      "negative_examples": [
+        "source-code security scan",
+        "mobile app build"
+      ],
+      "load_policy": "hard-load-preview",
+      "ranking_signals": [
+        "boost live office connector terms"
+      ],
+      "scene_description": "One-person-company operations, email/calendar, knowledge, CRM, meeting intelligence, Slack, and planning.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
+    },
+    "research-analysis": {
+      "target_profile": "market-research",
+      "default_task_modules": [
+        "company-research",
+        "news-library",
+        "paper-citation",
+        "model-dataset-inspection",
+        "science-visuals",
+        "report-artifacts"
+      ],
+      "scenario_description": "Market, company, paper, library, model/dataset, science visual, and report research.",
+      "route_when": [
+        "research",
+        "market",
+        "company",
+        "paper",
+        "citation",
+        "dataset",
+        "hugging face",
+        "biorender",
+        "zotero",
+        "factiva",
+        "pitchbook"
+      ],
+      "negative_examples": [
+        "customer WhatsApp send",
+        "hard-load every plugin"
+      ],
+      "load_policy": "hard-load-preview",
+      "ranking_signals": [
+        "boost research-source plugin terms"
+      ],
+      "scene_description": "Market, company, paper, library, model/dataset, science visual, and report research.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
+    },
+    "design-media": {
+      "target_profile": "creative-content",
+      "default_task_modules": [
+        "design-generation",
+        "design-implementation",
+        "slides-docs",
+        "video-motion",
+        "brand-assets",
+        "media-assets"
+      ],
+      "scenario_description": "Creative content, visual design, slides, documents, video, brand, and media assets.",
+      "route_when": [
+        "canva",
+        "figma",
+        "design",
+        "slides",
+        "presentation",
+        "video",
+        "remotion",
+        "hyperframes",
+        "brand",
+        "cloudinary",
+        "asset"
+      ],
+      "negative_examples": [
+        "database migration",
+        "email inbox triage"
+      ],
+      "load_policy": "hard-load-preview",
+      "ranking_signals": [
+        "boost design and media production terms"
+      ],
+      "scene_description": "Creative content, visual design, slides, documents, video, brand, and media assets.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
+    },
+    "repo-local-gui": {
+      "target_profile": "pyside6-gui",
+      "default_task_modules": [
+        "qt-gui-dev",
+        "gui-preview-apply",
+        "gui-packaging-preflight"
+      ],
+      "scenario_description": "Repo-local PySide6/Qt desktop GUI helper work without enabling unrelated plugin bundles.",
+      "route_when": [
+        "pyside6",
+        "qt",
+        "desktop gui",
+        "windows gui",
+        "operator console",
+        "packaging preflight"
+      ],
+      "negative_examples": [
+        "web SaaS deploy",
+        "cloud plugin hard-load"
+      ],
+      "load_policy": "repo-local-only",
+      "ranking_signals": [
+        "boost PySide6 and local GUI terms"
+      ],
+      "scene_description": "Repo-local PySide6/Qt desktop GUI helper work without enabling unrelated plugin bundles.",
+      "routing_scope": "repo-local",
+      "activation_scope": "soft-load",
+      "governance_scope": "repo-local-only",
+      "evidence_scope": "repo-local-evidence"
+    },
+    "troubleshooting": {
+      "target_profile": "full",
+      "default_task_modules": [],
+      "scenario_description": "Broad all-plugin troubleshooting only when the user explicitly asks to inspect or diagnose all plugin capabilities.",
+      "route_when": [
+        "full profile",
+        "all plugins",
+        "troubleshoot all plugins",
+        "diagnose missing plugin capability",
+        "broad discovery"
+      ],
+      "negative_examples": [
+        "ordinary development task",
+        "single plugin workflow",
+        "focused profile suggestion"
+      ],
+      "load_policy": "troubleshooting-only",
+      "ranking_signals": [
+        "penalize unless explicit broad troubleshooting appears"
+      ],
+      "scene_description": "Broad all-plugin troubleshooting only when the user explicitly asks to inspect or diagnose all plugin capabilities.",
+      "routing_scope": "explicit-full-troubleshooting",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "explicit-approval-required",
+      "evidence_scope": "explicit-full-request",
+      "explicit_full_request_required": true,
+      "allowed_full_selection_reasons": [
+        "explicit_all_plugins",
+        "explicit_broad_discovery",
+        "explicit_missing_plugin_capability"
+      ]
+    },
+    "customer-messaging": {
+      "target_profile": "customer-comms",
+      "default_task_modules": [
+        "messaging",
+        "email-delivery",
+        "support-comms",
+        "payment-comms"
+      ],
+      "scenario_description": "Customer communication tasks over Twilio, WhatsApp, SMS, voice, SendGrid, Slack, Gmail, and payment messaging.",
+      "route_when": [
+        "twilio",
+        "whatsapp",
+        "sms",
+        "voice",
+        "sendgrid",
+        "customer notice",
+        "customer notification",
+        "support",
+        "payment message"
+      ],
+      "negative_examples": [
+        "internal CI repair",
+        "scientific figure generation"
+      ],
+      "load_policy": "hard-load-preview",
+      "ranking_signals": [
+        "boost channel-specific communication terms"
+      ],
+      "scene_description": "Customer communication tasks over Twilio, WhatsApp, SMS, voice, SendGrid, Slack, Gmail, and payment messaging.",
+      "routing_scope": "scenario-or-profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
+    },
+    "skills-budget-triage": {
+      "target_profile": "core-dev",
+      "default_task_modules": [
+        "skills-budget-triage"
+      ],
+      "scenario_description": "Codex skills context budget, post-compaction skill description removal, omitted model-visible skills, and standalone user-skill pressure triage. Use receipt-backed standalone visibility reduction when user-layer pressure dominates.",
+      "route_when": [
+        "skills context budget",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "skill descriptions removed",
+        "context compacted",
+        "compaction",
+        "Codex compaction",
+        "skills budget warning",
+        "Chinese compacted-context phrase",
+        "Chinese skill-context-budget phrase",
+        "skills2cli visibility plan",
+        "skills2cli visibility apply",
+        "skills2cli visibility restore",
+        "standalone visibility reduction",
+        "receipt-backed visibility reduction",
+        "restart Codex to recompute model-visible skills"
+      ],
+      "positive_examples": [
+        "skills context budget",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "skill descriptions removed",
+        "context compacted",
+        "compaction",
+        "Codex compaction",
+        "skills budget warning",
+        "Exceeded skills context budget of 2%. All skill descriptions were removed and 1111 additional skills were not included in the model-visible skills list.",
+        "Codex compaction exceeded skills context budget additional skills removed",
+        "Chinese compacted-context phrase",
+        "Chinese skill-context-budget phrase",
+        "skills2cli visibility plan",
+        "skills2cli visibility apply",
+        "skills2cli visibility restore",
+        "standalone visibility reduction",
+        "receipt-backed visibility reduction",
+        "restart Codex to recompute model-visible skills"
+      ],
+      "negative_examples": [
+        "normal market model dataset research",
+        "normal web deployment",
+        "ordinary customer messaging",
+        "full profile broad discovery without budget warning"
+      ],
+      "load_policy": "soft-load",
+      "ranking_signals": [
+        "budget warning intent wins before audit boost",
+        "model-visible warning is not Hugging Face model research",
+        "standalone user-skill pressure is reported preview-only",
+        "repeat plugin profile apply is not the primary fix when user-layer pressure dominates",
+        "receipt-backed visibility reduction requires explicit apply and restore receipt"
+      ],
+      "plugin_hints": [
+        "Skills2CLI"
+      ],
+      "scene_description": "Codex skills context budget, post-compaction skill description removal, omitted model-visible skills, and standalone user-skill pressure triage. Use skills2cli visibility plan/apply/restore for reversible standalone user-skill reduction.",
+      "routing_scope": "task-or-scenario",
+      "activation_scope": "soft-load",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
+    }
+  },
+  "allow_full_only_plugins": {},
   "modules": {
     "core-dev": {
-      "description": "Daily developer profile for repository work, code review, security checks, OpenAI development, browser verification, and document artifacts.",
-      "plugins": ["Browser", "GitHub", "CodeRabbit", "Codex Security", "OpenAI Developers", "Documents", "Spreadsheets", "Presentations"],
+      "description": "Daily developer profile for repository work, code review, security checks, OpenAI/ChatGPT Apps development, workflow orchestration, browser verification, and document artifacts.",
+      "scenario_description": "Daily developer profile for repository work, code review, security checks, OpenAI/ChatGPT Apps development, workflow orchestration, browser verification, and document artifacts.",
+      "route_when": [
+        "code",
+        "repo",
+        "repository",
+        "git",
+        "github",
+        "gitlab",
+        "ci",
+        "test",
+        "security",
+        "review",
+        "openai",
+        "chatgpt apps",
+        "temporal",
+        "workflow",
+        "browser",
+        "documents",
+        "skills context budget",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "skill descriptions removed",
+        "context compacted",
+        "compaction",
+        "Codex compaction",
+        "skills budget warning",
+        "Chinese compacted-context phrase",
+        "Chinese skill-context-budget phrase"
+      ],
+      "negative_examples": [
+        "customer messaging campaign",
+        "market/company research only",
+        "creative video or brand-only work"
+      ],
+      "load_policy": "default-candidate",
+      "plugin_hints": [
+        "Browser",
+        "GitHub",
+        "CodeRabbit",
+        "Codex Security",
+        "OpenAI Developers",
+        "ChatGPT Apps",
+        "Temporal",
+        "Documents",
+        "Spreadsheets",
+        "Presentations"
+      ],
+      "skill_doc_hints": [
+        "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+        "plugins/cache/openai-curated/github/*/skills/github/SKILL.md",
+        "plugins/cache/openai-curated/github/*/skills/gh-fix-ci/SKILL.md",
+        "plugins/cache/openai-curated/coderabbit/*/skills/coderabbit-review/SKILL.md",
+        "plugins/cache/openai-curated/codex-security/*/skills/security-scan/SKILL.md",
+        "plugins/cache/openai-curated/codex-security/*/skills/threat-model/SKILL.md",
+        "plugins/cache/openai-curated/openai-developers/*/skills/agents-sdk/SKILL.md",
+        "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md",
+        "plugins/cache/openai-curated/chatgpt-apps/*/skills/*/SKILL.md",
+        "plugins/cache/openai-curated/temporal/*/skills/*/SKILL.md",
+        "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+        "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+        "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
+      ],
+      "ranking_signals": [
+        "boost exact plugin names",
+        "boost recent strong audit evidence",
+        "penalize warning-heavy broad profiles",
+        "boost explicit skills-budget warning intent before audit evidence",
+        "inspect standalone user-skill pressure before profile apply"
+      ],
+      "plugins": [
+        "Browser",
+        "GitHub",
+        "CodeRabbit",
+        "Codex Security",
+        "OpenAI Developers",
+        "ChatGPT Apps",
+        "Temporal",
+        "Documents",
+        "Spreadsheets",
+        "Presentations"
+      ],
       "soft_load": {
-        "use_for": ["general code work", "GitHub/GitLab-adjacent review", "security review", "OpenAI API/Agents guidance", "document/spreadsheet/presentation artifacts"],
+        "use_for": [
+          "general code work",
+          "GitHub/GitLab-adjacent review",
+          "security review",
+          "OpenAI API/Agents guidance",
+          "ChatGPT Apps",
+          "workflow orchestration",
+          "document/spreadsheet/presentation artifacts"
+        ],
         "skill_doc_hints": [
           "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
           "plugins/cache/openai-curated/github/*/skills/github/SKILL.md",
@@ -64,22 +675,689 @@
           "plugins/cache/openai-curated/codex-security/*/skills/threat-model/SKILL.md",
           "plugins/cache/openai-curated/openai-developers/*/skills/agents-sdk/SKILL.md",
           "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md",
+          "plugins/cache/openai-curated/chatgpt-apps/*/skills/*/SKILL.md",
+          "plugins/cache/openai-curated/temporal/*/skills/*/SKILL.md",
           "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
           "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
           "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
         ],
-        "notes": ["Prefer this module as the daily reduced profile for developer work."]
+        "notes": [
+          "Prefer this module as the daily reduced profile for developer work."
+        ]
       },
       "hard_load": {
-        "enable_plugins": ["Browser", "GitHub", "CodeRabbit", "Codex Security", "OpenAI Developers", "Documents", "Spreadsheets", "Presentations"],
+        "enable_plugins": [
+          "Browser",
+          "GitHub",
+          "CodeRabbit",
+          "Codex Security",
+          "OpenAI Developers",
+          "ChatGPT Apps",
+          "Temporal",
+          "Documents",
+          "Spreadsheets",
+          "Presentations"
+        ],
         "disable_other_known_plugins": true
-      }
+      },
+      "task_modules": {
+        "repo-governance": {
+          "description": "Repository governance, OpenSpec, local gates, local MR review, and local-main-first workflow.",
+          "scenario_description": "Repository governance, OpenSpec, local gates, local MR review, and local-main-first workflow.",
+          "route_when": [
+            "openspec",
+            "governance",
+            "local gate",
+            "local mr",
+            "main",
+            "worktree",
+            "commit",
+            "archive"
+          ],
+          "positive_examples": [
+            "openspec",
+            "governance",
+            "local gate",
+            "local mr",
+            "main",
+            "worktree",
+            "commit",
+            "archive"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "GitHub",
+            "Documents"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/github/*/skills/github/SKILL.md",
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+            "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+            "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "openspec",
+              "governance",
+              "local gate",
+              "local mr",
+              "main",
+              "worktree",
+              "commit",
+              "archive"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/github/*/skills/github/SKILL.md",
+              "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+              "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+              "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Repository governance, OpenSpec, local gates, local MR review, and local-main-first workflow.",
+          "qualified_name": "core-dev.repo-governance",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "code-review": {
+          "description": "Code review, CI repair, pull/MR feedback, GitHub/GitLab-adjacent review, and CodeRabbit review flows.",
+          "scenario_description": "Code review, CI repair, pull/MR feedback, GitHub/GitLab-adjacent review, and CodeRabbit review flows.",
+          "route_when": [
+            "code review",
+            "ci",
+            "gitlab ci",
+            "github actions",
+            "mr",
+            "pr",
+            "coderabbit",
+            "fix ci"
+          ],
+          "positive_examples": [
+            "code review",
+            "ci",
+            "gitlab ci",
+            "github actions",
+            "mr",
+            "pr",
+            "coderabbit",
+            "fix ci"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "GitHub",
+            "CodeRabbit"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/github/*/skills/gh-fix-ci/SKILL.md",
+            "plugins/cache/openai-curated/coderabbit/*/skills/coderabbit-review/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "code review",
+              "ci",
+              "gitlab ci",
+              "github actions",
+              "mr",
+              "pr",
+              "coderabbit",
+              "fix ci"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/github/*/skills/gh-fix-ci/SKILL.md",
+              "plugins/cache/openai-curated/coderabbit/*/skills/coderabbit-review/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Code review, CI repair, pull/MR feedback, GitHub/GitLab-adjacent review, and CodeRabbit review flows.",
+          "qualified_name": "core-dev.code-review",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "security-review": {
+          "description": "Security review, threat modeling, vulnerability triage, and secure code changes.",
+          "scenario_description": "Security review, threat modeling, vulnerability triage, and secure code changes.",
+          "route_when": [
+            "security",
+            "threat model",
+            "vulnerability",
+            "auth",
+            "permission",
+            "secrets",
+            "secure"
+          ],
+          "positive_examples": [
+            "security",
+            "threat model",
+            "vulnerability",
+            "auth",
+            "permission",
+            "secrets",
+            "secure"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Codex Security"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/codex-security/*/skills/security-scan/SKILL.md",
+            "plugins/cache/openai-curated/codex-security/*/skills/threat-model/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "security",
+              "threat model",
+              "vulnerability",
+              "auth",
+              "permission",
+              "secrets",
+              "secure"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/codex-security/*/skills/security-scan/SKILL.md",
+              "plugins/cache/openai-curated/codex-security/*/skills/threat-model/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Security review, threat modeling, vulnerability triage, and secure code changes.",
+          "qualified_name": "core-dev.security-review",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "openai-dev": {
+          "description": "OpenAI API, Agents SDK, ChatGPT Apps, Responses, model/tool integration, and troubleshooting.",
+          "scenario_description": "OpenAI API, Agents SDK, ChatGPT Apps, Responses, model/tool integration, and troubleshooting.",
+          "route_when": [
+            "openai",
+            "agents sdk",
+            "responses api",
+            "chatgpt apps",
+            "tool call",
+            "api troubleshooting"
+          ],
+          "positive_examples": [
+            "openai",
+            "agents sdk",
+            "responses api",
+            "chatgpt apps",
+            "tool call",
+            "api troubleshooting"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "OpenAI Developers",
+            "ChatGPT Apps"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/openai-developers/*/skills/agents-sdk/SKILL.md",
+            "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md",
+            "plugins/cache/openai-curated/chatgpt-apps/*/skills/*/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "openai",
+              "agents sdk",
+              "responses api",
+              "chatgpt apps",
+              "tool call",
+              "api troubleshooting"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/openai-developers/*/skills/agents-sdk/SKILL.md",
+              "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md",
+              "plugins/cache/openai-curated/chatgpt-apps/*/skills/*/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "OpenAI API, Agents SDK, ChatGPT Apps, Responses, model/tool integration, and troubleshooting.",
+          "qualified_name": "core-dev.openai-dev",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "workflow-orchestration": {
+          "description": "Temporal/workflow orchestration and durable execution design connected to development workflows.",
+          "scenario_description": "Temporal/workflow orchestration and durable execution design connected to development workflows.",
+          "route_when": [
+            "temporal",
+            "workflow",
+            "orchestration",
+            "durable execution",
+            "worker queue"
+          ],
+          "positive_examples": [
+            "temporal",
+            "workflow",
+            "orchestration",
+            "durable execution",
+            "worker queue"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Temporal"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/temporal/*/skills/*/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "temporal",
+              "workflow",
+              "orchestration",
+              "durable execution",
+              "worker queue"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/temporal/*/skills/*/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Temporal/workflow orchestration and durable execution design connected to development workflows.",
+          "qualified_name": "core-dev.workflow-orchestration",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "docs-artifacts": {
+          "description": "Documents, spreadsheets, and presentations for developer artifacts and evidence packages.",
+          "scenario_description": "Documents, spreadsheets, and presentations for developer artifacts and evidence packages.",
+          "route_when": [
+            "docx",
+            "pdf",
+            "document",
+            "spreadsheet",
+            "presentation",
+            "evidence package"
+          ],
+          "positive_examples": [
+            "docx",
+            "pdf",
+            "document",
+            "spreadsheet",
+            "presentation",
+            "evidence package"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Documents",
+            "Spreadsheets",
+            "Presentations"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+            "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+            "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "docx",
+              "pdf",
+              "document",
+              "spreadsheet",
+              "presentation",
+              "evidence package"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+              "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+              "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Documents, spreadsheets, and presentations for developer artifacts and evidence packages.",
+          "qualified_name": "core-dev.docs-artifacts",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "browser-verification": {
+          "description": "Browser, Chrome DevTools, CDP, screenshot, and web verification support for developer tasks.",
+          "scenario_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification support for developer tasks.",
+          "route_when": [
+            "browser",
+            "chrome",
+            "devtools",
+            "cdp",
+            "screenshot",
+            "web verification",
+            "tab"
+          ],
+          "positive_examples": [
+            "browser",
+            "chrome",
+            "devtools",
+            "cdp",
+            "screenshot",
+            "web verification",
+            "tab"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Browser"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+            "plugins/cache/openai-bundled/chrome/*/skills/control-chrome/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "browser",
+              "chrome",
+              "devtools",
+              "cdp",
+              "screenshot",
+              "web verification",
+              "tab"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+              "plugins/cache/openai-bundled/chrome/*/skills/control-chrome/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Browser, Chrome DevTools, CDP, screenshot, and web verification support for developer tasks.",
+          "qualified_name": "core-dev.browser-verification",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "skills-budget-triage": {
+          "description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage.",
+          "scenario_description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage. Use receipt-backed standalone visibility reduction when user-layer pressure dominates.",
+          "route_when": [
+            "skills context budget",
+            "Exceeded skills context budget",
+            "All skill descriptions were removed",
+            "additional skills were not included",
+            "model-visible skills list",
+            "skill descriptions removed",
+            "context compacted",
+            "compaction",
+            "Codex compaction",
+            "skills budget warning",
+            "Chinese compacted-context phrase",
+            "Chinese skill-context-budget phrase",
+            "skills2cli visibility plan",
+            "skills2cli visibility apply",
+            "skills2cli visibility restore",
+            "standalone visibility reduction",
+            "receipt-backed visibility reduction",
+            "restart Codex to recompute model-visible skills"
+          ],
+          "positive_examples": [
+            "skills context budget",
+            "Exceeded skills context budget",
+            "All skill descriptions were removed",
+            "additional skills were not included",
+            "model-visible skills list",
+            "skill descriptions removed",
+            "context compacted",
+            "compaction",
+            "Codex compaction",
+            "skills budget warning",
+            "Exceeded skills context budget of 2%. All skill descriptions were removed and additional skills were not included.",
+            "Codex compaction exceeded skills context budget additional skills removed",
+            "Chinese compacted-context phrase",
+            "Chinese skill-context-budget phrase",
+            "skills2cli visibility plan",
+            "skills2cli visibility apply",
+            "skills2cli visibility restore",
+            "standalone visibility reduction",
+            "receipt-backed visibility reduction",
+            "restart Codex to recompute model-visible skills"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply without warning evidence",
+            "web deployment without skills budget warning",
+            "market research model dataset inspection without Codex warning"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Skills2CLI"
+          ],
+          "skill_doc_hints": [
+            "tools/skills2cli.py",
+            "tools/skill_sources/plugin-modules/references/profiles.json",
+            "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md",
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+          ],
+          "routing_explanation": "Use this task module for Codex skills context budget and post-compaction model-visible skill warnings; diagnose user/plugin/repo layer pressure, then use skills2cli visibility plan/apply/restore for receipt-backed standalone user-skill reduction when the user layer dominates.",
+          "ranking_signals": [
+            "exact budget warning phrase match",
+            "context compaction phrase match",
+            "model-visible skill omission phrase match",
+            "user-layer skill pressure reported separately from plugin profile apply",
+            "repeat plugin profile apply is not the primary fix when user-layer pressure dominates",
+            "receipt-backed visibility reduction requires explicit apply and restore receipt"
+          ],
+          "soft_load": {
+            "use_for": [
+              "skills context budget",
+              "Exceeded skills context budget",
+              "All skill descriptions were removed",
+              "additional skills were not included",
+              "model-visible skills list",
+              "skill descriptions removed",
+              "context compacted",
+              "compaction",
+              "Codex compaction",
+              "skills budget warning",
+              "Chinese compacted-context phrase",
+              "Chinese skill-context-budget phrase",
+              "skills2cli visibility plan",
+              "skills2cli visibility apply",
+              "skills2cli visibility restore",
+              "standalone visibility reduction",
+              "receipt-backed visibility reduction"
+            ],
+            "skill_doc_hints": [
+              "tools/skills2cli.py",
+              "tools/skill_sources/plugin-modules/references/profiles.json",
+              "plugins/cache/openai-curated/openai-developers/*/skills/openai-api-troubleshooting/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Do not mutate user-level config, plugin cache, or standalone skills from profile suggest.",
+              "Hard-load previews resolve to the canonical top-level target_profile.",
+              "When standalone user-skill pressure dominates, use skills2cli visibility plan first; apply requires --apply and --operator-confirmation and writes a restore receipt.",
+              "Hard-load previews resolve to the canonical top-level target_profile and do not solve standalone user-skill pressure by themselves."
+            ]
+          },
+          "scene_description": "Codex skills context budget, context compaction, model-visible skill omission, and standalone user-skill pressure triage. Use skills2cli visibility plan/apply/restore for reversible standalone user-skill reduction.",
+          "qualified_name": "core-dev.skills-budget-triage",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        }
+      },
+      "scene_description": "Daily developer profile for repository work, code review, security checks, OpenAI/ChatGPT Apps development, workflow orchestration, browser verification, and document artifacts.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "web-saas": {
-      "description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Figma, browser checks, and GitHub workflows.",
-      "plugins": ["Vercel", "Cloudflare", "Supabase", "Sentry", "Stripe", "Figma", "Browser", "GitHub"],
+      "description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Expo, Figma, browser checks, and GitHub workflows.",
+      "scenario_description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Expo, Figma, browser checks, and GitHub workflows.",
+      "route_when": [
+        "web",
+        "saas",
+        "frontend",
+        "nextjs",
+        "vercel",
+        "cloudflare",
+        "supabase",
+        "stripe",
+        "sentry",
+        "expo",
+        "mobile",
+        "figma",
+        "deploy",
+        "browser"
+      ],
+      "negative_examples": [
+        "offline PySide6 GUI only",
+        "Gmail inbox triage only",
+        "market research only",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
+      ],
+      "load_policy": "default-candidate",
+      "plugin_hints": [
+        "Vercel",
+        "Cloudflare",
+        "Supabase",
+        "Sentry",
+        "Stripe",
+        "Expo",
+        "Figma",
+        "Browser",
+        "GitHub"
+      ],
+      "skill_doc_hints": [
+        "plugins/cache/openai-curated/vercel/*/skills/nextjs/SKILL.md",
+        "plugins/cache/openai-curated/vercel/*/skills/vercel-api/SKILL.md",
+        "plugins/cache/openai-curated/vercel/*/skills/deployments-cicd/SKILL.md",
+        "plugins/cache/openai-curated/cloudflare/*/skills/workers-best-practices/SKILL.md",
+        "plugins/cache/openai-curated/cloudflare/*/skills/wrangler/SKILL.md",
+        "plugins/cache/openai-curated/supabase/*/skills/supabase/SKILL.md",
+        "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md",
+        "plugins/cache/openai-curated/expo/*/skills/*/SKILL.md",
+        "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md",
+        "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+        "plugins/cache/openai-bundled/chrome/*/skills/control-chrome/SKILL.md"
+      ],
+      "ranking_signals": [
+        "boost exact plugin names",
+        "boost recent strong audit evidence",
+        "penalize warning-heavy broad profiles"
+      ],
+      "plugins": [
+        "Vercel",
+        "Cloudflare",
+        "Supabase",
+        "Sentry",
+        "Stripe",
+        "Expo",
+        "Figma",
+        "Browser",
+        "GitHub"
+      ],
       "soft_load": {
-        "use_for": ["frontend", "deployment", "payments", "database", "observability", "design implementation"],
+        "use_for": [
+          "frontend",
+          "deployment",
+          "payments",
+          "database",
+          "observability",
+          "mobile app",
+          "design implementation"
+        ],
         "skill_doc_hints": [
           "plugins/cache/openai-curated/vercel/*/skills/nextjs/SKILL.md",
           "plugins/cache/openai-curated/vercel/*/skills/vercel-api/SKILL.md",
@@ -88,21 +1366,622 @@
           "plugins/cache/openai-curated/cloudflare/*/skills/wrangler/SKILL.md",
           "plugins/cache/openai-curated/supabase/*/skills/supabase/SKILL.md",
           "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md",
+          "plugins/cache/openai-curated/expo/*/skills/*/SKILL.md",
           "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md",
-          "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md"
+          "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+          "plugins/cache/openai-bundled/chrome/*/skills/control-chrome/SKILL.md"
         ],
-        "notes": ["Preserve Vercel/browser capabilities for projects that need visual or web verification."]
+        "notes": [
+          "Preserve Vercel/browser capabilities for projects that need visual or web verification."
+        ]
       },
       "hard_load": {
-        "enable_plugins": ["Vercel", "Cloudflare", "Supabase", "Sentry", "Stripe", "Figma", "Browser", "GitHub"],
+        "enable_plugins": [
+          "Vercel",
+          "Cloudflare",
+          "Supabase",
+          "Sentry",
+          "Stripe",
+          "Expo",
+          "Figma",
+          "Browser",
+          "GitHub"
+        ],
         "disable_other_known_plugins": true
-      }
+      },
+      "task_modules": {
+        "frontend-build": {
+          "description": "Frontend, Next.js, Vercel, web UI, and browser-facing product builds.",
+          "scenario_description": "Frontend, Next.js, Vercel, web UI, and browser-facing product builds.",
+          "route_when": [
+            "frontend",
+            "nextjs",
+            "react",
+            "vercel",
+            "web build",
+            "landing page"
+          ],
+          "positive_examples": [
+            "frontend",
+            "nextjs",
+            "react",
+            "vercel",
+            "web build",
+            "landing page"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Vercel",
+            "Browser",
+            "GitHub"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/vercel/*/skills/nextjs/SKILL.md",
+            "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+            "plugins/cache/openai-bundled/chrome/*/skills/control-chrome/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "frontend",
+              "nextjs",
+              "react",
+              "vercel",
+              "web build",
+              "landing page"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/vercel/*/skills/nextjs/SKILL.md",
+              "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+              "plugins/cache/openai-bundled/chrome/*/skills/control-chrome/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Frontend, Next.js, Vercel, web UI, and browser-facing product builds.",
+          "qualified_name": "web-saas.frontend-build",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "deploy-runtime": {
+          "description": "Cloudflare/Vercel deployment runtime, workers, CI/CD, and edge deployment work.",
+          "scenario_description": "Cloudflare/Vercel deployment runtime, workers, CI/CD, and edge deployment work.",
+          "route_when": [
+            "deploy",
+            "deployment",
+            "cloudflare",
+            "workers",
+            "wrangler",
+            "ci cd",
+            "vercel"
+          ],
+          "positive_examples": [
+            "deploy",
+            "deployment",
+            "cloudflare",
+            "workers",
+            "wrangler",
+            "ci cd",
+            "vercel"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Vercel",
+            "Cloudflare",
+            "GitHub"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/cloudflare/*/skills/workers-best-practices/SKILL.md",
+            "plugins/cache/openai-curated/cloudflare/*/skills/wrangler/SKILL.md",
+            "plugins/cache/openai-curated/vercel/*/skills/deployments-cicd/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "deploy",
+              "deployment",
+              "cloudflare",
+              "workers",
+              "wrangler",
+              "ci cd",
+              "vercel"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/cloudflare/*/skills/workers-best-practices/SKILL.md",
+              "plugins/cache/openai-curated/cloudflare/*/skills/wrangler/SKILL.md",
+              "plugins/cache/openai-curated/vercel/*/skills/deployments-cicd/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Cloudflare/Vercel deployment runtime, workers, CI/CD, and edge deployment work.",
+          "qualified_name": "web-saas.deploy-runtime",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "db-backend": {
+          "description": "Supabase/database/backend API work for web products.",
+          "scenario_description": "Supabase/database/backend API work for web products.",
+          "route_when": [
+            "supabase",
+            "database",
+            "postgres",
+            "auth",
+            "storage",
+            "backend"
+          ],
+          "positive_examples": [
+            "supabase",
+            "database",
+            "postgres",
+            "auth",
+            "storage",
+            "backend"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Supabase"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/supabase/*/skills/supabase/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "supabase",
+              "database",
+              "postgres",
+              "auth",
+              "storage",
+              "backend"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/supabase/*/skills/supabase/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Supabase/database/backend API work for web products.",
+          "qualified_name": "web-saas.db-backend",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "payments": {
+          "description": "Stripe payments, billing, checkout, subscriptions, and payment integration.",
+          "scenario_description": "Stripe payments, billing, checkout, subscriptions, and payment integration.",
+          "route_when": [
+            "stripe",
+            "payment",
+            "checkout",
+            "billing",
+            "subscription",
+            "invoice"
+          ],
+          "positive_examples": [
+            "stripe",
+            "payment",
+            "checkout",
+            "billing",
+            "subscription",
+            "invoice"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Stripe"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "stripe",
+              "payment",
+              "checkout",
+              "billing",
+              "subscription",
+              "invoice"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Stripe payments, billing, checkout, subscriptions, and payment integration.",
+          "qualified_name": "web-saas.payments",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "observability": {
+          "description": "Sentry/monitoring/error tracking and production observability for web or mobile apps.",
+          "scenario_description": "Sentry/monitoring/error tracking and production observability for web or mobile apps.",
+          "route_when": [
+            "sentry",
+            "observability",
+            "monitoring",
+            "error tracking",
+            "crash",
+            "trace"
+          ],
+          "positive_examples": [
+            "sentry",
+            "observability",
+            "monitoring",
+            "error tracking",
+            "crash",
+            "trace"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Sentry"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/sentry/*/skills/*/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "sentry",
+              "observability",
+              "monitoring",
+              "error tracking",
+              "crash",
+              "trace"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/sentry/*/skills/*/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Sentry/monitoring/error tracking and production observability for web or mobile apps.",
+          "qualified_name": "web-saas.observability",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "mobile-app": {
+          "description": "Expo/React Native/mobile app build, native UI, and app deployment work.",
+          "scenario_description": "Expo/React Native/mobile app build, native UI, and app deployment work.",
+          "route_when": [
+            "expo",
+            "mobile",
+            "react native",
+            "native app",
+            "ios",
+            "android",
+            "dev client"
+          ],
+          "positive_examples": [
+            "expo",
+            "mobile",
+            "react native",
+            "native app",
+            "ios",
+            "android",
+            "dev client"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Expo"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/expo/*/skills/*/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "expo",
+              "mobile",
+              "react native",
+              "native app",
+              "ios",
+              "android",
+              "dev client"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/expo/*/skills/*/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Expo/React Native/mobile app build, native UI, and app deployment work.",
+          "qualified_name": "web-saas.mobile-app",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "design-implementation": {
+          "description": "Figma-to-code, design implementation, and UI handoff for web/SaaS products.",
+          "scenario_description": "Figma-to-code, design implementation, and UI handoff for web/SaaS products.",
+          "route_when": [
+            "figma",
+            "design implementation",
+            "figma code",
+            "ui handoff",
+            "design to code"
+          ],
+          "positive_examples": [
+            "figma",
+            "design implementation",
+            "figma code",
+            "ui handoff",
+            "design to code"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Figma"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "figma",
+              "design implementation",
+              "figma code",
+              "ui handoff",
+              "design to code"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Figma-to-code, design implementation, and UI handoff for web/SaaS products.",
+          "qualified_name": "web-saas.design-implementation",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "browser-verification": {
+          "description": "Browser verification, screenshots, DevTools checks, and visual QA for web products.",
+          "scenario_description": "Browser verification, screenshots, DevTools checks, and visual QA for web products.",
+          "route_when": [
+            "browser",
+            "chrome",
+            "screenshot",
+            "visual qa",
+            "devtools",
+            "cdp"
+          ],
+          "positive_examples": [
+            "browser",
+            "chrome",
+            "screenshot",
+            "visual qa",
+            "devtools",
+            "cdp"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Browser"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+            "plugins/cache/openai-bundled/chrome/*/skills/control-chrome/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "browser",
+              "chrome",
+              "screenshot",
+              "visual qa",
+              "devtools",
+              "cdp"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-bundled/browser-use/*/skills/browser/SKILL.md",
+              "plugins/cache/openai-bundled/chrome/*/skills/control-chrome/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Browser verification, screenshots, DevTools checks, and visual QA for web products.",
+          "qualified_name": "web-saas.browser-verification",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        }
+      },
+      "scene_description": "Web/SaaS build and deploy profile for Vercel, Cloudflare, Supabase, Sentry, Stripe, Expo, Figma, browser checks, and GitHub workflows.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "company-ops": {
-      "description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, CRM, and office artifacts.",
-      "plugins": ["Gmail", "Google Calendar", "Google Drive", "Slack", "Notion", "HubSpot", "Documents", "Spreadsheets", "Presentations"],
+      "description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, HubSpot, Fireflies, Linear, and office artifacts.",
+      "scenario_description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, HubSpot, Fireflies, Linear, and office artifacts.",
+      "route_when": [
+        "gmail",
+        "calendar",
+        "drive",
+        "slack",
+        "notion",
+        "hubspot",
+        "crm",
+        "meeting",
+        "fireflies",
+        "linear",
+        "ops",
+        "docs",
+        "sheets",
+        "slides"
+      ],
+      "negative_examples": [
+        "source-code security scan",
+        "mobile app build",
+        "scientific citation review",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
+      ],
+      "load_policy": "default-candidate",
+      "plugin_hints": [
+        "Gmail",
+        "Google Calendar",
+        "Google Drive",
+        "Slack",
+        "Notion",
+        "HubSpot",
+        "Fireflies",
+        "Linear",
+        "Documents",
+        "Spreadsheets",
+        "Presentations"
+      ],
+      "skill_doc_hints": [
+        "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md",
+        "plugins/cache/openai-curated/google-calendar/*/skills/google-calendar/SKILL.md",
+        "plugins/cache/openai-curated/google-drive/*/skills/google-drive/SKILL.md",
+        "plugins/cache/openai-curated/google-drive/*/skills/google-docs/SKILL.md",
+        "plugins/cache/openai-curated/google-drive/*/skills/google-sheets/SKILL.md",
+        "plugins/cache/openai-curated/slack/*/skills/slack/SKILL.md",
+        "plugins/cache/openai-curated/notion/*/skills/notion-knowledge-capture/SKILL.md",
+        "plugins/cache/openai-curated/notion/*/skills/notion-research-documentation/SKILL.md",
+        "plugins/cache/openai-curated/fireflies/*/skills/*/SKILL.md",
+        "plugins/cache/openai-curated/linear/*/skills/*/SKILL.md",
+        "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+        "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+        "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
+      ],
+      "ranking_signals": [
+        "boost exact plugin names",
+        "boost recent strong audit evidence",
+        "penalize warning-heavy broad profiles"
+      ],
+      "plugins": [
+        "Gmail",
+        "Google Calendar",
+        "Google Drive",
+        "Slack",
+        "Notion",
+        "HubSpot",
+        "Fireflies",
+        "Linear",
+        "Documents",
+        "Spreadsheets",
+        "Presentations"
+      ],
       "soft_load": {
-        "use_for": ["inbox triage", "scheduling", "knowledge capture", "meeting prep", "docs/sheets/slides", "CRM notes"],
+        "use_for": [
+          "inbox triage",
+          "scheduling",
+          "knowledge capture",
+          "meeting prep",
+          "docs/sheets/slides",
+          "CRM notes",
+          "Fireflies meeting intelligence",
+          "Linear issue planning"
+        ],
         "skill_doc_hints": [
           "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md",
           "plugins/cache/openai-curated/google-calendar/*/skills/google-calendar/SKILL.md",
@@ -112,40 +1991,1012 @@
           "plugins/cache/openai-curated/slack/*/skills/slack/SKILL.md",
           "plugins/cache/openai-curated/notion/*/skills/notion-knowledge-capture/SKILL.md",
           "plugins/cache/openai-curated/notion/*/skills/notion-research-documentation/SKILL.md",
+          "plugins/cache/openai-curated/fireflies/*/skills/*/SKILL.md",
+          "plugins/cache/openai-curated/linear/*/skills/*/SKILL.md",
           "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
-          "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md"
+          "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+          "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
         ],
-        "notes": ["Use hard-load only when live app connectors are needed after restart."]
+        "notes": [
+          "Use hard-load only when live app connectors are needed after restart."
+        ]
       },
       "hard_load": {
-        "enable_plugins": ["Gmail", "Google Calendar", "Google Drive", "Slack", "Notion", "HubSpot", "Documents", "Spreadsheets", "Presentations"],
+        "enable_plugins": [
+          "Gmail",
+          "Google Calendar",
+          "Google Drive",
+          "Slack",
+          "Notion",
+          "HubSpot",
+          "Fireflies",
+          "Linear",
+          "Documents",
+          "Spreadsheets",
+          "Presentations"
+        ],
         "disable_other_known_plugins": true
-      }
+      },
+      "task_modules": {
+        "mail-calendar": {
+          "description": "Gmail and Google Calendar triage, scheduling, and daily briefing.",
+          "scenario_description": "Gmail and Google Calendar triage, scheduling, and daily briefing.",
+          "route_when": [
+            "gmail",
+            "email",
+            "inbox",
+            "calendar",
+            "schedule",
+            "meeting prep"
+          ],
+          "positive_examples": [
+            "gmail",
+            "email",
+            "inbox",
+            "calendar",
+            "schedule",
+            "meeting prep"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Gmail",
+            "Google Calendar"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md",
+            "plugins/cache/openai-curated/google-calendar/*/skills/google-calendar/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "gmail",
+              "email",
+              "inbox",
+              "calendar",
+              "schedule",
+              "meeting prep"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md",
+              "plugins/cache/openai-curated/google-calendar/*/skills/google-calendar/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Gmail and Google Calendar triage, scheduling, and daily briefing.",
+          "qualified_name": "company-ops.mail-calendar",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "docs-sheets-slides": {
+          "description": "Google Drive Docs/Sheets/Slides and office artifacts.",
+          "scenario_description": "Google Drive Docs/Sheets/Slides and office artifacts.",
+          "route_when": [
+            "drive",
+            "google docs",
+            "google sheets",
+            "google slides",
+            "documents",
+            "spreadsheets",
+            "presentations"
+          ],
+          "positive_examples": [
+            "drive",
+            "google docs",
+            "google sheets",
+            "google slides",
+            "documents",
+            "spreadsheets",
+            "presentations"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Google Drive",
+            "Documents",
+            "Spreadsheets",
+            "Presentations"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/google-drive/*/skills/google-docs/SKILL.md",
+            "plugins/cache/openai-curated/google-drive/*/skills/google-sheets/SKILL.md",
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+            "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+            "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "drive",
+              "google docs",
+              "google sheets",
+              "google slides",
+              "documents",
+              "spreadsheets",
+              "presentations"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/google-drive/*/skills/google-docs/SKILL.md",
+              "plugins/cache/openai-curated/google-drive/*/skills/google-sheets/SKILL.md",
+              "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+              "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md",
+              "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Google Drive Docs/Sheets/Slides and office artifacts.",
+          "qualified_name": "company-ops.docs-sheets-slides",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "knowledge-capture": {
+          "description": "Notion/Drive knowledge capture, notes, and operating-system documentation.",
+          "scenario_description": "Notion/Drive knowledge capture, notes, and operating-system documentation.",
+          "route_when": [
+            "notion",
+            "knowledge",
+            "wiki",
+            "notes",
+            "documentation"
+          ],
+          "positive_examples": [
+            "notion",
+            "knowledge",
+            "wiki",
+            "notes",
+            "documentation"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Notion",
+            "Google Drive"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/notion/*/skills/notion-knowledge-capture/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "notion",
+              "knowledge",
+              "wiki",
+              "notes",
+              "documentation"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/notion/*/skills/notion-knowledge-capture/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Notion/Drive knowledge capture, notes, and operating-system documentation.",
+          "qualified_name": "company-ops.knowledge-capture",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "crm-workflow": {
+          "description": "HubSpot CRM records, pipeline notes, customer follow-up, and sales operations.",
+          "scenario_description": "HubSpot CRM records, pipeline notes, customer follow-up, and sales operations.",
+          "route_when": [
+            "hubspot",
+            "crm",
+            "lead",
+            "deal",
+            "pipeline",
+            "follow-up"
+          ],
+          "positive_examples": [
+            "hubspot",
+            "crm",
+            "lead",
+            "deal",
+            "pipeline",
+            "follow-up"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "HubSpot"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/hubspot/*/skills/hubspot/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "hubspot",
+              "crm",
+              "lead",
+              "deal",
+              "pipeline",
+              "follow-up"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/hubspot/*/skills/hubspot/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "HubSpot CRM records, pipeline notes, customer follow-up, and sales operations.",
+          "qualified_name": "company-ops.crm-workflow",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "team-comms": {
+          "description": "Slack team communications and collaboration flows.",
+          "scenario_description": "Slack team communications and collaboration flows.",
+          "route_when": [
+            "slack",
+            "team comms",
+            "channel",
+            "message",
+            "collaboration"
+          ],
+          "positive_examples": [
+            "slack",
+            "team comms",
+            "channel",
+            "message",
+            "collaboration"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Slack"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/slack/*/skills/slack/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "slack",
+              "team comms",
+              "channel",
+              "message",
+              "collaboration"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/slack/*/skills/slack/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Slack team communications and collaboration flows.",
+          "qualified_name": "company-ops.team-comms",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "meeting-intel": {
+          "description": "Fireflies meeting intelligence, meeting notes, transcripts, and follow-up extraction.",
+          "scenario_description": "Fireflies meeting intelligence, meeting notes, transcripts, and follow-up extraction.",
+          "route_when": [
+            "fireflies",
+            "meeting notes",
+            "transcript",
+            "meeting intelligence",
+            "action items"
+          ],
+          "positive_examples": [
+            "fireflies",
+            "meeting notes",
+            "transcript",
+            "meeting intelligence",
+            "action items"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Fireflies",
+            "Google Calendar"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/fireflies/*/skills/*/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "fireflies",
+              "meeting notes",
+              "transcript",
+              "meeting intelligence",
+              "action items"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/fireflies/*/skills/*/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Fireflies meeting intelligence, meeting notes, transcripts, and follow-up extraction.",
+          "qualified_name": "company-ops.meeting-intel",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "issue-planning": {
+          "description": "Linear planning, issue triage, roadmap, backlog, and execution tracking.",
+          "scenario_description": "Linear planning, issue triage, roadmap, backlog, and execution tracking.",
+          "route_when": [
+            "linear",
+            "issue",
+            "backlog",
+            "roadmap",
+            "sprint",
+            "planning"
+          ],
+          "positive_examples": [
+            "linear",
+            "issue",
+            "backlog",
+            "roadmap",
+            "sprint",
+            "planning"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Linear"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/linear/*/skills/*/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "linear",
+              "issue",
+              "backlog",
+              "roadmap",
+              "sprint",
+              "planning"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/linear/*/skills/*/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Linear planning, issue triage, roadmap, backlog, and execution tracking.",
+          "qualified_name": "company-ops.issue-planning",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        }
+      },
+      "scene_description": "One-person-company operations profile for mail, calendar, drive/docs, Slack, Notion, HubSpot, Fireflies, Linear, and office artifacts.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "market-research": {
-      "description": "Market, company, investment, news, library, and model/dataset research profile.",
-      "plugins": ["PitchBook", "CB Insights", "Dow Jones Factiva", "Readwise", "Zotero", "Hugging Face", "Documents", "Spreadsheets"],
+      "description": "Market, company, investment, news, library, scientific visual, and model/dataset research profile.",
+      "scenario_description": "Market, company, investment, news, library, scientific visual, and model/dataset research profile.",
+      "route_when": [
+        "market",
+        "research",
+        "company",
+        "investment",
+        "news",
+        "citation",
+        "paper",
+        "dataset",
+        "model",
+        "hugging face",
+        "biorender",
+        "science",
+        "figure",
+        "zotero"
+      ],
+      "negative_examples": [
+        "send customer WhatsApp",
+        "deploy web app",
+        "desktop GUI build",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
+      ],
+      "load_policy": "default-candidate",
+      "plugin_hints": [
+        "PitchBook",
+        "CB Insights",
+        "Dow Jones Factiva",
+        "Readwise",
+        "Zotero",
+        "Hugging Face",
+        "BioRender",
+        "Documents",
+        "Spreadsheets"
+      ],
+      "skill_doc_hints": [
+        "plugins/cache/openai-curated/hugging-face/*/skills/papers/SKILL.md",
+        "plugins/cache/openai-curated/hugging-face/*/skills/datasets/SKILL.md",
+        "plugins/cache/openai-curated/hugging-face/*/skills/cli/SKILL.md",
+        "plugins/cache/openai-curated/biorender/*/skills/*/SKILL.md",
+        "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+        "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md"
+      ],
+      "ranking_signals": [
+        "boost exact plugin names",
+        "boost recent strong audit evidence",
+        "penalize warning-heavy broad profiles"
+      ],
+      "plugins": [
+        "PitchBook",
+        "CB Insights",
+        "Dow Jones Factiva",
+        "Readwise",
+        "Zotero",
+        "Hugging Face",
+        "BioRender",
+        "Documents",
+        "Spreadsheets"
+      ],
       "soft_load": {
-        "use_for": ["private markets", "company research", "news archive", "citation/library work", "model and dataset inspection"],
+        "use_for": [
+          "private markets",
+          "company research",
+          "news archive",
+          "citation/library work",
+          "model and dataset inspection",
+          "scientific figures"
+        ],
         "skill_doc_hints": [
           "plugins/cache/openai-curated/hugging-face/*/skills/papers/SKILL.md",
           "plugins/cache/openai-curated/hugging-face/*/skills/datasets/SKILL.md",
           "plugins/cache/openai-curated/hugging-face/*/skills/cli/SKILL.md",
+          "plugins/cache/openai-curated/biorender/*/skills/*/SKILL.md",
           "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
           "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md"
         ],
-        "notes": ["Some research plugins expose app/MCP tools rather than local SKILL.md files; use hard-load plus restart when those connectors are needed."]
+        "notes": [
+          "Some research plugins expose app/MCP tools rather than local SKILL.md files; use hard-load plus restart when those connectors are needed."
+        ]
       },
       "hard_load": {
-        "enable_plugins": ["PitchBook", "CB Insights", "Dow Jones Factiva", "Readwise", "Zotero", "Hugging Face", "Documents", "Spreadsheets"],
+        "enable_plugins": [
+          "PitchBook",
+          "CB Insights",
+          "Dow Jones Factiva",
+          "Readwise",
+          "Zotero",
+          "Hugging Face",
+          "BioRender",
+          "Documents",
+          "Spreadsheets"
+        ],
         "disable_other_known_plugins": true
-      }
+      },
+      "task_modules": {
+        "company-research": {
+          "description": "Company, market, investment, and competitive research.",
+          "scenario_description": "Company, market, investment, and competitive research.",
+          "route_when": [
+            "company research",
+            "market",
+            "investment",
+            "competitor",
+            "private markets",
+            "pitchbook",
+            "cb insights"
+          ],
+          "positive_examples": [
+            "company research",
+            "market",
+            "investment",
+            "competitor",
+            "private markets",
+            "pitchbook",
+            "cb insights"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "PitchBook",
+            "CB Insights"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/pitchbook/*/skills/*/SKILL.md",
+            "plugins/cache/openai-curated/cb-insights/*/skills/*/SKILL.md",
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "company research",
+              "market",
+              "investment",
+              "competitor",
+              "private markets",
+              "pitchbook",
+              "cb insights"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/pitchbook/*/skills/*/SKILL.md",
+              "plugins/cache/openai-curated/cb-insights/*/skills/*/SKILL.md",
+              "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Company, market, investment, and competitive research.",
+          "qualified_name": "market-research.company-research",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "news-library": {
+          "description": "News/archive/library ingestion and source tracking.",
+          "scenario_description": "News/archive/library ingestion and source tracking.",
+          "route_when": [
+            "news",
+            "factiva",
+            "archive",
+            "readwise",
+            "library"
+          ],
+          "positive_examples": [
+            "news",
+            "factiva",
+            "archive",
+            "readwise",
+            "library"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Dow Jones Factiva",
+            "Readwise"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/dow-jones-factiva/*/skills/*/SKILL.md",
+            "plugins/cache/openai-curated/readwise/*/skills/*/SKILL.md",
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "news",
+              "factiva",
+              "archive",
+              "readwise",
+              "library"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/dow-jones-factiva/*/skills/*/SKILL.md",
+              "plugins/cache/openai-curated/readwise/*/skills/*/SKILL.md",
+              "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "News/archive/library ingestion and source tracking.",
+          "qualified_name": "market-research.news-library",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "paper-citation": {
+          "description": "Academic paper, Zotero, citation, and literature review work.",
+          "scenario_description": "Academic paper, Zotero, citation, and literature review work.",
+          "route_when": [
+            "paper",
+            "citation",
+            "zotero",
+            "literature",
+            "academic"
+          ],
+          "positive_examples": [
+            "paper",
+            "citation",
+            "zotero",
+            "literature",
+            "academic"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Zotero",
+            "Documents"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "paper",
+              "citation",
+              "zotero",
+              "literature",
+              "academic"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Academic paper, Zotero, citation, and literature review work.",
+          "qualified_name": "market-research.paper-citation",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "model-dataset-inspection": {
+          "description": "Hugging Face model, dataset, and ML artifact inspection.",
+          "scenario_description": "Hugging Face model, dataset, and ML artifact inspection.",
+          "route_when": [
+            "hugging face",
+            "model",
+            "dataset",
+            "ml",
+            "paper model"
+          ],
+          "positive_examples": [
+            "hugging face",
+            "model",
+            "dataset",
+            "ml",
+            "paper model"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting",
+            "skills context budget warning",
+            "Exceeded skills context budget",
+            "All skill descriptions were removed",
+            "additional skills were not included",
+            "model-visible skills list",
+            "context compacted skills warning"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Hugging Face"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/hugging-face/*/skills/datasets/SKILL.md",
+            "plugins/cache/openai-curated/hugging-face/*/skills/papers/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "hugging face",
+              "model",
+              "dataset",
+              "ml",
+              "paper model"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/hugging-face/*/skills/datasets/SKILL.md",
+              "plugins/cache/openai-curated/hugging-face/*/skills/papers/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Hugging Face model, dataset, and ML artifact inspection.",
+          "qualified_name": "market-research.model-dataset-inspection",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "science-visuals": {
+          "description": "BioRender scientific figure and research visual preparation.",
+          "scenario_description": "BioRender scientific figure and research visual preparation.",
+          "route_when": [
+            "biorender",
+            "scientific figure",
+            "science visual",
+            "biology diagram",
+            "research figure"
+          ],
+          "positive_examples": [
+            "biorender",
+            "scientific figure",
+            "science visual",
+            "biology diagram",
+            "research figure"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "BioRender"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/biorender/*/skills/*/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "biorender",
+              "scientific figure",
+              "science visual",
+              "biology diagram",
+              "research figure"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/biorender/*/skills/*/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "BioRender scientific figure and research visual preparation.",
+          "qualified_name": "market-research.science-visuals",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "report-artifacts": {
+          "description": "Research report documents and spreadsheet artifacts.",
+          "scenario_description": "Research report documents and spreadsheet artifacts.",
+          "route_when": [
+            "report",
+            "analysis document",
+            "spreadsheet",
+            "evidence table"
+          ],
+          "positive_examples": [
+            "report",
+            "analysis document",
+            "spreadsheet",
+            "evidence table"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Documents",
+            "Spreadsheets"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+            "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "report",
+              "analysis document",
+              "spreadsheet",
+              "evidence table"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md",
+              "plugins/cache/openai-primary-runtime/spreadsheets/*/skills/spreadsheets/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Research report documents and spreadsheet artifacts.",
+          "qualified_name": "market-research.report-artifacts",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        }
+      },
+      "scene_description": "Market, company, investment, news, library, scientific visual, and model/dataset research profile.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "customer-comms": {
       "description": "Customer communications profile for Twilio, SendGrid, Slack, Gmail, and Stripe-adjacent customer/payment messaging.",
-      "plugins": ["Twilio Developer Kit", "Slack", "Gmail", "Stripe", "Documents"],
+      "scenario_description": "Customer communications profile for Twilio, SendGrid, Slack, Gmail, and Stripe-adjacent customer/payment messaging.",
+      "route_when": [
+        "twilio",
+        "sendgrid",
+        "sms",
+        "voice",
+        "whatsapp",
+        "customer notification",
+        "customer notice",
+        "support",
+        "payment message",
+        "gmail",
+        "slack"
+      ],
+      "negative_examples": [
+        "CI repair",
+        "BioRender figure",
+        "desktop GUI",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
+      ],
+      "load_policy": "default-candidate",
+      "plugin_hints": [
+        "Twilio Developer Kit",
+        "Slack",
+        "Gmail",
+        "Stripe",
+        "Documents"
+      ],
+      "skill_doc_hints": [
+        "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-messaging-overview/SKILL.md",
+        "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-send-message/SKILL.md",
+        "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-voice-outbound-calls/SKILL.md",
+        "plugins/cache/openai-curated/twilio-developer-kit/*/skills/sendgrid/twilio-sendgrid-email-send/SKILL.md",
+        "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-security-api-auth/SKILL.md",
+        "plugins/cache/openai-curated/slack/*/skills/slack/SKILL.md",
+        "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md",
+        "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md"
+      ],
+      "ranking_signals": [
+        "boost exact plugin names",
+        "boost recent strong audit evidence",
+        "penalize warning-heavy broad profiles"
+      ],
+      "plugins": [
+        "Twilio Developer Kit",
+        "Slack",
+        "Gmail",
+        "Stripe",
+        "Documents"
+      ],
       "soft_load": {
-        "use_for": ["SMS", "voice", "WhatsApp", "SendGrid email", "customer support", "communication compliance"],
+        "use_for": [
+          "SMS",
+          "voice",
+          "WhatsApp",
+          "SendGrid email",
+          "customer support",
+          "communication compliance"
+        ],
         "skill_doc_hints": [
           "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-messaging-overview/SKILL.md",
           "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-send-message/SKILL.md",
@@ -156,39 +3007,758 @@
           "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md",
           "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md"
         ],
-        "notes": ["Load only the channel-specific Twilio/SendGrid files needed for the current task."]
+        "notes": [
+          "Load only the channel-specific Twilio/SendGrid files needed for the current task."
+        ]
       },
       "hard_load": {
-        "enable_plugins": ["Twilio Developer Kit", "Slack", "Gmail", "Stripe", "Documents"],
+        "enable_plugins": [
+          "Twilio Developer Kit",
+          "Slack",
+          "Gmail",
+          "Stripe",
+          "Documents"
+        ],
         "disable_other_known_plugins": true
-      }
+      },
+      "task_modules": {
+        "messaging": {
+          "description": "Twilio SMS, WhatsApp, and voice customer messaging.",
+          "scenario_description": "Twilio SMS, WhatsApp, and voice customer messaging.",
+          "route_when": [
+            "twilio",
+            "sms",
+            "whatsapp",
+            "voice",
+            "customer notification",
+            "customer notice"
+          ],
+          "positive_examples": [
+            "twilio",
+            "sms",
+            "whatsapp",
+            "voice",
+            "customer notification",
+            "customer notice"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Twilio Developer Kit"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-messaging-overview/SKILL.md",
+            "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-send-message/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "twilio",
+              "sms",
+              "whatsapp",
+              "voice",
+              "customer notification",
+              "customer notice"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-messaging-overview/SKILL.md",
+              "plugins/cache/openai-curated/twilio-developer-kit/*/skills/twilio/twilio-send-message/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Twilio SMS, WhatsApp, and voice customer messaging.",
+          "qualified_name": "customer-comms.messaging",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "email-delivery": {
+          "description": "SendGrid/Gmail customer email delivery and deliverability tasks.",
+          "scenario_description": "SendGrid/Gmail customer email delivery and deliverability tasks.",
+          "route_when": [
+            "sendgrid",
+            "email delivery",
+            "gmail",
+            "deliverability",
+            "customer email"
+          ],
+          "positive_examples": [
+            "sendgrid",
+            "email delivery",
+            "gmail",
+            "deliverability",
+            "customer email"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Twilio Developer Kit",
+            "Gmail"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/twilio-developer-kit/*/skills/sendgrid/twilio-sendgrid-email-send/SKILL.md",
+            "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "sendgrid",
+              "email delivery",
+              "gmail",
+              "deliverability",
+              "customer email"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/twilio-developer-kit/*/skills/sendgrid/twilio-sendgrid-email-send/SKILL.md",
+              "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "SendGrid/Gmail customer email delivery and deliverability tasks.",
+          "qualified_name": "customer-comms.email-delivery",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "support-comms": {
+          "description": "Slack/Gmail support communications and customer support coordination.",
+          "scenario_description": "Slack/Gmail support communications and customer support coordination.",
+          "route_when": [
+            "support",
+            "slack",
+            "gmail",
+            "customer comms",
+            "conversation"
+          ],
+          "positive_examples": [
+            "support",
+            "slack",
+            "gmail",
+            "customer comms",
+            "conversation"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Slack",
+            "Gmail",
+            "Documents"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/slack/*/skills/slack/SKILL.md",
+            "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "support",
+              "slack",
+              "gmail",
+              "customer comms",
+              "conversation"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/slack/*/skills/slack/SKILL.md",
+              "plugins/cache/openai-curated/gmail/*/skills/gmail/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Slack/Gmail support communications and customer support coordination.",
+          "qualified_name": "customer-comms.support-comms",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "payment-comms": {
+          "description": "Stripe-adjacent customer payment, invoice, and billing messaging.",
+          "scenario_description": "Stripe-adjacent customer payment, invoice, and billing messaging.",
+          "route_when": [
+            "stripe",
+            "payment message",
+            "invoice",
+            "billing notice",
+            "checkout email"
+          ],
+          "positive_examples": [
+            "stripe",
+            "payment message",
+            "invoice",
+            "billing notice",
+            "checkout email"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Stripe",
+            "Documents"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "stripe",
+              "payment message",
+              "invoice",
+              "billing notice",
+              "checkout email"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/stripe/*/skills/stripe-best-practices/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Stripe-adjacent customer payment, invoice, and billing messaging.",
+          "qualified_name": "customer-comms.payment-comms",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        }
+      },
+      "scene_description": "Customer communications profile for Twilio, SendGrid, Slack, Gmail, and Stripe-adjacent customer/payment messaging.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "creative-content": {
-      "description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, presentations, and document deliverables.",
-      "plugins": ["Canva", "Figma", "Remotion", "HyperFrames by HeyGen", "Presentations", "Documents"],
+      "description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, Cloudinary, presentations, and document deliverables.",
+      "scenario_description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, Cloudinary, presentations, and document deliverables.",
+      "route_when": [
+        "canva",
+        "figma",
+        "design",
+        "slides",
+        "presentation",
+        "video",
+        "remotion",
+        "hyperframes",
+        "brand",
+        "cloudinary",
+        "asset",
+        "media"
+      ],
+      "negative_examples": [
+        "database backend",
+        "CI security review",
+        "meeting transcript",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
+      ],
+      "load_policy": "default-candidate",
+      "plugin_hints": [
+        "Canva",
+        "Figma",
+        "Remotion",
+        "HyperFrames by HeyGen",
+        "Cloudinary",
+        "Presentations",
+        "Documents"
+      ],
+      "skill_doc_hints": [
+        "plugins/cache/openai-curated/canva/*/skills/canva-branded-presentation/SKILL.md",
+        "plugins/cache/openai-curated/figma/*/skills/figma-generate-design/SKILL.md",
+        "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md",
+        "plugins/cache/openai-curated/remotion/*/skills/remotion/SKILL.md",
+        "plugins/cache/openai-curated/hyperframes/*/skills/hyperframes/SKILL.md",
+        "plugins/cache/openai-curated/cloudinary/*/skills/*/SKILL.md",
+        "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md",
+        "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+      ],
+      "ranking_signals": [
+        "boost exact plugin names",
+        "boost recent strong audit evidence",
+        "penalize warning-heavy broad profiles"
+      ],
+      "plugins": [
+        "Canva",
+        "Figma",
+        "Remotion",
+        "HyperFrames by HeyGen",
+        "Cloudinary",
+        "Presentations",
+        "Documents"
+      ],
       "soft_load": {
-        "use_for": ["design generation", "design implementation", "slide decks", "video rendering", "brand assets"],
+        "use_for": [
+          "design generation",
+          "design implementation",
+          "slide decks",
+          "video rendering",
+          "brand assets",
+          "media assets"
+        ],
         "skill_doc_hints": [
           "plugins/cache/openai-curated/canva/*/skills/canva-branded-presentation/SKILL.md",
           "plugins/cache/openai-curated/figma/*/skills/figma-generate-design/SKILL.md",
           "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md",
           "plugins/cache/openai-curated/remotion/*/skills/remotion/SKILL.md",
           "plugins/cache/openai-curated/hyperframes/*/skills/hyperframes/SKILL.md",
+          "plugins/cache/openai-curated/cloudinary/*/skills/*/SKILL.md",
           "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md",
           "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
         ],
-        "notes": ["Use tool-specific plugin capabilities only after hard-load/restart if current session lacks them."]
+        "notes": [
+          "Use tool-specific plugin capabilities only after hard-load/restart if current session lacks them."
+        ]
       },
       "hard_load": {
-        "enable_plugins": ["Canva", "Figma", "Remotion", "HyperFrames by HeyGen", "Presentations", "Documents"],
+        "enable_plugins": [
+          "Canva",
+          "Figma",
+          "Remotion",
+          "HyperFrames by HeyGen",
+          "Cloudinary",
+          "Presentations",
+          "Documents"
+        ],
         "disable_other_known_plugins": true
-      }
+      },
+      "task_modules": {
+        "design-generation": {
+          "description": "Canva/Figma design generation and visual concept creation.",
+          "scenario_description": "Canva/Figma design generation and visual concept creation.",
+          "route_when": [
+            "canva",
+            "figma generate",
+            "design generation",
+            "visual concept"
+          ],
+          "positive_examples": [
+            "canva",
+            "figma generate",
+            "design generation",
+            "visual concept"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Canva",
+            "Figma"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/canva/*/skills/canva-branded-presentation/SKILL.md",
+            "plugins/cache/openai-curated/figma/*/skills/figma-generate-design/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "canva",
+              "figma generate",
+              "design generation",
+              "visual concept"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/canva/*/skills/canva-branded-presentation/SKILL.md",
+              "plugins/cache/openai-curated/figma/*/skills/figma-generate-design/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Canva/Figma design generation and visual concept creation.",
+          "qualified_name": "creative-content.design-generation",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "design-implementation": {
+          "description": "Figma design implementation, design-to-code, and UI handoff.",
+          "scenario_description": "Figma design implementation, design-to-code, and UI handoff.",
+          "route_when": [
+            "figma implementation",
+            "design to code",
+            "ui handoff"
+          ],
+          "positive_examples": [
+            "figma implementation",
+            "design to code",
+            "ui handoff"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Figma"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "figma implementation",
+              "design to code",
+              "ui handoff"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/figma/*/skills/figma-implement-design/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Figma design implementation, design-to-code, and UI handoff.",
+          "qualified_name": "creative-content.design-implementation",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "slides-docs": {
+          "description": "Presentations and document deliverables for creative content.",
+          "scenario_description": "Presentations and document deliverables for creative content.",
+          "route_when": [
+            "slides",
+            "presentation",
+            "deck",
+            "document deliverable"
+          ],
+          "positive_examples": [
+            "slides",
+            "presentation",
+            "deck",
+            "document deliverable"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Presentations",
+            "Documents",
+            "Canva"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md",
+            "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "slides",
+              "presentation",
+              "deck",
+              "document deliverable"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-primary-runtime/presentations/*/skills/presentations/SKILL.md",
+              "plugins/cache/openai-primary-runtime/documents/*/skills/documents/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Presentations and document deliverables for creative content.",
+          "qualified_name": "creative-content.slides-docs",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "video-motion": {
+          "description": "Remotion and HyperFrames video/motion production.",
+          "scenario_description": "Remotion and HyperFrames video/motion production.",
+          "route_when": [
+            "video",
+            "motion",
+            "remotion",
+            "hyperframes",
+            "heygen"
+          ],
+          "positive_examples": [
+            "video",
+            "motion",
+            "remotion",
+            "hyperframes",
+            "heygen"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Remotion",
+            "HyperFrames by HeyGen"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/remotion/*/skills/remotion/SKILL.md",
+            "plugins/cache/openai-curated/hyperframes/*/skills/hyperframes/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "video",
+              "motion",
+              "remotion",
+              "hyperframes",
+              "heygen"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/remotion/*/skills/remotion/SKILL.md",
+              "plugins/cache/openai-curated/hyperframes/*/skills/hyperframes/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Remotion and HyperFrames video/motion production.",
+          "qualified_name": "creative-content.video-motion",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "brand-assets": {
+          "description": "Brand asset planning and reusable creative asset production.",
+          "scenario_description": "Brand asset planning and reusable creative asset production.",
+          "route_when": [
+            "brand",
+            "logo",
+            "visual identity",
+            "asset pack"
+          ],
+          "positive_examples": [
+            "brand",
+            "logo",
+            "visual identity",
+            "asset pack"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Canva",
+            "Figma",
+            "Presentations"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/canva/*/skills/canva-branded-presentation/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "brand",
+              "logo",
+              "visual identity",
+              "asset pack"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/canva/*/skills/canva-branded-presentation/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Brand asset planning and reusable creative asset production.",
+          "qualified_name": "creative-content.brand-assets",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        },
+        "media-assets": {
+          "description": "Cloudinary/media asset pipeline, transformations, and hosted creative assets.",
+          "scenario_description": "Cloudinary/media asset pipeline, transformations, and hosted creative assets.",
+          "route_when": [
+            "cloudinary",
+            "media asset",
+            "image pipeline",
+            "asset delivery",
+            "transformation"
+          ],
+          "positive_examples": [
+            "cloudinary",
+            "media asset",
+            "image pipeline",
+            "asset delivery",
+            "transformation"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "soft-load",
+          "plugin_hints": [
+            "Cloudinary"
+          ],
+          "skill_doc_hints": [
+            "plugins/cache/openai-curated/cloudinary/*/skills/*/SKILL.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "cloudinary",
+              "media asset",
+              "image pipeline",
+              "asset delivery",
+              "transformation"
+            ],
+            "skill_doc_hints": [
+              "plugins/cache/openai-curated/cloudinary/*/skills/*/SKILL.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Cloudinary/media asset pipeline, transformations, and hosted creative assets.",
+          "qualified_name": "creative-content.media-assets",
+          "routing_scope": "task-or-scenario",
+          "activation_scope": "soft-load",
+          "governance_scope": "advisory-only",
+          "evidence_scope": "scenario-negative-audit"
+        }
+      },
+      "scene_description": "Creative production profile for Canva, Figma, Remotion, HyperFrames, Cloudinary, presentations, and document deliverables.",
+      "routing_scope": "profile",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "advisory-only",
+      "evidence_scope": "scenario-negative-audit"
     },
     "pyside6-gui": {
       "description": "Project-local PySide6 desktop GUI profile for preview/apply helper guidance, GUI templates, import-smoke checks, and packaging opt-in boundaries without enabling unrelated plugins.",
+      "scenario_description": "Project-local PySide6 desktop GUI profile for preview/apply helper guidance, GUI templates, import-smoke checks, and packaging opt-in boundaries without enabling unrelated plugins.",
+      "route_when": [
+        "pyside6",
+        "qt",
+        "desktop gui",
+        "windows desktop",
+        "operator console",
+        "gui packaging"
+      ],
+      "negative_examples": [
+        "web SaaS deploy",
+        "cloud plugin hard-load",
+        "customer messaging",
+        "skills context budget warning",
+        "Exceeded skills context budget",
+        "All skill descriptions were removed",
+        "additional skills were not included",
+        "model-visible skills list",
+        "context compacted skills warning"
+      ],
+      "load_policy": "repo-local-only",
+      "plugin_hints": [],
+      "skill_doc_hints": [
+        "repo:.codex/skills/pyside6-gui/SKILL.md",
+        "repo:tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1",
+        "repo:tools/pyside6_gui_templates/README.md",
+        "repo:tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template"
+      ],
+      "ranking_signals": [
+        "boost exact plugin names",
+        "boost recent strong audit evidence",
+        "penalize warning-heavy broad profiles"
+      ],
       "plugins": [],
       "soft_load": {
-        "use_for": ["local desktop GUI", "PySide6", "Qt", "Windows desktop tooling", "operator console", "GUI packaging preflight"],
+        "use_for": [
+          "local desktop GUI",
+          "PySide6",
+          "Qt",
+          "Windows desktop tooling",
+          "operator console",
+          "GUI packaging preflight"
+        ],
         "skill_doc_hints": [
           "repo:.codex/skills/pyside6-gui/SKILL.md",
           "repo:tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1",
@@ -204,20 +3774,261 @@
       "hard_load": {
         "enable_plugins": [],
         "disable_other_known_plugins": false
-      }
+      },
+      "task_modules": {
+        "qt-gui-dev": {
+          "description": "PySide6/Qt local desktop GUI development guidance.",
+          "scenario_description": "PySide6/Qt local desktop GUI development guidance.",
+          "route_when": [
+            "pyside6",
+            "qt",
+            "desktop gui",
+            "gui dev"
+          ],
+          "positive_examples": [
+            "pyside6",
+            "qt",
+            "desktop gui",
+            "gui dev"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "repo-local-only",
+          "plugin_hints": [],
+          "skill_doc_hints": [
+            "repo:.codex/skills/pyside6-gui/SKILL.md",
+            "repo:tools/pyside6_gui_templates/README.md"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "pyside6",
+              "qt",
+              "desktop gui",
+              "gui dev"
+            ],
+            "skill_doc_hints": [
+              "repo:.codex/skills/pyside6-gui/SKILL.md",
+              "repo:tools/pyside6_gui_templates/README.md"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "PySide6/Qt local desktop GUI development guidance.",
+          "qualified_name": "pyside6-gui.qt-gui-dev",
+          "routing_scope": "repo-local",
+          "activation_scope": "soft-load",
+          "governance_scope": "repo-local-only",
+          "evidence_scope": "repo-local-evidence"
+        },
+        "gui-preview-apply": {
+          "description": "Preview/apply helper usage for project-local PySide6 GUI setup.",
+          "scenario_description": "Preview/apply helper usage for project-local PySide6 GUI setup.",
+          "route_when": [
+            "preview",
+            "apply",
+            "ensure pyside6",
+            "gui helper"
+          ],
+          "positive_examples": [
+            "preview",
+            "apply",
+            "ensure pyside6",
+            "gui helper"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "repo-local-only",
+          "plugin_hints": [],
+          "skill_doc_hints": [
+            "repo:tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "preview",
+              "apply",
+              "ensure pyside6",
+              "gui helper"
+            ],
+            "skill_doc_hints": [
+              "repo:tools/pyside6_gui_helpers/ensure-pyside6-gui.ps1"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "Preview/apply helper usage for project-local PySide6 GUI setup.",
+          "qualified_name": "pyside6-gui.gui-preview-apply",
+          "routing_scope": "repo-local",
+          "activation_scope": "soft-load",
+          "governance_scope": "repo-local-only",
+          "evidence_scope": "repo-local-evidence"
+        },
+        "gui-packaging-preflight": {
+          "description": "PySide6 executable packaging preflight and opt-in packaging boundary.",
+          "scenario_description": "PySide6 executable packaging preflight and opt-in packaging boundary.",
+          "route_when": [
+            "packaging",
+            "pyinstaller",
+            "preflight",
+            "executable"
+          ],
+          "positive_examples": [
+            "packaging",
+            "pyinstaller",
+            "preflight",
+            "executable"
+          ],
+          "negative_examples": [
+            "whole-profile hard-load apply",
+            "unrelated broad plugin troubleshooting"
+          ],
+          "load_policy": "repo-local-only",
+          "plugin_hints": [],
+          "skill_doc_hints": [
+            "repo:tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template"
+          ],
+          "routing_explanation": "Use this focused task module when the query matches the positive route terms and is not excluded by negative examples.",
+          "ranking_signals": [
+            "exact task term match",
+            "exact plugin family match",
+            "strong audit evidence can boost but cannot apply profiles"
+          ],
+          "soft_load": {
+            "use_for": [
+              "packaging",
+              "pyinstaller",
+              "preflight",
+              "executable"
+            ],
+            "skill_doc_hints": [
+              "repo:tools/pyside6_gui_templates/packaging/pyside6_packaging_preflight.ps1.template"
+            ],
+            "notes": [
+              "Task modules are soft-load guidance only.",
+              "Hard-load previews resolve to the canonical top-level target_profile."
+            ]
+          },
+          "scene_description": "PySide6 executable packaging preflight and opt-in packaging boundary.",
+          "qualified_name": "pyside6-gui.gui-packaging-preflight",
+          "routing_scope": "repo-local",
+          "activation_scope": "soft-load",
+          "governance_scope": "repo-local-only",
+          "evidence_scope": "repo-local-evidence"
+        }
+      },
+      "scene_description": "Project-local PySide6 desktop GUI profile for preview/apply helper guidance, GUI templates, import-smoke checks, and packaging opt-in boundaries without enabling unrelated plugins.",
+      "routing_scope": "repo-local",
+      "activation_scope": "soft-load",
+      "governance_scope": "repo-local-only",
+      "evidence_scope": "repo-local-evidence"
     },
     "full": {
       "description": "Troubleshooting profile that enables every known installed plugin family.",
+      "scenario_description": "Broad all-plugin troubleshooting only; not a normal daily or task-specific recommendation.",
+      "route_when": [
+        "full profile",
+        "all plugins",
+        "troubleshoot all plugins",
+        "diagnose missing plugin capability",
+        "broad discovery"
+      ],
+      "negative_examples": [
+        "ordinary repository work",
+        "single connector task",
+        "focused web or ops work"
+      ],
+      "load_policy": "troubleshooting-only",
+      "plugin_hints": [
+        "BioRender",
+        "Browser",
+        "Canva",
+        "CB Insights",
+        "ChatGPT Apps",
+        "Cloudflare",
+        "Cloudinary",
+        "CodeRabbit",
+        "Codex Security",
+        "Documents",
+        "Dow Jones Factiva",
+        "Expo",
+        "Figma",
+        "Fireflies",
+        "GitHub",
+        "Gmail",
+        "Google Calendar",
+        "Google Drive",
+        "HubSpot",
+        "Hugging Face",
+        "HyperFrames by HeyGen",
+        "Linear",
+        "Notion",
+        "OpenAI Developers",
+        "PitchBook",
+        "Presentations",
+        "Readwise",
+        "Remotion",
+        "Sentry",
+        "Slack",
+        "Spreadsheets",
+        "Stripe",
+        "Supabase",
+        "Temporal",
+        "Twilio Developer Kit",
+        "Vercel",
+        "Zotero"
+      ],
+      "skill_doc_hints": [],
+      "ranking_signals": [
+        "strong penalty for ordinary tasks",
+        "eligible only with explicit all-plugin troubleshooting language"
+      ],
       "plugins": "all_known_plugins",
       "soft_load": {
-        "use_for": ["temporary broad discovery", "diagnosing missing plugin capability"],
+        "use_for": [
+          "temporary broad discovery",
+          "diagnosing missing plugin capability"
+        ],
         "skill_doc_hints": [],
-        "notes": ["Do not use as a long-term default; it can exceed the skills context budget."]
+        "notes": [
+          "Do not use as a long-term default; it can exceed the skills context budget."
+        ]
       },
       "hard_load": {
         "enable_plugins": "all_known_plugins",
         "disable_other_known_plugins": false
-      }
+      },
+      "task_modules": {},
+      "scene_description": "Broad all-plugin troubleshooting only; not a normal daily or task-specific recommendation.",
+      "routing_scope": "explicit-full-troubleshooting",
+      "activation_scope": "hard-load-preview",
+      "governance_scope": "explicit-approval-required",
+      "evidence_scope": "explicit-full-request",
+      "explicit_full_request_required": true,
+      "allowed_full_selection_reasons": [
+        "explicit_all_plugins",
+        "explicit_broad_discovery",
+        "explicit_missing_plugin_capability"
+      ],
+      "ordinary_top1_allowed": false
     }
   }
 }

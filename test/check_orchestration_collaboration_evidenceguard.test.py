@@ -82,18 +82,70 @@ class CollaborationEvidenceguardBilingualSurfaceTest(unittest.TestCase):
 
         self.assertEqual([], issues)
 
-    def test_routing_trace_conversation_requires_key_value_fields(self) -> None:
+    def test_updated_plan_conversation_accepts_native_bullet_panel(self) -> None:
+        issues = module.conversation_surface_issues(
+            "updated_plan",
+            "\u2022 Updated Plan\n  \u2514 \u2714 \u5df2\u8bfb\u53d6\u4e0a\u4e0b\u6587\n    \u25a1 \u8fd0\u884c\u95e8\u7981",
+        )
+
+        self.assertEqual([], issues)
+
+    def test_updated_plan_conversation_rejects_duplicate_or_nested_panels(self) -> None:
+        duplicate = module.conversation_surface_issues(
+            "updated_plan",
+            "Updated Plan\n  \u2714 one\n\nUpdated Plan\n  \u25a1 duplicate",
+        )
+        nested = module.conversation_surface_issues(
+            "updated_plan",
+            "Updated Plan\n\u2514 Updated Plan\n  \u2714 nested",
+        )
+        native_plus_handwritten = module.conversation_surface_issues(
+            "updated_plan",
+            "\u2022 Updated Plan\n  \u2514 \u2714 native panel\n\nUpdated Plan:\n\u2611 duplicate handwritten summary",
+        )
+
+        self.assertTrue(any("exactly one" in issue for issue in duplicate), duplicate)
+        self.assertTrue(any("exactly one" in issue for issue in nested), nested)
+        self.assertTrue(any("native-plus-handwritten" in issue for issue in native_plus_handwritten), native_plus_handwritten)
+
+    def test_routing_trace_conversation_requires_full_key_value_fields(self) -> None:
         valid = module.conversation_surface_issues(
             "routing_trace",
-            "Routing trace: phase=execute, experts=blocked:platform_subagent_invocation_constraint, why=threshold_not_met:single_execution_slice",
+            "Routing trace: phase=execute, capability_chain=subagent:auto > omx:on > langgraph:on, "
+            "backend_default=langgraph, backend_ready=true, "
+            "experts=blocked:platform_subagent_invocation_constraint, durable_workflow=not_needed, "
+            "persistent_team=not_needed, main_session_escalation=not_needed, "
+            "approval_timeout_risk=none, approval_receipt=none, "
+            "why=threshold_not_met:single_execution_slice",
         )
-        invalid = module.conversation_surface_issues(
+        prose_only = module.conversation_surface_issues(
             "routing_trace",
             "Routing trace\nThis is only prose without diagnostic fields.",
         )
+        missing_full_fields = module.conversation_surface_issues(
+            "routing_trace",
+            "Routing trace: phase=execute, experts=blocked:platform_subagent_invocation_constraint, "
+            "why=threshold_not_met:single_execution_slice",
+        )
+        legacy = module.conversation_surface_issues(
+            "routing_trace",
+            "Routing trace: phase=execute, experts_now=main, durable_team=not_selected, "
+            "why=threshold_not_met:single_execution_slice",
+        )
+        duplicate = module.conversation_surface_issues(
+            "routing_trace",
+            "Routing trace: phase=execute, capability_chain=subagent:auto > omx:on > langgraph:on, "
+            "backend_default=langgraph, backend_ready=true, experts=none, durable_workflow=not_needed, "
+            "persistent_team=not_needed, main_session_escalation=not_needed, approval_timeout_risk=none, "
+            "approval_receipt=none, why=threshold_not_met:single_execution_slice\n"
+            "Routing trace: phase=verify-accept, why=duplicate",
+        )
 
         self.assertEqual([], valid)
-        self.assertTrue(any("key=value" in issue for issue in invalid), invalid)
+        self.assertTrue(any("key=value" in issue for issue in prose_only), prose_only)
+        self.assertTrue(any("capability_chain" in issue for issue in missing_full_fields), missing_full_fields)
+        self.assertTrue(any("legacy short field" in issue for issue in legacy), legacy)
+        self.assertTrue(any("exactly one" in issue for issue in duplicate), duplicate)
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ openspec-guard-report.json
 /PMP/
 .vscode/settings.json
 local-gate-report.json
+config/doc_pipeline/doc_pipeline_config.json
 /Business Management/
 log202605111306.md
 /完整提交流程.md

@@ -1,5 +1,30 @@
 version: 1
 documents:
+
+  - doc_id: ppt_visual_review_tool_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/ppt_visual_review_tool_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/ppt_visual_review_tool_plan.zh-CN.md
+
+  - doc_id: project_moe_gui_dirty_target_launch_and_wrappers_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/project_moe_gui_dirty_target_launch_and_wrappers_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/project_moe_gui_dirty_target_launch_and_wrappers_plan.zh-CN.md
+
+  - doc_id: document_visual_rendering_qa_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/document_visual_rendering_qa_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/document_visual_rendering_qa_plan.zh-CN.md
+
+  - doc_id: reusable_document_pdf_vector_tools_promotion_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/reusable_document_pdf_vector_tools_promotion_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/reusable_document_pdf_vector_tools_promotion_plan.zh-CN.md
+
   - doc_id: project_startup_summary
     doc_class: startup_summary
     status: active
@@ -18,8 +43,6 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/automatic_orchestration_routing_enforcement_plan.zh-CN.md
 
-
-
   - doc_id: codex_user_level_context_retention_canary_plan
     doc_class: implementation_plan
     status: active
@@ -32,14 +55,11 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/user_level_capability_receipt_rollback_redaction_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/user_level_capability_receipt_rollback_redaction_plan.zh-CN.md
 
-
   - doc_id: user_level_port_browser_owner_isolation_plan
     doc_class: implementation_plan
     status: active
     canonical_path: docs_bilingual/implementation_plans/user_level_port_browser_owner_isolation_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/user_level_port_browser_owner_isolation_plan.zh-CN.md
-
-
 
   - doc_id: user_level_mcp_skills_cli_runtime_plan
     doc_class: implementation_plan
@@ -47,19 +67,23 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/user_level_mcp_skills_cli_runtime_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/user_level_mcp_skills_cli_runtime_plan.zh-CN.md
 
+  - doc_id: user_level_cloakbrowser_academic_research_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/user_level_cloakbrowser_academic_research_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/user_level_cloakbrowser_academic_research_runtime_plan.zh-CN.md
+
   - doc_id: user_level_browser_cli_adapter_boundary_plan
     doc_class: implementation_plan
     status: active
     canonical_path: docs_bilingual/implementation_plans/user_level_browser_cli_adapter_boundary_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/user_level_browser_cli_adapter_boundary_plan.zh-CN.md
 
-
   - doc_id: user_level_cli_anything_wxwork_cli_governance_plan
     doc_class: implementation_plan
     status: active
     canonical_path: docs_bilingual/implementation_plans/user_level_cli_anything_wxwork_cli_governance_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/user_level_cli_anything_wxwork_cli_governance_plan.zh-CN.md
-
 
   - doc_id: codex_harnesses_governance_plan
     doc_class: implementation_plan
@@ -97,13 +121,11 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/parent_parallel_orchestration_index_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/parent_parallel_orchestration_index_plan.zh-CN.md
 
-
   - doc_id: complete_local_commit_flow_scheduler_reorder_buffer_plan
     doc_class: implementation_plan
     status: active
     canonical_path: docs_bilingual/implementation_plans/complete_local_commit_flow_scheduler_reorder_buffer_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/complete_local_commit_flow_scheduler_reorder_buffer_plan.zh-CN.md
-
 
   - doc_id: self_retiring_peer_session_local_main_plan
     doc_class: implementation_plan
@@ -159,7 +181,6 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/launcher_payload_context_boundary_plan.zh-CN.md
 
-
   - doc_id: prompt_canary_canonical_visible_marker_restore_plan
     doc_class: implementation_plan
     status: active
@@ -201,6 +222,18 @@ documents:
     status: active
     canonical_path: docs_bilingual/implementation_plans/portable_no_backend_parallel_session_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/portable_no_backend_parallel_session_plan.zh-CN.md
+
+  - doc_id: transient_operator_surface_replay_filtering_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/transient_operator_surface_replay_filtering_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/transient_operator_surface_replay_filtering_plan.zh-CN.md
+
+  - doc_id: conversation_surface_single_panel_runtime_alignment_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/conversation_surface_single_panel_runtime_alignment_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/conversation_surface_single_panel_runtime_alignment_plan.zh-CN.md
 
   - doc_id: chinese_routing_trace_conversation_surface_plan
     doc_class: implementation_plan
@@ -250,12 +283,17 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/stop_slop_caveman_response_density_runtime_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/stop_slop_caveman_response_density_runtime_plan.zh-CN.md
 
-
   - doc_id: gstack_codex_delivery_loop_runtime_governance_plan
     doc_class: implementation_plan
     status: active
     canonical_path: docs_bilingual/implementation_plans/gstack_codex_delivery_loop_runtime_governance_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/gstack_codex_delivery_loop_runtime_governance_plan.zh-CN.md
+
+  - doc_id: r6_live_runtime_promotion_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.zh-CN.md
 
   - doc_id: comet_management_record_bootstrap_plan
     doc_class: implementation_plan
@@ -317,6 +355,11 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/parallel_plan_openspec_comet_archive_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/parallel_plan_openspec_comet_archive_plan.zh-CN.md
 
+  - doc_id: omx_windows_native_team_runtime_fix_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/omx_windows_native_team_runtime_fix_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/omx_windows_native_team_runtime_fix_plan.zh-CN.md
 
   - doc_id: codex_oh_my_codex_user_level_team_mode_plan
     doc_class: implementation_plan
@@ -336,12 +379,29 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.zh-CN.md
 
+  - doc_id: one_person_company_pmi_operations_refresh_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/one_person_company_pmi_operations_refresh_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/one_person_company_pmi_operations_refresh_plan.zh-CN.md
+
+  - doc_id: codex_cli_personal_production_durable_team_delivery_matrix
+    doc_class: delivery_matrix
+    status: draft
+    canonical_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_delivery_matrix.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_delivery_matrix.zh-CN.md
 
   - doc_id: codex_cli_personal_production_durable_team_whitepaper
     doc_class: whitepaper
     status: draft
     canonical_path: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md
     zh_cn_path: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md
+
+  - doc_id: personal_production_one_person_company_operations_whitepaper
+    doc_class: whitepaper
+    status: draft
+    canonical_path: docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md
+    zh_cn_path: docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.zh-CN.md
 
   - doc_id: codex_cli_personal_production_durable_team_mrd
     doc_class: market_requirements
@@ -355,11 +415,41 @@ documents:
     canonical_path: docs_bilingual/north_star_plan.md
     zh_cn_path: docs_bilingual/north_star_plan.zh-CN.md
 
+  - doc_id: codex_cli_personal_production_durable_team_north_star
+    doc_class: north_star_plan
+    status: draft
+    canonical_path: docs_bilingual/north_star/codex_cli_personal_production_durable_team_north_star.md
+    zh_cn_path: docs_bilingual/north_star/codex_cli_personal_production_durable_team_north_star.zh-CN.md
+
+  - doc_id: personal_production_one_person_company_operations_north_star
+    doc_class: north_star_plan
+    status: draft
+    canonical_path: docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.md
+    zh_cn_path: docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.zh-CN.md
+
   - doc_id: business_management_source_synthesis
     doc_class: product_lifecycle
     status: draft
     canonical_path: docs_bilingual/product_lifecycle/business_management_source_synthesis.md
     zh_cn_path: docs_bilingual/product_lifecycle/business_management_source_synthesis.zh-CN.md
+
+  - doc_id: fresh_source_reading_evidence
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/fresh_source_reading_evidence.md
+    zh_cn_path: docs_bilingual/product_lifecycle/fresh_source_reading_evidence.zh-CN.md
+
+  - doc_id: durable_team_source_traceability
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/durable_team_source_traceability.md
+    zh_cn_path: docs_bilingual/product_lifecycle/durable_team_source_traceability.zh-CN.md
+
+  - doc_id: durable_team_process_group_contract
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/durable_team_process_group_contract.md
+    zh_cn_path: docs_bilingual/product_lifecycle/durable_team_process_group_contract.zh-CN.md
 
   - doc_id: codex_durable_team_platform_build_lifecycle
     doc_class: product_lifecycle
@@ -409,6 +499,12 @@ documents:
     canonical_path: docs_bilingual/product_lifecycle/product_business_document_lifecycle.md
     zh_cn_path: docs_bilingual/product_lifecycle/product_business_document_lifecycle.zh-CN.md
 
+  - doc_id: ten_to_twelve_layer_bridge
+    doc_class: product_lifecycle
+    status: draft
+    canonical_path: docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.md
+    zh_cn_path: docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.zh-CN.md
+
   - doc_id: codex_cli_personal_production_durable_team_playbook
     doc_class: implementation_plan
     status: draft
@@ -439,7 +535,6 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/codex_skills_usage_audit_plan.zh-CN.md
 
-
   - doc_id: pyside6_gui_cross_project_usage
     doc_class: guide
     status: active
@@ -458,6 +553,12 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.zh-CN.md
 
+  - doc_id: project_expert_lens_agent_gui_toolchain_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/project_expert_lens_agent_gui_toolchain_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/project_expert_lens_agent_gui_toolchain_plan.zh-CN.md
+
   - doc_id: project_moe_gui_enhancement_roadmap_plan
     doc_class: implementation_plan
     status: active
@@ -470,6 +571,17 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/project_moe_gui_product_ui_function_rebuild_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/project_moe_gui_product_ui_function_rebuild_plan.zh-CN.md
 
+  - doc_id: project_moe_gui_sessions_tab_design_refresh_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/project_moe_gui_sessions_tab_design_refresh_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/project_moe_gui_sessions_tab_design_refresh_plan.zh-CN.md
+
+  - doc_id: project_moe_sessions_tab_design_fallback_reason
+    doc_class: design_evidence
+    status: active
+    canonical_path: docs_bilingual/designs/project_moe_sessions_tab/fallback_reason.md
+    zh_cn_path: docs_bilingual/designs/project_moe_sessions_tab/fallback_reason.zh-CN.md
 
   - doc_id: project_moe_gui_double_click_launch_repair_plan
     doc_class: implementation_plan
@@ -482,7 +594,6 @@ documents:
     status: active
     canonical_path: docs_bilingual/governance/codex_user_level_skills_governance_policy.md
     zh_cn_path: docs_bilingual/governance/codex_user_level_skills_governance_policy.zh-CN.md
-
 
   - doc_id: codex_user_level_orchestration_activation_policy
     doc_class: governance
@@ -514,6 +625,12 @@ documents:
     canonical_path: docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.md
     zh_cn_path: docs_bilingual/governance/codex_multi_session_worktree_isolation_policy.zh-CN.md
 
+  - doc_id: one_person_company_embedded_codex_governance_policy
+    doc_class: governance
+    status: active
+    canonical_path: docs_bilingual/governance/one_person_company_embedded_codex_governance_policy.md
+    zh_cn_path: docs_bilingual/governance/one_person_company_embedded_codex_governance_policy.zh-CN.md
+
   - doc_id: openspec_usage_convention
     doc_class: governance
     status: active
@@ -531,7 +648,6 @@ documents:
     status: active
     canonical_path: docs_bilingual/governance/openspec_official_workflow_policy.md
     zh_cn_path: docs_bilingual/governance/openspec_official_workflow_policy.zh-CN.md
-
 
   - doc_id: spec_kit_subordinate_adapter_policy
     doc_class: governance
@@ -569,6 +685,36 @@ documents:
     canonical_path: docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md
     zh_cn_path: docs_bilingual/governance/solo_maintainable_production_persistent_team_research.zh-CN.md
 
+  - doc_id: reference6_reference7_reference8_user_project_live_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/reference6_reference7_reference8_user_project_live_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/reference6_reference7_reference8_user_project_live_runtime_plan.zh-CN.md
+
+  - doc_id: reference6_reference7_user_project_live_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/reference6_reference7_user_project_live_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/reference6_reference7_user_project_live_runtime_plan.zh-CN.md
+
+  - doc_id: reference6_user_project_capability_install_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/reference6_user_project_capability_install_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/reference6_user_project_capability_install_plan.zh-CN.md
+
+  - doc_id: recent_manual_workflow_packaging_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/recent_manual_workflow_packaging_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/recent_manual_workflow_packaging_plan.zh-CN.md
+
+  - doc_id: general_templates_cross_project_reuse_upgrade_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/general_templates_cross_project_reuse_upgrade_plan.zh-CN.md
+
   - doc_id: general_template_phase0_update_patch_plan
     doc_class: implementation_plan
     status: active
@@ -586,7 +732,6 @@ documents:
     status: active
     canonical_path: docs_bilingual/implementation_plans/main_worktree_gitlab_main_alignment_safety_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/main_worktree_gitlab_main_alignment_safety_plan.zh-CN.md
-
 
   - doc_id: evidence_intake_pipeline_workflow_plan
     doc_class: implementation_plan
@@ -612,9 +757,1283 @@ documents:
     canonical_path: docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/chrome_devtools_mcp_multi_session_isolation_plan.zh-CN.md
 
-
   - doc_id: comet_runtime_agile_focus_area_plan
     doc_class: implementation_plan
     status: active
     canonical_path: docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.md
     zh_cn_path: docs_bilingual/implementation_plans/comet_runtime_agile_focus_area_plan.zh-CN.md
+
+  - doc_id: operations_package_generation_and_runtime_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/operations_package_generation_and_runtime_plan.zh-CN.md
+
+  - doc_id: operations_package_full_body_generation_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_brd
+    doc_class: business
+    status: active
+    canonical_path: docs_bilingual/business/codex_cli_durable_team_brd.md
+    zh_cn_path: docs_bilingual/business/codex_cli_durable_team_brd.zh-CN.md
+
+  - doc_id: template_update_policy
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/template_update_policy.md
+    zh_cn_path: docs_bilingual/templates/template_update_policy.zh-CN.md
+
+  - doc_id: codex_platform_core_documents_register
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_core_documents_register.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_core_documents_register.zh-CN.md
+
+  - doc_id: codex_platform_responsibility_raci
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_responsibility_raci.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_responsibility_raci.zh-CN.md
+
+  - doc_id: codex_platform_governed_agent_catalog
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_governed_agent_catalog.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_governed_agent_catalog.zh-CN.md
+
+  - doc_id: codex_platform_cross_cutting_module_map
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_cross_cutting_module_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_cross_cutting_module_map.zh-CN.md
+
+  - doc_id: codex_platform_reference_books_map
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_reference_books_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_reference_books_map.zh-CN.md
+
+  - doc_id: codex_platform_virtual_departments_operating_map
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_platform_virtual_departments_operating_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_platform_virtual_departments_operating_map.zh-CN.md
+
+  - doc_id: codex_cli_personal_production_durable_team_document_generation_order
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_document_generation_order.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_document_generation_order.zh-CN.md
+
+  - doc_id: codex_cli_personal_production_durable_team_operating_slice_template
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_operating_slice_template.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_operating_slice_template.zh-CN.md
+
+  - doc_id: one_person_company_operations_document_system
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_operations_document_system.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_operations_document_system.zh-CN.md
+
+  - doc_id: one_person_company_tailoring_decision_tree
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_tailoring_decision_tree.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_tailoring_decision_tree.zh-CN.md
+
+  - doc_id: one_person_company_minimum_startup_documents
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_minimum_startup_documents.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_minimum_startup_documents.zh-CN.md
+
+  - doc_id: one_person_company_core_documents_register
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_core_documents_register.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_core_documents_register.zh-CN.md
+
+  - doc_id: one_person_company_responsibility_raci
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_responsibility_raci.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_responsibility_raci.zh-CN.md
+
+  - doc_id: one_person_company_governed_agent_catalog
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_governed_agent_catalog.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_governed_agent_catalog.zh-CN.md
+
+  - doc_id: one_person_company_cross_cutting_module_map
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_cross_cutting_module_map.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_cross_cutting_module_map.zh-CN.md
+
+  - doc_id: one_person_company_pmi_process_group_playbook
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_pmi_process_group_playbook.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_pmi_process_group_playbook.zh-CN.md
+
+  - doc_id: one_person_company_architecture_mode_selection_guide
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_architecture_mode_selection_guide.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_architecture_mode_selection_guide.zh-CN.md
+
+  - doc_id: one_person_company_operations_metrics_and_monthly_review
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_operations_metrics_and_monthly_review.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_operations_metrics_and_monthly_review.zh-CN.md
+
+  - doc_id: reference6_7_8_recursive_install_live_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/reference6_7_8_recursive_install_live_runtime_plan.zh-CN.md
+
+  - doc_id: codex_skills2cli_profile_routing_runtime_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_skills2cli_profile_routing_runtime_plan.zh-CN.md
+
+  - doc_id: embedded_codex_governance_in_one_person_company_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_governance_in_one_person_company_plan.zh-CN.md
+
+  - doc_id: embedded_codex_governance_alignment_runtime_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/embedded_codex_governance_alignment_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_governance_alignment_runtime_plan.zh-CN.md
+
+  - doc_id: embedded_codex_startup_kits_and_project_kit_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/embedded_codex_startup_kits_and_project_kit_plan.zh-CN.md
+
+  - doc_id: project_expert_lens_agent_toml_schema_compatibility_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/project_expert_lens_agent_toml_schema_compatibility_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/project_expert_lens_agent_toml_schema_compatibility_plan.zh-CN.md
+
+  - doc_id: codex_cli_personal_production_durable_team_minimum_startup_documents
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.md
+    zh_cn_path: docs_bilingual/product_lifecycle/codex_cli_personal_production_durable_team_minimum_startup_documents.zh-CN.md
+
+  - doc_id: one_person_company_embedded_codex_startup_matrix
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.md
+    zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_embedded_codex_startup_matrix.zh-CN.md
+
+  - doc_id: shared_governance_decision_log_entry_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/decision-log-entry-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/decision-log-entry-template.zh-CN.md
+
+  - doc_id: shared_governance_risk_register_entry_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/risk-register-entry-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/risk-register-entry-template.zh-CN.md
+
+  - doc_id: shared_governance_experiment_log_entry_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/experiment-log-entry-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/experiment-log-entry-template.zh-CN.md
+
+  - doc_id: shared_governance_learning_log_entry_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/learning-log-entry-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/learning-log-entry-template.zh-CN.md
+
+  - doc_id: shared_governance_human_review_record_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/human-review-record-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/human-review-record-template.zh-CN.md
+
+  - doc_id: shared_governance_monthly_review_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/shared_governance_ledgers/monthly-review-template.md
+    zh_cn_path: docs_bilingual/templates/shared_governance_ledgers/monthly-review-template.zh-CN.md
+
+  - doc_id: tailoring_decision_record_template
+    doc_class: template
+    status: active
+    canonical_path: docs_bilingual/templates/tailoring_decision_record_template.md
+    zh_cn_path: docs_bilingual/templates/tailoring_decision_record_template.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_readme
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/README.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/README.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_startup_checklist
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/startup-checklist.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/startup-checklist.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_folder_structure
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/folder-structure.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/folder-structure.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_governance_gates
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/governance-gates.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/governance-gates.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_local_main_workflow
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/local-main-workflow.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/local-main-workflow.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_remote_publication_gate
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/remote-publication-gate.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/remote-publication-gate.zh-CN.md
+
+  - doc_id: one_person_company_with_embedded_codex_monthly_review_sample
+    doc_class: product_lifecycle
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/monthly-review-sample.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/monthly-review-sample.zh-CN.md
+
+
+  - doc_id: codex_one_person_operational_runtime_pack_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/codex_one_person_operational_runtime_pack_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_one_person_operational_runtime_pack_plan.zh-CN.md
+
+  - doc_id: codex_one_person_next_supplement_file_sequence_plan
+    doc_class: implementation_plan
+    status: final
+    canonical_path: docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_one_person_next_supplement_file_sequence_plan.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_vision
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/vision.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/vision.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_thesis
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/thesis.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/thesis.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_business_model
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/business-model.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/business-model.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_pricing
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/pricing.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/pricing.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_unit_economics
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/unit-economics.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/unit-economics.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_strategy
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/strategy.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/strategy.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_user_segments
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/user-segments.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/user-segments.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_market_map
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/market-map.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/market-map.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_research_repository
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/research-repository.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/research-repository.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_product_strategy
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/product-strategy.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/product-strategy.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_prd
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/prd.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/prd.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_cli_ux
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/cli-ux.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/cli-ux.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_metrics
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/metrics.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/metrics.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_north_star
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/north-star.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/north-star.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_tracking_plan
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/tracking-plan.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/tracking-plan.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_data_dictionary
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/data-dictionary.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/data-dictionary.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_data_quality_checklist
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/data-quality-checklist.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/data-quality-checklist.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_experiment_log
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/experiment-log.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/experiment-log.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_architecture
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/architecture.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/architecture.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_adr
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/adr.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/adr.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_module_boundaries
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/module-boundaries.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/module-boundaries.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_tech_stack
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/tech-stack.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/tech-stack.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_delivery_plan
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/delivery-plan.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/delivery-plan.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_observability
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/observability.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/observability.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_security_policy
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/security-policy.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/security-policy.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_access_control
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/access-control.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/access-control.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_privacy_policy
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/privacy-policy.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/privacy-policy.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_incident_response
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/incident-response.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/incident-response.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_risk_register
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/risk-register.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/risk-register.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_backup_restore
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/backup-restore.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/backup-restore.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_agent_role_map
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-role-map.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-role-map.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_agent_permissions
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-permissions.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-permissions.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_agent_governance
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-governance.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_human_review_checklist
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/human-review-checklist.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/human-review-checklist.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_agent_evaluation
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-evaluation.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-evaluation.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_agent_failure_modes
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-failure-modes.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/agent-failure-modes.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_growth_model
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/growth-model.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/growth-model.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_docs_plan
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/docs-plan.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/docs-plan.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_support_playbook
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/support-playbook.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/support-playbook.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_faq
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/faq.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/faq.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_trust_page
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/trust-page.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/trust-page.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_changelog
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/changelog.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/changelog.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_decision_log
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/decision-log.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/decision-log.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_weekly_review
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/weekly-review.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/weekly-review.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_monthly_review
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/monthly-review.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/monthly-review.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_postmortem
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/postmortem.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/postmortem.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_learning_log
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/learning-log.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/learning-log.zh-CN.md
+
+  - doc_id: codex_cli_durable_team_template_library
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/codex_cli_durable_team/template-library.md
+    zh_cn_path: docs_bilingual/operations_packages/codex_cli_durable_team/template-library.zh-CN.md
+
+  - doc_id: one_person_company_thesis
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/thesis.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/thesis.zh-CN.md
+
+  - doc_id: one_person_company_vision
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/vision.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/vision.zh-CN.md
+
+  - doc_id: one_person_company_strategy
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/strategy.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/strategy.zh-CN.md
+
+  - doc_id: one_person_company_annual_plan
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/annual-plan.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/annual-plan.zh-CN.md
+
+  - doc_id: one_person_company_quarterly_plan
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/quarterly-plan.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/quarterly-plan.zh-CN.md
+
+  - doc_id: one_person_company_decision_log
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/decision-log.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/decision-log.zh-CN.md
+
+  - doc_id: one_person_company_business_model
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/business-model.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/business-model.zh-CN.md
+
+  - doc_id: one_person_company_offer
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/offer.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/offer.zh-CN.md
+
+  - doc_id: one_person_company_pricing
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/pricing.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/pricing.zh-CN.md
+
+  - doc_id: one_person_company_unit_economics
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/unit-economics.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/unit-economics.zh-CN.md
+
+  - doc_id: one_person_company_finance_model
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/finance-model.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/finance-model.zh-CN.md
+
+  - doc_id: one_person_company_cashflow
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/cashflow.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/cashflow.zh-CN.md
+
+  - doc_id: one_person_company_market_map
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/market-map.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/market-map.zh-CN.md
+
+  - doc_id: one_person_company_user_segments
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/user-segments.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/user-segments.zh-CN.md
+
+  - doc_id: one_person_company_competitor_analysis
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/competitor-analysis.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/competitor-analysis.zh-CN.md
+
+  - doc_id: one_person_company_alternative_solutions
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/alternative-solutions.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/alternative-solutions.zh-CN.md
+
+  - doc_id: one_person_company_research_repository
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/research-repository.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/research-repository.zh-CN.md
+
+  - doc_id: one_person_company_interview_guide
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/interview-guide.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/interview-guide.zh-CN.md
+
+  - doc_id: one_person_company_product_strategy
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/product-strategy.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/product-strategy.zh-CN.md
+
+  - doc_id: one_person_company_prd
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/prd.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/prd.zh-CN.md
+
+  - doc_id: one_person_company_service_blueprint
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/service-blueprint.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/service-blueprint.zh-CN.md
+
+  - doc_id: one_person_company_onboarding
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/onboarding.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/onboarding.zh-CN.md
+
+  - doc_id: one_person_company_customer_journey
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/customer-journey.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/customer-journey.zh-CN.md
+
+  - doc_id: one_person_company_roadmap
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/roadmap.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/roadmap.zh-CN.md
+
+  - doc_id: one_person_company_metrics
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/metrics.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/metrics.zh-CN.md
+
+  - doc_id: one_person_company_north_star
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/north-star.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/north-star.zh-CN.md
+
+  - doc_id: one_person_company_funnel_dashboard
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/funnel-dashboard.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/funnel-dashboard.zh-CN.md
+
+  - doc_id: one_person_company_tracking_plan
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/tracking-plan.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/tracking-plan.zh-CN.md
+
+  - doc_id: one_person_company_data_dictionary
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/data-dictionary.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/data-dictionary.zh-CN.md
+
+  - doc_id: one_person_company_experiment_log
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/experiment-log.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/experiment-log.zh-CN.md
+
+  - doc_id: one_person_company_growth_model
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/growth-model.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/growth-model.zh-CN.md
+
+  - doc_id: one_person_company_channel_map
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/channel-map.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/channel-map.zh-CN.md
+
+  - doc_id: one_person_company_sales_playbook
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/sales-playbook.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/sales-playbook.zh-CN.md
+
+  - doc_id: one_person_company_landing_page
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/landing-page.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/landing-page.zh-CN.md
+
+  - doc_id: one_person_company_email_sequences
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/email-sequences.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/email-sequences.zh-CN.md
+
+  - doc_id: one_person_company_content_calendar
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/content-calendar.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/content-calendar.zh-CN.md
+
+  - doc_id: one_person_company_ops_playbook
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/ops-playbook.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/ops-playbook.zh-CN.md
+
+  - doc_id: one_person_company_customer_success_playbook
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/customer-success-playbook.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/customer-success-playbook.zh-CN.md
+
+  - doc_id: one_person_company_support_playbook
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/support-playbook.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/support-playbook.zh-CN.md
+
+  - doc_id: one_person_company_faq
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/faq.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/faq.zh-CN.md
+
+  - doc_id: one_person_company_refund_policy
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/refund-policy.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/refund-policy.zh-CN.md
+
+  - doc_id: one_person_company_feedback_triage
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/feedback-triage.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/feedback-triage.zh-CN.md
+
+  - doc_id: one_person_company_tech_stack
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/tech-stack.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/tech-stack.zh-CN.md
+
+  - doc_id: one_person_company_automation_map
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/automation-map.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/automation-map.zh-CN.md
+
+  - doc_id: one_person_company_tool_stack
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/tool-stack.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/tool-stack.zh-CN.md
+
+  - doc_id: one_person_company_vendor_register
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/vendor-register.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/vendor-register.zh-CN.md
+
+  - doc_id: one_person_company_api_dependency_map
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/api-dependency-map.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/api-dependency-map.zh-CN.md
+
+  - doc_id: one_person_company_backup_restore
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/backup-restore.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/backup-restore.zh-CN.md
+
+  - doc_id: one_person_company_legal_checklist
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/legal-checklist.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/legal-checklist.zh-CN.md
+
+  - doc_id: one_person_company_terms_of_service
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/terms-of-service.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/terms-of-service.zh-CN.md
+
+  - doc_id: one_person_company_privacy_policy
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/privacy-policy.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/privacy-policy.zh-CN.md
+
+  - doc_id: one_person_company_contract_template
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/contract-template.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/contract-template.zh-CN.md
+
+  - doc_id: one_person_company_risk_register
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/risk-register.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/risk-register.zh-CN.md
+
+  - doc_id: one_person_company_compliance_checklist
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/compliance-checklist.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/compliance-checklist.zh-CN.md
+
+  - doc_id: one_person_company_agent_governance
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/agent-governance.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/agent-governance.zh-CN.md
+
+  - doc_id: one_person_company_agent_role_map
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/agent-role-map.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/agent-role-map.zh-CN.md
+
+  - doc_id: one_person_company_agent_permissions
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/agent-permissions.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/agent-permissions.zh-CN.md
+
+  - doc_id: one_person_company_human_review_checklist
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/human-review-checklist.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/human-review-checklist.zh-CN.md
+
+  - doc_id: one_person_company_monthly_review
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/monthly-review.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/monthly-review.zh-CN.md
+
+  - doc_id: one_person_company_learning_log
+    doc_class: operations_package
+    status: active
+    canonical_path: docs_bilingual/operations_packages/one_person_company/learning-log.md
+    zh_cn_path: docs_bilingual/operations_packages/one_person_company/learning-log.zh-CN.md
+
+  - doc_id: shared_ledgers_readme
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/README.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/README.zh-CN.md
+
+  - doc_id: shared_ledgers_decision_log
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/decision-log.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/decision-log.zh-CN.md
+
+  - doc_id: shared_ledgers_risk_register
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/risk-register.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/risk-register.zh-CN.md
+
+  - doc_id: shared_ledgers_evidence_register
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/evidence-register.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/evidence-register.zh-CN.md
+
+  - doc_id: shared_ledgers_tailoring_decision_log
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/tailoring-decision-log.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/tailoring-decision-log.zh-CN.md
+
+  - doc_id: shared_ledgers_human_review_records
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/human-review-records.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/human-review-records.zh-CN.md
+
+  - doc_id: shared_ledgers_monthly_review
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/monthly-review.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/shared-ledgers/monthly-review.zh-CN.md
+
+  - doc_id: codex_platform_agent_routing_policy
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/agent-routing-policy.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/agent-routing-policy.zh-CN.md
+
+  - doc_id: codex_platform_worktree_and_branch_protocol
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/worktree-and-branch-protocol.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/worktree-and-branch-protocol.zh-CN.md
+
+  - doc_id: codex_platform_openspec_change_lifecycle
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/openspec-change-lifecycle.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/openspec-change-lifecycle.zh-CN.md
+
+  - doc_id: codex_platform_durable_state_inspection_and_recovery
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/durable-state-inspection-and-recovery.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/durable-state-inspection-and-recovery.zh-CN.md
+
+  - doc_id: codex_platform_validation_and_release_gates
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/validation-and-release-gates.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/validation-and-release-gates.zh-CN.md
+
+  - doc_id: codex_platform_incident_and_rollback_playbook
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/incident-and-rollback-playbook.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/incident-and-rollback-playbook.zh-CN.md
+
+  - doc_id: codex_platform_agent_evaluation_scorecard
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/agent-evaluation-scorecard.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/codex-platform/agent-evaluation-scorecard.zh-CN.md
+
+  - doc_id: business_operations_business_operating_cadence
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/business-operating-cadence.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/business-operating-cadence.zh-CN.md
+
+  - doc_id: business_operations_offer_pricing_finance_control
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/offer-pricing-finance-control.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/offer-pricing-finance-control.zh-CN.md
+
+  - doc_id: business_operations_customer_intake_and_delivery_workflow
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/customer-intake-and-delivery-workflow.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/customer-intake-and-delivery-workflow.zh-CN.md
+
+  - doc_id: business_operations_sales_support_refund_workflow
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/sales-support-refund-workflow.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/sales-support-refund-workflow.zh-CN.md
+
+  - doc_id: business_operations_legal_compliance_contract_control
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/legal-compliance-contract-control.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/legal-compliance-contract-control.zh-CN.md
+
+  - doc_id: business_operations_cashflow_and_runway_review
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/cashflow-and-runway-review.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/cashflow-and-runway-review.zh-CN.md
+
+  - doc_id: business_operations_experiment_to_roadmap_workflow
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/experiment-to-roadmap-workflow.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/business-operations/experiment-to-roadmap-workflow.zh-CN.md
+
+  - doc_id: mixed_governance_mixed_change_dual_gate_playbook
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/mixed-change-dual-gate-playbook.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/mixed-change-dual-gate-playbook.zh-CN.md
+
+  - doc_id: mixed_governance_business_to_codex_intake_brief
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/business-to-codex-intake-brief.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/business-to-codex-intake-brief.zh-CN.md
+
+  - doc_id: mixed_governance_codex_to_business_impact_brief
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/codex-to-business-impact-brief.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/codex-to-business-impact-brief.zh-CN.md
+
+  - doc_id: mixed_governance_portfolio_roadmap_and_module_tailoring_board
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/portfolio-roadmap-and-module-tailoring-board.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/portfolio-roadmap-and-module-tailoring-board.zh-CN.md
+
+  - doc_id: mixed_governance_weekly_monthly_quarterly_operating_cadence
+    doc_class: operations_runtime_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/weekly-monthly-quarterly-operating-cadence.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/mixed-governance/weekly-monthly-quarterly-operating-cadence.zh-CN.md
+
+
+  - doc_id: operational_instance_entrypoint_readme
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/README.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/README.zh-CN.md
+
+  - doc_id: operational_instance_entrypoint_instance_profile
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/instance-profile.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/instance-profile.zh-CN.md
+
+  - doc_id: operational_instance_entrypoint_operating_calendar
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/operating-calendar.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/operating-calendar.zh-CN.md
+
+  - doc_id: operational_instance_entrypoint_artifact_index
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/artifact-index.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/artifact-index.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_decision_log_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/decision-log.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/decision-log.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_risk_register_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/risk-register.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/risk-register.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_evidence_register_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/evidence-register.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/evidence-register.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_tailoring_decision_log_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/tailoring-decision-log.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/tailoring-decision-log.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_human_review_records_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/human-review-records.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/human-review-records.instance.zh-CN.md
+
+  - doc_id: operational_instance_shared_ledgers_monthly_review_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/monthly-review.instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/shared-ledgers/monthly-review.instance.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_runtime_run_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/runtime-run-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/runtime-run-record.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_local_main_integration_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/local-main-integration-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/local-main-integration-record.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_validation_release_readiness_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/validation-release-readiness-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/validation-release-readiness-record.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_agent_evaluation_run_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/agent-evaluation-run-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/agent-evaluation-run-record.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_durable_state_recovery_drill
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/durable-state-recovery-drill.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/durable-state-recovery-drill.zh-CN.md
+
+  - doc_id: operational_instance_codex_platform_incident_rollback_case_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/incident-rollback-case-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/codex-platform/incident-rollback-case-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_offer_pricing_decision_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/offer-pricing-decision-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/offer-pricing-decision-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_customer_intake_delivery_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/customer-intake-delivery-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/customer-intake-delivery-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_sales_support_refund_case_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/sales-support-refund-case-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/sales-support-refund-case-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_legal_contract_review_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/legal-contract-review-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/legal-contract-review-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_cashflow_runway_review_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/cashflow-runway-review-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/cashflow-runway-review-record.zh-CN.md
+
+  - doc_id: operational_instance_business_operations_experiment_roadmap_readout
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/experiment-roadmap-readout.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/business-operations/experiment-roadmap-readout.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_mixed_change_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/mixed-change-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/mixed-change-record.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_business_to_codex_intake_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/business-to-codex-intake-instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/business-to-codex-intake-instance.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_codex_to_business_impact_instance
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/codex-to-business-impact-instance.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/codex-to-business-impact-instance.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_module_tailoring_decision_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/module-tailoring-decision-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/module-tailoring-decision-record.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_dual_gate_release_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/dual-gate-release-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/dual-gate-release-record.zh-CN.md
+
+  - doc_id: operational_instance_mixed_governance_quarterly_portfolio_review_record
+    doc_class: operations_instance_pack
+    status: active
+    canonical_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/quarterly-portfolio-review-record.md
+    zh_cn_path: docs_bilingual/project_kits/one_person_company_with_embedded_codex/operational-instances/mixed-governance/quarterly-portfolio-review-record.zh-CN.md
+
+  - doc_id: codex_one_person_operational_instance_pack_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_one_person_operational_instance_pack_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_one_person_operational_instance_pack_plan.zh-CN.md
+
+
+  - doc_id: codex_skills2cli_hidden_progressive_disclosure_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_skills2cli_hidden_progressive_disclosure_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_skills2cli_hidden_progressive_disclosure_plan.zh-CN.md
+
+  - doc_id: codex_skills2cli_budget_compaction_runtime_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/codex_skills2cli_budget_compaction_runtime_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/codex_skills2cli_budget_compaction_runtime_plan.zh-CN.md
+
+  - doc_id: ppt_render_toolchain_local_only_plan
+    doc_class: implementation_plan
+    status: active
+    canonical_path: docs_bilingual/implementation_plans/ppt_render_toolchain_local_only_plan.md
+    zh_cn_path: docs_bilingual/implementation_plans/ppt_render_toolchain_local_only_plan.zh-CN.md

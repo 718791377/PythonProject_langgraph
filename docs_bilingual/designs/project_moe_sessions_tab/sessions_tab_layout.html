@@ -1,0 +1,131 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project MOE GUI Sessions Tab Layout Mockup</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #020617;
+      --line: #334155;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --strong: #f8fafc;
+      --accent: #2563eb;
+      --accent-2: #93c5fd;
+      --ok: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 "Microsoft YaHei UI", "Segoe UI", Arial, sans-serif;
+    }
+    .app {
+      width: 1180px;
+      height: 720px;
+      margin: 24px auto;
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg);
+    }
+    .nav, .card, .list, .search, .session-row, .subpanel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+    .nav { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .nav div { padding: 10px 12px; border-radius: 8px; color: var(--muted); }
+    .nav .active { background: var(--accent); color: white; font-weight: 700; }
+    .page { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+    h1 { margin: 0; font-size: 22px; color: var(--strong); }
+    .sessions { min-height: 0; flex: 1; display: grid; grid-template-columns: 360px 1fr; gap: 12px; }
+    .left { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+    .count { color: var(--accent-2); font-weight: 700; }
+    .search { padding: 9px 10px; color: var(--muted); background: var(--panel-2); }
+    .list { min-height: 0; flex: 1; padding: 6px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+    .session-row { padding: 9px 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .session-row.active { background: var(--accent); color: white; }
+    .badge { float: right; font-size: 12px; color: var(--ok); margin-left: 8px; }
+    .right { min-width: 0; display: grid; grid-template-rows: 230px auto 1fr; gap: 12px; }
+    .card { padding: 12px; min-width: 0; overflow: hidden; }
+    .card h2 { margin: 0 0 8px; font-size: 15px; color: var(--accent-2); }
+    .detail-scroll { height: 176px; overflow: auto; white-space: pre-wrap; color: var(--text); background: var(--panel-2); border-radius: 8px; padding: 10px; }
+    .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+    button { border: 1px solid #3b82f6; border-radius: 8px; padding: 8px 10px; background: var(--accent); color: #fff; font-weight: 700; }
+    .selector { min-height: 0; display: grid; grid-template-columns: 330px 1fr; gap: 10px; }
+    .subpanel { min-height: 0; padding: 10px; overflow: auto; background: var(--panel-2); }
+    label { display: block; margin: 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hint { color: var(--muted); margin: 0 0 6px; }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="Project MOE GUI Sessions Tab mockup">
+    <aside class="nav">
+      <div>概览 / Overview</div>
+      <div class="active">会话 / Sessions</div>
+      <div>交接台 / Workbench</div>
+      <div>诊断 / Diagnostics</div>
+      <div>设置 / Settings</div>
+    </aside>
+    <section class="page">
+      <h1>会话 / Sessions</h1>
+      <div class="sessions">
+        <section class="left">
+          <strong>会话列表 / Session list</strong>
+          <div class="count">5/5 个会话 / sessions</div>
+          <div class="search">搜索会话 ID、标题、目录、分支 / Search session id, title, directory, branch</div>
+          <div class="list">
+            <div class="session-row active">14h ago  严苛导师检查 EI 会议论文证据链 <span class="badge">enabled</span></div>
+            <div class="session-row">18h ago  修改建模数据缺失与 FEM 复现风险 <span class="badge">disabled</span></div>
+            <div class="session-row">1d ago  论文摘要、引言、贡献点重写建议 <span class="badge">enabled</span></div>
+            <div class="session-row">2d ago  图表、代码、指标一致性检查 <span class="badge">disabled</span></div>
+            <div class="session-row">3d ago  终稿投稿风险复核 <span class="badge">enabled</span></div>
+          </div>
+        </section>
+        <section class="right">
+          <article class="card">
+            <h2>会话详情 / Session details</h2>
+            <div class="detail-scroll">Session: 019ea705-2e6f-7910-a975-7b55515bfef7
+Created: 14 hours ago - 2026-06-08 11:36:35
+Updated: 14 hours ago - 2026-06-08 11:48:04
+Directory: D:\PythonProject_paper_suggest
+Branch: main
+Conversation: 导师最终意见：稿件结构完整，但证据链不完整。</div>
+          </article>
+          <article class="card">
+            <h2>MOE 状态与操作 / MOE status and actions</h2>
+            <p class="hint">显示原因、映射置信度、生效状态和冲突提示独立显示。</p>
+            <div class="actions"><button>开启本会话 MOE / Enable session MOE</button><button>关闭本会话 MOE / Disable session MOE</button><button>应用会话镜头 / Apply session lenses</button><button>清空会话镜头 / Clear session lenses</button></div>
+          </article>
+          <article class="card">
+            <h2>MOE 分类与镜头选择 / MOE categories and lenses</h2>
+            <p class="hint">空选择 = 全部镜头 / Empty selection = all lenses</p>
+            <div class="selector">
+              <div class="subpanel">
+                <label><input type="checkbox" checked> 严苛的研究生导师专家模块 / Strict Graduate Advisor Module</label>
+                <label><input type="checkbox"> 认知行为式提问专家模块 / Socratic Questioning Module</label>
+                <label><input type="checkbox"> 五大经典思维模型专家模块 / Five Classic Thinking Models Module</label>
+              </div>
+              <div class="subpanel">
+                <label><input type="checkbox" checked> 盲审专家镜头 / Blind-review expert</label>
+                <label><input type="checkbox" checked> 严苛导师追问镜头 / Advisor interrogation expert</label>
+                <label><input type="checkbox" checked> AIGC / AI 味风险镜头 / AIGC risk expert</label>
+                <label><input type="checkbox" checked> 文献与证据链镜头 / Literature and evidence expert</label>
+                <label><input type="checkbox"> 认知行为式苏格拉底提问镜头 / Socratic CBT-style questioning expert</label>
+                <label><input type="checkbox"> 五大经典思维模型调度镜头 / Thinking-model dispatcher</label>
+              </div>
+            </div>
+          </article>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

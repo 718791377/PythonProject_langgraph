@@ -121,6 +121,7 @@ class DocumentPairPolicyCheckTest(unittest.TestCase):
         subprocess.run(["git", "add", "."], cwd=root, check=True)
         subprocess.run(["git", "commit", "-m", "initial commit"], cwd=root, check=True, capture_output=True, text=True)
 
+        subprocess.run(["git", "checkout", "-b", "archive-sample"], cwd=root, check=True, capture_output=True, text=True)
         archive_parent = root / "openspec" / "changes" / "archive"
         archive_parent.mkdir(parents=True, exist_ok=True)
         subprocess.run(
@@ -128,6 +129,35 @@ class DocumentPairPolicyCheckTest(unittest.TestCase):
             cwd=root,
             check=True,
         )
+
+        result = self.run_check_json(root)
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertIn("openspec/changes/sample/tasks.md", payload["checked_files"])
+        self.assertIn("openspec/changes/sample/tasks.zh-CN.md", payload["checked_files"])
+        self.assertIn("openspec/changes/archive/2026-06-08-sample/tasks.md", payload["checked_files"])
+        self.assertIn("openspec/changes/archive/2026-06-08-sample/tasks.zh-CN.md", payload["checked_files"])
+
+
+    def test_passes_for_committed_archive_rename_pair(self) -> None:
+        root = self.make_root("doc-pair-archive-rename-committed")
+        chinese_title = from_codepoints(20219, 21153)
+        chinese_done = from_codepoints(23436, 25104)
+        self.write_file(root, "openspec/changes/sample/tasks.md", "# Tasks\n- [x] Done.\n")
+        self.write_file(root, "openspec/changes/sample/tasks.zh-CN.md", f"# {chinese_title}\n- [x] {chinese_done}.\n")
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-m", "initial commit"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "archive-sample"], cwd=root, check=True, capture_output=True, text=True)
+
+        archive_parent = root / "openspec" / "changes" / "archive"
+        archive_parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            ["git", "mv", "openspec/changes/sample", "openspec/changes/archive/2026-06-08-sample"],
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(["git", "commit", "-m", "archive sample"], cwd=root, check=True, capture_output=True, text=True)
 
         result = self.run_check_json(root)
         self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)

@@ -241,6 +241,31 @@ class UserLevelReceiptGovernanceTests(unittest.TestCase):
         self.assertEqual(payload["local_path_evidence"]["install_path"], raw_install_path)
         self.assertEqual(payload["local_path_evidence"]["rollback_pointer"], raw_rollback_pointer)
 
+    def test_r6_live_template_and_check_delegate_to_r6_checker(self) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        import check_r6_live_runtime_receipts as r6
+
+        with tempfile.TemporaryDirectory() as tmp:
+            receipt = self.write_json(
+                Path(tmp),
+                "r6.json",
+                r6.fixture_for_lane("wxwork-cli", live_mode="blocked"),
+            )
+            code, payload = run_cli(
+                "r6-live-check",
+                "--receipt",
+                str(receipt),
+                "--lane",
+                "wxwork-cli",
+            )
+            template_code, template_payload = run_cli("template", "--kind", "r6-live")
+
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["r6_live_valid"], payload["blockers"])
+        self.assertEqual(payload["runtime_stage"], "R6")
+        self.assertIn("live_mode", template_payload["required_fields"])
+        self.assertEqual(template_code, 0)
+
     def test_redaction_check_blocks_raw_sensitive_payloads(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             receipt = self.write_json(

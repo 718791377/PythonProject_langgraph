@@ -15,7 +15,7 @@ related_plans:
 
 ## 0. 执行结论
 
-本方案将 Project MOE GUI 从当前 `0.2.31` 的 QML Material 工程控制台升级为产品级本地 GUI。目标是让每个项目拥有只显示和控制自身 session 的 MOE 控制台，每个 session 可以独立开关 MOE，并通过具体 MOE / MOE 分类联动选择最终生效的专家镜头。GUI 需要支持 English / 中英对照 / 中文三种语言，默认中英对照。
+本方案已将 Project MOE GUI 从原 `0.2.31` 的 QML Material 工程控制台升级并验收为 `0.2.32` 产品级本地 GUI。目标是让每个项目拥有只显示和控制自身 session 的 MOE 控制台，每个 session 可以独立开关 MOE，并通过具体 MOE / MOE 分类联动选择最终生效的专家镜头。GUI 需要支持 English / 中英对照 / 中文三种语言，默认中英对照。
 
 本方案同时增强 Expert Workbench：它仍然是安全交接台，不直接启动 Codex、subagent、durable team、LangGraph workflow 或模型 API；它只生成、保存、复制、导出 handoff package，并提供执行前检查建议。
 
@@ -26,11 +26,11 @@ related_plans:
 ### 1.1 当前已具备
 
 - B 仓库 source of truth：`tools/project_moe_gui_toolchain/`。
-- A 目标项目：`D:\PythonProject_paper_suggest` 已安装 Project MOE GUI `0.2.31`。
+- A 目标项目：`D:\PythonProject_paper_suggest` 已安装并验收 Project MOE GUI `0.2.32`。
 - A 安装检查显示 installed/source toolchain 版本一致。
-- 当前 GUI 已有：项目默认开关、session 开关、session lens/category 字段保存、Workbench handoff package 草稿/导出、多尺寸视觉渲染检查。
+- 当前 GUI 已有：项目默认开关、session 开关、session lens/category 字段保存、Workbench handoff package 草稿/导出、多尺寸视觉渲染检查，以及 QFluentWidgets / Qt Widgets 产品级主界面。
 - 共享 PySide6 runtime 位于 `D:\PythonProject_langgraph\.shared_runtimes\pyside6`，消费项目默认不安装 PySide6。
-- QFluentWidgets runtime 检查和 GPLv3/商业双许可 manifest 已存在，但当前 primary shell 仍是 QML。
+- QFluentWidgets runtime 检查和 GPLv3/商业双许可 manifest 已存在；当前 primary shell 是 `qfluentwidgets-qtwidgets`，QML Material 仅作为显式 fallback。
 
 ### 1.2 当前问题
 
@@ -47,9 +47,9 @@ related_plans:
 <!-- CURRENT_STATUS_START -->
 
 - [x] 需求已冻结：产品级 Fluent Widgets 主界面、默认中英对照、项目内 session 范围、session 对账、MOE 分类三态联动、Workbench 安全交接台。
-- [x] 0.2.31 基线已确认：当前 A 项目 GUI 已安装但仍以 QML 为主体验。
-- [ ] B runtime 产品级重构尚未完成。
-- [ ] A 目标项目安装与可见启动验收尚未完成。
+- [x] 0.2.31 基线已确认：A 项目曾安装 QML 主体验。
+- [x] B runtime 产品级重构已在源码完成、验证并合入本地 main：`e041f59`。
+- [x] A 目标项目安装与可见启动验收已完成：A 本地 main 提交 `b4c5333`。
 
 <!-- CURRENT_STATUS_END -->
 
@@ -57,14 +57,14 @@ related_plans:
 <!-- TASK_BACKLOG_START -->
 
 - [x] Slice 0：新建本产品级重构方案。
-- [ ] Slice 1：Fluent Widgets 主界面骨架。
-- [ ] Slice 2：i18n 与语言切换。
-- [ ] Slice 3：项目边界与默认页面收敛。
-- [ ] Slice 4：Session 列表、Codex 发现与对账。
-- [ ] Slice 5：MOE lens/category 三态联动。
-- [ ] Slice 6：Workbench 安全交接台增强。
-- [ ] Slice 7：视觉与自动化验证。
-- [ ] Slice 8：A 目标项目安装验收。
+- [x] Slice 1：Fluent Widgets 主界面骨架。
+- [x] Slice 2：i18n 与语言切换。
+- [x] Slice 3：项目边界与默认页面收敛。
+- [x] Slice 4：Session 列表、Codex 发现与对账。
+- [x] Slice 5：MOE lens/category 三态联动。
+- [x] Slice 6：Workbench 安全交接台增强。
+- [x] Slice 7：视觉与自动化验证。
+- [x] Slice 8：A 目标项目安装验收。
 
 <!-- TASK_BACKLOG_END -->
 
@@ -73,8 +73,18 @@ related_plans:
 
 - B source of truth：`tools/project_moe_gui_toolchain/`。
 - A 目标项目：`D:/PythonProject_paper_suggest`。
-- 当前已安装工具链基线：`0.2.31`。
-- 当前主体验基线：QML Material shell；QFluentWidgets 仅为 runtime/license 检查。
+- A 目标项目 Slice 8 前安装基线：`0.2.31`。
+- A 目标项目 Slice 8 后安装版本：`0.2.32`，A 本地 main 提交 `b4c5333`。
+- B 源码 runtime Slice 1-7 后版本：`0.2.32`，B 本地 main 提交 `e041f59`。
+- Slice 1-7 后默认源码 shell：QFluentWidgets / Qt Widgets (`qfluentwidgets-qtwidgets`)；QML Material 保留为显式 fallback。
+- B 定向测试证据：`python .\test\project_moe_gui_toolchain.test.py` -> `Ran 91 tests ... OK`。
+- B 视觉证据：`visual_render_check.py` product Widgets shell，profiles `long-content` 与 `dense-sessions`，尺寸 `1180x720`、`1366x768`、`1440x900`，页面 `overview sessions workbench diagnostics settings` -> `ok=true`。
+- Slice 8 安装检查：`python tools\project_moe_gui_toolchain\check_project_moe_gui_install.py --target-project D:\PythonProject_paper_suggest --json` -> `ok=true`、`status=up_to_date`、installed/target version 均为 `0.2.32`。
+- Slice 8 launcher preflight：`D:\PythonProject_paper_suggest\project-moe-gui.cmd --preflight --json` -> `ok=true`、`product_shell_contract=project-moe-gui-product-widgets-v1`、`primary_shell=qfluentwidgets-qtwidgets`、`qfluentwidgets_status.ok=true`、Phase1 readiness `ready`。
+- Slice 8 A 视觉证据：`visual_render_check.py --target-project D:\PythonProject_paper_suggest --shell widgets`，profiles `long-content` 与 `dense-sessions`，尺寸 `1180x720`、`1366x768`、`1440x900`，页面 `overview sessions workbench diagnostics settings` -> `ok=true`；截图目录 `.tmp/paper_suggest_moe_visual_long/` 与 `.tmp/paper_suggest_moe_visual_dense/`。
+- Slice 8 可见启动 smoke：`PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS=3000` + `D:\PythonProject_paper_suggest\project-moe-gui.cmd --allow-visible` -> exit code `0`。
+- Slice 8 A Git 状态：`git -C D:\PythonProject_paper_suggest status --short --branch` -> `## main`，无脏文件。
+- 当前主体验：QFluentWidgets / Qt Widgets (`qfluentwidgets-qtwidgets`)；QML Material 仅为显式 fallback。
 - 关键验收会话：`smoke-session-final` 必须默认显示，除非存在显式测试元数据。
 
 <!-- EVIDENCE_INDEX_END -->
@@ -254,73 +264,73 @@ A 论文项目默认分类升级为：
 
 ### Slice 0：方案落地
 
-- [ ] 新建本方案文件。
-- [ ] 更新既有 Project MOE GUI 方案索引，指向本方案为 0.2.31 后续产品级重构方案。
-- [ ] 本地提交。
-- [ ] 合入 B 本地 main。
+- [x] 新建本方案文件。
+- [x] 更新既有 Project MOE GUI 方案索引，指向本方案为 0.2.31 后续产品级重构方案。
+- [x] 本地提交。
+- [x] 合入 B 本地 main。
 
 ### Slice 1：Fluent Widgets 主界面骨架
 
-- [ ] 新增 Widgets GUI shell。
-- [ ] launcher 默认启动 Widgets shell。
-- [ ] QML shell 保留为 fallback。
-- [ ] 增加 QFluentWidgets fail-closed preflight。
-- [ ] 增加基础页面导航和主题。
+- [x] 新增 Widgets GUI shell。
+- [x] launcher 默认启动 Widgets shell。
+- [x] QML shell 保留为 fallback。
+- [x] 增加 QFluentWidgets fail-closed preflight。
+- [x] 增加基础页面导航和主题。
 
 ### Slice 2：i18n
 
-- [ ] 新增 i18n 字典。
-- [ ] 默认中英对照。
-- [ ] Settings 页面可切换 English / 中英对照 / 中文。
-- [ ] 核心页面文案接入 i18n。
+- [x] 新增 i18n 字典。
+- [x] 默认中英对照。
+- [x] Settings 页面可切换 English / 中英对照 / 中文。
+- [x] 核心页面文案接入 i18n。
 
 ### Slice 3：项目边界与页面收敛
 
-- [ ] 目标项目 GUI 隐藏 Projects 多项目页。
-- [ ] 保留多项目扫描能力为 B 维护台或诊断-only 非默认入口。
-- [ ] 所有写操作显示当前 target project root。
+- [x] 目标项目 GUI 隐藏 Projects 多项目页。
+- [x] 保留多项目扫描能力为 B 维护台或诊断-only 非默认入口。
+- [x] 所有写操作显示当前 target project root。
 
 ### Slice 4：Session 列表与对账
 
-- [ ] 新增 Codex session discovery 只读模块。
-- [ ] 读取 MOE session state 与 Codex session index/files 做映射。
-- [ ] 显示完整 session id 和映射置信度。
-- [ ] 禁止名称启发式隐藏 session。
-- [ ] `smoke-session-final` 默认显示。
-- [ ] 增加 session 详情页和 why-shown 解释。
+- [x] 新增 Codex session discovery 只读模块。
+- [x] 读取 MOE session state 与 Codex session index/files 做映射。
+- [x] 显示完整 session id 和映射置信度。
+- [x] 禁止名称启发式隐藏 session。
+- [x] `smoke-session-final` 默认显示。
+- [x] 增加 session 详情页和 why-shown 解释。
 
 ### Slice 5：MOE lens/category 三态联动
 
-- [ ] 新增 lens/category selection model。
-- [ ] 分类勾选联动具体 lens。
-- [ ] 具体 lens 变化反向更新分类三态。
-- [ ] 展示最终生效 lens 列表。
-- [ ] 保存/读回兼容现有 `selected_lenses`、`selected_categories`。
+- [x] 新增 lens/category selection model。
+- [x] 分类勾选联动具体 lens。
+- [x] 具体 lens 变化反向更新分类三态。
+- [x] 展示最终生效 lens 列表。
+- [x] 保存/读回兼容现有 `selected_lenses`、`selected_categories`。
 
 ### Slice 6：Workbench 安全交接台
 
-- [ ] Workbench 绑定当前 session。
-- [ ] package 包含最终生效 lens。
-- [ ] 增加历史筛选和复用。
-- [ ] 增加执行前检查建议。
-- [ ] 保持不执行 carrier。
+- [x] Workbench 绑定当前 session。
+- [x] package 包含最终生效 lens。
+- [x] 增加历史筛选和复用。
+- [x] 增加执行前检查建议。
+- [x] 保持不执行 carrier。
 
 ### Slice 7：视觉与自动化验证
 
-- [ ] 更新 visual render checker 支持 Widgets shell。
-- [ ] 覆盖 1180x720、1366x768、1440x900。
-- [ ] 覆盖中英对照、中文、英文。
-- [ ] 覆盖长 session id、长 lens 名、多 session、多分类。
+- [x] 更新 visual render checker 支持 Widgets shell。
+- [x] 覆盖 1180x720、1366x768、1440x900。
+- [x] 覆盖中英对照、中文、英文。
+- [x] 覆盖长 session id、长 lens 名、多 session、多分类。
 
 ### Slice 8：A 目标项目安装验收
 
-- [ ] 安装/更新到 `D:\PythonProject_paper_suggest`。
-- [ ] 运行 install check。
-- [ ] 运行 launcher preflight。
-- [ ] 运行视觉截图验证。
-- [ ] 运行可见启动验证。
-- [ ] 提交 A 项目本地 git。
-- [ ] 合入 A 本地 main。
+- [x] 安装/更新到 `D:\PythonProject_paper_suggest`。
+- [x] 运行 install check。
+- [x] 运行 launcher preflight。
+- [x] 运行视觉截图验证。
+- [x] 运行可见启动验证。
+- [x] 提交 A 项目本地 git。
+- [x] 合入 A 本地 main。
 
 ## 10. 验证计划
 
@@ -358,6 +368,8 @@ A 项目验证：
 | Workbench 被误当执行器 | 所有 package 标明 generated-only，GUI 不执行 carrier |
 
 ## 12. 完成定义
+
+截至 2026-06-08，本方案所有 Slice 已完成并通过 A/B 两仓本地验证；远端发布不在本方案授权范围内。
 
 - 本方案文件已提交并合入 B 本地 main。
 - B runtime 实现已提交并合入 B 本地 main。

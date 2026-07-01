@@ -27,7 +27,6 @@ DEFAULT_TIMEOUT_SECONDS = 30
 MAX_TRANSCRIPT_CHARS = 4000
 CHECKER_RELATIVE_PATH = Path("tools/check_durable_routing_smoke_gate_template.py")
 FORBIDDEN_COMMAND_TERMS = (
-    "-apply",
     "omx-team-auto.ps1 -apply",
     "omx team",
     "git push",
@@ -36,6 +35,7 @@ FORBIDDEN_COMMAND_TERMS = (
     "langgraph dev",
     "langgraph up",
 )
+FORBIDDEN_APPLY_FLAGS = {"-apply", "--apply", "/apply"}
 SECRET_VALUE_RE = re.compile(
     r"(?i)(sk-[A-Za-z0-9_-]{8,}|xox[baprs]-[A-Za-z0-9_-]+|(?:token|secret|password|cookie|api[_-]?key)\s*[=:]\s*[^&\s]+)"
 )
@@ -126,9 +126,28 @@ def validate_safe_command(command: Sequence[str], root: Path) -> list[str]:
             relative = ""
         if not relative.startswith("tools/check_") or not relative.endswith(".py"):
             blockers.append("command_script_must_be_tools_check_py")
-    if any(token == "--apply" or token.lower().endswith("-apply") for token in command):
+    if any(is_apply_flag_token(token) for token in command):
         blockers.append("command_apply_flag_forbidden")
     return sorted(set(blockers))
+
+
+def is_apply_flag_token(token: str) -> bool:
+    """Return true only for actual apply flags, not path or dry-run labels.
+
+    Smoke commands can run from worktrees or temporary paths whose directory
+    names legitimately end in ``-apply``. Those path fragments are not operator
+    apply consent. The fail-closed boundary is the real flag token that would
+    switch a tool into apply mode, including PowerShell-style ``-Apply`` and
+    common ``=``/``:`` value spellings. Harmless labels such as
+    ``--dry-run-apply`` remain allowed and are still constrained by the Python
+    ``tools/check_*.py`` command gate.
+    """
+
+    lowered = token.strip().lower()
+    return lowered in FORBIDDEN_APPLY_FLAGS or any(
+        lowered.startswith(f"{flag}=") or lowered.startswith(f"{flag}:")
+        for flag in FORBIDDEN_APPLY_FLAGS
+    )
 
 
 def git_head(root: Path) -> str:

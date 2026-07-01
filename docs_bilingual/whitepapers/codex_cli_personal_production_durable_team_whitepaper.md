@@ -1,10 +1,10 @@
 ---
 doc_id: codex_cli_personal_production_durable_team_whitepaper
 lang: en
-canonical: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md
-translation_of: null
 doc_class: whitepaper
 status: draft
+canonical_path: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.md
+zh_cn_path: docs_bilingual/whitepapers/codex_cli_personal_production_durable_team_whitepaper.zh-CN.md
 ---
 
 # White Paper: Codex CLI Personal Production Durable Team
@@ -12,6 +12,16 @@ status: draft
 ## Purpose
 
 This white paper answers why a solo maintainer who works across multiple repositories needs a personal production durable team for Codex CLI. It is the cognitive-narrative document for the platform, not an implementation task list.
+
+## Fresh Source Evidence For This Refresh
+
+This white paper is updated against the fresh local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` generated at `2026-06-15T17:33:52Z`. The run read 54 sources across `Business Management/` and `PMP/`, including 31 PDFs / 9,280 pages, 9 EPUBs / 362 spine items, and 14 Markdown full-text files. The white paper cites only aggregate and synthesized evidence; raw extracted text remains in ignored local cache.
+
+## 0. 2026-06-15 Durable-Team Corpus Sync Checkpoint
+
+This file participates in the core `codex_cli_personal_production_durable_team` corpus sync. The current synchronized corpus is: white paper, governance research note, MRD, North Star plan, implementation plan, playbook, lifecycle maps, and OpenSpec specs. The shared rule is that the 10-layer model is the runtime/governance capability core, while the 12-layer model is the product/business lifecycle planning frame.
+
+Evidence boundary: tracked evidence for the June 2026 source refresh is the archived OpenSpec change, verification report, and updated synthesis documents. Raw extraction streams under `.omx/state/langgraph/extraction/` are ignored local artifacts and may be absent from a clean worktree. This file therefore must not claim that raw extraction cache presence is required for cold-start understanding, and it must not treat any draft document as runtime evidence that a durable or persistent team is currently running.
 
 ## Why This White Paper Exists Beside The Research Document
 
@@ -31,6 +41,8 @@ Cross-document rule:
 - The implementation plan, MRD, and lifecycle documents should cite both when they need both `why` and `how-strict` evidence.
 
 Default merge policy:
+
+Update-trigger matrix: platform boundary change -> white paper required; capability model, evidence-base, or runtime decomposition change -> research note required; lifecycle bridge, count authority, or PMI authority change -> both required. The white paper cites conclusions; the research note owns criteria, evidence, and official-versus-derived distinctions.
 
 1. Keep the documents separate while they serve different readers, different update cadences, or different governance roles.
 2. Update both when a change affects both the platform narrative and the detailed production-grade capability model.
@@ -58,20 +70,76 @@ This is an AI-era value-delivery system, not only a toolchain. The platform exis
 
 ## 10-To-12 Layer Bridge
 
-The supporting research document uses a ten-layer runtime and governance decomposition because it studies what a production-grade persistent team must be able to do at execution time. This white paper uses the repository's newer 12-layer product/business lifecycle trunk because this repository also governs product, market, release, operations, and retrospective behavior.
+The supporting research document uses a ten-layer runtime and governance decomposition because it studies what a production-grade persistent team must be able to do at execution time. This white paper uses the repository 12-layer product/business lifecycle trunk because this repository also governs narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, and retrospective behavior.
 
-Bridge rule:
+In short: the 10-layer model is the execution-time runtime/governance capability model; the 12-layer model is the repository operating/lifecycle receiving model. The two documents should be aligned, but the research note should not be renumbered into twelve layers.
 
-- Research layers 1-3 map primarily into the lifecycle technical, organization, and execution layers.
-- Research layers 4-6 map into the lifecycle technical, metrics, and operations layers, depending on whether the concern is storage, retrieval quality, or operating policy.
-- Research layers 7-10 map into the lifecycle technical, organization, execution, operations, and retrospective layers because quality, evaluation, security, and control-center design all need lifecycle ownership.
-- The lifecycle adds four platform-governance trunks that the research document does not try to own directly: cognitive narrative, business, market, and growth.
+### Canonical Authority Split
 
-This is why the two documents should stay distinct: the research document decomposes runtime production capability, while this white paper places that capability inside the larger platform lifecycle. See also `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` and `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`.
+- The 10-layer research model is the canonical decision surface for runtime and governance capability completeness.
+- The 12-layer lifecycle model is the canonical decision surface for product, business, delivery, platform-operating narrative, and retrospective learning.
+- This white paper must not rename the ten research layers into a new canonical runtime list.
+- The bridge document owns the bidirectional mapping grammar and does not replace either authority.
+
+### Reading Rules
+
+| Research use | White-paper use | Required reading rule |
+| --- | --- | --- |
+| Ask whether the durable team can execute, persist, recover, govern, audit, and stay safe at runtime | Ask why the platform should exist, how it is operated, and which lifecycle layers receive the runtime capability | If the question is `can the system do this safely and durably`, read the research note first; if the question is `where does this belong in the platform lifecycle`, read this white paper and the bridge |
+| Judge runtime capability gaps | Judge platform scope, product boundary, operating ownership, and lifecycle completeness | Runtime verdicts stay in the research note; platform adoption verdicts stay in the 12-layer stack |
+| Decompose execution capability into ten layers | Recompose the same capability into twelve lifecycle receiving layers | Use the bridge when one side cites the other |
+
+### 10-Layer To 12-Layer Landing View
+
+| 10-layer runtime/governance concern | Primary 12-layer receiving layers | Why the landing is correct |
+| --- | --- | --- |
+| Persistence core | Technical, Execution, Operations | State, checkpoints, recovery semantics, and rollback boundaries must be designed, used, and operated |
+| Interaction and execution | Product, Technical, Execution | User-visible commands and tool execution become product promises and governed delivery flow |
+| Team orchestration | Organization, Execution, Operations | Leader-worker structure becomes ownership, operating gates, and coordination discipline |
+| Long-term memory | Technical, Operations, Retrospective | Memory is both a runtime retention system and a learning feedback loop |
+| Context enhancement | Technical, Metrics, Operations | Context quality depends on design, measurement, freshness, budget, and operating policy |
+| Vector database and retrieval storage | Technical, Operations | Storage, indexing, tenant isolation, backup, deletion, and recovery are infrastructure concerns |
+| Quality assurance | Technical, Execution, Operations | Runtime checks and approval gates live in delivery and production operation |
+| Evaluation and regression | Metrics, Execution, Retrospective | Evaluation needs measurable baselines, release gates, and post-run learning |
+| Security and persistence hardening | Technical, Organization, Operations | Trust boundaries require architecture, permissions, audit, and operating discipline |
+| Local GUI control center | Product, Technical, Operations | The control surface is both a user surface and a production operations surface |
+
+### 12-Layer Additions The Research Note Does Not Try To Own
+
+The lifecycle model adds four trunks that are intentionally larger than runtime capability decomposition: cognitive narrative, business, market, and growth. They explain why the platform exists, why it is worth sustaining, who needs it, and how knowledge and adoption compound over time.
+
+This is why the two documents should stay distinct: the research document decomposes runtime production capability, while this white paper places that capability inside the larger platform lifecycle. See also `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` and `docs_bilingual/product_lifecycle/ten_to_twelve_layer_bridge.md`.
 
 ## 12-Layer Target Architecture
 
-The white-paper target is not a generic multi-agent story. It is a governed Codex CLI platform architecture:
+The white-paper target is not a generic multi-agent story. It is a governed Codex CLI platform architecture.
+
+### Layer Inventory
+
+| Layer | Primary question | What this platform owns here |
+| --- | --- | --- |
+| 0. Cognitive Narrative | Why does this platform exist? | Durable-team story, operator worldview, and recoverable mental model |
+| 1. Business | Why sustain this platform? | Personal production value, cost discipline, and ownership boundary |
+| 2. Market | Relative to what alternatives? | Codex CLI position versus ad hoc chat, raw scripts, unmanaged automation, and external agent platforms |
+| 3. Strategy | What tradeoffs guide action? | Local-first posture, solo-maintainer control, backend-family separation, and non-goals |
+| 4. Metrics | How is health judged? | Recovery, approval, quality, throughput, cost, safety, context, and adoption metrics |
+| 5. Product | What is the offer? | Codex user-level orchestration surfaces, approval entrypoints, control-center requirements, and durable-team capability set |
+| 6. Technical | How is it built? | Native Codex, native_omx, LangGraph, OpenSpec, repo-local state, persistence, memory, retrieval, and helper boundaries |
+| 7. Organization | Who owns what? | Human operator authority, current leader session authority, governed agent roles, and escalation paths |
+| 8. Execution | How does work move? | Plan freeze, bounded delegation, gates, rollback, validation, and local-main-first integration flow |
+| 9. Growth | How does capability compound? | Reusable skills, templates, policies, source maps, and learned operating patterns |
+| 10. Operations | How does the platform stay alive? | Runbooks, blocked-run query, recovery drills, audits, state management, and operator control surfaces |
+| 11. Retrospective | How does the platform learn? | Post-run synthesis, memory updates, incident review, evidence review, and lifecycle correction |
+
+### Architecture Rules
+
+- The twelve layers are not twelve software modules; they are twelve governing receiving views on one platform.
+- A runtime capability may land in multiple lifecycle layers because product ownership, execution safety, operating recovery, and learning are different responsibilities.
+- The current main Codex leader session remains the final human-in-the-loop control surface even when governed agents expand execution capacity.
+- `native_omx` and `langgraph` remain distinct backend families. The lifecycle model can compare them, but runtime selection still follows task-fit rules.
+- Repo-local durable state stays repo-local even when business or market layers discuss reuse at the platform level.
+
+### Platform Scale Statement
 
 - 12 trunk layers keep the platform connected from narrative to retrospective learning.
 - 4 virtual departments keep platform strategy/product, engineering/platform, agent governance, and growth/knowledge responsibilities separate.
@@ -81,9 +149,11 @@ The white-paper target is not a generic multi-agent story. It is a governed Code
 
 This inventory is intentionally smaller than the downstream one-person-company operating-system inventory. The Codex platform should build developer orchestration mechanisms; it should not absorb downstream customer, revenue, finance, legal, or operations truth. The count authority is `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md`; the downstream comparison authority is `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`.
 
-The downstream operating-system comparison is explicit: 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan that translates this white-paper narrative into the primary success metric, input metrics, guardrails, and staged decision thresholds.
+The downstream operating-system comparison is explicit: 12 layers, 5 virtual departments, 30 responsibility domains, 20 cross-cutting modules, 60 core documents, 15 governed AI agents, 15 recommended books, and 12 minimal startup documents. The downstream narrative white paper is `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md`. `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan that translates this white-paper narrative into the primary success metric, input metrics, guardrails, and staged decision thresholds.
 
 ## PMI Delivery Discipline
+
+Execution-level I/T/O authority is delegated to `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`, `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md`, and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md`. This white paper states the platform direction and cites the rule; it does not own detailed process grammar.
 
 The platform narrative becomes actionable only when delivery follows a process-group discipline. Every release slice should identify Inputs, Tools and Techniques, and Outputs, then move through initiating, planning, executing, monitoring and controlling, and closing. This keeps AI-assisted delivery inspectable and prevents hidden automation from becoming approval authority. The explicit reference map is `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md`: PMBOK 8 is the primary value-delivery and tailoring overlay, PMBOK 7 and PMBOK 6 are supplements, Process Groups supplies delivery gates, Agile Practice Guide supplies adaptive/hybrid delivery, Program Management supplies multi-initiative alignment, Portfolio Management supplies value/capacity balancing, and the PMO Practice Guide supplies governance-service patterns.
 
@@ -114,6 +184,7 @@ Tailoring has five explicit outcomes. Use full architecture for affected scopes 
 - `docs_bilingual/governance/solo_maintainable_production_persistent_team_research.md` is the detailed capability and evidence companion for this white paper.
 - `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md` defines the full 12-layer document stack used by this repository.
 - `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md` and `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md` define the two count authorities.
+- `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md` is the downstream business operating-system white paper.
 - `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` define the PMI overlay and tailoring authority.
 - `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` converts this direction into a staged platform plan.
 
@@ -123,3 +194,28 @@ Tailoring has five explicit outcomes. Use full architecture for affected scopes 
 - `docs_bilingual/north_star_plan.md` is the metrics-layer North Star plan; it turns this narrative into a measurable operating system.
 - `docs_bilingual/implementation_plans/codex_cli_personal_production_durable_team_plan.md` is the implementation-bridge plan; it turns this narrative and the North Star into staged targets, lanes, and release slices.
 - `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md` is the lifecycle reference; it defines how white papers, MRDs, North Star plans, PRDs, technical designs, release plans, and retrospectives relate.
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- Codex boundary: Codex owns execution truth for agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries, while consuming business intent from the one-person company.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

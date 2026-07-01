@@ -1,3 +1,12 @@
+---
+doc_id: lifecycle_tailoring_rules
+lang: en
+doc_class: product_lifecycle
+status: draft
+canonical_path: docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md
+zh_cn_path: docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.zh-CN.md
+---
+
 # Lifecycle Tailoring Rules
 
 This document defines how to tailor the 12-layer lifecycle for the two target architecture modes:
@@ -8,6 +17,10 @@ This document defines how to tailor the 12-layer lifecycle for the two target ar
 It is a governance overlay for `product_business_document_lifecycle.md`, `codex_durable_team_platform_build_lifecycle.md`, `codex_project_consumption_lifecycle.md`, and `pmi_project_management_reference_map.md`.
 
 The rule is source-backed by the local `Business Management/` and `PMP/` synthesis. The local references were read as PDF pages, EPUB spine items, and Markdown full text; this document records only repository-specific operating rules and does not reproduce source-book text.
+
+## Source Evidence Boundary
+
+This tailoring rule is refreshed from the Stage B evidence run `one-person-company-pmi-refresh-stageb-20260619` (`2026-06-18T18:37:58Z`), covering 54 local sources and 9,656 page/spine/full-document units. It supersedes outdated extraction wording for this refresh and keeps raw extracted text in ignored local cache only. Use `fresh_source_reading_evidence.md` for the current evidence index.
 
 ## Tailoring Principle
 
@@ -52,6 +65,20 @@ Use this gate before opening a large documentation stack, launching durable work
 - Required approvals, reviews, validation, release, rollback, and retrospective evidence.
 - Escalation triggers and owner for re-tailoring.
 - Decision to continue, stop, run a spike, split scope, or expand governance.
+
+## PMI Overlay By Tailoring Outcome
+
+Tailoring also decides how much PMI overlay is needed. The overlay can be applied to the whole project, a phase, a module, or a release slice; it does not have to be all-or-nothing.
+
+| Tailoring outcome | PMI overlay | Execution rule |
+| --- | --- | --- |
+| Full architecture | PMBOK 8 value/tailoring plus Process Groups, with PMBOK 6 I/T/O detail where execution artifacts are produced; add Agile, program, portfolio, or PMO overlays when their entry triggers are present | Consider all 12 layers and write full evidence for affected layers; do not create every document immediately unless the affected risk scope requires it |
+| Whole-project lightweight | Minimal project canvas plus a small process-group note; PMI remains implicit except for validation, risk, and closing evidence | Allowed only for private, reversible, low-risk work with no external users, money, sensitive data, durable state, shared runtime, or release commitment |
+| Phase-local lightweight | Use I/T/O only for that phase and define upstream/downstream gates; keep high-risk adjacent phases on fuller governance | The whole project is not lightweight; only the named phase is reduced |
+| Module-level lightweight | Use a module scope note, owner, validation, rollback/deletion path, and learning note | The surrounding project keeps full architecture boundaries; the module may not change trust, durable state, public API, shared runtime, or release safety without re-tailoring |
+| Hybrid | Start with adaptive Agile-style discovery and lightweight I/T/O, then freeze predictive Process Groups before production, release, customer, trust, durable-state, or shared-runtime change | Lighten discovery first; expand the affected layer/module when risk becomes real; expand whole project only when coupling becomes systemic |
+
+The default question is not "full or light for everything?" The default question is: which exact scope is light, which exact scope remains full, and which signal forces expansion.
 
 ## When To Use The Full Architecture
 
@@ -157,7 +184,7 @@ Do not launch a durable team just because the full architecture is referenced. D
 
 For a downstream one-person-company operating system, do not start by creating all 60 documents. Start with the 12 minimal startup documents:
 
-`company-thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.yaml`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
+`thesis.md`, `business-model.md`, `offer.md`, `pricing.md`, `user-segments.md`, `growth-model.md`, `finance-model.md`, `ops-playbook.md`, `metrics.md`, `risk-register.md`, `agent-governance.md`, and `monthly-review.md`.
 
 Expand to fuller governance when the business gains paying customers, repeatable delivery, support obligations, financial complexity, compliance exposure, sensitive data, external partners, recurring incidents, or agent automation beyond low-risk support.
 
@@ -173,3 +200,42 @@ Review tailoring at these gates:
 - during retrospective closing.
 
 The closing output should state whether the next cycle remains lightweight, expands a layer/module, or returns to a smaller governance footprint.
+
+## One-Person Company PMI Tailoring Matrix
+
+For the one-person-company operating system, decide the tailoring scope before expanding documents. The decision is local to the affected risk surface unless coupling becomes systemic.
+
+| Mode | Use when | Scope rule | Minimum I/T/O evidence |
+| --- | --- | --- | --- |
+| Full architecture for affected scope | Customer-visible release, payment, sensitive data, compliance, repeated delivery, support obligation, external commitment, broad agent automation, or material revenue/risk | Expand the affected layer, phase, module, or release slice first; expand the whole project only when coupling is systemic | Initiating value case, planning controls, executing validation, monitoring guardrails, closing learning |
+| Whole-project lightweight | The whole project is private, reversible, low-risk, local-only, one-owner, no users, no money, no sensitive data, no support promise, no shared runtime, no release commitment | The whole project may stay light | Compact canvas, stop condition, owner, validation note, learning note |
+| Phase-local lightweight | Discovery, interview, prototype, content exploration, or metric exploration is low-risk inside a larger governed project | Only the named phase is light | Phase Inputs / Tools and Techniques / Outputs plus trigger to expand |
+| Module-level lightweight | A bounded module is reversible and does not change trust, durable state, customer promise, public API, support, or release safety | Only the module is light | Module scope, owner, validation, rollback or deletion path, learning note |
+| Hybrid | Discovery is uncertain but later delivery may affect production, users, revenue, trust, compliance, runtime behavior, or release safety | Start light; freeze full controls before external impact | Discovery I/T/O first, then predictive process-group I/T/O for affected delivery layers |
+
+The default is not full-for-everything or light-for-everything. The default is local lightness with explicit escalation triggers.
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- Shared boundary: business truth defines customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, and business learning; execution truth defines agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

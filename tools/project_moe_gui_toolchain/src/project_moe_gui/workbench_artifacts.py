@@ -10,6 +10,7 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 ARTIFACT_KIND = "project_moe_gui_handoff"
+CANONICAL_ARTIFACT_KIND = "project_expert_lens_gui_handoff"
 RUNTIME_RELATIVE = Path(".project-runtime/project_moe_gui")
 STATUS_DIRECTORIES = {
     "draft": "workbench_drafts",
@@ -18,7 +19,7 @@ STATUS_DIRECTORIES = {
     "completed": "expert_history",
     "superseded": "expert_history",
 }
-VALID_HANDOFF_TARGETS = {"main-session", "subagent", "durable-team", "langgraph-workflow"}
+VALID_HANDOFF_TARGETS = {"main-session", "native-experts", "subagent", "durable-team", "persistent-team", "langgraph-workflow"}
 
 
 def utc_now_iso() -> str:
@@ -57,8 +58,10 @@ def _string_list(value: Any) -> list[str]:
 def _execution_policy() -> dict[str, bool]:
     return {
         "starts_codex": False,
+        "starts_native_experts": False,
         "starts_subagents": False,
         "starts_durable_team": False,
+        "starts_persistent_team": False,
         "starts_langgraph_workflow": False,
         "calls_model_api": False,
         "writes_target_project_state": False,
@@ -110,6 +113,7 @@ def create_handoff_package(
     return {
         "schema_version": SCHEMA_VERSION,
         "artifact_kind": ARTIFACT_KIND,
+        "canonical_artifact_kind": CANONICAL_ARTIFACT_KIND,
         "artifact_id": artifact_id,
         "created_at": created,
         "updated_at": created,
@@ -118,6 +122,9 @@ def create_handoff_package(
         "session_key_hash": session_key_hash,
         "selected_lenses": lenses,
         "selected_categories": categories,
+        "selected_expert_lenses": lenses,
+        "selected_expert_categories": categories,
+        "effective_expert_lens_mode": "selected" if (lenses or categories) else "all",
         "handoff_target": handoff_target,
         "task_template_id": _safe_text(task_template_id, limit=120),
         "brief_text": brief,
@@ -141,7 +148,7 @@ def save_handoff_artifact(target_project: str | Path, package: dict[str, Any]) -
         return {
             "ok": False,
             "token": "blocked:invalid_handoff_artifact",
-            "message": "Project MOE handoff artifact must be a JSON object with artifact_kind=project_moe_gui_handoff.",
+            "message": "Project Expert Lens handoff artifact must be a JSON object with a compatible artifact_kind.",
         }
     status = str(package.get("status") or "draft")
     artifact_id = str(package.get("artifact_id") or stable_hash(json.dumps(package, sort_keys=True, default=str))[:24])
@@ -215,13 +222,15 @@ def list_handoff_artifacts(
 
 
 def carrier_instructions_for(handoff_target: str) -> str:
-    if handoff_target == "subagent":
-        return "Paste this package into a native subagent task. The GUI does not spawn subagents."
+    if handoff_target in {"native-experts", "subagent"}:
+        return "Paste this package into one or more native expert/subagent tasks. The GUI does not spawn experts or subagents."
     if handoff_target == "durable-team":
         return "Use this package as a durable team brief after the leader confirms the durable-team threshold."
+    if handoff_target == "persistent-team":
+        return "Use this package as a persistent team brief after the leader confirms the persistent-team threshold."
     if handoff_target == "langgraph-workflow":
         return "Use this package as a LangGraph workflow brief or checkpoint artifact. The GUI does not invoke LangGraph."
-    return "Use this package directly in the main session with the selected Project MOE lenses."
+    return "Use this package directly in the main session with the selected expert lenses."
 
 
 def export_handoff_package(package: dict[str, Any], handoff_target: str) -> dict[str, Any]:
@@ -237,7 +246,7 @@ def export_handoff_package(package: dict[str, Any], handoff_target: str) -> dict
     categories = ", ".join(_string_list(payload.get("selected_categories"))) or "all categories"
     payload["export_text"] = "\n".join(
         [
-            "Project MOE handoff package",
+            "Project Expert Lens handoff package",
             f"Handoff target: {normalized_target}",
             f"Session: {payload.get('session_display_id') or '<none>'}",
             f"Lenses: {lenses}",

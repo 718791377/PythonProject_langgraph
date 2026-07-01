@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "case_type": "conversation_surface",
+  "case_id": "conversation-surface-updated-plan-duplicate-invalid",
+  "surface": "updated_plan",
+  "text": "Updated Plan\n  ✔ 读取上下文\n  □ 运行验证\n\nUpdated Plan\n  ✔ 重复面板",
+  "expected_valid": false
+}

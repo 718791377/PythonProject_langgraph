@@ -1,0 +1,27 @@
+schema: spec-driven
+created: 2026-06-20
+x_change_class: mixed
+x_code_evidence_required: true
+x_code_evidence_paths:
+  - tools/generate_operations_package.py
+  - tools/check_operations_package_docs.py
+  - test/operations_package_docs.test.py
+  - tools/ci/ci_test_manifest.json
+x_delivery_stages:
+  - stage: A
+    name: freeze-plan-and-contract
+    local_main_required: true
+  - stage: B
+    name: implement-live-runtime-and-generated-body-docs
+    local_main_required: true
+x_remote_publication: "not-authorized"
+x_authority_paths:
+  - docs_bilingual/implementation_plans/operations_package_full_body_generation_plan.md
+  - openspec/specs/codex-operations-package-runtime/spec.md
+  - openspec/specs/codex-product-lifecycle-document-governance/spec.md
+x_stage_b_write_scope:
+  - tools/generate_operations_package.py
+  - tools/check_operations_package_docs.py
+  - test/operations_package_docs.test.py
+  - docs_bilingual/docs_registry.yaml
+  - docs_bilingual/operations_packages/

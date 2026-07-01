@@ -86,7 +86,16 @@ OpenCLI 必须使用 `--port auto` 和 `codex-port` lease；默认只做 discove
 
 ### Requirement: CLI-Anything governance guard SHALL 要求 receipt evidence 和 adapter-generation 边界
 
-CLI-Anything 只能作为 adapter-generation 支撑进入 repo-local MVP。安装、更新、pin 切换、rollback 和 harness plan 必须由 receipt、smoke evidence 和 rollback pointer 约束；不得 hard-load skills、运行 live control 或泄露私有路径。
+CLI-Anything 只能作为 adapter-generation 支撑进入 repo-local MVP，直到安装、更新、pin 切换、rollback 和 smoke evidence 已由 receipt 与 rollback pointer 约束；不得 hard-load skills、运行 live control 或泄露私有路径。`install-record` 必须支持 `--status installed-user-level`、`--install-performed`、`--network-fetch-performed` 与 `--user-level-config-mutated`，并且在记录真实用户级 CLI-Anything 安装时仍保持 `wxwork_cli_installed=false` 与 `wxwork_cli_controlled=false`。
+
+#### Scenario: installed-user-level CLI-Anything receipt 与 WXWork_CLI 边界
+
+- **WHEN** `install-record` 在 user-level skill、wrapper 与 state path 已存在后使用 `--status installed-user-level --install-performed --network-fetch-performed`
+- **THEN** 命令必须返回 `ok=true`
+- **AND** 必须报告 `installs_cli_anything=true`、`network_fetch_performed=true`、`user_level_config_mutated=false`、`wxwork_cli_installed=false` 与 `wxwork_cli_controlled=false`
+- **AND** 必须保留 `source_url=https://github.com/HKUDS/CLI-Anything`，不得把 URL 误脱敏成 private path
+- **AND** 如果 install、wrapper 或 state path 不存在，guard 必须在写 receipt 前 fail closed
+- **AND** WXWork_CLI integration 必须交给 the operator-designated external consumer project，本仓库 package 不得安装、启动或控制 WXWork_CLI
 
 ### Requirement: WXWork_CLI governance guard SHALL 优先 API/Webhook，并对 WXWork GUI 自动化 fail closed
 

@@ -2,6 +2,10 @@
 
 本文是 Codex CLI 个人开发者生产级持久化团队平台的轻量对齐工件。它不替代白皮书、MRD、implementation plan、OpenSpec 或 release evidence。它遵循 `Business Management/` 综合：让平台有意保持小、以机制驱动、用 outcome 衡量，并保持 repo-local。
 
+## 来源与过程边界
+
+当前画布派生自 `fresh_source_reading_evidence.zh-CN.md` 记录的 `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` 证据边界。当画布进入执行授权时，应在相关 OpenSpec change、implementation plan 或生命周期文档中，把受影响层级展开为“输入 / 工具与技术 / 输出”，而不是把画布本身当成完整交付记录。
+
 ## 目的
 
 建设个人生产级 Codex CLI 持久化团队平台，让一个维护者可以跨多个仓库工作，同时不丢失上下文、不混用 repo-local durable truth，也不破坏 native Codex。

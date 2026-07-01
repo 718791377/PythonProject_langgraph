@@ -16,7 +16,7 @@ related_plans:
 
 ## 0. Execution Verdict
 
-This plan upgrades Project MOE GUI from the current `0.2.31` QML Material operator console to a product-grade local GUI. Each target project gets a project-scoped MOE console that displays and controls only its own sessions. Each session can independently enable or disable MOE, select concrete MOE lenses or MOE categories, and see the final effective lens set. The GUI must support English, bilingual, and Chinese display modes, with bilingual as the default.
+This plan has upgraded Project MOE GUI from the former `0.2.31` QML Material operator console to an accepted `0.2.32` product-grade local GUI. Each target project gets a project-scoped MOE console that displays and controls only its own sessions. Each session can independently enable or disable MOE, select concrete MOE lenses or MOE categories, and see the final effective lens set. The GUI must support English, bilingual, and Chinese display modes, with bilingual as the default.
 
 This plan also strengthens Expert Workbench. Workbench remains a safe handoff surface: it does not start Codex, native subagents, durable teams, LangGraph workflows, or model APIs. It only generates, saves, copies, and exports handoff packages and provides pre-dispatch checks.
 
@@ -27,11 +27,11 @@ This plan adds session identity, discovery, and reconciliation. The GUI must sho
 ### 1.1 Current Capabilities
 
 - B repository source of truth: `tools/project_moe_gui_toolchain/`.
-- Target A: `D:/PythonProject_paper_suggest` has Project MOE GUI `0.2.31` installed.
+- Target A: `D:/PythonProject_paper_suggest` has Project MOE GUI `0.2.32` installed and accepted.
 - Install check reports matching installed/source toolchain versions.
-- Current GUI supports project default on/off, session on/off, session lens/category state, Workbench handoff draft/export, and multi-size visual rendering checks.
+- Current GUI supports project default on/off, session on/off, session lens/category state, Workbench handoff draft/export, multi-size visual rendering checks, and the QFluentWidgets / Qt Widgets product primary shell.
 - Shared PySide6 runtime lives at `D:/PythonProject_langgraph/.shared_runtimes/pyside6`; consumer projects do not install PySide6 by default.
-- QFluentWidgets runtime and GPLv3/commercial license manifest checks exist, but the primary shell is still QML.
+- QFluentWidgets runtime and GPLv3/commercial license manifest checks exist; the primary shell is `qfluentwidgets-qtwidgets`, and QML Material is an explicit fallback only.
 
 ### 1.2 Problems
 
@@ -48,9 +48,9 @@ This plan adds session identity, discovery, and reconciliation. The GUI must sho
 <!-- CURRENT_STATUS_START -->
 
 - [x] Requirements are frozen: product-grade Fluent Widgets shell, bilingual default, project-scoped sessions, session reconciliation, tri-state MOE category linkage, and Workbench safe handoff.
-- [x] `0.2.31` baseline is confirmed: target A has the GUI installed, but the primary experience is still QML.
-- [ ] B runtime product rebuild is not implemented yet.
-- [ ] Target A install and visible-launch acceptance are not complete yet.
+- [x] `0.2.31` baseline is confirmed: target A previously had the QML primary experience installed.
+- [x] B runtime product rebuild is implemented, validated, and merged to local main: `e041f59`.
+- [x] Target A install and visible-launch acceptance are complete: target A local main commit `b4c5333`.
 
 <!-- CURRENT_STATUS_END -->
 
@@ -58,14 +58,14 @@ This plan adds session identity, discovery, and reconciliation. The GUI must sho
 <!-- TASK_BACKLOG_START -->
 
 - [x] Slice 0: create this product rebuild plan.
-- [ ] Slice 1: Fluent Widgets primary shell.
-- [ ] Slice 2: i18n and language switching.
-- [ ] Slice 3: project boundary and page reduction.
-- [ ] Slice 4: session list, Codex discovery, and reconciliation.
-- [ ] Slice 5: MOE lens/category tri-state linkage.
-- [ ] Slice 6: Workbench safe handoff enhancements.
-- [ ] Slice 7: visual and automated validation.
-- [ ] Slice 8: target A install acceptance.
+- [x] Slice 1: Fluent Widgets primary shell.
+- [x] Slice 2: i18n and language switching.
+- [x] Slice 3: project boundary and page reduction.
+- [x] Slice 4: session list, Codex discovery, and reconciliation.
+- [x] Slice 5: MOE lens/category tri-state linkage.
+- [x] Slice 6: Workbench safe handoff enhancements.
+- [x] Slice 7: visual and automated validation.
+- [x] Slice 8: target A install acceptance.
 
 <!-- TASK_BACKLOG_END -->
 
@@ -74,8 +74,18 @@ This plan adds session identity, discovery, and reconciliation. The GUI must sho
 
 - B source of truth: `tools/project_moe_gui_toolchain/`.
 - Target A: `D:/PythonProject_paper_suggest`.
-- Current installed toolchain baseline: `0.2.31`.
-- Current primary shell baseline: QML Material shell; QFluentWidgets is runtime/license checking only.
+- Current target A installed toolchain baseline before Slice 8: `0.2.31`.
+- Target A installed toolchain version after Slice 8: `0.2.32`, target A local main commit `b4c5333`.
+- B source runtime version after Slice 1-7: `0.2.32`, B local main commit `e041f59`.
+- Default source shell after Slice 1-7: QFluentWidgets / Qt Widgets (`qfluentwidgets-qtwidgets`); QML Material remains explicit fallback.
+- B directed test evidence: `python .\test\project_moe_gui_toolchain.test.py` -> `Ran 91 tests ... OK`.
+- B visual evidence: `visual_render_check.py` product Widgets shell, profiles `long-content` and `dense-sessions`, sizes `1180x720`, `1366x768`, `1440x900`, sections `overview sessions workbench diagnostics settings` -> `ok=true`.
+- Slice 8 install check: `python tools/project_moe_gui_toolchain/check_project_moe_gui_install.py --target-project D:/PythonProject_paper_suggest --json` -> `ok=true`, `status=up_to_date`, installed/target version `0.2.32`.
+- Slice 8 launcher preflight: `D:/PythonProject_paper_suggest/project-moe-gui.cmd --preflight --json` -> `ok=true`, `product_shell_contract=project-moe-gui-product-widgets-v1`, `primary_shell=qfluentwidgets-qtwidgets`, `qfluentwidgets_status.ok=true`, Phase1 readiness `ready`.
+- Slice 8 target A visual evidence: `visual_render_check.py --target-project D:/PythonProject_paper_suggest --shell widgets`, profiles `long-content` and `dense-sessions`, sizes `1180x720`, `1366x768`, `1440x900`, sections `overview sessions workbench diagnostics settings` -> `ok=true`; screenshot dirs `.tmp/paper_suggest_moe_visual_long/` and `.tmp/paper_suggest_moe_visual_dense/`.
+- Slice 8 visible-launch smoke: `PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS=3000` + `D:/PythonProject_paper_suggest/project-moe-gui.cmd --allow-visible` -> exit code `0`.
+- Slice 8 target A Git status: `git -C D:/PythonProject_paper_suggest status --short --branch` -> `## main`, clean.
+- Current primary shell: QFluentWidgets / Qt Widgets (`qfluentwidgets-qtwidgets`); QML Material is an explicit fallback only.
 - Critical acceptance session: `smoke-session-final` must show by default unless explicit test metadata exists.
 
 <!-- EVIDENCE_INDEX_END -->
@@ -200,73 +210,73 @@ Session details include full session id, optional Codex resume/thread id, mappin
 
 ### Slice 0: Plan Landing
 
-- [ ] Create this plan.
-- [ ] Update parent Project MOE GUI plan index to point at this post-0.2.31 product rebuild plan.
-- [ ] Commit locally.
-- [ ] Merge into B local main.
+- [x] Create this plan.
+- [x] Update parent Project MOE GUI plan index to point at this post-0.2.31 product rebuild plan.
+- [x] Commit locally.
+- [x] Merge into B local main.
 
 ### Slice 1: Fluent Widgets Shell
 
-- [ ] Add Widgets GUI shell.
-- [ ] Make launcher start Widgets shell by default.
-- [ ] Keep QML as fallback.
-- [ ] Add fail-closed QFluentWidgets preflight.
-- [ ] Add navigation and theme baseline.
+- [x] Add Widgets GUI shell.
+- [x] Make launcher start Widgets shell by default.
+- [x] Keep QML as fallback.
+- [x] Add fail-closed QFluentWidgets preflight.
+- [x] Add navigation and theme baseline.
 
 ### Slice 2: i18n
 
-- [ ] Add i18n dictionary.
-- [ ] Default to bilingual.
-- [ ] Add Settings language switch.
-- [ ] Connect core UI copy to i18n.
+- [x] Add i18n dictionary.
+- [x] Default to bilingual.
+- [x] Add Settings language switch.
+- [x] Connect core UI copy to i18n.
 
 ### Slice 3: Project Boundary
 
-- [ ] Hide Projects page in normal target-project GUI.
-- [ ] Keep multi-project scanning only as B maintenance or diagnostics-only surface.
-- [ ] Show target project root for all writes.
+- [x] Hide Projects page in normal target-project GUI.
+- [x] Keep multi-project scanning only as B maintenance or diagnostics-only surface.
+- [x] Show target project root for all writes.
 
 ### Slice 4: Session List and Reconciliation
 
-- [ ] Add read-only Codex session discovery.
-- [ ] Reconcile MOE state with Codex sessions.
-- [ ] Show full session id and mapping confidence.
-- [ ] Forbid name-based hiding.
-- [ ] Ensure `smoke-session-final` displays by default.
-- [ ] Add session details and why-shown explanations.
+- [x] Add read-only Codex session discovery.
+- [x] Reconcile MOE state with Codex sessions.
+- [x] Show full session id and mapping confidence.
+- [x] Forbid name-based hiding.
+- [x] Ensure `smoke-session-final` displays by default.
+- [x] Add session details and why-shown explanations.
 
 ### Slice 5: Lens/Category Tri-State Linkage
 
-- [ ] Add lens/category selection model.
-- [ ] Category checks update concrete lenses.
-- [ ] Lens changes update category tri-state.
-- [ ] Show final effective lens list.
-- [ ] Preserve read/write compatibility with existing state fields.
+- [x] Add lens/category selection model.
+- [x] Category checks update concrete lenses.
+- [x] Lens changes update category tri-state.
+- [x] Show final effective lens list.
+- [x] Preserve read/write compatibility with existing state fields.
 
 ### Slice 6: Workbench Safe Handoff
 
-- [ ] Bind Workbench to selected session.
-- [ ] Include effective lenses in the package.
-- [ ] Add history filtering and reuse.
-- [ ] Add pre-dispatch checks.
-- [ ] Keep carrier execution disabled.
+- [x] Bind Workbench to selected session.
+- [x] Include effective lenses in the package.
+- [x] Add history filtering and reuse.
+- [x] Add pre-dispatch checks.
+- [x] Keep carrier execution disabled.
 
 ### Slice 7: Visual and Automated Validation
 
-- [ ] Update visual render checker for Widgets shell.
-- [ ] Cover 1180x720, 1366x768, and 1440x900.
-- [ ] Cover bilingual, Chinese, and English.
-- [ ] Cover long session ids, long lens names, many sessions, and multiple categories.
+- [x] Update visual render checker for Widgets shell.
+- [x] Cover 1180x720, 1366x768, and 1440x900.
+- [x] Cover bilingual, Chinese, and English.
+- [x] Cover long session ids, long lens names, many sessions, and multiple categories.
 
 ### Slice 8: Target A Acceptance
 
-- [ ] Install/update into `D:/PythonProject_paper_suggest`.
-- [ ] Run install check.
-- [ ] Run launcher preflight.
-- [ ] Run visual screenshot validation.
-- [ ] Run visible launch validation.
-- [ ] Commit target A local Git.
-- [ ] Merge target A local main.
+- [x] Install/update into `D:/PythonProject_paper_suggest`.
+- [x] Run install check.
+- [x] Run launcher preflight.
+- [x] Run visual screenshot validation.
+- [x] Run visible launch validation.
+- [x] Commit target A local Git.
+- [x] Merge target A local main.
 
 ## 10. Verification Plan
 
@@ -304,6 +314,8 @@ Target A:
 | Workbench is mistaken for executor | Mark packages generated-only and keep carrier execution disabled |
 
 ## 12. Definition of Done
+
+As of 2026-06-08, every slice in this plan is complete and has passed local validation in both B and target A; remote publication is outside this plan authorization.
 
 - This plan is committed and merged into B local main.
 - B runtime implementation is committed and merged into B local main.

@@ -24,14 +24,55 @@ Why both exist:
 
 Default merge policy:
 
+Update-trigger matrix: platform boundary change -> white paper required; capability model, evidence-base, or runtime decomposition change -> this research note required; lifecycle bridge, count authority, or PMI authority change -> both required. The white paper cites conclusions; this research note owns criteria, evidence, and official-versus-derived distinctions.
+
 1. Keep the files separate while they serve different readers or different lifecycle layers.
 2. Update the white paper when the platform story, boundaries, or paradigm shift changes.
 3. Update this research note when the production-grade criteria, evidence base, or runtime-capability decomposition changes.
 4. Merge only if one file becomes a non-functional duplicate of the other. That is not the current state.
 
+## 0. 2026-06-15 Durable-Team Corpus Sync Checkpoint
+
+This file participates in the core `codex_cli_personal_production_durable_team` corpus sync. The current synchronized corpus is: white paper, governance research note, MRD, North Star plan, implementation plan, playbook, lifecycle maps, and OpenSpec specs. The shared rule is that the 10-layer model is the runtime/governance capability core, while the 12-layer model is the product/business lifecycle planning frame.
+
+Evidence boundary: tracked evidence for the June 2026 source refresh is the archived OpenSpec change, verification report, and updated synthesis documents. Raw extraction streams under `.omx/state/langgraph/extraction/` are ignored local artifacts and may be absent from a clean worktree. This file therefore must not claim that raw extraction cache presence is required for cold-start understanding, and it must not treat any draft document as runtime evidence that a durable or persistent team is currently running.
+
 ## 0.1 Bridge From The 10-Layer Research Model To The Repository 12-Layer Lifecycle
 
-This research note uses a ten-layer model because it studies the minimum production capabilities of a persistent-team runtime. The repository lifecycle uses twelve layers because product and governance work must also cover narrative, market, growth, operations, and retrospective learning.
+This research note uses a ten-layer model because it studies the minimum production capabilities of a persistent-team runtime. The repository lifecycle uses twelve layers because product and governance work must also cover narrative, business, market, growth, operations, and retrospective learning.
+
+In short: the 10-layer model is the execution-time runtime/governance capability model; the 12-layer model is the product/business lifecycle receiving model. This research note does not replace the 12-layer lifecycle, and the 12-layer lifecycle does not renumber this research note's runtime model.
+
+The separation is intentional:
+
+- The research note owns the evidence lens: what must be true for a system to be recoverable, governable, auditable, secure, and solo-maintainable.
+- The white paper owns the narrative lens: why the Codex CLI platform should exist, who it serves, what boundaries it keeps, and how it fits the larger product/business lifecycle.
+- The bridge owns the translation: which 12-layer lifecycle trunk receives each runtime finding, and which runtime evidence should be checked when a lifecycle trunk makes a platform claim.
+
+This research note does not own PMI process authority; it depends on `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md` for process-group and tailoring rules.
+
+### 12-Layer Lifecycle Receiving View
+
+This table is a receiving view for lifecycle work. It is not a replacement for the canonical 10-layer runtime model in section 6.
+
+| 12-layer lifecycle trunk | Research capability evidence | White-paper narrative duty |
+| --- | --- | --- |
+| 0. Cognitive Narrative | A recoverable, governable, auditable system, not merely more agents | Explain why a new operating paradigm is needed |
+| 1. Business | Maintenance cost, recovery cost, risk cost, and solo sustainability | Define platform investment logic and risk-return boundaries |
+| 2. Market | Target operators, alternative-solution pain, and adoption blockers | Explain who needs the platform and why the timing matters |
+| 3. Strategy | Local-first posture, solo-maintainer control, and no backend-family mixing | Define platform tradeoffs and non-goals |
+| 4. Metrics | Recovery, approvals, evaluation, regression, cost, and context quality | Provide sources for the North Star metric and guardrails |
+| 5. Product | CLI, GUI, API, approval entrypoints, and control-center workflows | Describe user-visible platform capabilities |
+| 6. Technical | Persistence kernel, checkpoints/history, memory, retrieval, and security | Support platform architecture credibility |
+| 7. Organization | Leader/worker division, agent permissions, and human takeover | Define human-AI collaboration and governance responsibilities |
+| 8. Execution | Durable task flow, fan-out/fan-in, gates, and rollback | Explain delivery and release discipline |
+| 9. Growth | Reusable knowledge loops, adoption evidence, and template propagation boundaries | Explain how the platform can be adopted and reused |
+| 10. Operations | Runbooks, blocked-run queries, recovery drills, support, and degradation | Explain long-term operation and recovery capability |
+| 11. Retrospective | Evaluation regression, incident review, lessons learned, and governance updates | Explain the learning loop and continuous improvement |
+
+### 10-Layer Runtime Landing View
+
+The following table keeps the research note's capability model intact while showing the primary lifecycle landing zones.
 
 | 10-layer research model | Primary 12-layer lifecycle landing zones | Why |
 | --- | --- | --- |
@@ -47,7 +88,6 @@ This research note uses a ten-layer model because it studies the minimum product
 | 10. Local GUI Control Center | Product, Technical, Operations | The control plane is both a user surface and a production surface |
 
 The 12-layer lifecycle adds four trunks that this research note does not try to own directly: cognitive narrative, business, market, and growth. Those trunks explain why the platform exists, who it serves, and how adoption or value should be measured. See `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`. Count authority lives in `docs_bilingual/product_lifecycle/codex_platform_inventory_map.md` and `docs_bilingual/product_lifecycle/one_person_company_inventory_map.md`; PMI delivery and tailoring authority lives in `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md` and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md`.
-
 
 ## 1. Abstract
 
@@ -141,6 +181,8 @@ It answers a narrower and harder question:
 
 ## 3. Method And Evidence Base
 
+This 2026-06-16 refresh also uses the local reading run `fresh-source-lifecycle-whitepaper-pmi-refresh-20260616` (`2026-06-15T17:33:52Z`) as product/business context evidence: 54 local sources, 9,656 page/spine/full-document units, and 18,492,044 extracted characters. That evidence updates the relationship between this research note, the white paper, and the 12-layer lifecycle, but it does not replace the runtime/governance research basis of this document.
+
 This paper uses a cross-source synthesis method.
 
 Its arguments are grounded in public, official, currently accessible documentation across:
@@ -219,6 +261,16 @@ Derived judgment:
 - without layers 2 and 3, the system cannot really behave like a `team`
 - without layers 4 through 6, the system lacks long-horizon enhancement capability
 - without layers 7 through 10, the system cannot reliably enter production
+
+Dual-lens judgment:
+
+| Question being asked | Use the 10-layer research model when... | Use the 12-layer lifecycle when... |
+| --- | --- | --- |
+| Capability completeness | The question is whether the runtime can persist, recover, coordinate, remember, evaluate, secure, or expose operator control | The question is which product/business lifecycle layer receives that capability as a requirement, document, metric, runbook, or learning item |
+| Authority and evidence | The claim needs runtime proof, official-source support, engineering judgment, or production-readiness criteria | The claim needs narrative, business, market, strategy, metrics, product, technical, organization, execution, growth, operations, or retrospective ownership |
+| Merge or separation | The research note would lose evidence detail if merged into the white paper | The white paper would lose platform narrative clarity if it absorbed the full research matrix |
+
+This is why aligning the research note to the 12-layer lifecycle is appropriate only as a receiving view. It is not appropriate to renumber the research model itself to 12 layers.
 
 ## 7. Persistence Core: Deep Dive
 
@@ -1042,6 +1094,8 @@ If a system cannot answer "yes" to most of the following questions, it should no
 
 ## 14. Reference Architecture
 
+This section is a deployment/reference-plane rendering of the same 10-layer runtime model. It is not a third layer system competing with the 10-layer research model or the repository 12-layer lifecycle.
+
 The recommended reference architecture is:
 
 - `L0 Operator Surface` - CLI, GUI, and API
@@ -1178,3 +1232,20 @@ Only when these conditions are satisfied together should a system be considered 
 - `production pilot` - maturity label for a bounded production trial under governance.
 - `production-grade` - maturity label for a system suitable for sustained governed production use.
 - and further, `solo-maintainable over the long term`
+
+## Appendix: 10-Layer Execution Landing I/T/O
+
+This appendix does not turn the research note into the PMI authority. It shows how each runtime capability layer should be translated when it lands in platform execution. Detailed process grammar remains owned by `docs_bilingual/product_lifecycle/product_business_document_lifecycle.md`, `docs_bilingual/product_lifecycle/pmi_project_management_reference_map.md`, and `docs_bilingual/product_lifecycle/lifecycle_tailoring_rules.md`.
+
+| 10-layer runtime capability | Primary 12-layer receiving view | Inputs | Tools And Techniques | Outputs |
+| --- | --- | --- | --- | --- |
+| Persistence Core | Technical, Execution, Operations | Runtime state requirements, recovery risks, checkpoint needs, durable-state boundaries | State schema design, checkpoint review, replay/recovery drills, integrity checks | Durable-state contract, recovery evidence, rollback boundary |
+| Interaction and Execution | Product, Technical, Execution | User task, tool permissions, execution context, approval constraints | Tool-call validation, command gating, worktree isolation, execution trace review | Controlled execution artifact, changed-path list, approval or rejection evidence |
+| Team Orchestration | Organization, Execution, Operations | Frozen plan, slice ownership, worker roles, hotspot list | Leader-owned fan-out, bounded waits, mailbox or graph routing, fan-in review | Worker patch set, execution evidence, integrated decision |
+| Long-Term Memory | Technical, Operations, Retrospective | Retention requirement, privacy boundary, reuse target, deletion rule | Memory classification, namespace design, retention/deletion policy, retrieval quality check | Memory contract, retention evidence, safe recall boundary |
+| Context Enhancement | Technical, Metrics, Operations | Source corpus, startup summary, prompt budget, relevance target | Context selection, summarization, citation map, freshness check | Context bundle, source map, stale-context rejection rule |
+| Vector Database and Retrieval Storage | Technical, Operations | Corpus units, metadata, tenant/project boundary, query use case | Chunking/indexing design, metadata filters, backup/restore review, deletion test | Retrieval store contract, quality baseline, lifecycle policy |
+| Quality Assurance | Technical, Execution, Operations | Acceptance criteria, schema constraints, tool side effects, gate requirements | Runtime guards, output validation, approval gates, policy checks | Accepted output, rejected defect, quality-gate evidence |
+| Evaluation and Regression | Metrics, Execution, Retrospective | Baselines, regression risks, comparison target, release threshold | Offline/online eval, test suites, diff review, experiment comparison | Evaluation report, regression gate, release decision |
+| Security and Persistence Hardening | Technical, Organization, Operations | Secrets, permissions, audit needs, trust boundaries, recovery risks | Least-privilege review, threat modeling, audit logging, encryption/integrity checks | Security control record, audit trail, recovery-safe operating rule |
+| Local GUI Control Center | Product, Technical, Operations | Operator workflow, approval surface, state visibility, recovery action | UI/control-surface review, authority-boundary check, replay/approval inspection | Operator control record, approval/recovery panel requirement, usability feedback |

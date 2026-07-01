@@ -9,6 +9,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "tools" / "check_plan_exit_execution_governance.py"
+GIT_TEXT_KWARGS = {"text": True, "encoding": "utf-8", "errors": "replace"}
 
 
 class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
@@ -18,12 +19,12 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
         root = REPO_ROOT / ".omx" / "test-artifacts" / f"{name}-{uuid.uuid4().hex[:8]}"
         root.mkdir(parents=True, exist_ok=True)
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
-        subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "init", "-b", "main"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=root, check=True)
         subprocess.run(["git", "config", "user.name", "Test User"], cwd=root, check=True)
         (root / "README.md").write_text("# Test\n", encoding="utf-8")
         subprocess.run(["git", "add", "README.md"], cwd=root, check=True)
-        subprocess.run(["git", "commit", "-m", "初始化测试仓库"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "commit", "-m", "初始化测试仓库"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         return root
 
     def commit_file(self, root: Path, relative: str, content: str, message: str) -> str:
@@ -31,13 +32,13 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
         subprocess.run(["git", "add", relative], cwd=root, check=True)
-        subprocess.run(["git", "commit", "-m", message], cwd=root, check=True, capture_output=True, text=True)
-        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+        subprocess.run(["git", "commit", "-m", message], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
+        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS).stdout.strip()
 
     def rev_parse(self, root: Path, ref: str = "HEAD") -> str:
-        return subprocess.run(["git", "rev-parse", ref], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
+        return subprocess.run(["git", "rev-parse", ref], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS).stdout.strip()
 
-    def commit_plan_package(self, root: Path, *, doc_id: str = "example_plan") -> str:
+    def commit_plan_package(self, root: Path, *, doc_id: str = "example_plan", status: str = "active") -> str:
         canonical = f"docs_bilingual/implementation_plans/{doc_id}.md"
         zh_cn = f"docs_bilingual/implementation_plans/{doc_id}.zh-CN.md"
         (root / "docs_bilingual/implementation_plans").mkdir(parents=True, exist_ok=True)
@@ -45,7 +46,7 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
             "---\n"
             f"doc_id: {doc_id}\n"
             "lang: en\n"
-            "status: active\n"
+            f"status: {status}\n"
             "doc_class: implementation_plan\n"
             f"zh_cn_path: {zh_cn}\n"
             "---\n"
@@ -56,7 +57,7 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
             "---\n"
             f"doc_id: {doc_id}\n"
             "lang: zh-CN\n"
-            "status: active\n"
+            f"status: {status}\n"
             "doc_class: implementation_plan\n"
             f"translation_of: {canonical}\n"
             "---\n"
@@ -68,13 +69,13 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
             "documents:\n"
             f"  - doc_id: {doc_id}\n"
             "    doc_class: implementation_plan\n"
-            "    status: active\n"
+            f"    status: {status}\n"
             f"    canonical_path: {canonical}\n"
             f"    zh_cn_path: {zh_cn}\n",
             encoding="utf-8",
         )
         subprocess.run(["git", "add", "docs_bilingual"], cwd=root, check=True)
-        subprocess.run(["git", "commit", "-m", "新增示例实施计划"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "commit", "-m", "新增示例实施计划"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         return self.rev_parse(root)
 
     def run_check(self, root: Path, base: str = "main", head: str = "HEAD") -> subprocess.CompletedProcess[str]:
@@ -190,7 +191,7 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
 
     def test_passes_remote_ci_forward_fix_receipt_for_matching_branch_and_paths(self) -> None:
         root = self.make_repo("plan-exit-remote-ci-forward-fix")
-        subprocess.run(["git", "checkout", "-b", "fix/remote-ci-forward"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "fix/remote-ci-forward"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         self.commit_file(root, "tools/checker.py", "print('forward fix')\n", "修复远端 CI 门禁")
         self.write_remote_ci_forward_fix_receipt(root, branch="fix/remote-ci-forward", paths=["tools/checker.py"])
 
@@ -203,7 +204,7 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
 
     def test_fails_remote_ci_forward_fix_receipt_when_paths_do_not_cover_range(self) -> None:
         root = self.make_repo("plan-exit-remote-ci-forward-fix-mismatch")
-        subprocess.run(["git", "checkout", "-b", "fix/remote-ci-forward"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "fix/remote-ci-forward"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         self.commit_file(root, "tools/checker.py", "print('forward fix')\n", "修复远端 CI 门禁")
         self.write_remote_ci_forward_fix_receipt(root, branch="fix/remote-ci-forward", paths=["tools/other.py"])
 
@@ -222,7 +223,7 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
     def test_passes_with_confirmed_stage_a_receipt_when_code_range_has_no_docs_commit(self) -> None:
         root = self.make_repo("plan-exit-staged-pass")
         governance_commit = self.commit_plan_package(root)
-        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         self.commit_file(root, "tools/example.py", "print('ok')\n", "添加受控代码")
         self.write_receipt(root, governance_commit, confirmed=True, merged=True)
 
@@ -233,10 +234,32 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
         self.assertEqual(payload["counts"]["valid_staged_confirmations"], 1)
         self.assertEqual(payload["staged_confirmations"][0]["implementation_plan"], "docs_bilingual/implementation_plans/example_plan.md")
 
+    def test_passes_with_confirmed_final_stage_a_receipt_when_plan_is_frozen(self) -> None:
+        root = self.make_repo("plan-exit-staged-final-pass")
+        governance_commit = self.commit_plan_package(root, doc_id="frozen_plan", status="final")
+        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
+        self.commit_file(root, "tools/example.py", "print('ok')\n", "add frozen-plan authorized code")
+        self.write_receipt(
+            root,
+            governance_commit,
+            confirmed=True,
+            merged=True,
+            plan="docs_bilingual/implementation_plans/frozen_plan.md",
+        )
+
+        result = self.run_check(root, "main", "HEAD")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["counts"]["valid_staged_confirmations"], 1)
+        self.assertEqual(
+            payload["staged_confirmations"][0]["implementation_plan"],
+            "docs_bilingual/implementation_plans/frozen_plan.md",
+        )
+
     def test_passes_with_confirmed_completed_claim_for_publication_range(self) -> None:
         root = self.make_repo("plan-exit-completed-claim-pass")
         governance_commit = self.commit_plan_package(root)
-        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         self.commit_file(root, "tools/example.py", "print('ok')\n", "添加受控代码")
         self.write_completed_claim(root, governance_commit, confirmed=True, merged=True)
 
@@ -253,7 +276,7 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
     def test_fails_when_stage_a_receipt_is_not_confirmed(self) -> None:
         root = self.make_repo("plan-exit-staged-unconfirmed")
         governance_commit = self.commit_plan_package(root)
-        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         self.commit_file(root, "tools/example.py", "print('bad')\n", "添加未确认代码")
         self.write_receipt(root, governance_commit, confirmed=False, merged=True)
 
@@ -265,10 +288,10 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
 
     def test_fails_when_governance_commit_is_not_merged_to_main(self) -> None:
         root = self.make_repo("plan-exit-staged-not-main")
-        subprocess.run(["git", "checkout", "-b", "governance"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "governance"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         governance_commit = self.commit_plan_package(root)
-        subprocess.run(["git", "checkout", "main"], cwd=root, check=True, capture_output=True, text=True)
-        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "main"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
+        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         self.commit_file(root, "tools/example.py", "print('bad')\n", "添加未合入代码")
         self.write_receipt(root, governance_commit, confirmed=True, merged=True)
 
@@ -300,9 +323,9 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
         (root / "tools").mkdir(parents=True, exist_ok=True)
         (root / "tools/governance.py").write_text("print('mixed')\n", encoding="utf-8")
         subprocess.run(["git", "add", "docs_bilingual", "tools/governance.py"], cwd=root, check=True)
-        subprocess.run(["git", "commit", "-m", "混合治理提交"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "commit", "-m", "混合治理提交"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         governance_commit = self.rev_parse(root)
-        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         self.commit_file(root, "tools/example.py", "print('bad')\n", "添加混合后代码")
         self.write_receipt(root, governance_commit, confirmed=True, merged=True)
 
@@ -311,10 +334,10 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertTrue(any("must be docs-only" in detail for record in payload["staged_confirmations"] for detail in record["errors"]))
 
-    def test_fails_when_confirmed_receipt_omits_active_registered_plan_file(self) -> None:
+    def test_fails_when_confirmed_receipt_omits_active_or_final_registered_plan_file(self) -> None:
         root = self.make_repo("plan-exit-missing-plan")
         governance_commit = self.commit_file(root, "docs_bilingual/memory/sample.md", "# Governance\n", "新增治理文档")
-        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         self.commit_file(root, "tools/example.py", "print('bad')\n", "添加缺少计划代码")
         self.write_receipt(root, governance_commit, confirmed=True, merged=True, include_plan=False)
 
@@ -325,11 +348,11 @@ class PlanExitExecutionGovernanceCheckTest(unittest.TestCase):
             any("implementation_plan must name" in detail for record in payload["staged_confirmations"] for detail in record["errors"])
         )
 
-    def test_fails_when_confirmed_plan_file_is_not_registered_active(self) -> None:
+    def test_fails_when_confirmed_plan_file_is_not_registered_active_or_final(self) -> None:
         root = self.make_repo("plan-exit-unregistered-plan")
         plan = "docs_bilingual/implementation_plans/example_plan.md"
         governance_commit = self.commit_file(root, plan, "---\ndoc_id: example_plan\nstatus: active\ndoc_class: implementation_plan\n---\n# Plan\n", "新增未注册计划")
-        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "checkout", "-b", "feature/code"], cwd=root, check=True, capture_output=True, **GIT_TEXT_KWARGS)
         self.commit_file(root, "tools/example.py", "print('bad')\n", "添加未注册计划代码")
         self.write_receipt(root, governance_commit, confirmed=True, merged=True, plan=plan)
 

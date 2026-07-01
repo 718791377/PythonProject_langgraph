@@ -9,24 +9,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from codex_skill_frontmatter import (
+    codex_frontmatter_report,
+    parse_frontmatter_file,
+)
+
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
 def parse_frontmatter(path: Path) -> dict[str, Any]:
-    lines = read_text(path).splitlines()
-    if not lines or lines[0].strip() != "---":
-        return {}
-    data: dict[str, Any] = {}
-    for line in lines[1:]:
-        if line.strip() == "---":
-            break
-        if ":" not in line or not line.strip() or line.lstrip().startswith("#"):
-            continue
-        key, value = line.split(":", 1)
-        data[key.strip()] = value.strip().strip('"').strip("'")
-    return data
+    return dict(parse_frontmatter_file(path).data)
 
 
 def repo_relative(path: Path, root: Path) -> str | None:
@@ -102,19 +96,32 @@ def build_inventory(root: Path, include_plugins: bool, user_root: Path, plugin_r
     repo_root = root / ".codex" / "skills"
     skills: list[dict[str, Any]] = []
     for path, layer in collect_skill_files(root, include_plugins, user_root, plugin_root):
-        metadata = parse_frontmatter(path)
+        parsed = parse_frontmatter_file(path)
+        metadata = dict(parsed.data)
         name = infer_name(path, metadata)
         description = str(metadata.get("description", "")).strip()
+        compatibility = codex_frontmatter_report(
+            metadata,
+            parsed.frontmatter_valid,
+            parsed.frontmatter_error,
+            had_bom=parsed.had_bom,
+        )
         plugin = plugin_name_for(path, plugin_root) if layer == "plugin" else None
         depth = repo_skill_depth(path, repo_root) if layer == "repo" else 0
         row = {
             "name": name,
             "description": description,
-            "description_length": len(description),
+            "name_length": compatibility["name_length"],
+            "description_length": compatibility["description_length"],
             "source_layer": layer,
             "source_detail": plugin or ("repo_nested" if depth > 2 else layer),
             "file_path": repo_relative(path, root) or str(path.resolve()),
             "frontmatter_keys": sorted(metadata.keys()),
+            "frontmatter_valid": parsed.frontmatter_valid,
+            "frontmatter_error": parsed.frontmatter_error,
+            "had_bom": parsed.had_bom,
+            "codex_frontmatter_compatible": compatibility["codex_frontmatter_compatible"],
+            "codex_frontmatter_errors": compatibility["codex_frontmatter_errors"],
             "duplicate_name_group": None,
             "suspected_profile": suspected_profile(name, description, layer, plugin),
             "status_suggestion": initial_status(name, description, layer, depth),

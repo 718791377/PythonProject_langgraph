@@ -58,19 +58,19 @@ Activation trace 必须包含：
 
 ```text
 phase=<phase>
-capability_chain=subagent:<auto|manual|off> > omx:<on|off> > langgraph:<on|off>
+capability_chain=subagent_routing:<auto|manual|off> > oh_my_codex:<on|off> > langgraph:<on|off>
 backend_default=<langgraph|native_omx|none>
 backend_ready=<true|false>
 experts=<none|analystxN|architect|writer|verifier|blocked:<reason>|...>
-durable_workflow=<not_needed|candidate|selected|blocked|running>
-persistent_team=<not_needed|candidate|selected|blocked|running>
+durable_workflow=<not_needed|candidate|selected|running|complete|blocked>
+persistent_team=<not_needed|candidate|selected|running|complete|blocked>
 main_session_escalation=<not_needed|preflight|pending_approval|granted|timed_out|blocked>
 approval_timeout_risk=<none|low|medium|high|expired>
 approval_receipt=<none|receipt id or repo-local artifact path>
 why=<concrete reason>
 ```
 
-用户可见会话表面必须保留字面标签 `Routing trace` 和 `Updated Plan`。这些标签下的解释内容可以使用中文。`Routing trace` 是普通文本诊断行或短块，使用固定 key=value 字段；它不是进度面板。`Updated Plan` 是进度面板，必须保持为用户可见的 CLI/tree 状态清单表面，使用勾选/空方框语义，而不是纯自然语言段落。Markdown checkbox syntax 仍然只属于 implementation-plan-internal 任务追踪，不能作为用户可见的 `Updated Plan` 会话表面。保存版结构化 evidence 继续保留 canonical field name、threshold token 和 blocker token，以保持 checker 兼容。
+Live-only operator surfaces must keep the literal labels `Routing trace` 和 `Updated Plan`。这些标签下的解释内容可以使用中文。`Routing trace` 是普通文本诊断行或短块，必须只有一个 `Routing trace` 标签，必须使用完整固定 key=value 字段集，并且不得使用 `experts_now` 或 `durable_team` 等旧短字段；它不是进度面板。如果外层 wrapper、launcher 或 runtime 已经为当前 activation 注入 `Routing trace`，assistant 正文不得再输出第二个 `Routing trace` 块。`Updated Plan` 是进度面板，必须保持为唯一一个用户可见的 CLI/tree 状态清单表面，使用勾选/空方框语义，而不是纯自然语言段落；不得重复、嵌套或渲染成 Markdown checkbox。Codex 原生 `update_plan` render 是 canonical `Updated Plan` 面板，因此原生面板出现后，assistant 正文不得再手写第二个 `Updated Plan` 标题、嵌套 `Updated Plan` 树节点或 Markdown checkbox 镜像。如果没有输出原生计划面板但仍需要简短进度说明，应使用 `执行进度` 等不冲突标签，而不是冒充 `Updated Plan`。Markdown checkbox syntax 仍然只属于 implementation-plan-internal 任务追踪，不能作为用户可见的 `Updated Plan` 会话表面。保存版结构化 evidence 继续保留 canonical field name、threshold token 和 blocker token，以保持 checker 兼容。 These labels are live-only transient operator surfaces: session-history replay, compaction summaries, model-readable resume context, worker handoff, and tool output must filter standalone/panel-shaped copies as `transient_operator_surface` and must fail closed on embedded prose or prompt-authority copies as `transient_surface_leak`; saved fixtures remain evidence only when explicitly supplied to evidence checkers, never session-history authority.
 
 Main-session escalation visibility 必须显式可见：在任何 OMX、LangGraph、durable-worker 或 shell flow 等待主会话审批前，trace 必须暴露 `main_session_escalation`、`approval_timeout_risk` 和 `approval_receipt`。`main_session_escalation` 的状态为 `not_needed`、`preflight`、`pending_approval`、`granted`、`timed_out` 或 `blocked`；`approval_timeout_risk` 的状态为 `none`、`low`、`medium`、`high` 或 `expired`；`approval_receipt` 在无需审批时为 `none`，否则必须指向 repo-local receipt、interrupt、checkpoint 或 pending-approval artifact path。Worker context 必须收到同一个 receipt 或 blocked state，不得把 approval wait 隐藏在 main session 之外。
 
@@ -124,11 +124,11 @@ Leader session and task-flow scope evidence 由 `tools/check_leader_session_scop
 
 ### Session replay context filtering
 
-Session replay context filtering is the required boundary before a resumed legacy session, compacted transcript, or replayed thread fragment can re-enter prompts as current authority. Replay inputs include assistant-visible transcript messages, tool/function output, raw startup-summary copies, and old runtime workaround text recovered from `/resume` context. Filtered outputs must separate accepted assistant-visible context, filtered replay fragments, and blocked authority candidates.
+Session replay context filtering is the required boundary before a resumed legacy session, compacted transcript, or replayed thread fragment can re-enter prompts as current authority. Replay inputs include assistant-visible transcript messages, tool/function output, raw startup-summary copies, live-only `Routing trace` / `Updated Plan` transient operator surface panels, and old runtime workaround text recovered from `/resume` context. Filtered outputs must separate accepted assistant-visible context, filtered replay fragments, and blocked authority candidates.
 
-The filter must drop or block startup-summary-defined canonical canary copies, legacy/stale canary text, mojibake, raw startup-summary copies, and stale MCP assumptions before any prompt-authority handoff. tool/function output is diagnostic evidence only and must not become current authority or satisfy canary evidence. Current authority remains `AGENTS.md`, the UTF-8 startup summary pair, and current repository governance documents. For one old thread with an MCP startup problem, use a per-invocation override such as `-c "mcp_servers.omx_code_intel.enabled=false"`; that workaround is one-launch compatibility handling and must not become a permanent edit to user-level `config.toml` or a global disablement of `omx_*` MCP servers.
+The filter must drop or block startup-summary-defined canonical canary copies, legacy/stale canary text, mojibake, raw startup-summary copies, standalone/panel-shaped `Routing trace` / `Updated Plan` transient operator surfaces, embedded transient-surface leaks, and stale MCP assumptions before any prompt-authority handoff. tool/function output is diagnostic evidence only and must not become current authority or satisfy canary evidence. Current authority remains `AGENTS.md`, the UTF-8 startup summary pair, and current repository governance documents. For one old thread with an MCP startup problem, use a per-invocation override such as `-c "mcp_servers.omx_code_intel.enabled=false"`; that workaround is one-launch compatibility handling and must not become a permanent edit to user-level `config.toml` or a global disablement of `omx_*` MCP servers.
 
-Saved replay-filtering evidence is checked by `tools/session_replay_context_filtering.py`. The checker reports `accepted_context_items`, `filtered_context_items`, `blocked_authority_items`, and `replay_diagnostics`, and fails closed when stale replay content would re-enter prompts as current authority.
+Saved replay-filtering evidence is checked by `tools/session_replay_context_filtering.py`. The checker reports `accepted_context_items`, `filtered_context_items`, `blocked_authority_items`, and `replay_diagnostics`; filters standalone panels as `transient_operator_surface`; and fails closed as `transient_surface_leak` when stale replay content or embedded operator-surface labels would re-enter prompts as current authority.
 
 Native Codex remains the base layer。oh-my-codex、native_omx、skills、profile helpers 与 LangGraph 是 additive workflow 或 durable-state layers，不是 Codex replacements。Effective lane choice 基于 task fit：worker-centric durable execution、worktree isolation、mailbox flow 或 direct worker lifecycle control 优先使用 `native_omx`；graph-shaped multi-phase execution、checkpoint-driven recovery、interrupt/resume approval gates、frozen briefs 或 persisted survivor queues 优先使用 LangGraph。每个 durable task 同一时间只使用 one backend family，backend-family switching 需要 explicit close or handoff。已保存的 lane-fit evidence 由 `tools/check_effective_lane_fit_evidence.py` 检查；它要求 native_omx worker-centric fit、LangGraph graph-shaped fit、default-backend-not-enough evidence，以及 backend-family switching 前的 explicit close/handoff。
 

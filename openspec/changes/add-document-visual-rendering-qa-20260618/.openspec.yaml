@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-18
+x_change_class: tooling-visual-qa-plan
+x_archive_deferred_reason: "Stage A freezes the visual rendering QA contract; Stage B must implement and verify runtime behavior before archive."
+x_archive_follow_up: "After Stage B local-main integration, archive the change and promote visual rendering QA requirements into the stable reusable document-tools spec."

@@ -1,0 +1,193 @@
+{
+  "counts": {
+    "accepted_lanes": 14,
+    "invalid_receipts": 0,
+    "known_lanes": 14,
+    "missing_lanes": 0,
+    "stale_receipts": 0
+  },
+  "coverage_command": "python tools/check_r6_live_runtime_receipts.py --root . --receipt-dir .omx/r6-live-runtime/receipts --require-coverage --json",
+  "coverage_ok": true,
+  "doc_id": "r6_live_runtime_stage_c_coverage_evidence_20260609",
+  "generated_at": "2026-06-09T01:24:04.873299+00:00",
+  "implementation_plan": "docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.md",
+  "invalid_receipts": [],
+  "lanes": {
+    "codex-harnesses-governance": {
+      "accepted": true,
+      "accepted_mode": "blocked",
+      "live_executed": false,
+      "policy": "blocked-or-ready-or-executed",
+      "receipt_path_hash": "5d2f99ff6bbc498a",
+      "side_effect": "harness_job",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    },
+    "durable-capability-readiness-projection": {
+      "accepted": true,
+      "accepted_mode": "live-executed",
+      "live_executed": true,
+      "policy": "live-executed-required",
+      "receipt_path_hash": "05304d362b787800",
+      "side_effect": "none",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    },
+    "durable-smoke-adoption-gate-template": {
+      "accepted": true,
+      "accepted_mode": "live-executed",
+      "live_executed": true,
+      "policy": "live-executed-required",
+      "receipt_path_hash": "afda9747361c37a0",
+      "side_effect": "none",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    },
+    "gstack-codex-delivery-loop-runtime-governance": {
+      "accepted": true,
+      "accepted_mode": "live-executed",
+      "live_executed": true,
+      "policy": "live-executed-required",
+      "receipt_path_hash": "41aed5ca27b72f80",
+      "side_effect": "none",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    },
+    "langgraph-state-release-evidence": {
+      "accepted": true,
+      "accepted_mode": "live-executed",
+      "live_executed": true,
+      "policy": "live-executed-required",
+      "receipt_path_hash": "036e7f6bd041ed07",
+      "side_effect": "none",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    },
+    "repo-local-selector-ownership": {
+      "accepted": true,
+      "accepted_mode": "live-executed",
+      "live_executed": true,
+      "policy": "live-executed-required",
+      "receipt_path_hash": "fd1f9c5d575cd4c0",
+      "side_effect": "none",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    },
+    "spec-kit-authority-guard": {
+      "accepted": true,
+      "accepted_mode": "blocked",
+      "live_executed": false,
+      "policy": "blocked-or-ready-or-executed",
+      "receipt_path_hash": "0a2785b02659cb01",
+      "side_effect": "spec_kit_apply",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    },
+    "spec-kit-subordinate-adapter-governance": {
+      "accepted": true,
+      "accepted_mode": "blocked",
+      "live_executed": false,
+      "policy": "blocked-or-ready-or-executed",
+      "receipt_path_hash": "5d27d80ae897bea6",
+      "side_effect": "spec_kit_apply",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    },
+    "stop-slop-caveman-response-density-runtime": {
+      "accepted": true,
+      "accepted_mode": "blocked",
+      "live_executed": false,
+      "policy": "blocked-or-ready-or-executed",
+      "receipt_path_hash": "7f47b534916466b4",
+      "side_effect": "user_level_install",
+      "template_distribution": "user-level",
+      "valid_receipt_count": 1
+    },
+    "user-level-browser-cli-adapter-boundary": {
+      "accepted": true,
+      "accepted_mode": "blocked",
+      "live_executed": false,
+      "policy": "blocked-or-ready-or-executed",
+      "receipt_path_hash": "390fcbdef48bbc15",
+      "side_effect": "browser_gui",
+      "template_distribution": "user-level",
+      "valid_receipt_count": 1
+    },
+    "user-level-capability-receipt-rollback-redaction": {
+      "accepted": true,
+      "accepted_mode": "live-executed",
+      "live_executed": true,
+      "policy": "live-executed-required",
+      "receipt_path_hash": "899cfc6e1e082324",
+      "side_effect": "none",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    },
+    "user-level-cli-anything-wxwork-cli-governance": {
+      "accepted": true,
+      "accepted_mode": "blocked",
+      "live_executed": false,
+      "policy": "blocked-or-ready-or-executed",
+      "receipt_path_hash": "63012f8f4723cafa",
+      "side_effect": "external_message",
+      "template_distribution": "user-level",
+      "valid_receipt_count": 1
+    },
+    "user-level-mcp-skills-cli-runtime": {
+      "accepted": true,
+      "accepted_mode": "blocked",
+      "live_executed": false,
+      "policy": "blocked-or-ready-or-executed",
+      "receipt_path_hash": "4b2f1fb1ba5be031",
+      "side_effect": "user_level_install",
+      "template_distribution": "user-level",
+      "valid_receipt_count": 1
+    },
+    "worktree-receipt-claim-lifecycle": {
+      "accepted": true,
+      "accepted_mode": "live-executed",
+      "live_executed": true,
+      "policy": "live-executed-required",
+      "receipt_path_hash": "d38a5691d61e75c4",
+      "side_effect": "none",
+      "template_distribution": "repo-local-only",
+      "valid_receipt_count": 1
+    }
+  },
+  "missing_lanes": [],
+  "package": "Package 3: R6 lane coverage audit and default receipt generation",
+  "receipt_dir": ".omx/r6-live-runtime/receipts",
+  "runtime_command": "python tools/r6_live_runtime.py run-all --root . --json",
+  "schema_version": 1,
+  "side_effect_posture": {
+    "remote_publication_mutated": false,
+    "repo_local_default_safe_lanes": "live_executed_no_external_side_effect",
+    "runs_external_tool": false,
+    "sends_external_message": false,
+    "sensitive_lanes_without_env_targets": "blocked_receipt",
+    "starts_browser_or_gui": false,
+    "starts_harness_job": false
+  },
+  "stale_receipts": [],
+  "template_sync": {
+    "command": "python tools/r6_live_runtime.py sync-templates --root . --general-root D:/PythonProject_General --general2-root D:/PythonProject_General_2 --update-managed --json",
+    "ok": true,
+    "redaction_status": "pass",
+    "remote_publication_mutated": false,
+    "template_distribution": {
+      "project-general-2-stub": {
+        "copied": 0,
+        "skipped_existing": 2,
+        "target_hash": "7a9bf480ab6da20f",
+        "updated": 1
+      },
+      "project-general-full": {
+        "copied": 0,
+        "skipped_existing": 0,
+        "target_hash": "328f348e55364ea2",
+        "updated": 5
+      }
+    },
+    "update_managed": true
+  }
+}

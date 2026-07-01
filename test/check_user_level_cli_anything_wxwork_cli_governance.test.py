@@ -40,6 +40,7 @@ class CLIAnythingWXWorkCheckerTests(unittest.TestCase):
             self.assertTrue(plan["implemented_local"])
             self.assertTrue(plan["has_stage_b_evidence"])
             self.assertTrue(plan["has_stage_d_r4_smoke_evidence"])
+            self.assertTrue(plan["has_cli_anything_user_level_install_evidence"])
             self.assertTrue(all(plan["runtime_stage_markers"].values()))
             self.assertTrue(all(plan["runtime_status_markers"].values()))
             self.assertTrue(plan["send_allowed_only_r5"])

@@ -88,6 +88,36 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["counts"]["findings"], 0)
 
+    def test_ignores_tmp_runtime_audit_outputs(self) -> None:
+        root = self.make_root("spec-kit-tmp-excluded")
+        self.write(
+            root,
+            ".tmp/skills-usage-audit-7d.json",
+            '{"dangerous_counter": {"specify init": 2}}\n',
+        )
+        self.write(root, "docs/usage.md", "Spec Kit is a safe subordinate adapter reference.\n")
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["findings"], 0)
+
+    def test_ignores_local_runtime_toolchains(self) -> None:
+        root = self.make_root("spec-kit-local-runtime-excluded")
+        self.write(
+            root,
+            ".local/ppt_render_tools/libreoffice/program/python-core-3.12.13/lib/dataclasses.py",
+            "# ClassVar and InitVar to specify init=<anything>.\n",
+        )
+        self.write(root, "docs/usage.md", "Spec Kit is a safe subordinate adapter reference.\n")
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["counts"]["findings"], 0)
+
     def test_prunes_excluded_directories_before_recursive_scan(self) -> None:
         root = self.make_root("spec-kit-prunes-excluded-before-scan")
         self.write(root, "docs/usage.md", "Spec Kit is a safe subordinate adapter reference.\n")
@@ -150,6 +180,101 @@ class SpecKitAuthorityGuardTest(unittest.TestCase):
         kinds = {finding["kind"] for finding in payload["findings"]}
         self.assertIn("specify_directory_present_without_plan", kinds)
         self.assertIn("specify_path_changed_without_plan", kinds)
+
+    def test_allows_r6_subordinate_repository_apply_surfaces(self) -> None:
+        root = self.make_root("spec-kit-r6-repository-apply")
+        self.init_git(root)
+        self.write(
+            root,
+            "docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.md",
+            (
+                "---\n"
+                "doc_id: r6_live_runtime_promotion_plan\n"
+                "status: active\n"
+                "doc_class: implementation_plan\n"
+                "---\n"
+                "# R6 Live Runtime Promotion Plan\n"
+            ),
+        )
+        self.write(
+            root,
+            ".specify/r6-live-runtime/README.md",
+            (
+                "# R6 Spec Kit subordinate receipt surface\n\n"
+                "This repository surface is subordinate to Comet/OpenSpec/Superpowers "
+                "and exists only because an R6 receipt authorized repository apply.\n"
+            ),
+        )
+        self.write(
+            root,
+            "specs/r6-live-runtime/spec.md",
+            (
+                "# R6 Spec Kit subordinate spec placeholder\n\n"
+                "Spec Kit remains subordinate and does not replace OpenSpec authority.\n"
+            ),
+        )
+
+        result = self.run_check(root)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["r6_live_runtime_plan_present"])
+        self.assertEqual(payload["counts"]["path_findings"], 0)
+
+    def test_rejects_r6_repository_apply_surface_without_subordinate_text(self) -> None:
+        root = self.make_root("spec-kit-r6-repository-apply-takeover")
+        self.init_git(root)
+        self.write(
+            root,
+            "docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.md",
+            (
+                "---\n"
+                "doc_id: r6_live_runtime_promotion_plan\n"
+                "status: active\n"
+                "doc_class: implementation_plan\n"
+                "---\n"
+                "# R6 Live Runtime Promotion Plan\n"
+            ),
+        )
+        self.write(root, ".specify/r6-live-runtime/README.md", "# generated repository setup\n")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        kinds = {finding["kind"] for finding in payload["findings"]}
+        self.assertIn("specify_directory_present_without_plan", kinds)
+        self.assertIn("specify_path_changed_without_plan", kinds)
+
+    def test_rejects_other_generated_surfaces_even_with_r6_plan(self) -> None:
+        root = self.make_root("spec-kit-r6-other-generated")
+        self.init_git(root)
+        self.write(
+            root,
+            "docs_bilingual/implementation_plans/r6_live_runtime_promotion_plan.md",
+            (
+                "---\n"
+                "doc_id: r6_live_runtime_promotion_plan\n"
+                "status: active\n"
+                "doc_class: implementation_plan\n"
+                "---\n"
+                "# R6 Live Runtime Promotion Plan\n"
+            ),
+        )
+        self.write(
+            root,
+            ".specify/r6-live-runtime/README.md",
+            "R6 receipt authorized repository apply; Spec Kit remains subordinate.\n",
+        )
+        self.write(root, ".specify/other/README.md", "Spec Kit remains subordinate.\n")
+        self.write(root, "specs/other/spec.md", "Spec Kit remains subordinate.\n")
+
+        result = self.run_check(root)
+        self.assertNotEqual(result.returncode, 0)
+        payload = json.loads(result.stdout)
+        paths = {finding["relative_path"] for finding in payload["findings"]}
+        self.assertIn(".specify", paths)
+        self.assertTrue(any(path.startswith(".specify/other") for path in paths))
+        self.assertIn("specs", paths)
+        self.assertTrue(any(path.startswith("specs/other") for path in paths))
 
     def test_active_migration_plan_allows_path_inspection_without_takeover_error(self) -> None:
         root = self.make_root("spec-kit-active-plan")

@@ -149,3 +149,107 @@ Codex 平台仓库可以定义可复用 governance、templates、checkers、role
 - **THEN** 指导说明轻量化适用于整个项目、本地阶段，还是某个模块
 - **AND** 它为裁剪决策记录输入、工具与技术、输出
 - **AND** 它定义当风险、不确定性、耦合、采用、发布影响或干系人影响增长时的升级触发条件
+
+### Requirement: Fresh source reading evidence for lifecycle refreshes
+
+凡是声称使用 Business Management 或 PMP/PMI evidence 刷新的 lifecycle、whitepaper、research 与 North Star 文档，在更新 tracked conclusions 前 SHALL 记录 fresh extraction run。
+
+#### Scenario: PDF source is included
+- **WHEN** local PDF source 属于 refresh 范围
+- **THEN** extraction evidence 逐页记录 status row
+- **AND** 记录每个 page 或 file fallback 使用 `pypdf` 还是 PyMuPDF/fitz
+
+#### Scenario: EPUB source is included
+- **WHEN** local EPUB source 属于 refresh 范围
+- **THEN** extraction evidence 按 spine item 记录 status row
+- **AND** 显式记录 skipped navigation 或 non-content items
+
+#### Scenario: Markdown source is included
+- **WHEN** local Markdown source 属于 refresh 范围
+- **THEN** extraction evidence 记录 full-document reading status、hash、modified time 与 character count
+
+### Requirement: Whitepaper and research relationship preservation
+
+Codex durable-team whitepaper 与 solo-maintainable production persistent team research note SHALL 保持分离，除非后续 governed change 证明其中一个不再有独立 lifecycle role。
+
+#### Scenario: 10-layer and 12-layer models both appear
+- **WHEN** tracked documents 同时提到两个模型
+- **THEN** 它们把 10-layer model 标识为 runtime/governance research view
+- **AND** 把 12-layer model 标识为 product/business lifecycle view
+- **AND** 提供 bridge，而不是把两个模型视为矛盾。
+
+### Requirement: PMI tailoring and execution grammar authority
+
+凡是使用 PMI evidence 刷新的 lifecycle、whitepaper、research 与 North Star 文档，SHALL 区分 strategic narrative 与 execution grammar，并显式记录完整架构、整个项目轻量、阶段局部轻量、模块级轻量和混合治理的裁剪规则。
+
+#### Scenario: Execution-facing lifecycle layer is updated
+- **WHEN** 某个 lifecycle layer 或 delivery gate 会驱动执行
+- **THEN** 接收方文档写明输入、工具与技术、输出
+- **AND** 记录受影响范围采用完整架构、整个项目轻量、阶段局部轻量、模块级轻量，还是混合模式
+
+#### Scenario: PMI editions and practice guides are referenced
+- **WHEN** 文档引用 PMBOK、Process Groups、Agile、项目集、项目组合或 PMO 来源
+- **THEN** 文档说明 primary overlay 与 supplemental role
+- **AND** 只有当旧版能提供执行词汇、连续性、翻译澄清或历史比较时才展开旧版
+- **AND** 写明 Agile、项目集、项目组合与 PMO 叠加层的进入和退出条件。
+
+### Requirement: Bilingual UTF-8 document integrity
+
+本变更更新的英文与 zh-CN 成对文档 SHALL 保持相同治理决策，并 SHALL NOT 留下 mojibake 或 replacement-marker 新增内容。
+
+#### Scenario: zh-CN document is touched
+- **WHEN** zh-CN tracked document 被更新
+- **THEN** changed text 是有效 UTF-8 中文或有意保留的技术术语
+- **AND** 不保留新增的 three ASCII question marks 或 replacement-character 文本
+- **AND** 如果存在成对文档，英文新增治理规则必须有 zh-CN 对应内容。
+
+### Requirement: 生命周期治理必须维护持久化团队证明面
+
+生命周期治理 SHALL 将持久化团队交付矩阵、来源追踪索引和过程组契约注册并保留为一等生命周期证明面。当有来源支撑的持久化团队刷新影响白皮书、研究稿、北极星计划、生命周期地图、实施方案、playbook 或 OpenSpec 规格时，生命周期栈 SHALL 使用这些证明面。
+
+过程组契约 SHALL 作为判断生命周期层级、交付门或发布切片何时需要“输入 / 工具与技术 / 输出”的交接权威。来源追踪索引 SHALL 作为当前来源运行身份以及已跟踪 / 被忽略证据边界的交接权威。
+
+#### Scenario: 生命周期刷新改变面向执行的指导
+
+- **GIVEN** 某次生命周期刷新使用 Business Management 或 PMP 证据，并改变面向执行的持久化团队指导
+- **WHEN** 维护者检查该刷新是否受治理
+- **THEN** 注册表暴露三组证明面双语文档
+- **AND** 生命周期规格要求来源追踪索引标识当前 fresh-reading 运行
+- **AND** 生命周期规格要求面向执行的规则在完成前经过过程组契约
+- **AND** 生命周期规格保持原始抽取文本和本地缓存日志不进入已跟踪权威
+
+### Requirement: 产品生命周期治理覆盖正文级运营文档
+
+产品生命周期文档治理必须把生成的运营包正文文档视为执行层生命周期产物，并由 12 层堆栈、过程组式 Inputs / Tools And Techniques / Outputs 以及显式裁剪决策治理。
+
+#### Scenario: 根据核心文档清单生成正文文档
+
+- **GIVEN** Codex 或一人公司核心文档清单定义了文档家族和文件名
+- **WHEN** Stage B 生成对应正文文档
+- **THEN** 该文档必须识别自己的 12 层落位
+- **AND** 它必须为执行层使用暴露 Inputs、Tools And Techniques、Outputs
+- **AND** 它必须说明该文档如何参与完整、轻量、阶段局部、模块级或混合治理。
+
+### Requirement: 裁剪可以是全项目阶段局部模块级或混合
+
+生命周期治理必须区分全项目轻量架构、阶段局部轻量架构和模块级轻量架构，并在只有部分项目可以安全轻量时允许混合架构。
+
+#### Scenario: 项目选择轻量范围
+
+- **GIVEN** 正在规划一个项目、阶段或模块
+- **WHEN** operator 记录裁剪决策
+- **THEN** 决策必须说明是整个项目轻量、只有一个阶段轻量、只有一个模块轻量，还是整体采用混合方式
+- **AND** 它必须说明所选范围为什么既不更重也不更轻
+- **AND** 它必须定义升级到混合或完整架构的触发器。
+
+### Requirement: Registry 把正文文档作为一等产物跟踪
+
+双语文档 registry 必须把生成的正文文档作为一等生命周期产物跟踪，而不是把它们当作未登记的 runtime cache。
+
+#### Scenario: 添加生成的正文文档
+
+- **GIVEN** 生成器创建英文主正文文档和 zh-CN 伴随文件
+- **WHEN** 校验正文层
+- **THEN** `docs_bilingual/docs_registry.yaml` 必须包含唯一 `doc_id`
+- **AND** 它必须包含英文 canonical path 和 zh-CN companion path
+- **AND** 生成文档必须是纳入源码控制的 Markdown，而不是被忽略的 cache 文件。

@@ -95,7 +95,7 @@ translation_of: docs_bilingual/project_startup_summary.md
 
 - 自动协同是所有项目、所有通过用户级 workflow 启动的 Codex 会话的默认行为；用户不需要重复提醒 “use experts / durable_team / persistent team”。
 - 在首次实质性任务、reload/restart/resume/continue、阶段变化、发现 `.omx` durable state、expert timeout/stall、capability state 变化或扩展到 2+ execution slices 时重新 activation。
-- Trace 必须包含 `phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team` 和 `why`。
+- Trace 必须包含 `phase`、`capability_chain`、`backend_default`、`backend_ready`、`experts`、`durable_workflow`、`persistent_team`、`main_session_escalation`、`approval_timeout_risk`、`approval_receipt` 和 `why`。
 - 不得用“用户没有要求并行/子代理”作为跳过理由；必须引用阈值、blocker、范围或主会话接管。
 - 如果 native `spawn_agent` 调用被当前 platform/tool contract 阻止，必须报告 `experts=blocked:platform_subagent_invocation_constraint`，并继续使用合格 durable lane 或主会话接管。
 - LangGraph ready 时报告默认 ready durable backend，但 team launch 仍受阈值约束。
@@ -188,3 +188,5 @@ translation_of: docs_bilingual/project_startup_summary.md
 - 主题相同且 rollback boundary（回退边界）相同的小变更可以合并到一个本地集成包；不要为了节省 runner minutes 把无关主题硬塞进同一个包。
 - 本地集成或远端发布前，当前会话的模型必须判断本地批次是否适合 integrate / publish 或 wait（继续等待），并向用户提出建议；用户仍然是 release decision authority（发布决策权威）。 If the package is ready and still within the local default authorization boundary, continue through automatic local `main` integration instead of asking for another local-merge confirmation; the user remains the remote release decision authority.
 - 默认不为 GitHub 开 PR。
+
+- `Routing trace` and `Updated Plan` are live-only transient operator surfaces: render fresh only in the current activation live UI; session replay, compaction summaries, model-readable resume context, worker handoff, and tool output must not hydrate old trace/plan panels as authority; standalone panels are filtered as `transient_operator_surface`, and embedded authority leaks are blocked as `transient_surface_leak`.

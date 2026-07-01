@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "case_type": "conversation_surface",
+  "case_id": "conversation-surface-updated-plan-nested-invalid",
+  "surface": "updated_plan",
+  "text": "Updated Plan\n└ Updated Plan\n  ✔ 嵌套标题\n  □ 继续执行",
+  "expected_valid": false
+}

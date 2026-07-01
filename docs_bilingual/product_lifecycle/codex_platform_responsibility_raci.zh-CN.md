@@ -1,0 +1,132 @@
+---
+doc_id: codex_platform_responsibility_raci
+doc_class: product_lifecycle
+status: active
+package: codex
+generated_by: tools/generate_operations_package.py
+lang: zh-CN
+translation_of: docs_bilingual/product_lifecycle/codex_platform_responsibility_raci.md
+---
+<!-- GENERATED_BY: tools/generate_operations_package.py; DO NOT EDIT BY HAND. -->
+# Codex 平台责任 RACI
+## 目的
+
+把 4 个虚拟部门和 24 个责任域映射到 accountable、consulted 和 informed 责任面。
+## 部门与责任域
+
+| # | 虚拟部门 | 责任域 |
+| --- | --- | --- |
+| 1 | 战略与产品办公室 | CEO and strategy owner |
+| 2 | 战略与产品办公室 | Chief of staff |
+| 3 | 战略与产品办公室 | Business model owner |
+| 4 | 战略与产品办公室 | Finance owner |
+| 5 | 战略与产品办公室 | Market intelligence |
+| 6 | 战略与产品办公室 | Customer research |
+| 7 | 工程与平台办公室 | Product strategy |
+| 8 | 工程与平台办公室 | PM and PRD owner |
+| 9 | 工程与平台办公室 | CLI and UX owner |
+| 10 | 工程与平台办公室 | Metrics owner |
+| 11 | 工程与平台办公室 | CTO and architect |
+| 12 | 工程与平台办公室 | Engineering manager |
+| 13 | Agent 治理办公室 | Code quality owner |
+| 14 | Agent 治理办公室 | DevOps owner |
+| 15 | Agent 治理办公室 | Platform and toolchain owner |
+| 16 | Agent 治理办公室 | Security owner |
+| 17 | Agent 治理办公室 | Privacy and data protection owner |
+| 18 | Agent 治理办公室 | Data governance owner |
+| 19 | 增长与知识办公室 | Agent governance owner |
+| 20 | 增长与知识办公室 | Agent evaluation owner |
+| 21 | 增长与知识办公室 | Docs owner |
+| 22 | 增长与知识办公室 | Support owner |
+| 23 | 增长与知识办公室 | Brand and trust owner |
+| 24 | 增长与知识办公室 | Knowledge and review owner |
+## 权威边界
+
+本生成包使用已跟踪的仓库权威文档，这些文档来自 Business Management、product lifecycle 与 PMP 综合刷新：codex_platform_inventory_map.md、one_person_company_inventory_map.md、durable_team_process_group_contract.md、lifecycle_tailoring_rules.md、pmi_project_management_reference_map.md 以及两份当前白皮书。Stage B 只把这些已跟踪权威运行化，不重新抽取原始 PDF、EPUB 或 Markdown source libraries。
+## 规范清单
+
+| 清单元素 | 数量 | 运行含义 |
+| --- | --- | --- |
+| 主干层级 | 12 | 0-11 的 12 层模型 |
+| 虚拟部门 | 4 | 每个部门 6 个责任域 |
+| 责任域 | 24 | 用于 owner 与 RACI 映射 |
+| 横切模块 | 18 | 用于跨层风险和能力控制 |
+| 核心文档 | 48 | 以六文档家族组织 |
+| 受治理 AI Agent | 12 | 每条通道保留人类 gate |
+| 推荐书籍 | 12 | 作为主题地图而非复制来源文本 |
+## 12 层主干
+
+| # | 层级 | 核心问题 |
+| --- | --- | --- |
+| 0 | 认知叙事 | 平台或公司为什么应该存在 |
+| 1 | 商业 | 为什么值得持续维护 |
+| 2 | 市场 | 哪些用户和细分需要它 |
+| 3 | 战略 | 先做什么以及拒绝什么 |
+| 4 | 指标 | 什么证据会改变决策 |
+| 5 | 产品 | 暴露哪些工作流或 offer |
+| 6 | 技术 | 系统如何保持安全和可演进 |
+| 7 | 组织 | 谁拥有决策和权限 |
+| 8 | 执行 | 工作如何交付和回滚 |
+| 9 | 增长 | 采用或需求如何形成复利 |
+| 10 | 运营 | 支持和运行健康如何稳定 |
+| 11 | 复盘 | 经验如何沉淀为持久资产 |
+## 裁剪规则
+
+裁剪不是在心智模型中删除层级，而是选择最小充分治理深度。每个裁剪记录都必须说明为什么所选模式不更重也不更轻，并列出升级触发器。
+
+| 模式 | 何时使用 | 轻量范围 |
+| --- | --- | --- |
+| 完整架构 | 适用于跨阶段、外部客户、收入、合规、安全、发布、回滚、持久状态、共享 runtime 或多 Agent 工作。 | 对受影响层级进行端到端治理；只为受影响风险范围写足完整证据。 |
+| 整个项目轻量化 | 仅适用于私有、可逆、低风险探索，且没有外部承诺、持久状态影响、发布、敏感数据或共享 runtime。 | 整个项目可以轻量，但仍需记录 owner、范围、验证、回滚或删除路径以及学习结果。 |
+| 阶段局部轻量化 | 适用于一个发现、指标、增长或复盘阶段在更大受治理项目内风险较低的情况。 | 只有被命名的阶段是轻量的；上游和下游 gate 仍需显式保留。 |
+| 模块级轻量化 | 适用于一个边界清晰的文档族、helper、原型或本地模块，且不改变 trust、状态、公开 API、CI、发布或共享 runtime 行为。 | 只有该模块轻量；外围项目仍保持完整架构边界。 |
+| 混合架构 | 适用于多数真实工作：不确定阶段先轻量，触达客户、生产、收入、信任、持久状态或发布影响前再冻结更完整的控制。 | 关键层级完整治理；低风险阶段或模块保持轻量，直到触发升级条件。 |
+## 输入
+
+- 当前白皮书、北极星、清单地图、PMI map 与 lifecycle tailoring rules。
+- 目标项目或平台切片的风险、耦合、owner、证据和约束。
+- 本地 main 优先工作流、OpenSpec 状态、验证路径和远端发布边界。
+## 工具与技术
+
+- 12 层落点分析、责任域映射、RACI、过程组 I/T/O、裁剪评分卡。
+- PMBOK 8 价值与裁剪叠加、Process Groups 执行语法、Agile 反馈循环、PMO 治理服务按需进入。
+- 生成器、检查器、本地 CI、本地 MR review、回滚引用与 lessons learned。
+## 输出
+
+- 双语受治理运营包文档、registry 条目、验证报告和变更路径证据。
+- 明确的裁剪决策、升级触发器、owner、验证和 closeout 记录。
+- 停在远端发布门，除非用户显式授权远端发布。
+## 过程组运行表
+
+| 过程组 | 输入 | 工具与技术 | 输出 |
+| --- | --- | --- | --- |
+| 启动 | 目的、价值假设、干系人信号、范围边界、初始风险 | 类章程 framing、owner 映射、非目标审查、裁剪预检 | 继续授权、已命名 owner、范围边界、初始风险日志 |
+| 规划 | 已批准目的、依赖、约束、风险画像、验收目标 | I/T/O 规划、发布切片、验证设计、回滚设计、角色边界审查 | 计划、验收标准、依赖地图、验证路径、回滚边界 |
+| 执行 | 已批准切片、来源证据、模板、worktree 状态、角色 ownership | 受控起草或实现、评审、测试、文档更新、满足条件时的 bounded expert 或 durable-lane handoff | 起草产物、受控变更集、验证工作、变更路径证据 |
+| 监控 | 活动工作产品、指标、问题、评审反馈、本地 gate 输出 | 质量检查、变更控制、偏差复核、风险响应、diff 评审、gate 重跑 | 问题日志、变更决策、指标检查、本地 gate 证据、回滚就绪度 |
+| 收尾 | 已验收工作、最终证据、归档候选、经验教训、残余风险 | 收尾评审、归档或同步、发布说明更新、复盘、下一周期 triage | 最终产物、归档或收尾记录、经验教训、下一周期输入 |
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- Codex boundary: Codex owns execution truth for agents, OpenSpec, worktrees, durable state, validation gates, local-main evidence, rollback, and release boundaries, while consuming business intent from the one-person company.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

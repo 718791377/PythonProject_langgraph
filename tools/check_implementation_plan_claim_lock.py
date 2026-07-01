@@ -134,7 +134,7 @@ def plan_identity(root: Path, plan_path: str) -> str:
     return yaml_scalar(text, "doc_id") or plan_path
 
 
-def validate_plan_path(root: Path, claim_file: Path, value: Any, errors: list[str]) -> str | None:
+def validate_plan_path(plan_root: Path, claim_file: Path, value: Any, errors: list[str]) -> str | None:
     if not isinstance(value, str) or not value.strip():
         errors.append(f"{claim_file}: `implementation_plan` must be a non-empty repo-relative path")
         return None
@@ -145,8 +145,8 @@ def validate_plan_path(root: Path, claim_file: Path, value: Any, errors: list[st
     if not plan.startswith(PLAN_PREFIX) or not plan.endswith(".md"):
         errors.append(f"{claim_file}: `implementation_plan` must point under {PLAN_PREFIX} and end with .md")
         return None
-    if not (root / plan).exists():
-        errors.append(f"{claim_file}: `implementation_plan` does not exist: {plan}")
+    if not (plan_root / plan).exists():
+        errors.append(f"{claim_file}: `implementation_plan` does not exist in claim worktree {plan_root}: {plan}")
         return None
     return plan
 
@@ -161,7 +161,7 @@ def validate_claim(root: Path, worktree: Path, claim_file: Path, data: dict[str,
     if not isinstance(status, str) or status not in ALLOWED_STATUSES:
         errors.append(f"{claim_file}: `status` must be one of {sorted(ALLOWED_STATUSES)}")
         status = str(status)
-    plan = validate_plan_path(root, claim_file, implementation_plan_value, errors) or ""
+    plan = validate_plan_path(worktree, claim_file, implementation_plan_value, errors) or ""
     required_strings = {}
     for field in ("session_id", "branch", "worktree"):
         value = data.get(field)
@@ -180,7 +180,7 @@ def validate_claim(root: Path, worktree: Path, claim_file: Path, data: dict[str,
     if expired and status == ACTIVE_STATUS:
         warnings.append(f"{claim_file}: active implementation-plan claim is stale because `expires_at` is in the past")
     declared_doc_id = data.get("implementation_plan_doc_id")
-    actual_doc_id = plan_identity(root, plan) if plan else ""
+    actual_doc_id = plan_identity(worktree, plan) if plan else ""
     if declared_doc_id is not None and isinstance(declared_doc_id, str) and declared_doc_id.strip() and actual_doc_id:
         if declared_doc_id.strip() != actual_doc_id:
             errors.append(

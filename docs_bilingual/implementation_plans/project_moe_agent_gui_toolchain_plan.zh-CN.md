@@ -6,8 +6,8 @@ plan_readiness: full-comet-structure-ready-for-implementation-slicing
 doc_class: implementation_plan
 translation_of: docs_bilingual/implementation_plans/project_moe_agent_gui_toolchain_plan.md
 created_at: 2026-05-20
-updated_at: 2026-06-07
-last_reviewed_at: 2026-06-07
+updated_at: 2026-06-09
+last_reviewed_at: 2026-06-08
 scope: project_moe_agent_gui_only
 implementation_lane: ready_bootstrap_repair_lanes
 comet_change: refine-project-moe-gui-plan-comet-structure
@@ -52,24 +52,13 @@ related_docs:
 
 状态解释：
 
-- `status: active`：本文是当前可执行实施方案；它不等于 Project MOE GUI 运行时能力已经全部完成。
-- `plan_readiness: full-comet-structure-ready-for-implementation-slicing`：结构、边界、任务颗粒度已满足继续切分代码实施的入口要求。
-- `D:\PythonProject_paper_suggest`：A 仍是 Phase 1 owner，不在 B 重新实现一套 A 业务 Phase 1。A 本地 `main` 已有 Phase 1、install/update receipt 与 rollback refs；但当前 GUI preflight 可用性必须以最新 0.2.23 更新后的重新验证为准。
-- 2026-06-01 决策：A=`D:\PythonProject_paper_suggest` 保留为真实 Phase 1 owner，B=`D:\PythonProject_langgraph` 保留为 Phase 2 toolchain source of truth；修复 worktree dry-run 路线已收敛为 A 本地 main 真实安装/更新验证路线。不得为了验证方便在 B 重新实现一套完整 A 业务 Phase 1 来替代目标项目证据。
-- 2026-06-01 证据：旧 worktree `paper_suggest-thesis-moe-phase1` 已判定为陈旧证据，不再作为 A 现状；新 A 修复 worktree `D:\PythonProject_langgraph\.worktrees\paper_suggest-moe-phase1-repair-20260601` 提交 `560da0e 功能：修复论文 MOE 阶段一就绪契约`。
-- 2026-06-01 隐私边界：A 的 `MOE.md` 是 ignored/private 文件，仅为 readiness validation 被复制到 A 修复 worktree；不得提交、不得复制全文到 B 文档或工具链。
-- 2026-06-01 readiness 证据：A 修复 worktree static-only 输出 `ok=true / readiness_status=static-ready-candidate / adaptation_lane=ready-candidate / control_mode_allowed=false`，其中 `readiness_status` 表示 Phase 1 契约分类，`adaptation_lane` 表示后续处理 lane，`control_mode_allowed=false` 表示只能展示或 dry-run；execute-read-contract 输出 `ok=true / token=ok / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`，其中 `token=ok` 是稳定机器可读成功 token，`control_mode_allowed=true` 表示在具备 receipt 与 rollback 证据后可进入受控安装/控制路径，已校验 `project-status`、`list-sessions`、`status`、`assert-on`。
-- 2026-06-01 A 本地 main 证据：A 已集成 `560da0e 功能：修复论文 MOE 阶段一就绪契约`、`c6b92ae 功能：安装论文 Project MOE GUI 控制面`、`ce23931 修复：使用共享运行时启动论文 Project MOE GUI`。回滚 refs 为 `refs/backup/local-main/20260601-125126-before-thesis-moe-phase1-repair-20260601` 和 `refs/backup/local-main/20260601-215213-before-project-moe-gui-runtime-entry-update`。
-- 2026-06-01 Phase 2 证据：B toolchain `0.2.22` 修复目标 launcher 的 runtime 入口：按配置的 `runtime_python` 重新执行，使用 `PROJECT_MOE_GUI_RUNTIME_REEXEC` 防止递归，并设置 `PYTHONUTF8=1`。已安装 preflight payload 记录 `launcher_runtime_python` 与 `launcher_runtime_reexec`。
-- 2026-06-01 纠偏证据：发现 A 已安装 `toolchain_source_root` 仍指向已删除的 B feature worktree，导致 A launcher preflight 返回 `blocked:phase1_readiness_gate_unavailable / No module named 'project_moe_gui'`；旧的“launcher preflight ok”只能视为历史证据，不能代表当前可用状态。
-- 2026-06-01 Phase 2 修复切片：B toolchain `0.2.23` 将目标安装配置写入稳定 source root `D:\PythonProject_langgraph\tools\project_moe_gui_toolchain`，新增 `toolchain_source_root` 存在性/import checker，并允许 updater 修复 manifest 仍匹配但 source root 失效的可恢复安装状态。
-- 2026-06-01 验收边界：A 仍是 Ready Lane 目标，但必须在 0.2.23 更新 A managed artifacts 并重新获得 install check、readiness 与 launcher preflight `token=ok` 后，才能重新声称“当前 GUI preflight 可用”；0.2.25 之后，无参 / 双击启动是人工可见启动路径，`--preflight --json` 仍是自动化路径。
-- 2026-06-01 scaffold apply 切片：B toolchain `0.2.24` 新增受保护的 `scaffold_project_moe_phase1.py --apply`。它只在项目证据与干净 Git dirty-state 检查通过后创建缺失的 Bootstrap Lane 文件，拒绝覆盖既有私有提示源或 operator surfaces，并且在后续 readiness 返回 Ready Lane 之前保持 GUI 控制禁用。
-- 2026-06-02 人类友好 launcher 切片：B toolchain `0.2.25` 将已安装的无参 / 双击 `project-moe-gui.cmd` 改为默认打开可见 PySide6 GUI，供人工 operator 使用；同时保留 `--preflight --json` 作为不弹窗自动化接口，并阻断未带 `--preflight` 的 `--json` 调用成为误触发的机器可见启动路径。
-- 2026-06-05 静默启动与专家工作台切片：B toolchain `0.2.27` 新增 `project-moe-gui-silent.vbs` 作为无控制台双击入口，保留 `project-moe-gui.cmd` 作为诊断入口；daemon 人工 GUI 子进程在可用时优先使用 `pythonw.exe`，否则继续使用 `python.exe + CREATE_NO_WINDOW / DETACHED_PROCESS`；GUI 新增 `Expert Workbench`，只生成运行时/剪贴板任务 brief，不启动 Codex、subagent 或模型 API，不读取/复制目标项目私有 `MOE.md`。
-- 2026-06-05 下一切片冻结：Expert Workbench v2 与 session 级 MOE 镜头选择是未完成 runtime 工作。v2 必须支持主会话自选一个或多个 MOE 镜头、生成面向 main session / subagent / durable team / LangGraph workflow 的 handoff package，并在 session 侧栏按单个 session 开启/关闭 MOE、设置某几个 MOE 或某几类 MOE；GUI 仍不得直接启动 Codex、subagent、durable worker、LangGraph workflow 或模型 API。
-- 2026-06-07 增强路线图 runtime 批次：B toolchain `0.2.31` 已实现多尺寸视觉 fixture、Workbench 草稿/历史/handoff 产物、真实 Workbench 保存/导出 QML bridge、Sessions 搜索/筛选/排序与生效状态解释、UI loading/empty/error/help 状态、只读多项目面板，以及 `.project-runtime/` Git 忽略保护。`D:\PythonProject_paper_suggest` 的目标项目更新/安装验证仍待执行，不能从本次 B 本地批次推断完成。
-- 当前 Comet change 是 `refine-project-moe-gui-plan-comet-structure`。如果 bash 不可用，只能用 OpenSpec artifacts、repo-local guard 与本地验证作为 fallback evidence。
+- `status: active`：只表示本文是当前可执行实施方案；不等于运行时能力已经全部完成。
+- A/B 边界：A=`D:\\PythonProject_paper_suggest` 拥有真实 Phase 1 业务契约；B=`D:\\PythonProject_langgraph` 拥有 Phase 2 工具链。B fixture 只用于测试，不能替代 A 验收。
+- 隐私边界：A 的私有 `MOE.md` 保持 ignored/private；B 只能引用路径/契约，不复制正文。
+- 2026-06-07 以前历史证据已压缩：A 修复 Phase 1 readiness；B 完成稳定 source-root 安装、受保护 scaffold apply、双击/无控制台 GUI 启动、QML/daemon/关闭确认、Expert Workbench v1/v2、多尺寸视觉检查、Workbench 历史/草稿、Sessions 搜索/筛选/排序和只读多项目状态面板；更早命令细节以 Git 历史和相关子方案为准。
+- 2026-06-08 historical evidence: B toolchain `0.2.33` added Codex `session_meta` discovery, discovered-only visible rows, explicit metadata smoke-session classification, session_id write/readback checks, and `tools/thesis_moe_turn_gate.py`. This version exposed an overly broad A view with `total=15`, so 2026-06-09 toolchain `0.2.34` supersedes it for Sessions tab identity and display validation.
+- 2026-06-09 current slice: B toolchain `0.2.34` narrows the Sessions main list to top-level target-project user Codex sessions, hides `thread_source=subagent` / `source.subagent.thread_spawn` / `forked_from_id` child-agent sessions by default, reads only user/assistant visible previews after project+top-level filtering, and shows `Session` / `Created` / `Updated` / `Directory` / `Branch` / `Conversation` details. After local main integration, refresh A and verify that A shows the 5 real top-level sessions only. Toolchain `0.2.35` 收口后续 8≠5 回归：当 Codex target-project discovery 已是权威会话来源时，未匹配真实 Codex metadata 的 Phase 1 state-only rows 只进入 `supplemental_state_only_rows` 诊断，不再进入 Sessions 主表或计入 visible rows。 Toolchain `0.2.36` adds shared display-block evidence?`0.2.37` enriches registered-matched rows with Codex identity details while preserving MOE state.
+- 当前 Comet change：`refine-project-moe-gui-plan-comet-structure`。Comet bash 不可用时只能用 OpenSpec artifacts、repo-local guard 和本地验证，不得伪造证据。
 
 就地字段解释：
 
@@ -636,7 +625,17 @@ A 已完成的收敛顺序：
 - [x] B toolchain version was bumped to patch version 0.2.29 so install/update artifacts carry the new QML/launcher contract.
 - [x] B toolchain version bumped to 0.2.30 so install/update artifacts carry the Sessions/Workbench overflow fix and multi-page visual render checker.
 - [x] B toolchain version bumped to 0.2.31 so install/update artifacts carry the roadmap enhancement runtime: multi-size visual fixture profiles、Workbench runtime artifact save/export、Sessions search/filter/sort、UI states、read-only multi-project panel data。
-Post-local-main target-project follow-up (not part of B Slice 4B-v2 local-main closure): install/update into `D:\PythonProject_paper_suggest` and rerun install check, readiness, launcher preflight, and target-project tests under the target project workflow.
+- [x] B toolchain version bumped to 0.2.33 so install/update artifacts carry running-session support：Codex `session_meta` discovery、discovered-only 可见行、下一条 user message turn gate，以及更严格的 session write/readback contract。
+- [x] B toolchain version bumped to 0.2.34 so install/update artifacts carry Sessions main-list convergence: only top-level target-project user Codex sessions are shown by default, subagent child sessions are hidden from the main list, and `Session` / `Created` / `Updated` / `Directory` / `Branch` / `Conversation` details are rendered.
+- [x] B toolchain version bumped to 0.2.35 so install/update artifacts keep unmatched Project MOE state-only session records supplemental when Codex target-project discovery is authoritative；Sessions 主表只显示 `registered-matched + discovered-only`，A 验收口径保持 5 个真实顶层 session，而不是历史 state 文件数量。
+- [x] B toolchain version bumped to 0.2.36 for structured display blocks.
+- [x] B toolchain version bumped to 0.2.37 for matched-row Codex identity enrichment without changing MOE state/write ownership.
+- [x] From `%USERPROFILE%\.codex\sessions\**\*.jsonl`, read `type=session_meta`, match `payload.cwd` to the target project, use `thread_source=user` for the main-list filter, and read only user/assistant visible previews after filtering; do not read credentials, developer instructions, full tool output, or private prompt bodies.
+- [x] `smoke-session` / `smoke-session-final` 这类名字在没有显式 metadata 时按普通 session 显示，不再用名字启发式隐藏。
+- [x] 安装受管目标项目 turn gate（`tools/thesis_moe_turn_gate.py`），按当前运行中 session 读取 effective state，并让 GUI/CLI 修改在下一条 user message 生效。
+- [x] 加固 GUI 写动作：session 写入必须 echo 被请求的 `session_id`，强制 status readback 也必须指向同一 session。
+
+Target-project acceptance evidence (2026-06-08 historical): A `D:\PythonProject_paper_suggest` committed `5d44839` with Phase 1 write contract and turn-gate updates; readiness returned `token=ok / readiness_status=ready / adaptation_lane=ready / control_mode_allowed=true`; `project-moe-gui.cmd --preflight --json` returned `token=ok`; `python -m unittest discover -s test -p "test_thesis_moe_mode.py"` returned `Ran 10 tests ... OK`. Its runtime view model `row_origin_counts={total:15, ...}` was too broad because it mixed subagent child sessions into the main list. Toolchain `0.2.34` fixed child-session filtering, but A validation then exposed `total=8` because three stale Phase 1 state-only rows were still visible. Toolchain `0.2.35` keeps those unmatched state-only rows supplemental；最终 A 验收证据仍必须是 exactly 5 real top-level user sessions。
 
 Visual overflow closure evidence (2026-06-06): `visual_render_check.py` must render `overview`, `sessions`, `workbench`, `diagnostics`, and `settings` at 1180x720; it requires key page text to be visible, rejects visible non-scroll-container overflow, allows scrollable TextArea/ScrollView content only inside its viewport, records screenshots, and fails closed on QML warnings.
 
@@ -651,7 +650,7 @@ Slice 4B-v2 closure evidence (2026-06-06):
 Roadmap enhancement evidence（2026-06-07）：
 - `project_moe_gui_enhancement_roadmap_plan.zh-CN.md` 记录 toolchain `0.2.31` 已在 B 本地实现。
 - 本地 runtime 证据包括默认视觉尺寸 `1180x720`、`1366x768`、`1440x900`，fixture profiles `default`、`long-content`、`dense-sessions`，Workbench `saveHandoffDraft` / `exportHandoffPackage` bridge，`.project-runtime/project_moe_gui/` 下的 Workbench 草稿/历史/handoff-queue 产物，Sessions 搜索/筛选/排序与 override hints，UI loading/empty/error/help 状态，以及只读 managed-project 安装状态面板数据。
-- `D:\PythonProject_paper_suggest` 目标项目验收仍未勾选，必须在后续实际执行 update/install、preflight 和视觉验证后才能声明完成。
+- `D:\PythonProject_paper_suggest` target acceptance is now owned by the 2026-06-09 `0.2.34` Sessions main-list convergence slice; final acceptance must run after B local-main integration and A install refresh.
 
 #### Slice 5：治理、文档与 checker 集成
 
@@ -812,8 +811,9 @@ python .\tools\run_openspec_guard.py --root .
 - [x] 明确验证命令和本地 main / 远端发布边界。
 - [x] 明确 Comet 管理记录、阶段门禁、Monitoring 回退语义和证据留存。
 - [x] 明确实施切片、文件职责图和本地集成顺序。
-- [x] 明确 Expert Workbench v2 与 session 级镜头选择是下一未完成 runtime 切片，并写明 handoff-only、session-only、空选择=all 的规则。
-- [ ] 后续代码实现完成并完成 A/B 验收后归档对应 OpenSpec change。
+- [x] 明确 Expert Workbench v2 与 session 级镜头选择已有 runtime 证据，并写明 handoff-only、session-only、空选择=all 的规则。
+- [x] 明确运行中 session 发现、下一条 user message turn-gate 激活、session 写入/回读加固已有 A/B 验证证据。
+- [ ] 完成本地集成包与最终 A stable-source-root 刷新验收后，归档对应 OpenSpec change。
   - 延期（2026-06-01）：本次 scaffold `--apply` 是本地工具链补齐切片；归档仍延期到当前本地集成包完成验证，并由 operator 明确选择 Project MOE GUI 已完成 change set 的 OpenSpec 归档范围。
 - [x] 目标项目真实 Ready Lane 证据生成后，再允许受保护 GUI 控制。
 

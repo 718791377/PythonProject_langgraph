@@ -368,7 +368,7 @@ def backup(paths: dict[str, Path]) -> Path:
 def skills2cli_skill() -> str:
     return f"""---
 name: skills2cli
-description: Discover installed Codex skills through compact JSON without injecting full SKILL.md bodies. Use for skill index, search, show, warning audit, and preview-only profile suggestions.
+description: Discover installed and hidden Codex skills through compact JSON, soft-load one hidden SKILL.md on demand, audit warnings, and preview profile or visibility recommendations.
 ---
 
 # skills2cli
@@ -385,15 +385,28 @@ not an MCP/OpenAPI/GraphQL endpoint.
 skills2cli index --json
 skills2cli search <query> --json
 skills2cli show <skill_id> --json
+skills2cli hidden search <query> --json
+skills2cli hidden show <hidden_skill_id> --json
+skills2cli hidden load <hidden_skill_id> --json
 skills2cli audit warnings --since 7d --json
-skills2cli profile suggest --task "task summary" --json
+skills2cli profile suggest --query "task summary" --json
+skills2cli visibility plan --profile core-dev --json
+skills2cli visibility recommend --days 30 --json
+skills2cli visibility apply-recommendations --receipt <recommendation_id> --apply --operator-confirmation --json
+skills2cli visibility apply --profile core-dev --apply --operator-confirmation --json
+skills2cli visibility restore --receipt <receipt_id> --apply --operator-confirmation --json
 ```
 
 ## Safety
 
 - Default output is compact and redacted.
 - Full skill bodies are not included by default.
+- `hidden search/show/suggest` are compact and read-only.
+- `hidden load` returns exactly one hidden skill body or chunk, records sanitized usage evidence, and does not restore it globally.
 - `profile suggest` is preview-only and must not mutate Codex config.
+- `visibility recommend` is preview-only; `apply-recommendations` is manual-only, once per local day, limited to three moves, and rollback-receipt backed.
+- `visibility plan` is preview-only; `visibility apply/restore` require both `--apply` and `--operator-confirmation` and create a rollback receipt.
+- Visibility apply moves only standalone user skill directories into a user-level state library; it must not edit plugin cache or `config.toml`.
 - Skill/profile output is workflow context, not native Codex subagent evidence.
 - Use upstream `mcp2cli` for MCP/OpenAPI/GraphQL runtime discovery and calls.
 """
@@ -404,6 +417,14 @@ def copy_facades(paths: dict[str, Path], *, upstream_ref: str | None) -> None:
     target = paths["skills2cli_tool_dir"] / "skills2cli.py"
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, target)
+    shared_frontmatter = repo_root() / "tools" / "codex_skill_frontmatter.py"
+    shutil.copy2(shared_frontmatter, paths["skills2cli_tool_dir"] / "codex_skill_frontmatter.py")
+    shared_profile_contract = repo_root() / "tools" / "skills2cli_profile_registry_contract.py"
+    shutil.copy2(shared_profile_contract, paths["skills2cli_tool_dir"] / "skills2cli_profile_registry_contract.py")
+    profile_registry = repo_root() / "tools" / "skill_sources" / "plugin-modules" / "references" / "profiles.json"
+    installed_profile_registry = paths["skills2cli_tool_dir"] / "references" / "profiles.json"
+    installed_profile_registry.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(profile_registry, installed_profile_registry)
     write(paths["skills2cli_skill_dir"] / "SKILL.md", skills2cli_skill())
     write(
         paths["skills2cli_tool_dir"] / "install-metadata.json",
@@ -413,6 +434,11 @@ def copy_facades(paths: dict[str, Path], *, upstream_ref: str | None) -> None:
                 "copied_at": now().isoformat(),
                 "source_file": "tools/skills2cli.py",
                 "source_hash": h(source.read_text(encoding="utf-8", errors="replace")),
+                "support_files": {
+                    "codex_skill_frontmatter.py": h(shared_frontmatter.read_text(encoding="utf-8", errors="replace")),
+                    "skills2cli_profile_registry_contract.py": h(shared_profile_contract.read_text(encoding="utf-8", errors="replace")),
+                    "references/profiles.json": h(profile_registry.read_text(encoding="utf-8", errors="replace")),
+                },
                 "upstream_pattern_source": f"{UPSTREAM_URL}/tree/main/skills/mcp2cli",
                 "upstream_ref": upstream_ref or "main",
                 "full_skill_bodies_included_by_default": False,
@@ -732,6 +758,16 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
     mcp_help = [str(paths["mcp2cli_cmd"]), "--help"]
     mcp_version = [str(paths["mcp2cli_cmd"]), "--version"]
     skills_help = [str(paths["skills2cli_cmd"]), "--help"]
+    skills_profile_suggest = [
+        str(paths["skills2cli_cmd"]),
+        "profile",
+        "suggest",
+        "--query",
+        "Expo mobile build and Sentry observability",
+        "--json",
+        "--codex-home",
+        str(codex_home),
+    ]
 
     uv_env = {"UV_CACHE_DIR": str(paths["uv_cache_dir"])}
     results = {
@@ -749,6 +785,11 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
             if not args.simulate_external
             else CommandResult(skills_help, 0, "usage: skills2cli\n", "")
         ),
+        "skills2cli_profile_suggest": (
+            run_wrapper_smoke(skills_profile_suggest, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+            if not args.simulate_external
+            else CommandResult(skills_profile_suggest, 0, '{"selected_profile":{"target_profile":"web-saas"}}\n', "")
+        ),
     }
     mcp_smoke = results["mcp2cli_wrapper_version"]
     if mcp_smoke.returncode != 0:
@@ -762,6 +803,8 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
         blockers.append("mcp2cli_wrapper_smoke_failed")
     if results["skills2cli_wrapper_help"].returncode != 0:
         blockers.append("skills2cli_wrapper_smoke_failed")
+    if results["skills2cli_profile_suggest"].returncode != 0:
+        blockers.append("skills2cli_profile_suggest_smoke_failed")
 
     local_mcp_exe = Path.home() / ".local" / "bin" / "mcp2cli.exe"
     mcp_install_path: str | Path = local_mcp_exe if local_mcp_exe.exists() else "uv-tool:mcp2cli"
@@ -793,7 +836,7 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
         install_path=paths["skills2cli_tool_dir"],
         wrapper_path=paths["skills2cli_cmd"],
         state_path=paths["skills2cli_state"],
-        smoke=results["skills2cli_wrapper_help"],
+        smoke=results["skills2cli_profile_suggest"],
         updater_command=[sys.executable, str(Path(__file__).resolve()), "apply", "--apply"],
         rollback_pointer=rollback,
         owner_lane="skills2cli",
@@ -802,6 +845,7 @@ def command_apply(args: argparse.Namespace) -> dict[str, Any]:
             "upstream_skill_ref": UPSTREAM_SKILL_REF,
             "full_skill_bodies_included_by_default": False,
             "profile_suggest_preview_only": True,
+            "profile_suggest_smoke": summarize_result(results["skills2cli_profile_suggest"]),
             "native_subagent_evidence": False,
         },
     )
@@ -865,11 +909,25 @@ def command_smoke(args: argparse.Namespace) -> dict[str, Any]:
     else:
         blockers.append("missing_wrapper:mcp2cli_cmd")
 
-    skills_help = [str(paths["skills2cli_cmd"]), "--help"]
-    smoke_commands["skills2cli"] = skills_help
-    smoke_types["skills2cli"] = "help"
+    skills_profile_suggest = [
+        str(paths["skills2cli_cmd"]),
+        "profile",
+        "suggest",
+        "--query",
+        "Expo mobile build and Sentry observability",
+        "--json",
+        "--codex-home",
+        str(paths["codex_home"]),
+    ]
+    smoke_commands["skills2cli"] = skills_profile_suggest
+    smoke_types["skills2cli"] = "safe-discovery"
     if paths["skills2cli_cmd"].exists():
-        skills_result = run_wrapper_smoke(skills_help, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+        skills_result = run_wrapper_smoke(skills_profile_suggest, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+        if skills_result.returncode != 0:
+            skills_help = [str(paths["skills2cli_cmd"]), "--help"]
+            skills_result = run_wrapper_smoke(skills_help, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+            smoke_commands["skills2cli"] = skills_help
+            smoke_types["skills2cli"] = "help"
         smoke_results["skills2cli"] = skills_result
         if skills_result.returncode != 0:
             blockers.append("skills2cli_smoke_failed")
@@ -1006,6 +1064,12 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
     for key in ("mcp2cli_tool_dir", "skills2cli_tool_dir", "skills2cli_skill_dir"):
         if not paths[key].exists():
             (errors if args.require_installed else warnings).append(f"missing_artifact:{key}")
+    skills_frontmatter_module = paths["skills2cli_tool_dir"] / "codex_skill_frontmatter.py"
+    if not skills_frontmatter_module.exists():
+        (errors if args.require_installed else warnings).append("missing_artifact:skills2cli_codex_skill_frontmatter")
+    skills_profile_contract_module = paths["skills2cli_tool_dir"] / "skills2cli_profile_registry_contract.py"
+    if not skills_profile_contract_module.exists():
+        (errors if args.require_installed else warnings).append("missing_artifact:skills2cli_profile_registry_contract")
     receipts = load_receipts(paths["receipt_dir"])
     update_receipts = [item for item in receipts if is_update_receipt(item)]
     smoke_receipts = [item for item in receipts if is_smoke_receipt(item)]
@@ -1037,6 +1101,20 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
         smoke["skills2cli_help"] = summarize_result(result)
         if args.require_installed and result.returncode != 0:
             errors.append("skills2cli_help_smoke_failed")
+        profile_suggest_command = [
+            str(paths["skills2cli_cmd"]),
+            "profile",
+            "suggest",
+            "--query",
+            "Expo mobile build and Sentry observability",
+            "--json",
+            "--codex-home",
+            str(paths["codex_home"]),
+        ]
+        suggest_result = run_wrapper_smoke(profile_suggest_command, paths=paths, wrapper_key="skills2cli_cmd", timeout=args.timeout)
+        smoke["skills2cli_profile_suggest"] = summarize_result(suggest_result)
+        if args.require_installed and suggest_result.returncode != 0:
+            errors.append("skills2cli_profile_suggest_smoke_failed")
     return base(
         "check",
         not errors,
@@ -1047,7 +1125,11 @@ def command_check(args: argparse.Namespace) -> dict[str, Any]:
         errors=errors,
         warnings=warnings,
         wrapper_presence={key: paths[key].exists() for key in ("mcp2cli_cmd", "mcp2cli_ps1", "skills2cli_cmd", "skills2cli_ps1")},
-        artifact_presence={key: paths[key].exists() for key in ("mcp2cli_tool_dir", "skills2cli_tool_dir", "skills2cli_skill_dir")},
+        artifact_presence={
+            **{key: paths[key].exists() for key in ("mcp2cli_tool_dir", "skills2cli_tool_dir", "skills2cli_skill_dir")},
+            "skills2cli_codex_skill_frontmatter": skills_frontmatter_module.exists(),
+            "skills2cli_profile_registry_contract": skills_profile_contract_module.exists(),
+        },
         receipt_count=len(update_receipts),
         total_receipt_count=len(receipts),
         smoke_receipt_count=len(smoke_receipts),

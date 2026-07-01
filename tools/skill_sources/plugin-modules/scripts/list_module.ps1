@@ -2,6 +2,7 @@
 param(
   [Alias('Name')]
   [string]$Module,
+  [switch]$IncludeTaskModules,
   [switch]$Json
 )
 
@@ -16,44 +17,86 @@ if (-not (Test-Path -LiteralPath $profilesPath)) {
 
 $profiles = Get-Content -LiteralPath $profilesPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $moduleProperties = @($profiles.modules.PSObject.Properties)
+$scenarioProperties = @($profiles.scenario_profiles.PSObject.Properties)
+
+function ConvertTo-ArrayCount {
+  param($Value)
+  if ($null -eq $Value) { return 0 }
+  if ($Value -is [string]) { return 1 }
+  return @($Value).Count
+}
+
+function Get-ProfilePropertyValue {
+  param($Object, [string]$Name, $Default = $null)
+  if ($null -eq $Object) { return $Default }
+  $property = @($Object.PSObject.Properties | Where-Object { $_.Name -eq $Name } | Select-Object -First 1)
+  if ($property) { return $property[0].Value }
+  return $Default
+}
 
 function ConvertTo-ModuleSummary {
-  param($Property)
-  $entry = $Property.Value
-  $plugins = $entry.plugins
+  param($Name, $Entry, [string]$EntryKind, [string]$TargetProfile = $null, [string]$TaskModule = $null, [string]$ScenarioProfile = $null)
+  $plugins = Get-ProfilePropertyValue -Object $Entry -Name 'plugin_hints'
+  if ($null -eq $plugins) { $plugins = Get-ProfilePropertyValue -Object $Entry -Name 'plugins' -Default @() }
   if ($plugins -is [string]) { $plugins = @($plugins) }
+  $taskModules = Get-ProfilePropertyValue -Object $Entry -Name 'task_modules'
+  $taskCount = 0
+  if ($null -ne $taskModules) { $taskCount = @($taskModules.PSObject.Properties).Count }
+  $hardLoad = Get-ProfilePropertyValue -Object $Entry -Name 'hard_load'
+  $softLoad = Get-ProfilePropertyValue -Object $Entry -Name 'soft_load'
   [ordered]@{
-    name = [string]$Property.Name
-    description = [string]$entry.description
+    name = [string]$Name
+    entry_kind = $EntryKind
+    target_profile = $(if ($TargetProfile) { $TargetProfile } else { $Name })
+    task_module = $TaskModule
+    scenario_profile = $ScenarioProfile
+    description = [string]$(if (Get-ProfilePropertyValue -Object $Entry -Name 'description') { Get-ProfilePropertyValue -Object $Entry -Name 'description' } elseif (Get-ProfilePropertyValue -Object $Entry -Name 'scene_description') { Get-ProfilePropertyValue -Object $Entry -Name 'scene_description' } else { Get-ProfilePropertyValue -Object $Entry -Name 'scenario_description' })
+    load_policy = [string](Get-ProfilePropertyValue -Object $Entry -Name 'load_policy')
+    qualified_name = $(if ($TaskModule) { [string](Get-ProfilePropertyValue -Object $Entry -Name 'qualified_name' -Default "$TargetProfile.$TaskModule") } else { $null })
+    routing_scope = [string](Get-ProfilePropertyValue -Object $Entry -Name 'routing_scope')
+    activation_scope = [string](Get-ProfilePropertyValue -Object $Entry -Name 'activation_scope')
+    governance_scope = [string](Get-ProfilePropertyValue -Object $Entry -Name 'governance_scope')
+    evidence_scope = [string](Get-ProfilePropertyValue -Object $Entry -Name 'evidence_scope')
     plugins = @($plugins)
-    hard_load_disables_other_known_plugins = [bool]$entry.hard_load.disable_other_known_plugins
-    soft_load_hint_count = @($entry.soft_load.skill_doc_hints).Count
+    hard_load_disables_other_known_plugins = [bool](Get-ProfilePropertyValue -Object $hardLoad -Name 'disable_other_known_plugins' -Default $false)
+    soft_load_hint_count = $(if ($null -ne $softLoad) { ConvertTo-ArrayCount (Get-ProfilePropertyValue -Object $softLoad -Name 'skill_doc_hints') } else { ConvertTo-ArrayCount (Get-ProfilePropertyValue -Object $Entry -Name 'skill_doc_hints') })
+    task_module_count = $taskCount
   }
+}
+
+$items = New-Object System.Collections.Generic.List[object]
+foreach ($property in $moduleProperties) {
+  $items.Add((ConvertTo-ModuleSummary -Name $property.Name -Entry $property.Value -EntryKind 'profile')) | Out-Null
+  $taskModulesForProfile = Get-ProfilePropertyValue -Object $property.Value -Name 'task_modules'
+  if ($IncludeTaskModules -and $null -ne $taskModulesForProfile) {
+    foreach ($task in @($taskModulesForProfile.PSObject.Properties)) {
+      $items.Add((ConvertTo-ModuleSummary -Name "$($property.Name).$($task.Name)" -Entry $task.Value -EntryKind 'task_module' -TargetProfile $property.Name -TaskModule $task.Name)) | Out-Null
+    }
+  }
+}
+foreach ($scenario in $scenarioProperties) {
+  $items.Add((ConvertTo-ModuleSummary -Name $scenario.Name -Entry $scenario.Value -EntryKind 'scenario_profile' -TargetProfile ([string]$scenario.Value.target_profile) -ScenarioProfile $scenario.Name)) | Out-Null
 }
 
 if (-not [string]::IsNullOrWhiteSpace($Module)) {
-  $match = $moduleProperties | Where-Object { $_.Name -eq $Module } | Select-Object -First 1
-  if ($null -eq $match) {
-    $known = ($moduleProperties | ForEach-Object { $_.Name }) -join ', '
-    throw "Unknown plugin module '$Module'. Known modules: $known"
+  $items = @($items | Where-Object { $_.name -eq $Module })
+  if ($items.Count -eq 0) {
+    $known = (@($moduleProperties | ForEach-Object { $_.Name }) + @($scenarioProperties | ForEach-Object { $_.Name })) -join ', '
+    throw "Unknown plugin module '$Module'. Known profiles or scenarios: $known. Use -IncludeTaskModules to list nested task modules."
   }
-  $payload = ConvertTo-ModuleSummary -Property $match
-} else {
-  $payload = @($moduleProperties | ForEach-Object { ConvertTo-ModuleSummary -Property $_ })
 }
 
+if ($items.Count -eq 1) {
+  $payload = $items.Item(0)
+} else {
+  $payload = @($items.ToArray())
+}
 if ($Json) {
-  $payload | ConvertTo-Json -Depth 16
+  $payload | ConvertTo-Json -Depth 24
   return
 }
 
-if ($payload -is [array]) {
-  foreach ($item in $payload) {
-    Write-Output ("{0}: {1}" -f $item.name, $item.description)
-    Write-Output ("  plugins: {0}" -f (($item.plugins) -join ', '))
-  }
-} else {
-  Write-Output ("{0}: {1}" -f $payload.name, $payload.description)
-  Write-Output ("plugins: {0}" -f (($payload.plugins) -join ', '))
-  Write-Output ("soft-load hints: {0}" -f $payload.soft_load_hint_count)
+foreach ($item in @($items)) {
+  Write-Output ("{0} [{1}] -> {2}: {3}" -f $item.name, $item.entry_kind, $item.target_profile, $item.description)
+  Write-Output ("  plugins: {0}" -f (($item.plugins) -join ', '))
 }

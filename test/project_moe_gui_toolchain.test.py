@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 import contextlib
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -15,11 +17,15 @@ from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TOOLCHAIN_SRC = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "src"
+os.environ.setdefault("PROJECT_MOE_GUI_TOOLCHAIN_SOURCE_ROOT", str(REPO_ROOT / "tools" / "project_moe_gui_toolchain"))
 sys.path.insert(0, str(TOOLCHAIN_SRC))
 from project_moe_gui.toolchain import stable_toolchain_source_root
 INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_moe_gui.py"
 CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_gui_install.py"
 UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_moe_gui.py"
+CANONICAL_INSTALLER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "install_project_expert_lens_gui.py"
+CANONICAL_CHECKER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_expert_lens_gui_install.py"
+CANONICAL_UPDATER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "update_project_expert_lens_gui.py"
 UNINSTALL_PLANNER = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "plan_project_moe_gui_uninstall.py"
 PHASE1_READINESS = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "check_project_moe_phase1_readiness.py"
 PHASE1_SCAFFOLD = REPO_ROOT / "tools" / "project_moe_gui_toolchain" / "scaffold_project_moe_phase1.py"
@@ -70,10 +76,24 @@ LENSES = [
     {"id": "blind_review", "label": "Blind review", "description": "Review rigor and objections.", "category": "review"},
     {"id": "aigc_risk", "label": "AIGC risk", "description": "Check AI-like wording and unsupported certainty.", "category": "risk"},
     {"id": "novelty", "label": "Novelty", "description": "Check innovation and differentiation.", "category": "review"},
+    {"id": "socratic_cbt", "label": "Socratic CBT", "description": "Ask Socratic CBT-style questions.", "category": "socratic_questioning"},
+    {"id": "feynman_learning", "label": "Feynman learning", "description": "Explain and simplify with Feynman learning.", "category": "five_classic_thinking_models"},
+    {"id": "first_principles", "label": "First principles", "description": "Reduce claims to first principles.", "category": "five_classic_thinking_models"},
+    {"id": "pyramid_principle", "label": "Pyramid principle", "description": "Structure arguments with the pyramid principle.", "category": "five_classic_thinking_models"},
+    {"id": "swot_analysis", "label": "SWOT analysis", "description": "Analyze strengths, weaknesses, opportunities, and threats.", "category": "five_classic_thinking_models"},
+    {"id": "decision_tree", "label": "Decision tree", "description": "Model choices with decision trees.", "category": "five_classic_thinking_models"},
 ]
 CATEGORIES = [
     {"id": "review", "label": "Review", "description": "Review-oriented lenses.", "lens_ids": ["blind_review", "novelty"]},
     {"id": "risk", "label": "Risk", "description": "Risk-oriented lenses.", "lens_ids": ["aigc_risk"]},
+    {"id": "socratic_questioning", "label": "Socratic Questioning Module", "description": "Socratic questioning lens.", "lens_ids": ["socratic_cbt"]},
+    {"id": "thinking", "label": "Legacy Thinking", "description": "Legacy thinking-model category.", "lens_ids": ["socratic_cbt", "thinking_dispatcher"]},
+    {
+        "id": "five_classic_thinking_models",
+        "label": "Five Classic Thinking Models Module",
+        "description": "Five independent thinking-model lenses.",
+        "lens_ids": ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+    },
 ]
 LENS_IDS = {item["id"] for item in LENSES}
 CATEGORY_IDS = {item["id"] for item in CATEGORIES}
@@ -117,7 +137,8 @@ def effective_lens_mode(payload: dict) -> str:
     return "selected" if selected_lenses or selected_categories else "all"
 
 def invalid_selection(selected_lenses: list[str], selected_categories: list[str]) -> dict | None:
-    bad_lenses = [item for item in selected_lenses if item not in LENS_IDS]
+    alias_lenses = {"thinking_dispatcher"}
+    bad_lenses = [item for item in selected_lenses if item not in LENS_IDS and item not in alias_lenses]
     bad_categories = [item for item in selected_categories if item not in CATEGORY_IDS]
     if bad_lenses or bad_categories:
         return {
@@ -131,6 +152,15 @@ def invalid_selection(selected_lenses: list[str], selected_categories: list[str]
             "cli_contract": "project-moe-cli-v1",
         }
     return None
+
+def normalize_fixture_lenses(values: list[str]) -> list[str]:
+    result: list[str] = []
+    for value in values:
+        expanded = ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"] if value == "thinking_dispatcher" else [value]
+        for item in expanded:
+            if item not in result:
+                result.append(item)
+    return result
 
 def project_default_enabled() -> bool:
     payload = read_json(PROJECT_DEFAULT)
@@ -183,6 +213,7 @@ def write_session(session_id: str, enabled: bool, selected_lenses: list[str] | N
         selected_lenses, _ = selected_lists(payload)
     if selected_categories is None:
         _, selected_categories = selected_lists(payload)
+    selected_lenses = normalize_fixture_lenses(list(selected_lenses or []))
     payload.update({
         "schema_version": 1,
         "project_label": PROJECT_LABEL,
@@ -216,6 +247,7 @@ def write_lens_selection(session_id: str, selected_lenses: list[str], selected_c
     before_payload = read_json(path, {"enabled": False})
     payload = read_json(path, {"enabled": False})
     before_lenses, before_categories = selected_lists(payload)
+    selected_lenses = normalize_fixture_lenses(list(selected_lenses or []))
     payload.update({
         "schema_version": 1,
         "project_label": PROJECT_LABEL,
@@ -400,23 +432,7 @@ class ProjectMoeGuiToolchainTests(unittest.TestCase):
             (root / ".codex" / "agents" / "thesis-moe-mentor.toml").write_text(
                 'name = "thesis-moe-mentor"\n'
                 'description = "Strict thesis mentor."\n'
-                'developer_instructions = "Use strict thesis mentor rules."\n'
-                "\n[project]\n"
-                'scope = "repo-local"\n'
-                'state_namespace = "thesis_moe"\n'
-                'private_prompt_source = "MOE.md"\n'
-                'private_prompt_policy = "do-not-copy-full-content"\n'
-                "\n[moe]\n"
-                'kind = "project-moe-agent"\n'
-                'family = "project-specific"\n'
-                'requires_manual_enable = true\n'
-                'project_default_state = ".omx/state/thesis_moe/project-default.json"\n'
-                'session_state_dir = ".omx/state/thesis_moe/sessions"\n'
-                "\n[dispatch]\n"
-                'mode = "brief-based"\n'
-                'forbidden = ["full-history-fork-with-custom-role"]\n'
-                'fallback = ["main-session-takeover", "durable-brief"]\n'
-                "\n[extensions]\n",
+                'developer_instructions = "Use strict thesis mentor rules. Project Expert Lens metadata is proven through config, CLI, wrappers, startup hook, private prompt source, and .omx/state."\n',
                 encoding="utf-8",
             )
         extra_payload = ""
@@ -660,24 +676,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         (root / "MOE.md").write_text(f"# Private MOE prompt for {project_label}\n", encoding="utf-8")
         (root / ".codex" / "agents" / f"{agent_name}.toml").write_text(
             f'name = "{agent_name}"\n'
-            f'description = "Fixture MOE agent for {project_label}."\n'
-            'developer_instructions = "Use only project-local fixture state."\n'
-            "\n[project]\n"
-            'scope = "repo-local"\n'
-            f'state_namespace = "{namespace}"\n'
-            'private_prompt_source = "MOE.md"\n'
-            'private_prompt_policy = "do-not-copy-full-content"\n'
-            "\n[moe]\n"
-            'kind = "project-moe-agent"\n'
-            'family = "project-specific"\n'
-            "requires_manual_enable = true\n"
-            f'project_default_state = ".omx/state/{namespace}/project-default.json"\n'
-            f'session_state_dir = ".omx/state/{namespace}/sessions"\n'
-            "\n[dispatch]\n"
-            'mode = "brief-based"\n'
-            'forbidden = ["full-history-fork-with-custom-role"]\n'
-            'fallback = ["main-session-takeover", "durable-brief"]\n'
-            "\n[extensions]\n",
+            f'description = "Fixture Expert Lens agent for {project_label}."\n'
+            f'developer_instructions = "Use only project-local fixture state. Project Expert Lens metadata is proven through config, CLI, wrappers, startup hook, private prompt source, and .omx/state/{namespace}."\n',
             encoding="utf-8",
         )
         state_root = root / ".omx" / "state" / namespace
@@ -715,16 +715,18 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         )
 
     def add_phase1_wrappers_and_startup_hook(self, root: Path) -> None:
+        from project_moe_gui.toolchain import phase1_wrapper_template
+
         (root / "thesis-moe-on.cmd").write_text(
-            '@echo off\npython "%~dp0tools\\thesis_moe_mode.py" project-on --json\nexit /b %ERRORLEVEL%\n',
+            phase1_wrapper_template(Path("tools/thesis_moe_mode.py"), "project-on"),
             encoding="utf-8",
         )
         (root / "thesis-moe-off.cmd").write_text(
-            '@echo off\npython "%~dp0tools\\thesis_moe_mode.py" project-off --json\nexit /b %ERRORLEVEL%\n',
+            phase1_wrapper_template(Path("tools/thesis_moe_mode.py"), "project-off"),
             encoding="utf-8",
         )
         (root / "AGENTS.md").write_text(
-            "On startup, resume, continue, reload, or phase change, run `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
+            "Before every user message and on the next user message after a GUI change, run `python .\\tools\\thesis_moe_turn_gate.py --json`; on startup, resume, continue, reload, or phase change, fall back to `python .\\tools\\thesis_moe_mode.py status --json` before applying the thesis MOE rules.\n",
             encoding="utf-8",
         )
         docs_dir = root / "docs_bilingual" / "operations"
@@ -845,11 +847,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertFalse(payload["private_prompt_source"]["under_agent_dir"])
             self.assertTrue(payload["private_prompt_source"]["private_prompt_boundary_ok"])
             self.assertTrue(payload["agent_toml"]["standard_profile_ready"])
+            self.assertTrue(payload["agent_toml"]["native_schema_compatible"])
             self.assertTrue(payload["agent_toml"]["extension_fields_ok"])
-            self.assertEqual(
-                payload["agent_toml"]["required_extension_sections"],
-                ["project", "moe", "dispatch", "extensions"],
-            )
+            self.assertEqual(payload["agent_toml"]["required_extension_sections"], [])
+            self.assertEqual(payload["agent_toml"]["unsupported_top_level_keys"], [])
+            self.assertEqual(payload["agent_toml"]["legacy_custom_tables"], [])
+            self.assertEqual(payload["agent_toml"]["project_lens_metadata_source"], "config_cli_wrappers_startup_private_prompt_and_state")
             self.assertEqual(payload["cli_contract_check"]["commands_checked"], ["project-status", "list-sessions", "list-lenses", "status"])
             self.assertEqual(payload["cli_contract_check"]["assertion_commands_checked"], ["assert-on"])
             self.assertEqual(payload["cli_execution_mode"], "execute-read-contract")
@@ -862,7 +865,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(payload["wrappers"]["on"]["direct_state_path_references"], [])
             self.assertTrue(payload["startup_activation_hooks"]["hook_found"])
             self.assertTrue(payload["startup_activation_hooks"]["basic_status_hook_found"])
-            self.assertEqual(payload["startup_activation_hooks"]["required_tokens"], ["thesis_moe_mode.py", "status --json", "startup", "resume", "continue", "reload", "phase change"])
+            self.assertEqual(payload["startup_activation_hooks"]["required_tokens"], ["thesis_moe_mode.py", "status --json", "thesis_moe_turn_gate.py", "user message", "next user message", "startup", "resume", "continue", "reload", "phase change"])
             self.assertTrue(payload["operator_docs"]["ready"])
             remediation = payload["remediation_plan"]
             self.assertTrue(remediation["ready_for_control"])
@@ -1200,7 +1203,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertTrue((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
             self.assertTrue((project / "MOE.md").exists())
             self.assertTrue((project / "tools" / "thesis_moe_mode.py").exists())
-            self.assertIn("blocked:bootstrap_placeholder", (project / "tools" / "thesis_moe_mode.py").read_text(encoding="utf-8"))
+            mode_cli_text = (project / "tools" / "thesis_moe_mode.py").read_text(encoding="utf-8")
+            self.assertIn("blocked:bootstrap_placeholder", mode_cli_text)
+            self.assertIn('"socratic_cbt"', mode_cli_text)
+            for lens_id in ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"]:
+                self.assertIn(f'"{lens_id}"', mode_cli_text)
+            self.assertNotIn('"thinking_dispatcher"', mode_cli_text)
             self.assertIn("Project MOE private prompt placeholder", (project / "MOE.md").read_text(encoding="utf-8"))
             self.assertTrue(all(item["scaffold_owned"] is True and item["managed"] is False for item in payload["applied_writes"]))
 
@@ -1232,6 +1240,67 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertFalse((project / ".codex" / "agents" / "thesis-moe-mentor.toml").exists())
             self.assertFalse((project / "MOE.md").exists())
             self.assertFalse((project / "tools" / "thesis_moe_mode.py").exists())
+
+    def test_install_apply_blocks_dirty_real_git_target_without_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "install-dirty-real-git"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="install-dirty-real-git", session_id="session-install-dirty")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            (project / "uncommitted.txt").write_text("dirty\n", encoding="utf-8")
+
+            _, payload = self.run_tool(
+                str(INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+                expect_success=False,
+            )
+
+            self.assertEqual(payload["token"], "blocked:dirty_target_project", payload)
+            self.assertTrue(payload["clean_worktree_required_for_apply"])
+            self.assertTrue(payload["git_status"]["dirty"])
+            self.assertFalse((project / "tools" / "project_moe_gui" / "launcher.py").exists())
+
+    def test_installed_launcher_allows_unrelated_dirty_target_as_warning_with_view_model(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "launcher-unrelated-dirty"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="launcher-unrelated-dirty", session_id="session-unrelated-dirty")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
+            (project / "operator-note.txt").write_text("unrelated dirty note\n", encoding="utf-8")
+
+            preflight = self.run_installed_launcher(project, "--preflight")
+
+            self.assertIn(preflight["token"], GUI_PREFLIGHT_ALLOWED_TOKENS, preflight)
+            self.assertIn("view_model", preflight)
+            gate = preflight["phase1_readiness_gate"]
+            self.assertEqual(gate["readiness_status"], "ready")
+            self.assertEqual(gate["git_status"]["token"], "ok:dirty_target_project_allowed_for_gui_runtime")
+            warning_codes = [item["code"] for item in preflight.get("phase1_warnings", [])]
+            self.assertIn("warning:dirty_target_project_allowed_for_gui_runtime", warning_codes)
+
+    def test_thesis_wrappers_remain_project_default_without_hardcoded_lenses(self) -> None:
+        from project_moe_gui.toolchain import phase1_wrapper_template
+
+        on_text = phase1_wrapper_template(Path("tools/thesis_moe_mode.py"), "project-on")
+        off_text = phase1_wrapper_template(Path("tools/thesis_moe_mode.py"), "project-off")
+
+        self.assertIn("project-on --json", on_text)
+        self.assertIn("project-off --json", off_text)
+        for wrapper_text in [on_text, off_text]:
+            self.assertIn("Project-default MOE wrapper", wrapper_text)
+            self.assertNotIn("--lens", wrapper_text)
+            self.assertNotIn("--category", wrapper_text)
+            self.assertNotIn("feynman_learning", wrapper_text)
+            self.assertNotIn("socratic_cbt", wrapper_text)
 
     def test_phase1_bootstrap_scaffold_plan_preserves_existing_private_surfaces(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1452,11 +1521,11 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertFalse(payload["startup_activation_hooks"]["hook_found"])
             self.assertFalse(payload["startup_activation_hooks"]["basic_status_hook_found"])
 
-    def test_phase1_readiness_checker_blocks_agent_toml_missing_extensions(self) -> None:
+    def test_phase1_readiness_checker_accepts_native_only_agent_toml_without_extension_sections(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            project = Path(tmp) / "phase1-agent-missing-extensions"
+            project = Path(tmp) / "phase1-agent-native-only"
             project.mkdir()
-            self.make_stateful_project(project, project_label="phase1-agent-missing-extensions", session_id="session-agent-missing")
+            self.make_stateful_project(project, project_label="phase1-agent-native-only", session_id="session-agent-native")
             self.add_phase1_wrappers_and_startup_hook(project)
             (project / ".codex" / "agents" / "thesis-moe-mentor.toml").write_text(
                 'name = "thesis-moe-mentor"\n'
@@ -1474,30 +1543,24 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "thesis-moe-mentor",
                 "--state-namespace",
                 "thesis_moe",
-                expect_success=False,
             )
 
-            blocker_codes = {item["code"] for item in payload["blockers"]}
-            self.assertIn("blocked:agent_toml_missing_extension_sections", blocker_codes)
-            self.assertFalse(payload["agent_toml"]["standard_profile_ready"])
-            self.assertEqual(
-                payload["agent_toml"]["required_extension_sections"],
-                ["project", "moe", "dispatch", "extensions"],
-            )
+            self.assertTrue(payload["agent_toml"]["standard_profile_ready"], payload)
+            self.assertTrue(payload["agent_toml"]["native_schema_compatible"], payload)
+            self.assertEqual(payload["agent_toml"]["required_extension_sections"], [])
+            self.assertEqual(payload["agent_toml"]["legacy_custom_tables"], [])
 
-    def test_phase1_readiness_checker_blocks_agent_toml_bad_boundaries(self) -> None:
+    def test_phase1_readiness_checker_blocks_agent_toml_custom_tables(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            project = Path(tmp) / "phase1-agent-bad-boundaries"
+            project = Path(tmp) / "phase1-agent-custom-tables"
             project.mkdir()
-            self.make_stateful_project(project, project_label="phase1-agent-bad-boundaries", session_id="session-agent-bad")
+            self.make_stateful_project(project, project_label="phase1-agent-custom-tables", session_id="session-agent-custom")
             self.add_phase1_wrappers_and_startup_hook(project)
             agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
             agent_path.write_text(
                 agent_path.read_text(encoding="utf-8")
-                .replace('private_prompt_policy = "do-not-copy-full-content"', 'private_prompt_policy = "copy-full-content"')
-                .replace('session_state_dir = ".omx/state/thesis_moe/sessions"', 'session_state_dir = "../sessions"')
-                .replace('forbidden = ["full-history-fork-with-custom-role"]', 'forbidden = []')
-                .replace('fallback = ["main-session-takeover", "durable-brief"]', 'fallback = ["full-history-fork"]'),
+                + '\n[project]\nscope = "repo-local"\n'
+                + '\n[dispatch]\nmode = "brief-based"\n',
                 encoding="utf-8",
             )
             self.git_commit_all(project)
@@ -1514,10 +1577,10 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             )
 
             blocker_codes = {item["code"] for item in payload["blockers"]}
-            self.assertIn("blocked:agent_project_boundary_invalid", blocker_codes)
-            self.assertIn("blocked:agent_moe_boundary_invalid", blocker_codes)
-            self.assertIn("blocked:agent_dispatch_boundary_incomplete", blocker_codes)
-            self.assertFalse(payload["agent_toml"]["extension_fields_ok"])
+            self.assertIn("blocked:agent_toml_unsupported_custom_fields", blocker_codes)
+            self.assertFalse(payload["agent_toml"]["native_schema_compatible"])
+            self.assertEqual(payload["agent_toml"]["legacy_custom_tables"], ["project", "dispatch"])
+            self.assertIn("project", payload["agent_toml"]["unsupported_top_level_keys"])
 
     def test_phase1_readiness_checker_accepts_assert_on_disabled_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1618,14 +1681,6 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             project.mkdir()
             self.make_stateful_project(project, project_label="phase1-private-prompt-state", session_id="session-private-prompt-state")
             self.add_phase1_wrappers_and_startup_hook(project)
-            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
-            agent_path.write_text(
-                agent_path.read_text(encoding="utf-8").replace(
-                    'private_prompt_source = "MOE.md"',
-                    'private_prompt_source = ".omx/state/thesis_moe/private-note.json"',
-                ),
-                encoding="utf-8",
-            )
             self.git_commit_all(project)
 
             _, payload = self.run_tool(
@@ -1636,6 +1691,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "thesis-moe-mentor",
                 "--state-namespace",
                 "thesis_moe",
+                "--private-prompt-source",
+                ".omx/state/thesis_moe/private-note.json",
                 expect_success=False,
             )
 
@@ -1651,14 +1708,6 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             project.mkdir()
             self.make_stateful_project(project, project_label="phase1-private-prompt-agent-dir", session_id="session-private-prompt-agent")
             self.add_phase1_wrappers_and_startup_hook(project)
-            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
-            agent_path.write_text(
-                agent_path.read_text(encoding="utf-8").replace(
-                    'private_prompt_source = "MOE.md"',
-                    'private_prompt_source = ".codex/agents/thesis-moe-mentor.toml"',
-                ),
-                encoding="utf-8",
-            )
             self.git_commit_all(project)
 
             _, payload = self.run_tool(
@@ -1669,6 +1718,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "thesis-moe-mentor",
                 "--state-namespace",
                 "thesis_moe",
+                "--private-prompt-source",
+                ".codex/agents/thesis-moe-mentor.toml",
                 expect_success=False,
             )
 
@@ -1687,14 +1738,6 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             managed_readme = project / "tools" / "project_moe_gui" / "README.md"
             managed_readme.parent.mkdir(parents=True)
             managed_readme.write_text("# Managed GUI artifact\n", encoding="utf-8")
-            agent_path = project / ".codex" / "agents" / "thesis-moe-mentor.toml"
-            agent_path.write_text(
-                agent_path.read_text(encoding="utf-8").replace(
-                    'private_prompt_source = "MOE.md"',
-                    'private_prompt_source = "tools/project_moe_gui/README.md"',
-                ),
-                encoding="utf-8",
-            )
             self.git_commit_all(project)
 
             _, payload = self.run_tool(
@@ -1705,6 +1748,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 "thesis-moe-mentor",
                 "--state-namespace",
                 "thesis_moe",
+                "--private-prompt-source",
+                "tools/project_moe_gui/README.md",
                 expect_success=False,
             )
 
@@ -1895,15 +1940,60 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertTrue((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").exists())
             self.assertTrue((project / "project-moe-gui.cmd").exists())
             self.assertTrue((project / "project-moe-gui-silent.vbs").exists())
+            self.assertTrue((project / "project-expert-lens-gui.cmd").exists())
+            self.assertTrue((project / "project-expert-lens-gui-silent.vbs").exists())
+            self.assertTrue((project / "tools" / "thesis_moe_turn_gate.py").exists())
             config_payload = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.config.json").read_text(encoding="utf-8-sig"))
             self.assertEqual(config_payload["silent_launch"]["entry"], "project-moe-gui-silent.vbs")
             self.assertEqual(config_payload["silent_launch"]["diagnostic_entry"], "project-moe-gui.cmd")
+            self.assertEqual(config_payload["canonical_toolchain"], "project_expert_lens_gui")
+            self.assertEqual(config_payload["product_display_name"], "Project Expert Lens Agent GUI")
+            self.assertEqual(config_payload["silent_launch"]["canonical_entry"], "project-expert-lens-gui-silent.vbs")
+            self.assertEqual(config_payload["silent_launch"]["canonical_diagnostic_entry"], "project-expert-lens-gui.cmd")
+            self.assertEqual(config_payload["running_session_turn_gate"]["helper"], "tools/thesis_moe_turn_gate.py")
             manifest = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json").read_text(encoding="utf-8-sig"))
-            self.assertIn("project-moe-gui-silent.vbs", [item["path"] for item in manifest["managed_files"]])
+            managed_paths = [item["path"] for item in manifest["managed_files"]]
+            self.assertIn("project-moe-gui-silent.vbs", managed_paths)
+            self.assertIn("project-expert-lens-gui.cmd", managed_paths)
+            self.assertIn("project-expert-lens-gui-silent.vbs", managed_paths)
+            self.assertIn("tools/thesis_moe_turn_gate.py", managed_paths)
 
             _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
             self.assertEqual(check_payload["status"], "up_to_date")
             self.assertEqual(check_payload["runtime_status"], "skipped_by_flag")
+
+
+    def test_canonical_expert_lens_wrappers_delegate_to_legacy_runtime_and_preserve_abi(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="fixture-canonical", session_id="session-canonical")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+
+            _, install_payload = self.run_tool(
+                str(CANONICAL_INSTALLER),
+                "--target-project",
+                str(project),
+                "--agent-name",
+                "thesis-moe-mentor",
+                "--state-namespace",
+                "thesis_moe",
+            )
+            self.assertEqual(install_payload["command"], "install_project_expert_lens_gui")
+            self.assertEqual(install_payload["legacy_command"], "install_project_moe_gui")
+            self.assertEqual(install_payload["canonical_toolchain"], "project_expert_lens_gui")
+            self.assertTrue((project / "project-moe-gui.cmd").exists())
+            self.assertTrue((project / "project-expert-lens-gui.cmd").exists())
+
+            _, check_payload = self.run_tool(str(CANONICAL_CHECKER), "--target-project", str(project), "--skip-runtime-import")
+            self.assertEqual(check_payload["command"], "check_project_expert_lens_gui_install")
+            self.assertEqual(check_payload["legacy_command"], "check_project_moe_gui_install")
+            self.assertEqual(check_payload["status"], "up_to_date")
+
+            _, update_payload = self.run_tool(str(CANONICAL_UPDATER), "--target-project", str(project), "--dry-run")
+            self.assertEqual(update_payload["command"], "update_project_expert_lens_gui")
+            self.assertEqual(update_payload["legacy_command"], "update_project_moe_gui")
 
     def test_install_fails_without_agent_toml(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -2053,6 +2143,109 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             _, payload = self.run_tool(str(UPDATER), "--target-project", str(project), "--dry-run")
             self.assertTrue(payload["no_op"], payload)
             self.assertEqual(payload["status"], "up_to_date")
+
+    def test_phase1_mode_cli_catalog_migration_updates_existing_public_lenses(self) -> None:
+        from project_moe_gui import toolchain
+
+        legacy_mode_cli = """
+from __future__ import annotations
+import argparse
+from typing import Any, Optional
+PUBLIC_LENSES = [
+    {"id": "blind_review", "label": "Blind-review expert", "description": "Review.", "category": "review"},
+    {"id": "socratic_cbt", "label": "Socratic CBT-style questioning expert", "description": "Question.", "category": "thinking"},
+    {"id": "thinking_dispatcher", "label": "Thinking-model dispatcher", "description": "Dispatch.", "category": "thinking"},
+]
+PUBLIC_CATEGORIES = [
+    {"id": "review", "label": "Review", "description": "Review lenses.", "lens_ids": ["blind_review"]},
+    {"id": "thinking", "label": "Thinking", "description": "Socratic and dispatcher.", "lens_ids": ["socratic_cbt", "thinking_dispatcher"]},
+]
+LENS_IDS = {str(item["id"]) for item in PUBLIC_LENSES}
+CATEGORY_IDS = {str(item["id"]) for item in PUBLIC_CATEGORIES}
+
+
+class ThesisMoeError(RuntimeError):
+    pass
+
+
+def unique_preserve_order(values: Optional[list[str]]) -> list[str]:
+    result = []
+    for item in values or []:
+        if item not in result:
+            result.append(item)
+    return result
+
+
+def selected_list(data: Optional[dict[str, Any]], field: str) -> list[str]:
+    return [str(item) for item in (data or {}).get(field, [])]
+
+
+def selected_lenses_from(data: Optional[dict[str, Any]]) -> list[str]:
+    return selected_list(data, "selected_lenses")
+
+
+def selected_categories_from(data: Optional[dict[str, Any]]) -> list[str]:
+    return selected_list(data, "selected_categories")
+
+
+def effective_lens_mode(selected_lenses: list[str], selected_categories: list[str]) -> str:
+    return "selected" if selected_lenses or selected_categories else "all"
+
+
+def validate_lens_selection(selected_lenses: list[str], selected_categories: list[str]) -> None:
+    invalid_lenses = [item for item in selected_lenses if item not in LENS_IDS]
+    invalid_categories = [item for item in selected_categories if item not in CATEGORY_IDS]
+    if invalid_lenses or invalid_categories:
+        raise ThesisMoeError("blocked:invalid_lens_selection")
+
+
+def parsed_selection(args: argparse.Namespace) -> tuple[Optional[list[str]], Optional[list[str]]]:
+    lenses = getattr(args, "lens", None)
+    categories = getattr(args, "category", None)
+    selected_lenses = unique_preserve_order(lenses) if lenses is not None else None
+    selected_categories = unique_preserve_order(categories) if categories is not None else None
+    if selected_lenses is not None or selected_categories is not None:
+        validate_lens_selection(selected_lenses or [], selected_categories or [])
+    return selected_lenses, selected_categories
+
+
+def attach_lens_fields(payload: dict[str, Any], selected_lenses: list[str], selected_categories: list[str]) -> dict[str, Any]:
+    return payload
+""".lstrip()
+
+        migrated, blockers = toolchain.migrate_phase1_mode_cli_catalog_text(legacy_mode_cli)
+        self.assertEqual(blockers, [])
+        migrated_twice, second_blockers = toolchain.migrate_phase1_mode_cli_catalog_text(migrated)
+        self.assertEqual(second_blockers, [])
+        self.assertEqual(migrated_twice, migrated)
+        self.assertEqual(migrated.count("def expand_lens_aliases("), 1)
+        self.assertEqual(migrated.count("def normalize_category_aliases("), 1)
+        self.assertIn('"feynman_learning"', migrated)
+        self.assertIn('"first_principles"', migrated)
+        self.assertIn('"pyramid_principle"', migrated)
+        self.assertIn('"swot_analysis"', migrated)
+        self.assertIn('"decision_tree"', migrated)
+        self.assertIn('DEPRECATED_LENS_ALIASES', migrated)
+        self.assertIn('"thinking": "five_classic_thinking_models"', migrated)
+        self.assertNotIn('"id": "thinking_dispatcher"', migrated)
+
+        namespace: dict[str, object] = {}
+        exec(compile(migrated, "<migrated-mode-cli>", "exec"), namespace)
+        self.assertEqual(
+            namespace["selected_lenses_from"]({"selected_lenses": ["thinking_dispatcher"]}),
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+        )
+        self.assertEqual(
+            namespace["selected_categories_from"]({"selected_categories": ["thinking"]}),
+            ["five_classic_thinking_models"],
+        )
+        args = argparse.Namespace(lens=["thinking_dispatcher"], category=["thinking"])
+        selected_lenses, selected_categories = namespace["parsed_selection"](args)
+        self.assertEqual(
+            selected_lenses,
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+        )
+        self.assertEqual(selected_categories, ["five_classic_thinking_models"])
 
     def test_uninstall_plan_is_dry_run_and_preserves_private_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -2225,6 +2418,488 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(view_model["session_table"]["token"], "ok")
             self.assertIsNone(view_model["session_lens_panel"]["selected_row_index"])
 
+    def test_gui_shell_discovers_codex_session_logs_for_target_project(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            project = Path(tmp) / "target"
+            other = Path(tmp) / "other"
+            sessions_root = home / ".codex" / "sessions" / "2026" / "06" / "08"
+            sessions_root.mkdir(parents=True)
+            project.mkdir()
+            other.mkdir()
+            (sessions_root / "rollout-target.jsonl").write_text(
+                json.dumps(
+                    {
+                        "timestamp": "2026-06-08T00:00:00Z",
+                        "type": "session_meta",
+                        "payload": {
+                            "id": "codex-target-session",
+                            "timestamp": "2026-06-08T00:00:00Z",
+                            "cwd": str(project),
+                            "git": {"branch": "main"},
+                        },
+                    }
+                )
+                + "\n"
+                + json.dumps({"type": "message", "payload": {"text": "private body must not be read"}})
+                + "\n",
+                encoding="utf-8",
+            )
+            (sessions_root / "rollout-other.jsonl").write_text(
+                json.dumps(
+                    {
+                        "type": "session_meta",
+                        "payload": {"id": "codex-other-session", "timestamp": "2026-06-08T00:01:00Z", "cwd": str(other)},
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            config = self.gui_config(project)
+            config["codex_sessions_root"] = str(home / ".codex" / "sessions")
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": False, "git_branch": "main"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": False},
+                pyside6_available=False,
+            )
+
+            rows = view_model["session_table"]["rows"]
+            self.assertEqual([row["session_id"] for row in rows], ["codex-target-session"])
+            self.assertEqual(rows[0]["row_origin"], "discovered-only")
+            self.assertEqual(rows[0]["session_id_source"], "codex-session-log")
+            self.assertTrue(rows[0]["actions"]["enable_session"]["ok"])
+            self.assertIn("codex-target-session", rows[0]["actions"]["enable_session"]["argv"])
+            discovery = view_model["session_table"]["codex_session_discovery"]
+            self.assertEqual(discovery["count"], 1)
+            self.assertTrue(discovery["privacy_policy"]["reads_message_bodies"])
+            self.assertEqual(discovery["privacy_policy"]["message_body_scope"], "target_project_top_level_user_assistant_preview_only")
+            self.assertEqual(view_model["session_table"]["row_origin_counts"]["discovered_only"], 1)
+
+
+
+    def test_gui_shell_discovers_only_top_level_codex_user_sessions_and_conversation_preview(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            project = Path(tmp) / "target"
+            sessions_root = home / ".codex" / "sessions" / "2026" / "06" / "09"
+            sessions_root.mkdir(parents=True)
+            project.mkdir()
+
+            def write_session(
+                filename: str,
+                session_id: str,
+                *,
+                thread_source: str = "user",
+                parent_id: str | None = None,
+                agent_role: str | None = None,
+                user_text: str = "Please inspect paper quality and give revision advice.",
+                assistant_text: str = "Final advisor opinion: structure is complete, but the evidence chain needs work.",
+            ) -> None:
+                meta_payload = {
+                    "id": session_id,
+                    "timestamp": "2026-06-09T00:00:00Z",
+                    "cwd": str(project),
+                    "thread_source": thread_source,
+                    "source": "cli" if thread_source == "user" else {"subagent": {"thread_spawn": {"parent_thread_id": parent_id or "parent-session", "agent_role": agent_role or "analyst"}}},
+                    "git": {"branch": "main"},
+                }
+                if parent_id:
+                    meta_payload["forked_from_id"] = parent_id
+                if agent_role:
+                    meta_payload["agent_role"] = agent_role
+                lines = [
+                    {"timestamp": "2026-06-09T00:00:00Z", "type": "session_meta", "payload": meta_payload},
+                    {"timestamp": "2026-06-09T00:00:03Z", "type": "response_item", "payload": {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": "developer instructions must not appear"}]}},
+                    {"timestamp": "2026-06-09T00:00:04Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "# AGENTS.md instructions for D:\\Project\n\n<INSTRUCTIONS>startup context</INSTRUCTIONS>"}, {"type": "input_text", "text": "<environment_context><cwd>D:\\Project</cwd></environment_context>"}]}},
+                    {"timestamp": "2026-06-09T00:00:05Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": user_text}]}},
+                    {"timestamp": "2026-06-09T00:01:00Z", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": assistant_text}]}},
+                ]
+                (sessions_root / filename).write_text("\n".join(json.dumps(item, ensure_ascii=False) for item in lines) + "\n", encoding="utf-8")
+
+            top_level_ids = [
+                "019ea705-2e6f-7910-a975-7b55515bfef7",
+                "019e7c0d-5127-7e71-8ed2-a5eea010bd5c",
+                "019e4080-1496-7e62-a7f6-d5343039a389",
+                "019e46e4-77b6-73d2-95a2-670eb79a6494",
+                "019e42c0-0c50-7d11-aaad-b8dcaa1014c8",
+            ]
+            for index, session_id in enumerate(top_level_ids):
+                write_session(f"rollout-2026-06-09T00-0{index}-00-{session_id}.jsonl", session_id)
+            for index in range(7):
+                write_session(
+                    f"rollout-subagent-{index}-019e-subagent-{index}.jsonl",
+                    f"019e-subagent-{index}",
+                    thread_source="subagent",
+                    parent_id=top_level_ids[index % len(top_level_ids)],
+                    agent_role="analyst",
+                )
+
+            config = self.gui_config(project)
+            config["codex_sessions_root"] = str(home / ".codex" / "sessions")
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": False, "git_branch": "main"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": False},
+                pyside6_available=False,
+            )
+
+            rows = view_model["session_table"]["rows"]
+            self.assertEqual(sorted(row["session_id"] for row in rows), sorted(top_level_ids))
+            self.assertTrue(all(row["thread_source"] == "user" for row in rows))
+            self.assertTrue(all(row["directory"] == str(project.resolve()) for row in rows))
+            self.assertTrue(all(row["branch"] == "main" for row in rows))
+            self.assertTrue(all(row["created_at"] for row in rows))
+            self.assertTrue(all(row["updated_at"] for row in rows))
+            self.assertTrue(all(row["created_relative"] for row in rows))
+            self.assertTrue(all(row["updated_relative"] for row in rows))
+            self.assertTrue(all("paper quality" in row["conversation"]["title"] for row in rows))
+            self.assertTrue(all("AGENTS.md instructions" not in row["conversation"]["title"] for row in rows))
+            self.assertTrue(all("Final advisor opinion" in row["conversation"]["preview"] for row in rows))
+            self.assertTrue(all("developer instructions" not in row["conversation"]["preview"] for row in rows))
+            discovery = view_model["session_table"]["codex_session_discovery"]
+            self.assertEqual(discovery["count"], 5)
+            self.assertEqual(discovery["hidden_child_agent_sessions"], 7)
+            self.assertTrue(discovery["privacy_policy"]["reads_message_bodies"])
+            self.assertEqual(discovery["privacy_policy"]["message_body_scope"], "target_project_top_level_user_assistant_preview_only")
+
+
+    def test_gui_shell_session_rows_expose_structured_display_block(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "home"
+            project = Path(tmp) / "target"
+            sessions_root = home / ".codex" / "sessions" / "2026" / "06" / "09"
+            sessions_root.mkdir(parents=True)
+            project.mkdir()
+            session_id = "019ea705-2e6f-7910-a975-7b55515bfef7"
+            user_text = "Strict advisor: inspect the paper directory for EI conference submission readiness."
+            assistant_text = "Final advisor opinion: the manuscript is structurally complete, but the evidence chain is incomplete."
+            lines = [
+                {
+                    "timestamp": "2026-06-09T00:00:00Z",
+                    "type": "session_meta",
+                    "payload": {"id": session_id, "timestamp": "2026-06-09T00:00:00Z", "cwd": str(project), "thread_source": "user", "git": {"branch": "main"}},
+                },
+                {"timestamp": "2026-06-09T00:00:05Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": user_text}]}},
+                {"timestamp": "2026-06-09T00:01:00Z", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": assistant_text}]}},
+            ]
+            (sessions_root / f"rollout-2026-06-09T00-00-00-{session_id}.jsonl").write_text("\n".join(json.dumps(item, ensure_ascii=False) for item in lines) + "\n", encoding="utf-8")
+
+            config = self.gui_config(project)
+            config["codex_sessions_root"] = str(home / ".codex" / "sessions")
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": False, "git_branch": "main"},
+                sessions_payload={"ok": True, "token": "ok", "sessions": []},
+                status_payload={"ok": True, "token": "ok", "effective_enabled": False},
+                pyside6_available=False,
+            )
+
+            row = view_model["session_table"]["rows"][0]
+            block = row["session_display_block"]
+            self.assertEqual(block["labels"], ["Session", "Created", "Updated", "Directory", "Branch", "Conversation"])
+            self.assertEqual(block["fields"]["Session"], session_id)
+            self.assertIn("2026-06-09", block["fields"]["Created"])
+            self.assertIn("2026-06-09", block["fields"]["Updated"])
+            self.assertEqual(block["fields"]["Directory"], str(project.resolve()))
+            self.assertEqual(block["fields"]["Branch"], "main")
+            self.assertIn("Final advisor opinion", block["fields"]["Conversation"])
+            compact = row["compact_list_text"]
+            self.assertIn("Strict advisor", compact)
+            for detail_label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+                self.assertNotIn(detail_label, compact)
+
+    def test_gui_shell_default_moe_modules_and_i18n_labels_are_governed(self) -> None:
+        from project_moe_gui import gui_shell
+
+        lenses = gui_shell.normalize_lens_display_fields(list(gui_shell.DEFAULT_EXPERT_LENSES))
+        categories = gui_shell.normalize_expert_categories(None, lenses)
+        self.assertEqual(
+            [item["id"] for item in categories],
+            ["strict_graduate_advisor", "socratic_questioning", "five_classic_thinking_models"],
+        )
+        default_lens_ids = [item["id"] for item in lenses]
+        self.assertNotIn("thinking_dispatcher", default_lens_ids)
+        self.assertEqual(
+            [
+                "feynman_learning",
+                "first_principles",
+                "pyramid_principle",
+                "swot_analysis",
+                "decision_tree",
+            ],
+            [item for item in default_lens_ids if item in {
+                "feynman_learning",
+                "first_principles",
+                "pyramid_principle",
+                "swot_analysis",
+                "decision_tree",
+            }],
+        )
+        lens_ids = {item["id"] for item in lenses}
+        for category in categories:
+            self.assertTrue(set(category["lens_ids"]).issubset(lens_ids), category)
+        category_by_id = {item["id"]: item for item in categories}
+        self.assertEqual(category_by_id["socratic_questioning"]["lens_ids"], ["socratic_cbt"])
+        self.assertEqual(
+            category_by_id["five_classic_thinking_models"]["lens_ids"],
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+        )
+        self.assertNotIn("socratic_cbt", category_by_id["five_classic_thinking_models"]["lens_ids"])
+
+        model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=["blind_review"],
+            selected_categories=[],
+            language="bilingual",
+        )
+        by_id = {item["id"]: item for item in model["categories"]}
+        self.assertEqual(by_id["strict_graduate_advisor"]["check_state"], "partial")
+        self.assertEqual(by_id["socratic_questioning"]["check_state"], "unchecked")
+        self.assertIn("严苛的研究生导师专家模块", by_id["strict_graduate_advisor"]["display_label"])
+        self.assertIn("Strict Graduate Advisor Module", by_id["strict_graduate_advisor"]["display_label"])
+
+        checked_model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=[],
+            selected_categories=["socratic_questioning"],
+            language="zh",
+        )
+        checked_by_id = {item["id"]: item for item in checked_model["categories"]}
+        self.assertEqual(checked_by_id["socratic_questioning"]["check_state"], "checked")
+        self.assertEqual(checked_by_id["socratic_questioning"]["display_label"], "认知行为式提问专家模块")
+        self.assertEqual(checked_model["effective_lenses"], ["socratic_cbt"])
+        self.assertEqual(checked_model["mode"], "selected")
+
+        thinking_model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=[],
+            selected_categories=["five_classic_thinking_models"],
+            language="en",
+        )
+        self.assertEqual(
+            thinking_model["effective_lenses"],
+            ["decision_tree", "feynman_learning", "first_principles", "pyramid_principle", "swot_analysis"],
+        )
+        self.assertNotIn("socratic_cbt", thinking_model["effective_lenses"])
+
+        legacy_model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=["thinking_dispatcher"],
+            selected_categories=["thinking"],
+            language="en",
+        )
+        self.assertEqual(
+            legacy_model["effective_lenses"],
+            ["decision_tree", "feynman_learning", "first_principles", "pyramid_principle", "swot_analysis"],
+        )
+        self.assertEqual(legacy_model["invalid_lenses"], [])
+        self.assertNotIn("thinking_dispatcher", legacy_model["selected_lenses"])
+        self.assertNotIn("socratic_cbt", legacy_model["effective_lenses"])
+
+        english_model = gui_shell._product_lens_selection_model(
+            lenses,
+            categories,
+            selected_lenses=[],
+            selected_categories=[],
+            language="en",
+        )
+        self.assertEqual(english_model["mode"], "all")
+        self.assertEqual(english_model["categories"][0]["display_label"], "Strict Graduate Advisor Module")
+        self.assertTrue(any(item["display_label"] == "Blind-review expert" for item in english_model["lenses"]))
+
+    def test_gui_view_model_declares_sessions_refresh_layout_contract(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"},
+                sessions_payload={
+                    "ok": True,
+                    "token": "ok",
+                    "sessions": [
+                        {
+                            "session_id": "session-1234567890abcdef",
+                            "enabled": True,
+                            "effective_enabled": True,
+                            "token": "ok",
+                            "valid": True,
+                            "conversation": {"title": "A concise visible session title", "preview": "Detailed preview stays on the right."},
+                        }
+                    ],
+                },
+                status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                pyside6_available=False,
+            )
+
+            contract = view_model["product_ui"]["sessions_layout_contract"]
+            self.assertEqual(contract["left_list"], "compact_one_line_rows_with_count")
+            self.assertEqual(contract["right_regions"], ["session_details_card", "expert_lens_status_actions_card", "expert_category_lens_selection_card"])
+            self.assertTrue(contract["lens_selection_independent_scroll_area"])
+            self.assertTrue(contract["category_selection_independent_scroll_area"])
+            self.assertEqual(contract["category_lens_selection_layout"], "fixed_category_rows_plus_tall_independent_lens_scroll")
+            self.assertFalse(contract["category_rows_use_tiny_scrollbar"])
+            self.assertGreaterEqual(contract["lens_selection_minimum_height_px"], 220)
+            self.assertEqual(contract["narrow_width_strategy"], "avoid_horizontal_category_lens_splitter")
+            self.assertEqual(contract["right_density"], "compact_lens_first")
+            self.assertEqual(contract["lens_selection_layout"], "two_column_lens_grid")
+            self.assertGreaterEqual(contract["lens_grid_columns"], 2)
+            self.assertLessEqual(contract["session_details_max_height_px"], 148)
+            self.assertLessEqual(contract["status_actions_max_height_px"], 184)
+            self.assertLessEqual(contract["category_rows_max_height_px"], 124)
+            self.assertGreaterEqual(contract["lens_first_visible_height_px"], 300)
+            self.assertTrue(contract["all_default_lenses_fit_without_outer_scroll_at_1180x720"])
+            self.assertTrue(contract["category_lens_i18n"])
+            self.assertTrue(contract["category_lens_tri_state_linkage"])
+            row = view_model["session_table"]["rows"][0]
+            self.assertIn("A concise visible session title", row["compact_list_text"])
+            self.assertIn("Session:", row["session_display_block"]["text"])
+            self.assertNotIn("Session:", row["compact_list_text"])
+            self.assertEqual(
+                [item["id"] for item in view_model["lens_catalog"]["categories"]],
+                ["strict_graduate_advisor", "socratic_questioning", "five_classic_thinking_models"],
+            )
+            block = row["session_display_block"]
+            text_block = block["text"]
+            for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+                self.assertIn(label, text_block)
+            self.assertEqual(row["session_display_lines"], block["lines"])
+            self.assertIn("A concise visible session title", row["conversation_title"])
+            self.assertIn("Detailed preview stays on the right.", row["conversation_preview"])
+
+
+    def test_gui_view_model_declares_sessions_search_filter_sort_counts_contract(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            view_model = gui_shell.build_view_model(
+                config,
+                project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"},
+                sessions_payload={
+                    "ok": True,
+                    "token": "ok",
+                    "sessions": [
+                        {
+                            "session_id": "session-enabled-aaaabbbbccccdddd",
+                            "enabled": True,
+                            "effective_enabled": True,
+                            "token": "ok",
+                            "valid": True,
+                            "conversation": {"title": "Enabled session title", "preview": "Visible enabled preview."},
+                            "source": "manual-session",
+                            "selected_lenses": ["blind_review"],
+                        },
+                        {
+                            "session_id": "session-disabled-eeeeffffgggghhhh",
+                            "enabled": False,
+                            "effective_enabled": False,
+                            "token": "ok",
+                            "valid": True,
+                            "conversation": {"title": "Disabled session title", "preview": "Visible disabled preview."},
+                            "source": "project-propagated",
+                        },
+                        {
+                            "session_id": "session-invalid-iiiijjjjkkkkllll",
+                            "enabled": False,
+                            "effective_enabled": False,
+                            "token": "blocked:invalid_session_record",
+                            "valid": False,
+                            "conversation": {"title": "Invalid session title", "preview": "Invalid preview."},
+                        },
+                    ],
+                },
+                status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                pyside6_available=False,
+            )
+
+            contract = view_model["product_ui"]["sessions_layout_contract"]
+            self.assertEqual(contract["left_list_controls"], "search_filter_sort")
+            self.assertTrue(contract["left_list_count_breakdown_visible"])
+            self.assertEqual(contract["left_list_filter_modes"], ["all", "enabled", "disabled", "blocked-invalid"])
+            self.assertEqual(contract["left_list_sort_keys"], ["last_seen", "display_id", "label", "effective_lens_mode"])
+
+            table = view_model["session_table"]
+            self.assertEqual(table["controls"]["default_filter_mode"], "all")
+            self.assertEqual(table["controls"]["default_sort_key"], "last_seen")
+            self.assertEqual(table["counts"]["total"], 3)
+            self.assertEqual(table["counts"]["enabled"], 1)
+            self.assertEqual(table["counts"]["disabled"], 1)
+            self.assertEqual(table["counts"]["blocked_invalid"], 1)
+            self.assertIn("3", table["count_summary"])
+            self.assertIn("1", table["count_summary"])
+            self.assertIn("blocked", table["count_summary"].lower())
+            self.assertEqual(table["filtered_rows_default"], table["rows"])
+
+            enabled_rows = gui_shell.filter_sort_session_rows(table["rows"], filter_mode="enabled")
+            self.assertEqual([row["session_id"] for row in enabled_rows], ["session-enabled-aaaabbbbccccdddd"])
+            invalid_rows = gui_shell.filter_sort_session_rows(table["rows"], filter_mode="blocked-invalid")
+            self.assertEqual([row["session_id"] for row in invalid_rows], ["session-invalid-iiiijjjjkkkkllll"])
+            search_rows = gui_shell.filter_sort_session_rows(table["rows"], search_text="disabled preview")
+            self.assertEqual([row["session_id"] for row in search_rows], ["session-disabled-eeeeffffgggghhhh"])
+
+    def test_gui_session_count_visible_text_stays_short_and_keeps_filter_sort_in_tooltip(self) -> None:
+        from project_moe_gui import gui_shell
+
+        visible = gui_shell.session_count_visible_text(
+            shown=3,
+            total=3,
+            count_word="会话 / sessions",
+        )
+        self.assertEqual(visible, "3/3 会话 / sessions")
+        self.assertNotIn("Filter", visible)
+        self.assertNotIn("Sort", visible)
+        self.assertLessEqual(len(visible), 24)
+
+        tooltip = gui_shell.session_count_tooltip(
+            shown=3,
+            total=3,
+            count_word="会话 / sessions",
+            filter_label="筛选 / Filter",
+            filter_mode="all",
+            sort_label="排序 / Sort",
+            sort_key="last_seen",
+            summary="3 sessions; enabled=1, disabled=1, blocked/invalid=1; origins: registered=2, discovered=1",
+        )
+        self.assertIn("筛选 / Filter: all", tooltip)
+        self.assertIn("排序 / Sort: last_seen", tooltip)
+        self.assertIn("blocked/invalid=1", tooltip)
+        self.assertIn("registered=2", tooltip)
+
+    def test_runtime_view_model_uses_installed_target_project_root(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "installed-target-root"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="installed-target-root", session_id="session-installed-root")
+            config = self.gui_config(project)
+            config.pop("target_project_root")
+            config["installed_target_project_root"] = str(project)
+            view_model, errors = gui_shell.build_runtime_view_model(config)
+            self.assertEqual(errors, [])
+            self.assertEqual(view_model["top_banner"]["project_root"], str(project.resolve()))
+            self.assertEqual(view_model["session_table"]["token"], "ok")
+            self.assertEqual(view_model["session_table"]["rows"][0]["session_id"], "session-installed-root")
+
     def test_gui_shell_action_plans_use_argv_lists_not_shell_strings(self) -> None:
         from project_moe_gui import gui_shell
 
@@ -2358,6 +3033,104 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertIn("project-status", result["readback"])
             self.assertEqual(result["button_state_during_command"]["pending_scope"], "project-default")
 
+    def test_gui_shell_rejects_session_write_readback_for_wrong_session(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            config = self.gui_config(project)
+            result = gui_shell.execute_write_action_with_readback(config, "session-on", session_id="another-session")
+            self.assertFalse(result["ok"], result)
+            self.assertIn(result["token"], {"blocked:write_cli_session_id_mismatch", "blocked:write_cli_readback_session_id_mismatch"})
+            observed_codes = {item["code"] for item in result["errors"]}
+            self.assertTrue({"blocked:write_cli_session_id_mismatch", "blocked:write_cli_readback_session_id_mismatch"} & observed_codes)
+
+    def test_installed_turn_gate_uses_explicit_session_id_and_next_message_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "turn-gate-target"
+            project.mkdir()
+            self.make_stateful_project(project, project_label="turn-gate-target", session_id="session-turn-gate")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+
+            mode_cli = project / "tools" / "thesis_moe_mode.py"
+            subprocess.run(
+                [sys.executable, str(mode_cli), "on", "--session-id", "session-turn-gate", "--json"],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=True,
+            )
+            result = subprocess.run(
+                [sys.executable, str(project / "tools" / "thesis_moe_turn_gate.py"), "--json", "--session-id", "session-turn-gate"],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["token"], "ok", payload)
+            self.assertTrue(payload["effective_enabled"])
+            self.assertTrue(payload["apply_project_moe_rules"])
+            self.assertEqual(payload["effect_timing"], "next_user_message")
+            self.assertEqual(payload["current_session_id_source"], "argument")
+            self.assertFalse(payload["privacy_policy"]["reads_message_bodies"])
+            self.assertEqual(payload["mode_cli_command"], "status --json --session-id <current-session>")
+
+    def test_installed_turn_gate_fails_closed_on_ambiguous_project_sessions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "turn-gate-ambiguous"
+            sessions_root = Path(tmp) / "home" / ".codex" / "sessions"
+            project.mkdir()
+            sessions_root.mkdir(parents=True)
+            self.make_stateful_project(project, project_label="turn-gate-ambiguous", session_id="session-turn-gate")
+            self.add_phase1_wrappers_and_startup_hook(project)
+            self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            text = (project / "tools" / "thesis_moe_turn_gate.py").read_text(encoding="utf-8")
+            text = re.sub(
+                r'"CODEX_THREAD_ID",\n    "CODEX_SESSION_ID",\n    "OPENAI_CODEX_SESSION_ID",\n    "OH_MY_CODEX_SESSION_ID",\n    "OMX_SESSION_ID",\n    "CODEX_SESSION",\n',
+                "",
+                text,
+            )
+            (project / "tools" / "thesis_moe_turn_gate.py").write_text(text, encoding="utf-8")
+            for name, session_id in [("one", "codex-one"), ("two", "codex-two")]:
+                (sessions_root / f"{name}.jsonl").write_text(
+                    json.dumps({"type": "session_meta", "payload": {"id": session_id, "timestamp": f"2026-06-08T00:00:0{len(name)}Z", "cwd": str(project)}})
+                    + "\n"
+                    + json.dumps({"type": "message", "payload": {"text": "body must not be read"}})
+                    + "\n",
+                    encoding="utf-8",
+                )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(project / "tools" / "thesis_moe_turn_gate.py"),
+                    "--json",
+                    "--codex-sessions-root",
+                    str(sessions_root),
+                ],
+                cwd=project,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["token"], "blocked:ambiguous_current_session_id", payload)
+            self.assertEqual(payload["candidate_count"], 2)
+            self.assertFalse(payload["privacy_policy"]["reads_message_bodies"])
+
     def test_gui_shell_rejects_write_payload_without_changed_paths(self) -> None:
         from project_moe_gui import gui_shell
 
@@ -2435,6 +3208,184 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertEqual(result["token"], "blocked:write_cli_lock_not_clean")
             self.assertEqual(result["errors"][0]["lock_status"], "lock_timeout")
 
+    def test_mode_cli_read_contract_timeout_is_configurable_for_loaded_hosts(self) -> None:
+        from project_moe_gui import toolchain
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            mode_cli = project / "tools" / "thesis_moe_mode.py"
+            mode_cli.parent.mkdir(parents=True)
+            mode_cli.write_text("# fixture mode cli\n", encoding="utf-8")
+            observed: dict[str, object] = {}
+
+            def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                observed["args"] = args
+                observed["timeout"] = kwargs.get("timeout")
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=0,
+                    stdout=json.dumps(
+                        {
+                            "schema_version": 1,
+                            "command": "status",
+                            "ok": True,
+                            "token": "ok",
+                            "exit_code": 0,
+                            "cli_contract": "project-moe-cli-v1",
+                        }
+                    ),
+                    stderr="",
+                )
+
+            with patch.dict(os.environ, {"PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS": "45"}), patch(
+                "project_moe_gui.toolchain.subprocess.run",
+                fake_run,
+            ):
+                payload, err = toolchain.run_cli(project, Path("tools/thesis_moe_mode.py"), "status")
+
+            self.assertIsNone(err)
+            self.assertEqual(payload["token"], "ok")
+            self.assertEqual(observed["timeout"], 45.0)
+
+    def test_mode_cli_default_timeout_has_full_suite_headroom(self) -> None:
+        from project_moe_gui import toolchain
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            mode_cli = project / "tools" / "thesis_moe_mode.py"
+            mode_cli.parent.mkdir(parents=True)
+            mode_cli.write_text("# fixture mode cli\n", encoding="utf-8")
+            observed: dict[str, object] = {}
+
+            def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                observed["timeout"] = kwargs.get("timeout")
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=0,
+                    stdout=json.dumps(
+                        {
+                            "schema_version": 1,
+                            "command": "status",
+                            "ok": True,
+                            "token": "ok",
+                            "exit_code": 0,
+                            "cli_contract": "project-moe-cli-v1",
+                        }
+                    ),
+                    stderr="",
+                )
+
+            with patch.dict(os.environ, {}, clear=False), patch("project_moe_gui.toolchain.subprocess.run", fake_run):
+                os.environ.pop("PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS", None)
+                payload, err = toolchain.run_cli(project, Path("tools/thesis_moe_mode.py"), "status")
+
+            self.assertIsNone(err)
+            self.assertEqual(payload["token"], "ok")
+            self.assertGreaterEqual(observed["timeout"], 45.0)
+
+    def test_gui_write_readback_timeout_uses_shared_environment_budget(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            config = self.gui_config(project)
+            observed_timeouts: list[object] = []
+
+            def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                observed_timeouts.append(kwargs.get("timeout"))
+                command = args[2] if len(args) > 2 else ""
+                payload = {
+                    "schema_version": 1,
+                    "command": command,
+                    "ok": True,
+                    "token": "ok",
+                    "exit_code": 0,
+                    "cli_contract": "project-moe-cli-v1",
+                    "project_default_enabled": True,
+                    "sessions": [],
+                    "effective_enabled": True,
+                    "effective_source": "project-default",
+                    "before": {},
+                    "after": {},
+                    "changed_scope": "project-default",
+                    "changed_paths": [".omx/state/thesis_moe/project-default.json"],
+                    "skipped_invalid_records": [],
+                    "lock_status": "not_locked_fixture",
+                    "audit_path": str(project / ".omx" / "state" / "thesis_moe" / "audit.log"),
+                    "no_op": False,
+                    "atomic_write": True,
+                }
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=0,
+                    stdout=json.dumps(payload),
+                    stderr="",
+                )
+
+            with patch.dict(os.environ, {"PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS": "45"}), patch(
+                "project_moe_gui.gui_shell.subprocess.run",
+                fake_run,
+            ):
+                result = gui_shell.execute_write_action_with_readback(config, "project-on")
+
+            self.assertTrue(result["ok"], result)
+            self.assertGreaterEqual(len(observed_timeouts), 4)
+            self.assertEqual(set(observed_timeouts), {45.0})
+
+    def test_gui_write_readback_default_timeout_has_full_suite_headroom(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            self.make_project(project)
+            config = self.gui_config(project)
+            observed_timeouts: list[object] = []
+
+            def fake_run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                observed_timeouts.append(kwargs.get("timeout"))
+                command = args[2] if len(args) > 2 else ""
+                payload = {
+                    "schema_version": 1,
+                    "command": command,
+                    "ok": True,
+                    "token": "ok",
+                    "exit_code": 0,
+                    "cli_contract": "project-moe-cli-v1",
+                    "project_default_enabled": True,
+                    "sessions": [],
+                    "effective_enabled": True,
+                    "effective_source": "project-default",
+                    "before": {},
+                    "after": {},
+                    "changed_scope": "project-default",
+                    "changed_paths": [".omx/state/thesis_moe/project-default.json"],
+                    "skipped_invalid_records": [],
+                    "lock_status": "not_locked_fixture",
+                    "audit_path": str(project / ".omx" / "state" / "thesis_moe" / "audit.log"),
+                    "no_op": False,
+                    "atomic_write": True,
+                }
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=0,
+                    stdout=json.dumps(payload),
+                    stderr="",
+                )
+
+            with patch.dict(os.environ, {}, clear=False), patch(
+                "project_moe_gui.gui_shell.subprocess.run",
+                fake_run,
+            ):
+                os.environ.pop("PROJECT_MOE_GUI_MODE_CLI_TIMEOUT_SECONDS", None)
+                result = gui_shell.execute_write_action_with_readback(config, "project-on")
+
+            self.assertTrue(result["ok"], result)
+            self.assertGreaterEqual(len(observed_timeouts), 4)
+            self.assertEqual(set(observed_timeouts), {gui_shell.DEFAULT_MODE_CLI_TIMEOUT_SECONDS})
+
     def test_gui_shell_invalid_session_rows_use_stable_tokens(self) -> None:
         from project_moe_gui import gui_shell
 
@@ -2477,11 +3428,13 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             )
 
             nav_labels = [item["label"] for item in view_model["navigation_sidebar"]["items"]]
+            nav_ids = [item["id"] for item in view_model["navigation_sidebar"]["items"]]
             region_ids = [region["id"] for region in view_model["window_structure"]["regions"]]
             workbench = view_model["expert_workbench"]
             serialized = json.dumps(workbench, ensure_ascii=False)
 
-            self.assertIn("Expert Workbench", nav_labels)
+            self.assertIn("workbench", nav_ids)
+            self.assertTrue(any("Workbench" in label for label in nav_labels), nav_labels)
             self.assertIn("expert_workbench", region_ids)
             self.assertEqual(workbench["mode"], "handoff_package_generation_only")
             self.assertEqual(workbench["privacy_boundary"]["source"]["type"], "public_agent_toml")
@@ -2492,7 +3445,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertFalse(workbench["execution_policy"]["starts_durable_team"])
             self.assertFalse(workbench["execution_policy"]["starts_langgraph_workflow"])
             self.assertIn("handoff_targets", workbench)
-            self.assertEqual([item["id"] for item in workbench["handoff_targets"]], ["main-session", "subagent", "durable-team", "langgraph-workflow"])
+            self.assertEqual([item["id"] for item in workbench["handoff_targets"]], ["main-session", "native-experts", "subagent", "durable-team", "persistent-team", "langgraph-workflow"])
             self.assertIn("Handoff target:", workbench["handoff_package_preview"])
             self.assertFalse(workbench["persistence_policy"]["disk_default"])
             self.assertTrue(workbench["persistence_policy"]["clipboard"])
@@ -2507,9 +3460,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
 
         qml = gui_shell.qml_shell_path().read_text(encoding="utf-8")
         self.assertIn("Expert Workbench", qml)
-        self.assertIn("Session MOE lenses", qml)
-        self.assertIn("Enable session MOE", qml)
-        self.assertIn("Disable session MOE", qml)
+        self.assertIn("Session expert lenses", qml)
+        self.assertIn("Enable session expert lenses", qml)
+        self.assertIn("Disable session expert lenses", qml)
         self.assertIn("Apply session lenses", qml)
         self.assertIn("Clear session lenses", qml)
         self.assertIn("Empty selection = all lenses", qml)
@@ -2527,12 +3480,16 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("main-session", qml)
         self.assertIn("subagent", qml)
         self.assertIn("durable-team", qml)
+        self.assertIn("native-experts", qml)
+        self.assertIn("persistent-team", qml)
         self.assertIn("langgraph-workflow", qml)
         self.assertIn("Copy handoff package", qml)
         self.assertIn("handoffPreview.copy()", qml)
         self.assertIn("no model execution", qml)
         self.assertIn("SectionCard", qml)
         self.assertIn("Session list", qml)
+        for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+            self.assertIn(label, qml)
         self.assertGreaterEqual(qml.count("ScrollView"), 3)
         self.assertIn("columns: 2", qml)
         self.assertIn("Layout.preferredHeight: 198", qml)
@@ -2554,7 +3511,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Render Project MOE GUI QML pages offscreen", result.stdout)
+        self.assertIn("Render Project Expert Lens GUI QML pages offscreen or product Widgets pages offscreen", result.stdout)
+        self.assertIn("--shell", result.stdout)
         self.assertIn("--sections", result.stdout)
         self.assertIn("--size", result.stdout)
         self.assertIn("overflow", result.stdout.lower())
@@ -2570,9 +3528,12 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         spec.loader.exec_module(module)
 
         self.assertEqual(module.DEFAULT_VISUAL_SIZES, ((1180, 720), (1366, 768), (1440, 900)))
+        for required_text in ["Session details", "Expert lens status and actions", "Expert lens modules and lenses", "Strict Graduate Advisor Module", "Socratic Questioning Module", "Five Classic Thinking Models Module"]:
+            self.assertIn(required_text, module.SECTION_REQUIRED_TEXT["sessions"])
         parser = module.build_parser()
         args = parser.parse_args(["--view-model-json", "fixture.json", "--no-runtime-reexec", "--json"])
         self.assertEqual(module.normalized_sizes(args), module.DEFAULT_VISUAL_SIZES)
+        self.assertEqual(args.shell, "auto")
         args = parser.parse_args(["--view-model-json", "fixture.json", "--size", "1000x700", "--no-runtime-reexec", "--json"])
         self.assertEqual(module.normalized_sizes(args), ((1000, 700),))
 
@@ -2591,13 +3552,31 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertGreater(len(long_vm["top_banner"]["project_root"]), 80)
         self.assertTrue(any(len(row["display_id"]) > 40 for row in long_vm["session_table"]["rows"]))
         self.assertTrue(any(len(lens["label"]) > 80 for lens in long_vm["lens_catalog"]["lenses"]))
-        self.assertTrue(any(len(category["label"]) > 60 for category in long_vm["lens_catalog"]["categories"]))
+        self.assertTrue(any(category["id"] == "strict_graduate_advisor" for category in long_vm["lens_catalog"]["categories"]))
+        long_lens_ids = [item["id"] for item in long_vm["lens_catalog"]["lenses"]]
+        for lens_id in ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"]:
+            self.assertIn(lens_id, long_lens_ids)
 
         dense_vm = module.build_fixture_view_model("dense-sessions", base)
         self.assertGreaterEqual(len(dense_vm["session_table"]["rows"]), 24)
         self.assertGreaterEqual(len(dense_vm["lens_catalog"]["lenses"]), 18)
         self.assertGreaterEqual(len(dense_vm["lens_catalog"]["categories"]), 8)
+        dense_lens_ids = [item["id"] for item in dense_vm["lens_catalog"]["lenses"]]
+        self.assertNotIn("thinking_dispatcher", dense_lens_ids)
+        for lens_id in ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"]:
+            self.assertIn(lens_id, dense_lens_ids)
+        self.assertEqual([category["id"] for category in dense_vm["lens_catalog"]["categories"][:3]], ["strict_graduate_advisor", "socratic_questioning", "five_classic_thinking_models"])
+        dense_categories = {category["id"]: category for category in dense_vm["lens_catalog"]["categories"]}
+        self.assertEqual(dense_categories["socratic_questioning"]["lens_ids"], ["socratic_cbt"])
+        self.assertEqual(
+            dense_categories["five_classic_thinking_models"]["lens_ids"],
+            ["feynman_learning", "first_principles", "pyramid_principle", "swot_analysis", "decision_tree"],
+        )
         self.assertEqual(dense_vm["fixture_profile"], "dense-sessions")
+        for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+            self.assertIn(label, module.SECTION_REQUIRED_TEXT["sessions"])
+        self.assertTrue(all("session_display_block" in row for row in long_vm["session_table"]["rows"]))
+        self.assertTrue(any("Conversation:" in row["session_display_block"]["text"] for row in long_vm["session_table"]["rows"]))
 
     def test_visual_render_check_detects_visible_text_overflow(self) -> None:
         import importlib.util
@@ -2670,6 +3649,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("text_width_overflow", violation_kinds)
         self.assertIn("visible_item_outside_clip", violation_kinds)
         self.assertTrue(any("Sessions page overflowing label" in item.get("text", "") for item in violations))
+        source = VISUAL_RENDER_CHECK.read_text(encoding="utf-8")
+        self.assertIn("widget_text_width_overflow", source)
+        self.assertIn("horizontalAdvance", source)
 
     def test_expert_workbench_artifact_contract_saves_filters_and_exports_without_execution(self) -> None:
         from project_moe_gui.workbench_artifacts import create_handoff_package, export_handoff_package, list_handoff_artifacts, save_handoff_artifact
@@ -2791,6 +3773,118 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertIn("Session override", first["effective_state_explanation"])
             self.assertIn("wins over project default", first["override_conflict_hint"])
             self.assertIn("no-search-result", table["empty_state_variants"])
+
+    def test_gui_shell_session_table_hides_unmatched_state_only_rows_from_main_project_view(self) -> None:
+        from project_moe_gui import gui_shell
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "target"
+            project.mkdir()
+            config = self.gui_config(project)
+            state_rows = [
+                {"session_id": "real-session-1", "enabled": True, "effective_enabled": True, "valid": True, "token": "ok", "source": "manual-session"},
+                {"session_id": "real-session-2", "enabled": False, "effective_enabled": False, "valid": True, "token": "ok", "source": "manual-session"},
+                {"session_id": "stale-state-1", "enabled": True, "effective_enabled": True, "valid": True, "token": "ok", "source": "manual-session"},
+                {"session_id": "stale-state-2", "enabled": True, "effective_enabled": True, "valid": True, "token": "ok", "source": "manual-session"},
+                {"session_id": "stale-state-3", "enabled": True, "effective_enabled": True, "valid": True, "token": "ok", "source": "manual-session"},
+            ]
+            discovered_rows = [
+                {
+                    "session_id": "real-session-1",
+                    "thread_id": "real-session-1",
+                    "created_at": "2026-06-08T01:00:00+00:00",
+                    "updated_at": "2026-06-08T02:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Real conversation 1", "preview": "Visible project session."},
+                },
+                {
+                    "session_id": "real-session-2",
+                    "thread_id": "real-session-2",
+                    "created_at": "2026-06-08T03:00:00+00:00",
+                    "updated_at": "2026-06-08T04:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Real conversation 2", "preview": "Visible project session."},
+                },
+                {
+                    "session_id": "discovered-session-3",
+                    "thread_id": "discovered-session-3",
+                    "created_at": "2026-06-08T05:00:00+00:00",
+                    "updated_at": "2026-06-08T06:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Discovered conversation 3", "preview": "Visible project session."},
+                },
+                {
+                    "session_id": "discovered-session-4",
+                    "thread_id": "discovered-session-4",
+                    "created_at": "2026-06-08T07:00:00+00:00",
+                    "updated_at": "2026-06-08T08:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Discovered conversation 4", "preview": "Visible project session."},
+                },
+                {
+                    "session_id": "discovered-session-5",
+                    "thread_id": "discovered-session-5",
+                    "created_at": "2026-06-08T09:00:00+00:00",
+                    "updated_at": "2026-06-08T10:00:00+00:00",
+                    "directory": str(project),
+                    "branch": "main",
+                    "thread_source": "user",
+                    "conversation": {"title": "Discovered conversation 5", "preview": "Visible project session."},
+                },
+            ]
+            original = gui_shell._safe_codex_session_index
+            gui_shell._safe_codex_session_index = lambda _config, _root: {
+                "schema_version": 1,
+                "ok": True,
+                "token": "ok",
+                "sessions": discovered_rows,
+                "count": len(discovered_rows),
+                "hidden_child_agent_sessions": 0,
+                "privacy_policy": {"authority": "fixture"},
+            }
+            try:
+                view_model = gui_shell.build_view_model(
+                    config,
+                    project_status={"ok": True, "token": "ok", "project_default_enabled": True, "git_branch": "main"},
+                    sessions_payload={"ok": True, "token": "ok", "sessions": state_rows},
+                    status_payload={"ok": True, "token": "ok", "effective_enabled": True},
+                    pyside6_available=False,
+                    project_root=project,
+                )
+            finally:
+                gui_shell._safe_codex_session_index = original
+
+            table = view_model["session_table"]
+            self.assertEqual(len(table["rows"]), 5)
+            self.assertEqual(
+                {row["session_id"] for row in table["rows"]},
+                {"real-session-1", "real-session-2", "discovered-session-3", "discovered-session-4", "discovered-session-5"},
+            )
+            self.assertEqual(table["row_origin_counts"]["registered_matched"], 2)
+            self.assertEqual(table["row_origin_counts"]["discovered_only"], 3)
+            self.assertEqual(table["row_origin_counts"]["state_only"], 3)
+            self.assertEqual(table["row_origin_counts"]["total"], 5)
+            self.assertEqual(table["row_origin_counts"]["visible_total"], 5)
+            self.assertEqual(len(table["supplemental_state_only_rows"]), 3)
+            self.assertNotIn("stale-state-1", {row["session_id"] for row in table["rows"]})
+            matched_by_id = {row["session_id"]: row for row in table["rows"]}
+            real_one_block = matched_by_id["real-session-1"]["session_display_block"]
+            self.assertEqual(matched_by_id["real-session-1"]["directory"], str(project))
+            self.assertEqual(matched_by_id["real-session-1"]["branch"], "main")
+            self.assertIn("2026-06-08", real_one_block["fields"]["Created"])
+            self.assertIn("2026-06-08", real_one_block["fields"]["Updated"])
+            self.assertEqual(real_one_block["fields"]["Directory"], str(project))
+            self.assertEqual(real_one_block["fields"]["Branch"], "main")
+            self.assertIn("Real conversation 1", real_one_block["fields"]["Conversation"])
+            self.assertIn("Visible project session.", real_one_block["fields"]["Conversation"])
 
     def test_gui_view_model_declares_ui_states_and_multi_project_status_panel(self) -> None:
         from project_moe_gui import TOOLCHAIN_VERSION, gui_shell
@@ -3217,17 +4311,24 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             expected_source_root = stable_toolchain_source_root()
             self.assertEqual(installed_config["toolchain_source_root"], str(expected_source_root))
             self.assertEqual(installed_config["qml_shell"]["relative_path"], "tools/project_moe_gui/qml/ProjectMoeGui.qml")
-            self.assertTrue(installed_config["qml_shell"]["primary"])
+            self.assertFalse(installed_config["qml_shell"]["primary"])
+            self.assertEqual(installed_config["qml_shell"]["fallback_role"], "explicit-qml-fallback")
+            self.assertTrue(installed_config["product_shell"]["primary"])
+            self.assertEqual(installed_config["product_shell_contract"], "project-moe-gui-product-widgets-v1")
             self.assertTrue((project / "tools" / "project_moe_gui" / "qml" / "ProjectMoeGui.qml").exists())
             installed_manifest = json.loads((project / "tools" / "project_moe_gui" / "project_moe_gui.install-manifest.json").read_text(encoding="utf-8-sig"))
             managed_paths = {item["path"] for item in installed_manifest["managed_files"]}
             self.assertIn("tools/project_moe_gui/qml/ProjectMoeGui.qml", managed_paths)
+            self.assertIn("tools/thesis_moe_turn_gate.py", managed_paths)
 
             launcher_text = (project / "tools" / "project_moe_gui" / "launcher.py").read_text(encoding="utf-8")
             command_text = (project / "project-moe-gui.cmd").read_text(encoding="utf-8")
+            turn_gate_text = (project / "tools" / "thesis_moe_turn_gate.py").read_text(encoding="utf-8")
             self.assertIn("maybe_reexec_with_runtime", launcher_text)
             self.assertIn("PROJECT_MOE_GUI_RUNTIME_REEXEC", launcher_text)
             self.assertIn("set PYTHONUTF8=1", command_text)
+            self.assertIn("blocked:ambiguous_current_session_id", turn_gate_text)
+            self.assertIn("reads_message_bodies", turn_gate_text)
 
             _, check_payload = self.run_tool(str(CHECKER), "--target-project", str(project), "--skip-runtime-import")
             self.assertEqual(check_payload["status"], "up_to_date")
@@ -3243,7 +4344,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertIn("launcher_runtime_reexec", preflight)
             self.assertEqual(preflight["view_model"]["top_banner"]["project_root"], str(project.resolve()))
             self.assertEqual(preflight["view_model"]["top_banner"]["current_branch"], "main")
-            self.assertEqual(preflight["view_model"]["visual"]["library"], "Qt Quick/QML")
+            self.assertEqual(preflight["view_model"]["visual"]["library"], "QFluentWidgets / Qt Widgets")
+            self.assertEqual(preflight["view_model"]["visual"]["primary_shell"], "qfluentwidgets-qtwidgets")
+            self.assertEqual(preflight["view_model"]["visual"]["fallback_shell"], "qml-material")
             self.assertEqual(preflight["view_model"]["visual"]["qml_source_status"]["source"], "target_project")
             self.assertEqual(
                 Path(preflight["view_model"]["visual"]["qml_source_status"]["path"]),
@@ -3331,6 +4434,8 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.make_stateful_project(project, project_label="fixture-invalid", session_id="session-current")
             self.add_phase1_wrappers_and_startup_hook(project)
             self.git_commit_all(project)
+            self.install_fixture_gui(project)
+            self.git_commit_all(project)
             sessions_root = project / ".omx" / "state" / "thesis_moe" / "sessions"
             invalid_path = sessions_root / "session-invalid.json"
             invalid_path.write_text("{invalid-json", encoding="utf-8")
@@ -3339,8 +4444,6 @@ raise SystemExit(int(payload.get("exit_code", 0)))
                 json.dumps({"session_id": "session-legacy", "enabled": False, "token": "ok"}, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
-            self.install_fixture_gui(project)
-            self.git_commit_all(project)
 
             project_on = self.run_toolchain_write(project, "project-on")
             self.assertTrue(project_on["ok"], project_on)
@@ -3480,7 +4583,7 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertEqual(stdout.getvalue(), "")
         self.assertEqual(stderr.getvalue(), "")
 
-    def test_gui_view_model_declares_qml_cards_sidebar_and_legacy_qfluent_gate(self) -> None:
+    def test_gui_view_model_declares_product_widgets_cards_sidebar_and_qml_fallback(self) -> None:
         from project_moe_gui.gui_shell import build_view_model
         from project_moe_gui.qfluent_runtime import check_qfluent_runtime
 
@@ -3516,13 +4619,20 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertIn("status_overview_cards", region_ids)
         self.assertIn("diagnostics_card", region_ids)
         self.assertIn("session_table", region_ids)
-        self.assertEqual(view_model["visual"]["library"], "Qt Quick/QML")
-        self.assertEqual(view_model["visual"]["style"], "Material")
+        self.assertEqual(view_model["visual"]["library"], "QFluentWidgets / Qt Widgets")
+        self.assertEqual(view_model["visual"]["style"], "Fluent Widgets")
+        self.assertEqual(view_model["visual"]["primary_shell"], "qfluentwidgets-qtwidgets")
+        self.assertEqual(view_model["visual"]["fallback_shell"], "qml-material")
+        self.assertEqual(view_model["visual"]["product_shell_contract"], "project-moe-gui-product-widgets-v1")
+        self.assertTrue(view_model["visual"]["qfluentwidgets_required"])
+        self.assertEqual(view_model["visual"]["qfluentwidgets_status"]["token"], "ok")
         self.assertEqual(view_model["visual"]["qml_source_status"]["token"], "ok")
         self.assertFalse(view_model["visual"]["external_template_copied"])
         self.assertEqual(view_model["visual"]["legacy_qfluent"]["qfluentwidgets_status"]["token"], "ok")
         self.assertTrue(view_model["visual"]["legacy_qfluent"]["license_manifest"]["commercial_use_requires_review"])
-        self.assertIn("Project", [item["label"] for item in view_model["navigation_sidebar"]["items"]])
+        self.assertEqual([item["id"] for item in view_model["navigation_sidebar"]["items"]], ["overview", "sessions", "workbench", "diagnostics", "settings"])
+        self.assertTrue(view_model["navigation_sidebar"]["projects_page_hidden_by_default"])
+        self.assertEqual(view_model["product_ui"]["language"], "bilingual")
         self.assertGreaterEqual(len(view_model["status_cards"]), 4)
         self.assertEqual(view_model["close_behavior"]["default_close_action"], "ask")
 
@@ -3599,35 +4709,53 @@ raise SystemExit(int(payload.get("exit_code", 0)))
             self.assertFalse(foreground["pythonw_available"])
             self.assertEqual(Path(foreground["selected_python_executable"]), python)
 
-    def test_visible_launch_uses_qml_engine_material_style_and_smoke_timer(self) -> None:
+    def test_visible_launch_defaults_to_product_widgets_and_keeps_qml_fallback(self) -> None:
         import inspect
         from project_moe_gui import gui_shell
 
         source = inspect.getsource(gui_shell.launch_visible)
-        self.assertIn("QQmlApplicationEngine", source)
-        self.assertIn('QQuickStyle.setStyle("Material")', source)
-        self.assertIn("viewModelJson", source)
-        self.assertIn("ProjectMoeBridge", source)
-        self.assertIn("executeWriteAction", source)
-        self.assertIn("saveHandoffDraft", source)
-        self.assertIn("exportHandoffPackage", source)
-        self.assertIn("projectMoeBridge", source)
-        self.assertIn("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS", source)
-        self.assertIn("QTimer(window)", source)
-        self.assertIn("app.exit(0)", source)
+        self.assertIn("_launch_product_widgets", source)
+        self.assertIn("PROJECT_MOE_GUI_USE_QML_FALLBACK", source)
+        self.assertIn("_legacy_launch_visible_qml", source)
+        product_source = inspect.getsource(gui_shell._launch_product_widgets)
+        self.assertIn("create_product_widget_window", product_source)
+        self.assertIn("PROJECT_MOE_GUI_VISIBLE_SMOKE_EXIT_MS", product_source)
+        self.assertIn("QTimer(window)", product_source)
+        self.assertIn("app.exit(0)", product_source)
+        fallback_source = inspect.getsource(gui_shell.launch_visible_qml_fallback) + inspect.getsource(gui_shell._legacy_launch_visible_qml)
+        self.assertIn("QQmlApplicationEngine", fallback_source)
+        self.assertIn('QQuickStyle.setStyle("Material")', fallback_source)
+        self.assertIn("viewModelJson", fallback_source)
+        self.assertIn("ProjectMoeBridge", fallback_source)
+        self.assertIn("executeWriteAction", fallback_source)
+        self.assertIn("saveHandoffDraft", fallback_source)
+        self.assertIn("exportHandoffPackage", fallback_source)
+        self.assertIn("projectMoeBridge", fallback_source)
+        qml_text = gui_shell.qml_shell_path().read_text(encoding="utf-8")
+        for label in ["Session:", "Created:", "Updated:", "Directory:", "Branch:", "Conversation:"]:
+            self.assertIn(label, qml_text)
         self.assertTrue(gui_shell.qml_shell_path().exists())
 
     def test_installer_config_and_launcher_include_daemon_and_qfluent_metadata(self) -> None:
         from project_moe_gui.toolchain import cmd_text, config_payload, launcher_text, silent_vbs_text
 
         cfg = config_payload(Path("D:/target"), "thesis-moe-mentor", "thesis_moe", Path("tools/thesis_moe_mode.py"), Path("D:/runtime"))
-        self.assertEqual(cfg["visual_dependency"]["library"], "Qt Quick/QML")
-        self.assertEqual(cfg["visual_dependency"]["style"], "Material")
+        self.assertEqual(cfg["visual_dependency"]["library"], "QFluentWidgets / Qt Widgets")
+        self.assertEqual(cfg["visual_dependency"]["style"], "Fluent Widgets")
+        self.assertEqual(cfg["visual_dependency"]["primary_shell"], "qfluentwidgets-qtwidgets")
+        self.assertEqual(cfg["visual_dependency"]["fallback_shell"], "qml-material")
+        self.assertEqual(cfg["visual_dependency"]["package_name"], "PySide6-Fluent-Widgets")
+        self.assertEqual(cfg["visual_dependency"]["import_name"], "qfluentwidgets")
+        self.assertEqual(cfg["product_shell_contract"], "project-moe-gui-product-widgets-v1")
+        self.assertTrue(cfg["product_shell"]["primary"])
+        self.assertEqual(cfg["product_shell"]["qml_fallback_env"], "PROJECT_MOE_GUI_USE_QML_FALLBACK=1")
+        self.assertFalse(cfg["qml_shell"]["primary"])
         self.assertEqual(cfg["qml_shell"]["relative_path"], "tools/project_moe_gui/qml/ProjectMoeGui.qml")
         self.assertEqual(cfg["qml_shell"]["style"], "Material")
         self.assertTrue(cfg["qml_shell"]["managed_artifact"])
-        self.assertEqual(cfg["legacy_visual_dependency"]["package_name"], "PySide6-Fluent-Widgets")
-        self.assertEqual(cfg["legacy_visual_dependency"]["import_name"], "qfluentwidgets")
+        self.assertEqual(cfg["qml_shell"]["fallback_role"], "explicit-qml-fallback")
+        self.assertEqual(cfg["legacy_visual_dependency"]["library"], "Qt Quick/QML")
+        self.assertEqual(cfg["legacy_visual_dependency"]["style"], "Material")
         self.assertTrue(cfg["gui_dependency_license_manifest"]["commercial_use_requires_review"])
         self.assertTrue(cfg["daemon_launch"]["duplicate_instance_guard"]["enabled"])
         self.assertEqual(cfg["daemon_launch"]["argv"][0], "D:\\runtime\\.venv\\Scripts\\python.exe")
@@ -3636,8 +4764,19 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         self.assertEqual(cfg["daemon_launch"]["duplicate_instance_guard"]["lock_path"], "D:\\target\\.project-runtime\\project_moe_gui\\project_moe_gui.daemon.lock")
         self.assertEqual(cfg["close_behavior"]["default_close_action"], "ask")
         self.assertEqual(cfg["silent_launch"]["entry"], "project-moe-gui-silent.vbs")
+        self.assertEqual(cfg["canonical_toolchain"], "project_expert_lens_gui")
+        self.assertEqual(cfg["product_display_name"], "Project Expert Lens Agent GUI")
+        self.assertEqual(cfg["silent_launch"]["canonical_entry"], "project-expert-lens-gui-silent.vbs")
+        self.assertEqual(cfg["silent_launch"]["canonical_diagnostic_entry"], "project-expert-lens-gui.cmd")
         self.assertTrue(cfg["silent_launch"]["uses_wscript_hidden_window"])
         self.assertTrue(cfg["silent_launch"]["keeps_preflight_on_cmd"])
+        self.assertTrue(cfg["codex_session_discovery"]["enabled"])
+        self.assertTrue(cfg["codex_session_discovery"]["reads_message_bodies"])
+        self.assertEqual(cfg["codex_session_discovery"]["message_body_scope"], "target_project_top_level_user_assistant_preview_only")
+        self.assertTrue(cfg["codex_session_discovery"]["hides_child_agent_sessions_from_default_view"])
+        self.assertEqual(cfg["codex_session_discovery"]["session_index_role"], "supplemental-labels-only")
+        self.assertTrue(cfg["running_session_turn_gate"]["enabled"])
+        self.assertEqual(cfg["running_session_turn_gate"]["effect_timing"], "next_user_message")
 
         launcher = launcher_text()
         self.assertIn("build_daemon_launch_plan", launcher)
@@ -3655,6 +4794,9 @@ raise SystemExit(int(payload.get("exit_code", 0)))
         silent_text = silent_vbs_text()
         self.assertIn("WScript.Shell", silent_text)
         self.assertIn("project-moe-gui.cmd", silent_text)
+        canonical_silent_text = silent_vbs_text("project-expert-lens-gui.cmd")
+        self.assertIn("project-expert-lens-gui.cmd", canonical_silent_text)
+        self.assertNotIn("project-moe-gui.cmd", canonical_silent_text)
         self.assertIn("shell.Run command, 0, False", silent_text)
 
 

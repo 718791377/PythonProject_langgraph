@@ -1,6 +1,19 @@
+---
+doc_id: one_person_company_inventory_map
+lang: en
+doc_class: product_lifecycle
+status: draft
+canonical_path: docs_bilingual/product_lifecycle/one_person_company_inventory_map.md
+zh_cn_path: docs_bilingual/product_lifecycle/one_person_company_inventory_map.zh-CN.md
+---
+
 # One-Person Company Inventory Map
 
-This map is the concise canonical inventory for the downstream one-person-company operating-system target.
+This map is the concise canonical inventory for the downstream one-person-company operating-system target. For the narrative white paper, see `docs_bilingual/whitepapers/personal_production_one_person_company_operations_whitepaper.md`. For the dedicated North Star, see `docs_bilingual/north_star/personal_production_one_person_company_operations_north_star.md`.
+
+## Fresh Source Evidence
+
+This map uses the Stage B fresh extraction run `one-person-company-pmi-refresh-stageb-20260619` (`2026-06-18T18:37:58Z`) as its current source-evidence boundary for `Business Management/` and `PMP/`. Exact inventory counts come from the full-text read of the local one-person-company architecture note under `Business Management/` (18,544 characters in the manifest). Business Management sources explain one-person-company operating principles; PMP sources provide process-group, PMO, program, portfolio, agile, and tailoring discipline. Current lifecycle Markdown files were also reread as full documents in `one-person-company-pmi-refresh-stageb-product-lifecycle-20260619` (26 files, 310,349 characters, all `ok`).
 
 ## Canonical Inventory
 
@@ -24,22 +37,22 @@ This map is the concise canonical inventory for the downstream one-person-compan
 | PMP sources | Process-group operating gate | They supply the common gate model used to run planning, execution, control, and closeout across business work |
 | Existing lifecycle docs in `docs_bilingual/product_lifecycle/` | Platform-to-project boundary alignment | They keep this target positioned as downstream business architecture, not as platform durable truth |
 
-## 12 Trunk Layers
+## 12 Trunk Layers With I/T/O
 
-| # | Layer | Primary question | Primary owner surface |
-| ---: | --- | --- | --- |
-| 0 | Cognitive narrative | Why should the company exist | Company thesis and vision |
-| 1 | Business | How does it earn and stay viable | Business model and finance model |
-| 2 | Market | Which users and segments matter most | Market map and user segments |
-| 3 | Strategy | What is the narrow win condition | Strategy and annual plan |
-| 4 | Metrics | What evidence changes the next move | North Star, funnel, tracking |
-| 5 | Product | What is being sold and delivered | Offer, PRD, service blueprint |
-| 6 | Technical | Which automation and systems support delivery | Tech stack and automation map |
-| 7 | Organization | How the founder, agents, and partners divide work | Role map and agent governance |
-| 8 | Execution | How work gets done now | Quarterly plan and delivery plan |
-| 9 | Growth | How demand compounds | Growth model and channel map |
-| 10 | Operations | How fulfillment, support, and retention stay stable | Ops playbook and customer success |
-| 11 | Retrospective | How learning updates the company system | Monthly review and learning log |
+| # | Layer | Primary question | Inputs | Tools and Techniques | Outputs |
+| ---: | --- | --- | --- | --- | --- |
+| 0 | Cognitive narrative | Why should the company exist? | Founder thesis, customer pain, personal constraints | Narrative writing, strategy diagnosis, non-goal framing | Company thesis, vision, non-goals |
+| 1 | Business | How does it earn and stay viable? | Offer, cost, pricing, runway | Business-model design, unit economics, cashflow review | Business model, finance model, cashflow |
+| 2 | Market | Which users and segments matter most? | Interviews, alternatives, channels, competitors | Segmentation, positioning, interview synthesis | Market map, user segments, research repository |
+| 3 | Strategy | What is the narrow win condition? | Narrative, business model, market evidence | Strategy kernel, trade-off review, planning cadence | Strategy, annual plan, quarterly plan |
+| 4 | Metrics | What evidence decides the next move? | North Star candidate, funnel, finance/support signals | OMTM, OKR, tracking plan, guardrail design | North Star, metrics contract, experiment log |
+| 5 | Product | What is sold and delivered? | Customer jobs, offer promise, acceptance evidence | Product discovery, PRD, service blueprint, MVP slicing | Offer, PRD, service blueprint, roadmap |
+| 6 | Technical | Which automation and systems support delivery? | Product promise, data/security needs, support load | Architecture review, automation mapping, vendor review | Tech stack, automation map, dependency map |
+| 7 | Organization | How do the founder, agents, and partners divide work? | Role load, agent candidates, permissions | Responsibility mapping, agent governance, approval gates | Role map, agent governance, permissions |
+| 8 | Execution | How does current work get done? | Approved plan, capacity, risks, validation plan | Process Groups, work slicing, Kanban/cycle planning | Delivery plan, validation evidence, release candidate |
+| 9 | Growth | How does demand compound? | Segment evidence, channel signal, content assets | Channel testing, growth-loop design, sales-playbook iteration | Growth model, channel map, sales playbook |
+| 10 | Operations | How do fulfillment, support, and retention stay stable? | Customer commitments, support tickets, SLA needs | Ops playbook, support triage, customer-success review | Ops playbook, support policy, FAQ |
+| 11 | Retrospective | How does learning update the company system? | Metrics, decisions, incidents, feedback | Monthly review, lessons synthesis, next-cycle prioritization | Monthly review, learning log, policy updates |
 
 ## 5 Departments and 30 Domains
 
@@ -102,13 +115,13 @@ The fresh architecture note fixes the target at 60 core documents. This canonica
 
 | Document family | Count | Canonical documents |
 | --- | ---: | --- |
-| Company strategy | 6 | `company-thesis.md`, `vision.md`, `strategy.md`, `annual-plan.md`, `quarterly-plan.md`, `decision-log.md` |
+| Company strategy | 6 | `thesis.md`, `vision.md`, `strategy.md`, `annual-plan.md`, `quarterly-plan.md`, `decision-log.md` |
 | Business and finance | 6 | `business-model.md`, `offer.md`, `pricing.md`, `unit-economics.md`, `finance-model.md`, `cashflow.md` |
 | Market and user | 6 | `market-map.md`, `user-segments.md`, `competitor-analysis.md`, `alternative-solutions.md`, `research-repository.md`, `interview-guide.md` |
 | Product and service | 6 | `product-strategy.md`, `prd.md`, `service-blueprint.md`, `onboarding.md`, `customer-journey.md`, `roadmap.md` |
-| Metrics and data | 6 | `metrics.yaml`, `north-star.md`, `funnel-dashboard.md`, `tracking-plan.md`, `data-dictionary.md`, `experiment-log.md` |
+| Metrics and data | 6 | `metrics.md`, `north-star.md`, `funnel-dashboard.md`, `tracking-plan.md`, `data-dictionary.md`, `experiment-log.md` |
 | Growth and sales | 6 | `growth-model.md`, `channel-map.md`, `sales-playbook.md`, `landing-page.md`, `email-sequences.md`, `content-calendar.md` |
-| Operations and customer success | 6 | `ops-playbook.md`, `customer-success-playbook.md`, `support-policy.md`, `faq.md`, `refund-policy.md`, `feedback-triage.md` |
+| Operations and customer success | 6 | `ops-playbook.md`, `customer-success-playbook.md`, `support-playbook.md`, `faq.md`, `refund-policy.md`, `feedback-triage.md` |
 | Technology and automation | 6 | `tech-stack.md`, `automation-map.md`, `tool-stack.md`, `vendor-register.md`, `api-dependency-map.md`, `backup-restore.md` |
 | Governance and risk | 6 | `legal-checklist.md`, `terms-of-service.md`, `privacy-policy.md`, `contract-template.md`, `risk-register.md`, `compliance-checklist.md` |
 | Agent and knowledge | 6 | `agent-governance.md`, `agent-role-map.md`, `agent-permissions.md`, `human-review-checklist.md`, `monthly-review.md`, `learning-log.md` |
@@ -153,7 +166,7 @@ The fresh architecture note fixes the target at 60 core documents. This canonica
 
 ## 12 Minimal Startup Documents
 
-1. `company-thesis.md` - states why the company exists and what belief it tests.
+1. `thesis.md` - states why the company exists and what belief it tests.
 2. `business-model.md` - defines how the company creates, delivers, and captures value.
 3. `offer.md` - describes the first paid or validated offer.
 4. `pricing.md` - records the price logic, packaging, and discount boundaries.
@@ -161,10 +174,22 @@ The fresh architecture note fixes the target at 60 core documents. This canonica
 6. `growth-model.md` - explains the first demand and adoption loop.
 7. `finance-model.md` - tracks costs, cashflow assumptions, and runway constraints.
 8. `ops-playbook.md` - defines delivery, support, and operating cadence.
-9. `metrics.yaml` - provides the machine-readable metric contract.
+9. `metrics.md` - provides the machine-readable metric contract.
 10. `risk-register.md` - records risks, triggers, responses, and owners.
 11. `agent-governance.md` - defines AI-agent roles, permissions, and human review.
 12. `monthly-review.md` - captures learning, decisions, and next-cycle updates.
+
+
+## Layer-Level Inputs, Tools And Techniques, Outputs
+
+A one-person company may stay lightweight, but each active layer still needs an explicit I/T/O loop so business work remains inspectable.
+
+| Layer group | Inputs | Tools And Techniques | Outputs |
+| --- | --- | --- | --- |
+| 0-2 Narrative, business, market | User problem, source evidence, stakeholder signal, market/adoption assumptions | Strategy diagnosis, PR/FAQ, interview synthesis, positioning, initiating gate | White paper update, business boundary, market/adoption hypothesis, initial risks |
+| 3-5 Strategy, metrics, product | North Star, OKRs, lifecycle tailoring decision, opportunity evidence | Guiding-policy design, OMTM/guardrail design, product discovery, planning gate | Strategy plan, metrics contract, PRD or release-slice brief, acceptance criteria |
+| 6-8 Technical, organization, execution | Architecture constraints, role/agent map, implementation plan, worktree ownership | Architecture review, threat/risk review, OpenSpec, subagent/durable-team threshold check, executing gate | Technical design, ownership matrix, committed changes, validation evidence |
+| 9-11 Growth, operations, retrospective | Release evidence, usage/adoption signals, incidents, lessons learned | Monitoring and controlling, portfolio review, PMO-style governance service, closing gate | Release notes, operating runbook, retrospective, archive and next-cycle decision |
 
 ## Process-Group Operating Gate
 
@@ -179,3 +204,28 @@ The fresh architecture note fixes the target at 60 core documents. This canonica
 ## Use Rule
 
 Use this map when a downstream business project needs a canonical operating-system target. Start from the 12 minimal startup documents, then expand into the 60-document system only when customer evidence, revenue exposure, delivery complexity, or governance risk makes the deeper layer necessary.
+
+## Stage B Embedded Governance Closeout
+
+This Stage B closeout makes the nested relationship explicit: the one-person company owns business truth, and embedded Codex owns governed execution truth. Embedded Codex is not a peer business authority and must not redefine business truth.
+
+- One-person company boundary: the one-person company owns business truth for customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, and business learning; embedded Codex supplies execution evidence and automation support.
+- Tailoring modes: full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, and hybrid are all scoped choices. Tailoring does not delete the twelve-layer mental model; it only changes how much evidence and ceremony is required for the chosen project, phase, module, or release slice.
+- Bridge rule: the 10-layer runtime capability view is an implementation projection of the 12-layer lifecycle view. The bridge prevents runtime convenience from overriding lifecycle authority.
+
+### Inputs
+
+- Current business intent, execution evidence, registry entry, tailoring decision, and local-main / remote-publication boundary.
+- Business truth inputs when customers, revenue, pricing, contracts, legal posture, cashflow, support, delivery commitments, or business learning are affected.
+- Execution truth inputs when agent routing, OpenSpec, worktree isolation, durable state, validation, rollback, or release boundaries are affected.
+
+### Tools And Techniques
+
+- Apply the shared truth-boundary map before selecting full architecture, whole-project lightweight, phase-local lightweight, module-level lightweight, or hybrid mode.
+- Use process-group I/T/O, RACI ownership, evidence traceability, validation gates, and escalation triggers instead of deleting layers.
+- Route mixed changes through both the business gate and the Codex execution gate before local-main integration or remote publication.
+
+### Outputs
+
+- A scoped governance mode, updated evidence trail, linked registry entry, and explicit owner for business truth, execution truth, or mixed truth.
+- A closeout decision that either stays lightweight in the declared scope, escalates to fuller architecture, or stops at the publication gate until human approval.

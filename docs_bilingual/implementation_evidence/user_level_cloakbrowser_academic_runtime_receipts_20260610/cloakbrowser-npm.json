@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-06-10T16:51:01.088740+00:00",
+  "install_root_hash": "17ee00cd9cb47353f8c2f150433eef68",
+  "install_root_label": "codex-tools/cloakbrowser/npm",
+  "installed_version": "0.3.31",
+  "native_codex_files_mutated": false,
+  "priority_order": "Comet > OpenSpec/Superpowers > gstack > harness runtime safety > Spec Kit",
+  "raw_paths_included": false,
+  "redaction_status": "pass",
+  "remote_publication_mutated": false,
+  "rollback_label": "remove codex-tools/cloakbrowser/npm and npm-cache",
+  "rollback_pointer_hash": "17ee00cd9cb47353f8c2f150433eef68",
+  "runtime_stage": "R6 live-executed",
+  "schema_version": 1,
+  "smoke_result": {
+    "command_hash": "372a1cb816b5fd6c797cce5da7eee823",
+    "observed_version_hash": "e58bd29b2bcf5473011ae7afa87ed1fe",
+    "smoke_kind": "package-version",
+    "status": "pass"
+  },
+  "source_ref": "npm:cloakbrowser@0.3.31",
+  "source_url": "https://github.com/CloakHQ/CloakBrowser",
+  "state_label": "codex-tools/cloakbrowser/npm-cache",
+  "state_path_hash": "a0e40ca5976c66a345bf5e97817eba19",
+  "tool_name": "cloakbrowser-npm",
+  "wrapper_label": "codex-tools/cloakbrowser/npm/node_modules/cloakbrowser",
+  "wrapper_path_hash": "a5facfedf9866079830c11baf8697f77"
+}

@@ -560,7 +560,7 @@ The repository SHALL provide a repo-local CLI-Anything governance guard that val
 
 The guard SHALL support at least:
 
-- `install-record --receipt-dir <dir> --pin <pin> --install-path <path> --wrapper-path <path> --state-path <path> --smoke-command <cmd> --rollback-pointer <pointer> --json`;
+- `install-record --receipt-dir <dir> --pin <pin> --install-path <path> --wrapper-path <path> --state-path <path> --smoke-command <cmd> --rollback-pointer <pointer> [--status installed-user-level] [--install-performed] [--network-fetch-performed] [--user-level-config-mutated] --json`;
 - `validate --receipt <path> --json`;
 - `update-plan --current-receipt <path> --new-pin <pin> --staging-dir <path> --smoke-status <status> --json`;
 - `update-record --current-receipt <path> --receipt-dir <dir> --new-pin <pin> --staging-dir <path> --smoke-command <cmd> --smoke-status <status> --json`;
@@ -576,6 +576,15 @@ The guard SHALL keep CLI-Anything as adapter-generation support only until insta
 - **AND** it SHALL write a `cli-anything.lock.json` receipt
 - **AND** it SHALL report path hashes instead of raw private paths
 - **AND** it SHALL report `installs_cli_anything=false`, `runs_cli_anything=false`, `hard_loads_skills=false`, and `adapter_generation_boundary_only=true`
+
+#### Scenario: Installed user-level CLI-Anything receipt keeps WXWork_CLI out of scope
+
+- **WHEN** `install-record` is called with `--status installed-user-level --install-performed --network-fetch-performed` after the user-level skill, wrapper, and state paths already exist
+- **THEN** the command SHALL return `ok=true`
+- **AND** it SHALL report `installs_cli_anything=true`, `network_fetch_performed=true`, `user_level_config_mutated=false`, `wxwork_cli_installed=false`, and `wxwork_cli_controlled=false`
+- **AND** it SHALL preserve `source_url=https://github.com/HKUDS/CLI-Anything` without redacting it as a private path
+- **AND** if the install, wrapper, or state path is missing, the guard SHALL fail closed before writing the receipt
+- **AND** WXWork_CLI integration SHALL remain delegated to the operator-designated external consumer project rather than installed, started, or controlled by this repository package
 
 #### Scenario: CLI-Anything hard-load skill attempts are blocked
 

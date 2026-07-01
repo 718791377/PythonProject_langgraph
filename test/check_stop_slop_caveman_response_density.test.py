@@ -51,7 +51,10 @@ class StopSlopCavemanResponseDensityTests(unittest.TestCase):
                 encoding="utf-8",
             )
             good.write_text(
-                "Routing trace: phase=build, durable_team=threshold_not_met:single_execution_slice\n"
+                "Routing trace: phase=build, capability_chain=subagent:auto > omx:on > langgraph:on, "
+                "backend_default=langgraph, backend_ready=true, experts=none, durable_workflow=not_needed, "
+                "persistent_team=not_needed, main_session_escalation=not_needed, approval_timeout_risk=none, "
+                "approval_receipt=none, why=threshold_not_met:single_execution_slice\n"
                 "Updated Plan\n"
                 "Fix parser. Keep `python tools/run.py --json`; path `tools/run.py`; "
                 "URL https://example.invalid/a?b=c. 中文说明保留。",

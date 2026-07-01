@@ -138,6 +138,22 @@ class ImplementationPlanClaimLockTest(unittest.TestCase):
         self.assertTrue(any("session_id" in error for error in payload["errors"]))
         self.assertTrue(any("implementation_plan" in error for error in payload["errors"]))
 
+    def test_claim_plan_is_validated_in_claim_containing_worktree(self) -> None:
+        primary = Path(tempfile.mkdtemp())
+        sibling = self.make_root()
+        self.addCleanup(lambda: __import__("shutil").rmtree(primary, ignore_errors=True))
+        self.write_claim(sibling, "sibling")
+
+        original_discover = claim_lock.discover_worktrees
+        try:
+            claim_lock.discover_worktrees = lambda root: [primary, sibling]  # type: ignore[assignment]
+            payload = claim_lock.evaluate(primary)
+        finally:
+            claim_lock.discover_worktrees = original_discover  # type: ignore[assignment]
+
+        self.assertTrue(payload["ok"], payload)
+        self.assertEqual(payload["counts"]["active_claims"], 1)
+
     def test_helper_claim_and_release_round_trip(self) -> None:
         root = self.make_root()
         claim_cmd = [

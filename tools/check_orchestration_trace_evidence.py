@@ -33,15 +33,18 @@ FIELD_PATTERN = re.compile(
 )
 
 CAPABILITY_CHAIN_PATTERN = re.compile(
-    r"subagent:(?P<subagent>auto|manual|off)\s*>\s*"
-    r"omx:(?P<omx>on|off)\s*>\s*"
+    r"(?:subagent|subagent_routing):(?P<subagent>auto|manual|off)\s*>\s*"
+    r"(?:omx|oh_my_codex):(?P<omx>on|off)\s*>\s*"
     r"langgraph:(?P<langgraph>on|off)",
     re.IGNORECASE,
 )
+LABEL_PREFIX_CHARS = r"\s*(?:[\u2022\u2514\u251c\u2502>+\-*]+\s*)*"
+ROUTING_TRACE_LABEL_PATTERN = re.compile(rf"(?im)^{LABEL_PREFIX_CHARS}Routing trace\b")
+LEGACY_SHORT_FIELD_PATTERN = re.compile(r"(?<![A-Za-z0-9_])(experts_now|durable_team)\s*=", re.IGNORECASE)
 
 BACKEND_DEFAULT_VALUES = {"langgraph", "native_omx", "none"}
 BOOLEAN_VALUES = {"true", "false"}
-LANE_STATE_VALUES = {"not_needed", "candidate", "selected", "blocked", "running"}
+LANE_STATE_VALUES = {"not_needed", "candidate", "selected", "blocked", "running", "complete"}
 MAIN_SESSION_ESCALATION_VALUES = {
     "not_needed",
     "preflight",
@@ -232,7 +235,7 @@ def validate_fields(fields: dict[str, str], full_text: str) -> tuple[list[str], 
     capability_chain = parse_capability_chain(fields["capability_chain"])
     if capability_chain is None:
         errors.append(
-            "capability_chain must use `subagent:<auto|manual|off> > omx:<on|off> > langgraph:<on|off>`."
+            "capability_chain must use `subagent_routing:<auto|manual|off> > oh_my_codex:<on|off> > langgraph:<on|off>` or the accepted `subagent`/`omx` aliases."
         )
     else:
         subagent = capability_chain["subagent"]
@@ -373,6 +376,14 @@ def run_check(trace_path: Path) -> dict[str, Any]:
         errors.append(f"Missing or unreadable activation trace evidence file: {trace_path}")
         fields: dict[str, str] = {}
     else:
+        label_count = len(ROUTING_TRACE_LABEL_PATTERN.findall(text))
+        if label_count == 0:
+            errors.append("Activation trace evidence must include the literal `Routing trace` label.")
+        elif label_count > 1:
+            errors.append("Activation trace evidence must include exactly one `Routing trace` label, not duplicate trace panels.")
+        legacy_fields = sorted({match.group(1).lower() for match in LEGACY_SHORT_FIELD_PATTERN.finditer(text)})
+        for legacy_field in legacy_fields:
+            errors.append(f"Activation trace evidence must not use legacy short field `{legacy_field}=...`.")
         fields = parse_trace_fields(text)
         field_errors, field_warnings = validate_fields(fields, text)
         errors.extend(field_errors)
