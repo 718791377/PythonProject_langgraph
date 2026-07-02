@@ -15,6 +15,9 @@ CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]")
 ZERO_SHA_RE = re.compile(r"^0{40}$")
 GITLAB_GENERATED_MERGE_SUBJECT_RE = re.compile(r"^Merge branch ['\"].+['\"] into ['\"].+['\"]$")
 QUESTION_MARK_CORRUPTED_MERGE_SUBJECT_RE = re.compile(r"^(?=.{4,120}$)(?=.*\?)(?=.*[A-Za-z0-9])[A-Za-z0-9 _./:#\-?]+$")
+GITLAB_MR_QUESTION_MARK_CORRUPTED_MERGE_SUBJECT_RE = re.compile(
+    r"^(?=.{8,160}$)(?=.*\?)(?=.*\bMR\s+!\d+\s*:)[A-Za-z0-9 _./:#!\-?]+$"
+)
 
 
 def run_git(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -114,11 +117,17 @@ def records_from_range(root: Path, base_ref: str, head_ref: str) -> tuple[list[d
 def is_question_mark_corrupted_merge_subject(subject: str) -> bool:
     if subject_has_chinese(subject):
         return False
-    if not QUESTION_MARK_CORRUPTED_MERGE_SUBJECT_RE.fullmatch(subject):
-        return False
     question_count = subject.count("?")
     non_space_count = sum(1 for char in subject if not char.isspace())
     if non_space_count == 0:
+        return False
+    if (
+        GITLAB_MR_QUESTION_MARK_CORRUPTED_MERGE_SUBJECT_RE.fullmatch(subject)
+        and question_count >= 4
+        and "??" in subject
+    ):
+        return True
+    if not QUESTION_MARK_CORRUPTED_MERGE_SUBJECT_RE.fullmatch(subject):
         return False
     return question_count >= 4 and (question_count / non_space_count) >= 0.5
 
