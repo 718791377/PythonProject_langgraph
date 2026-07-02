@@ -6,6 +6,7 @@ import sys
 import unittest
 import uuid
 from pathlib import Path
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -61,11 +62,22 @@ class SkillsAuditZhEvidenceEncodingCheckTest(unittest.TestCase):
         return result
 
     def init_git_repo(self, root: Path) -> None:
-        self.git(root, "init")
+        self.git(root, "init", "-b", "main")
         self.git(root, "config", "user.email", "skills-audit-test@example.invalid")
         self.git(root, "config", "user.name", "Skills Audit Test")
         self.git(root, "add", ".")
         self.git(root, "commit", "-m", "initial evidence")
+
+    def test_init_git_repo_uses_main_even_when_git_default_branch_differs(self) -> None:
+        root = self.make_repo("skills-audit-zh-non-main-default")
+        self.write_memory(root, "skills_usage_audit_warning_triage_2026-06-21-0826.zh-CN.md", GOOD_ZH)
+        git_config = root / "gitconfig"
+        git_config.write_text("[init]\n\tdefaultBranch = trunk\n", encoding="utf-8")
+
+        with mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": str(git_config)}):
+            self.init_git_repo(root)
+
+        self.assertEqual(self.git(root, "branch", "--show-current").stdout.strip(), "main")
 
     def test_current_clean_zh_evidence_passes_while_legacy_warns(self) -> None:
         root = self.make_repo("skills-audit-zh-clean")
