@@ -153,6 +153,34 @@ class GitCommitLanguageCheckTest(unittest.TestCase):
         merge_record = next(item for item in payload["commits"] if item.get("is_merge_commit"))
         self.assertEqual(merge_record.get("allowed_reason"), "gitlab_generated_merge_commit_subject_encoding_loss")
 
+    def test_accepts_gitlab_mr_question_mark_corrupted_merge_commit_in_ci_range(self) -> None:
+        root = self.make_root("commit-lang-gitlab-mr-merge-mojibake")
+        base_sha = self.run_git(root, "rev-parse", "HEAD").stdout.strip()
+        self.run_git(root, "checkout", "-b", "feature")
+        (root / "feature.txt").write_text("feature\n", encoding="utf-8")
+        self.run_git(root, "add", ".")
+        self.run_git(root, "commit", "-m", "修复 GitLab CI")
+        self.run_git(root, "checkout", "main")
+        self.run_git(root, "merge", "--no-ff", "feature", "-m", "?? MR !134:?????? GitLab CI ??")
+        merge_sha = self.run_git(root, "rev-parse", "HEAD").stdout.strip()
+        self.run_git(root, "checkout", "--detach", merge_sha)
+        self.run_git(root, "branch", "-D", "main")
+
+        result = self.run_check_json(
+            root,
+            "--base-ref",
+            "main",
+            "--head-ref",
+            "HEAD",
+            env={"CI_COMMIT_BEFORE_SHA": base_sha},
+        )
+
+        self.assertEqual(result.returncode, 0, result.stdout + "\n" + result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertTrue(payload["ok"])
+        merge_record = next(item for item in payload["commits"] if item.get("is_merge_commit"))
+        self.assertEqual(merge_record.get("allowed_reason"), "gitlab_generated_merge_commit_subject_encoding_loss")
+
     def test_rejects_ascii_only_merge_commit_without_encoding_loss_pattern(self) -> None:
         root = self.make_root("commit-lang-plain-merge")
         base_sha = self.run_git(root, "rev-parse", "HEAD").stdout.strip()
